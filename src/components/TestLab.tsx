@@ -18,7 +18,6 @@ import {
 import type { TripWithRole } from "@/lib/trips";
 import { savePendingCode, clearPendingCode } from "@/lib/pending-code";
 import { setLabView, useLabView, VIEW_LABELS } from "@/lib/lab-mode";
-import { HomeLayoutMockups } from "@/components/HomeLayoutMockups";
 
 const db = supabase as unknown as {
   rpc: (n: string, a?: object) => Promise<{ data: unknown; error: { message: string } | null }>;
@@ -132,7 +131,7 @@ export function TestLab({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [failedProofs, setFailedProofs] = useState<number | null>(null);
-  const [view, setView] = useState<"lab" | "checklist" | "home-mockups">("lab");
+  const [view, setView] = useState<"lab" | "checklist">("lab");
   const [hidden, setHidden] = useState<string[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [deleteTyped, setDeleteTyped] = useState("");
@@ -295,7 +294,6 @@ export function TestLab({
         }}
       />
     );
-  if (view === "home-mockups") return <HomeLayoutMockups onBack={() => setView("lab")} />;
 
   return (
     <div className="pb-8">
@@ -307,13 +305,6 @@ export function TestLab({
         Founder only. Sandbox trips use the real screens and rules, but stay hidden from everyone
         else and out of your stats.
       </p>
-      <Button
-        variant="outline"
-        className="w-full mt-4 min-h-12 justify-between"
-        onClick={() => setView("home-mockups")}
-      >
-        Home layout mockups <ArrowLeft className="rotate-180" size={18} />
-      </Button>
       {msg && (
         <p role="status" className="mt-3 text-sm font-bold text-green">
           {msg}

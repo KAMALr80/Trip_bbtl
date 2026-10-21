@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
-import { Route as HomeMockupsRouteImport } from './routes/home-mockups'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as BetaCodeRouteImport } from './routes/beta.$code'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
@@ -27,11 +26,6 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HomeMockupsRoute = HomeMockupsRouteImport.update({
-  id: '/home-mockups',
-  path: '/home-mockups',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -68,7 +62,6 @@ const ApiPublicVersionRoute = ApiPublicVersionRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/home-mockups': typeof HomeMockupsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/beta/$code': typeof BetaCodeRoute
   '/join/$code': typeof JoinCodeRoute
@@ -79,7 +72,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/home-mockups': typeof HomeMockupsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/beta/$code': typeof BetaCodeRoute
   '/join/$code': typeof JoinCodeRoute
@@ -91,7 +83,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/home-mockups': typeof HomeMockupsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/beta/$code': typeof BetaCodeRoute
   '/join/$code': typeof JoinCodeRoute
@@ -104,7 +95,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
-    | '/home-mockups'
     | '/reset-password'
     | '/beta/$code'
     | '/join/$code'
@@ -115,7 +105,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
-    | '/home-mockups'
     | '/reset-password'
     | '/beta/$code'
     | '/join/$code'
@@ -126,7 +115,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
-    | '/home-mockups'
     | '/reset-password'
     | '/beta/$code'
     | '/join/$code'
@@ -138,7 +126,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  HomeMockupsRoute: typeof HomeMockupsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   BetaCodeRoute: typeof BetaCodeRoute
   JoinCodeRoute: typeof JoinCodeRoute
@@ -161,13 +148,6 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/home-mockups': {
-      id: '/home-mockups'
-      path: '/home-mockups'
-      fullPath: '/home-mockups'
-      preLoaderRoute: typeof HomeMockupsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -218,7 +198,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  HomeMockupsRoute: HomeMockupsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   BetaCodeRoute: BetaCodeRoute,
   JoinCodeRoute: JoinCodeRoute,
