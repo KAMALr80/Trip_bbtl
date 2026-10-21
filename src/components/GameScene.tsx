@@ -15,7 +15,9 @@ import wheel from "@/assets/boarding-game-2.webp";
 import { premadeAvatars } from "@/lib/player-cards";
 
 const scenes = [cards, wheel, draw, song, never, vote, truths, bingo, hunt, mix];
-export function gameSceneArt(title: string) { return scenes[gameSceneFor(title)] ?? cards; }
+export function gameSceneArt(title: string) {
+  return scenes[gameSceneFor(title)] ?? cards;
+}
 
 export function gameSceneFor(title: string) {
   const value = title.toLowerCase();
@@ -31,22 +33,99 @@ export function gameSceneFor(title: string) {
   return 0;
 }
 
-export function GameScene({ index, title, phase, icon, crew, progress, onBack, onMember, children }: {
-  index: number; title: string; phase: string; icon: string;
+export function GameScene({
+  index,
+  title,
+  phase,
+  icon,
+  crew,
+  progress,
+  onBack,
+  onMember,
+  children,
+}: {
+  index: number;
+  title: string;
+  phase: string;
+  icon: string;
   crew: { userId?: string; name: string; avatar: string; done?: boolean }[];
-  progress?: ReactNode; onBack?: () => void; onMember?: ((id: string) => void) | undefined; children: ReactNode;
+  progress?: ReactNode;
+  onBack?: () => void;
+  onMember?: ((id: string) => void) | undefined;
+  children: ReactNode;
 }) {
-  return <div className={`cinematic-game-scene cinematic-game-scene-${index}`}>
-    <img className="cinematic-game-world" src={scenes[index] ?? cards} alt="" width={1536} height={1536} loading="lazy" sizes="(max-width: 520px) calc(100vw - 36px), 512px"/>
-    <div className="cinematic-game-content">
-      <header className="cinematic-game-header">
-        {onBack && <Button variant="ghost" size="icon" aria-label="Back to Games on Flight" onClick={onBack}><ArrowLeft/></Button>}
-        <img src={icon} alt="" width={48} height={48}/>
-        <span className="min-w-0"><span className="eyebrow">{phase}</span><strong className="font-display">{displayGameTitle(title)}</strong></span>
-      </header>
-       <div className={`cinematic-game-play cinematic-hero-${index}`}>{children}</div>
-      {progress && <div className="cinematic-game-progress">{progress}</div>}
-        <div className="cinematic-game-crew" aria-label="Your crew">{crew.map((person, i) => person.userId && onMember ? <Button key={`${person.name}-${i}`} variant="ghost" className="min-h-11 h-auto flex-col" title={`${person.name}${person.done ? " · ready" : ""}`} onClick={() => onMember(person.userId as string)}><img src={person.avatar || premadeAvatars[i % premadeAvatars.length]} alt={`${person.name}'s avatar`} width={36} height={36}/><small>{person.name}{person.done ? " ✓" : ""}</small></Button> : <span key={`${person.name}-${i}`} title={`${person.name}${person.done ? " · ready" : ""}`}><img src={person.avatar || premadeAvatars[i % premadeAvatars.length]} alt={`${person.name}'s avatar`} width={36} height={36}/><small>{person.name}{person.done ? " ✓" : ""}</small></span>)}</div>
+  return (
+    <div className={`cinematic-game-scene cinematic-game-scene-${index}`}>
+      <img
+        className="cinematic-game-world"
+        src={scenes[index] ?? cards}
+        alt=""
+        width={1536}
+        height={1536}
+        loading="lazy"
+        sizes="(max-width: 520px) calc(100vw - 36px), 512px"
+      />
+      <div className="cinematic-game-content">
+        <header className="cinematic-game-header">
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Back to Games on Flight"
+              onClick={onBack}
+            >
+              <ArrowLeft />
+            </Button>
+          )}
+          <img src={icon} alt="" width={48} height={48} />
+          <span className="min-w-0">
+            <span className="eyebrow">{phase}</span>
+            <strong className="font-display">{displayGameTitle(title)}</strong>
+          </span>
+        </header>
+        <div className={`cinematic-game-play cinematic-hero-${index}`}>{children}</div>
+        {progress && <div className="cinematic-game-progress">{progress}</div>}
+        <div className="cinematic-game-crew" aria-label="Your crew">
+          {crew.map((person, i) =>
+            person.userId && onMember ? (
+              <Button
+                key={`${person.name}-${i}`}
+                variant="ghost"
+                className="min-h-11 h-auto flex-col"
+                title={`${person.name}${person.done ? " · ready" : ""}`}
+                onClick={() => onMember(person.userId as string)}
+              >
+                <img
+                  src={person.avatar || premadeAvatars[i % premadeAvatars.length]}
+                  alt={`${person.name}'s avatar`}
+                  width={36}
+                  height={36}
+                />
+                <small>
+                  {person.name}
+                  {person.done ? " ✓" : ""}
+                </small>
+              </Button>
+            ) : (
+              <span
+                key={`${person.name}-${i}`}
+                title={`${person.name}${person.done ? " · ready" : ""}`}
+              >
+                <img
+                  src={person.avatar || premadeAvatars[i % premadeAvatars.length]}
+                  alt={`${person.name}'s avatar`}
+                  width={36}
+                  height={36}
+                />
+                <small>
+                  {person.name}
+                  {person.done ? " ✓" : ""}
+                </small>
+              </span>
+            ),
+          )}
+        </div>
+      </div>
     </div>
-  </div>;
+  );
 }

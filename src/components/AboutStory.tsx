@@ -6,7 +6,13 @@ import founderAbout from "@/assets/founder-about.jpg.asset.json";
 
 // The founder's story. Shown in three places: Me › About TripJunkies, the signed-out
 // "Our story ›" view, and the public /about page that can be shared as a link.
-export function AboutContent({ onBack, backLabel = "Me" }: { onBack: () => void; backLabel?: string }) {
+export function AboutContent({
+  onBack,
+  backLabel = "Me",
+}: {
+  onBack: () => void;
+  backLabel?: string;
+}) {
   return (
     <main className="pb-8">
       <Button variant="ghost" className="-ml-2 text-muted-foreground" onClick={onBack}>
@@ -23,14 +29,24 @@ export function AboutContent({ onBack, backLabel = "Me" }: { onBack: () => void;
           height={960}
           className="h-full w-full object-cover object-[center_42%]"
         />
-        <span className="passport-stamp absolute bottom-4 left-1/2 bg-card text-blue px-3 py-1 text-xs font-extrabold text-center whitespace-nowrap" style={{ transform: "translateX(-50%) rotate(0deg)" }}>
+        <span
+          className="passport-stamp absolute bottom-4 left-1/2 bg-card text-blue px-3 py-1 text-xs font-extrabold text-center whitespace-nowrap"
+          style={{ transform: "translateX(-50%) rotate(0deg)" }}
+        >
           COLLECT THE MOMENTS
         </span>
       </div>
       <RememberedSection
         id="about-idea"
         center
-        title={<span className="block"><span className="block">The Trip Before the Trip.</span><small className="block text-xs font-normal text-muted-foreground mt-1">Let the fun begin.</small></span>}
+        title={
+          <span className="block">
+            <span className="block">The Trip Before the Trip.</span>
+            <small className="block text-xs font-normal text-muted-foreground mt-1">
+              Let the fun begin.
+            </small>
+          </span>
+        }
         defaultOpen
       >
         <section className="mt-3 rounded-[1.75rem] bg-green-soft p-6">
@@ -44,8 +60,8 @@ export function AboutContent({ onBack, backLabel = "Me" }: { onBack: () => void;
           </p>
           <p className="mt-3 leading-relaxed">
             Pre-Flight game nights bring us together before we go. Trip Season games make memories
-            while we're away. Travel From Home welcomes everyone else in; Window Seat brings the road along. Next, the
-            phone apps will help more squads find their way here.
+            while we're away. Travel From Home welcomes everyone else in; Window Seat brings the
+            road along. Next, the phone apps will help more squads find their way here.
           </p>
         </section>
       </RememberedSection>

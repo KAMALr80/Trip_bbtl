@@ -29,74 +29,1446 @@ import bingoIcon from "@/assets/boarding-game-8.webp";
 import huntIcon from "@/assets/boarding-game-9.webp";
 
 const demos = [
-  { icon: "🃏", title: "Card flip", prompt: "What is one thing a friend might still get wrong about you?", art: cardIcon, rules: "Flip a talk card and share your answer out loud.", destination: "The story lounge", tagline: "Window seat to your squad's secrets", accent: "blue", length: "2 min" },
-  { icon: "🎡", title: "Spin the wheel", prompt: "Emoji story · Alex gets 20 seconds to tell a story in three emojis.", art: wheelIcon, rules: "Spin for a challenge, then give it your best shot.", destination: "The compass club", tagline: "Fasten your seatbelts — the wheel decides", accent: "orange", length: "2 min" },
-  { icon: "🎨", title: "30-sec Draw", prompt: "Draw your dream breakfast. Your squad guesses out loud!", art: drawIcon, rules: "Sketch quickly while your squad guesses what it is.", destination: "The sky studio", tagline: "Doodle at 30,000 feet", accent: "green", length: "30 sec" },
-  { icon: "🎵", title: "Guess the song", prompt: "Hum or say a line of a song you love. No lyrics appear in the app.", art: songIcon, rules: "Hum a favorite tune. Your squad guesses it aloud.", destination: "The sound cabin", tagline: "Next stop: your favorite chorus", accent: "blue", length: "2 min" },
-  { icon: "🙋", title: "Never Have I Ever", prompt: "Never have I ever packed for a trip the night before.", art: neverIcon, rules: "Read a statement and trade the stories behind it.", destination: "The memory lane", tagline: "Every journey has a confession", accent: "orange", length: "2 min" },
-  { icon: "🗳️", title: "Vote showdown", prompt: "Who told the funniest story tonight? Secret vote, then reveal.", art: voteIcon, rules: "Pick your favorite in secret, then reveal the winner.", destination: "The ballot lounge", tagline: "The cabin has spoken", accent: "green", length: "2 min" },
-  { icon: "🎭", title: "Two truths & lie", prompt: "Two true stories and one made-up story. Can they spot the lie?", art: truthsIcon, rules: "Tell two true stories and one lie. Let everyone guess.", destination: "The mystery gate", tagline: "One story missed its flight", accent: "orange", length: "2 min" },
-  { icon: "🎱", title: "Bingo", prompt: "Find a color that reminds you of the place you're visiting.", art: bingoIcon, rules: "Find the little moments around you and mark your squares.", destination: "The discovery deck", tagline: "Eyes open, adventure on", accent: "blue", length: "2 min" },
-  { icon: "🧭", title: "Scavenger hunt", prompt: "Find a tiny detail near you and share its story.", art: huntIcon, rules: "Spot something nearby and share its story.", destination: "The hidden route", tagline: "The best souvenirs are stories", accent: "green", length: "2 min" },
+  {
+    icon: "🃏",
+    title: "Card flip",
+    prompt: "What is one thing a friend might still get wrong about you?",
+    art: cardIcon,
+    rules: "Flip a talk card and share your answer out loud.",
+    destination: "The story lounge",
+    tagline: "Window seat to your squad's secrets",
+    accent: "blue",
+    length: "2 min",
+  },
+  {
+    icon: "🎡",
+    title: "Spin the wheel",
+    prompt: "Emoji story · Alex gets 20 seconds to tell a story in three emojis.",
+    art: wheelIcon,
+    rules: "Spin for a challenge, then give it your best shot.",
+    destination: "The compass club",
+    tagline: "Fasten your seatbelts — the wheel decides",
+    accent: "orange",
+    length: "2 min",
+  },
+  {
+    icon: "🎨",
+    title: "30-sec Draw",
+    prompt: "Draw your dream breakfast. Your squad guesses out loud!",
+    art: drawIcon,
+    rules: "Sketch quickly while your squad guesses what it is.",
+    destination: "The sky studio",
+    tagline: "Doodle at 30,000 feet",
+    accent: "green",
+    length: "30 sec",
+  },
+  {
+    icon: "🎵",
+    title: "Guess the song",
+    prompt: "Hum or say a line of a song you love. No lyrics appear in the app.",
+    art: songIcon,
+    rules: "Hum a favorite tune. Your squad guesses it aloud.",
+    destination: "The sound cabin",
+    tagline: "Next stop: your favorite chorus",
+    accent: "blue",
+    length: "2 min",
+  },
+  {
+    icon: "🙋",
+    title: "Never Have I Ever",
+    prompt: "Never have I ever packed for a trip the night before.",
+    art: neverIcon,
+    rules: "Read a statement and trade the stories behind it.",
+    destination: "The memory lane",
+    tagline: "Every journey has a confession",
+    accent: "orange",
+    length: "2 min",
+  },
+  {
+    icon: "🗳️",
+    title: "Vote showdown",
+    prompt: "Who told the funniest story tonight? Secret vote, then reveal.",
+    art: voteIcon,
+    rules: "Pick your favorite in secret, then reveal the winner.",
+    destination: "The ballot lounge",
+    tagline: "The cabin has spoken",
+    accent: "green",
+    length: "2 min",
+  },
+  {
+    icon: "🎭",
+    title: "Two truths & lie",
+    prompt: "Two true stories and one made-up story. Can they spot the lie?",
+    art: truthsIcon,
+    rules: "Tell two true stories and one lie. Let everyone guess.",
+    destination: "The mystery gate",
+    tagline: "One story missed its flight",
+    accent: "orange",
+    length: "2 min",
+  },
+  {
+    icon: "🎱",
+    title: "Bingo",
+    prompt: "Find a color that reminds you of the place you're visiting.",
+    art: bingoIcon,
+    rules: "Find the little moments around you and mark your squares.",
+    destination: "The discovery deck",
+    tagline: "Eyes open, adventure on",
+    accent: "blue",
+    length: "2 min",
+  },
+  {
+    icon: "🧭",
+    title: "Scavenger hunt",
+    prompt: "Find a tiny detail near you and share its story.",
+    art: huntIcon,
+    rules: "Spot something nearby and share its story.",
+    destination: "The hidden route",
+    tagline: "The best souvenirs are stories",
+    accent: "green",
+    length: "2 min",
+  },
 ] as const;
-const passBuddies = [buddyAvatars[0], buddyAvatars[1], buddyAvatars[2], buddyAvatars[3], buddyAvatars[4], buddyAvatars[5], buddyAvatars[6], buddyAvatars[7], buddyAvatars[8], buddyAvatars[9]];
-export function gamePassBuddyFor(title: string) { return passBuddies[gameSceneFor(title)] ?? premadeAvatars[0] ?? ""; }
-const gameIcons = [cardIcon, wheelIcon, drawIcon, songIcon, neverIcon, voteIcon, truthsIcon, bingoIcon, huntIcon, mixIcon];
-export function gameIconFor(title: string) { return gameIcons[gameSceneFor(title)] ?? cardIcon; }
+const passBuddies = [
+  buddyAvatars[0],
+  buddyAvatars[1],
+  buddyAvatars[2],
+  buddyAvatars[3],
+  buddyAvatars[4],
+  buddyAvatars[5],
+  buddyAvatars[6],
+  buddyAvatars[7],
+  buddyAvatars[8],
+  buddyAvatars[9],
+];
+export function gamePassBuddyFor(title: string) {
+  return passBuddies[gameSceneFor(title)] ?? premadeAvatars[0] ?? "";
+}
+const gameIcons = [
+  cardIcon,
+  wheelIcon,
+  drawIcon,
+  songIcon,
+  neverIcon,
+  voteIcon,
+  truthsIcon,
+  bingoIcon,
+  huntIcon,
+  mixIcon,
+];
+export function gameIconFor(title: string) {
+  return gameIcons[gameSceneFor(title)] ?? cardIcon;
+}
 const names = ["Alex", "Jordan", "Sam", "Riley"];
-const stages = ["Check-in", "Boarding", "Cruising", "Cruising", "Final approach", "Final approach", "Landing", "Landing", "Next destination"];
+const stages = [
+  "Check-in",
+  "Boarding",
+  "Cruising",
+  "Cruising",
+  "Final approach",
+  "Final approach",
+  "Landing",
+  "Landing",
+  "Next destination",
+];
 
 export function SampleNight({ onBack }: { onBack: () => void }) {
   const cinematic = useLook("boarding-pass") === "cinematic";
   const [boarded, setBoarded] = useState(false);
-  const [step, setStep] = useState(0), [paused, setPaused] = useState(true), [voted, setVoted] = useState<number | null>(null);
-  useEffect(() => { if (paused || step >= stages.length - 1) return; const t = window.setTimeout(() => setStep(s => s + 1), 4500); return () => window.clearTimeout(t); }, [step, paused]);
-  if (cinematic && !boarded) return <section className="pb-12"><Button variant="ghost" onClick={onBack}><ArrowLeft/> {cinematic ? "Games on Flight" : "Boarding…"}</Button><BoardingPass title="Card flip" art={cardIcon} rules="Watch the crew play, vote and reveal, then take the next stop." destination="The sample squad" tagline="Your first flight together" accent="blue" length="3 min" gate={2} buddy={buddyAvatars[0] ?? premadeAvatars[0] ?? ""} onBoard={()=>setBoarded(true)}/></section>;
-  return <section className="pb-12"><Button variant="ghost" onClick={onBack}><ArrowLeft/> {cinematic ? "Games on Flight" : "Boarding…"}</Button><div className="mt-4"><ArcadeBadge /></div><h1 className="font-display text-3xl font-extrabold mt-2">Watch a sample flight</h1><p className="text-sm text-muted-foreground mt-2">A sample game night with your squad.</p><div className="flex justify-center -space-x-2 my-5">{names.map((n,i) => <img key={n} src={premadeAvatars[i]} width={48} height={48} className="size-12 rounded-full border-2 border-background object-cover" alt={n}/>)}</div><div className="app-card"><div className="flex gap-1" aria-label="Flight progress">{stages.map((s,i) => <span key={`${s}-${i}`} className={`h-1.5 flex-1 rounded-full ${i<=step?"bg-primary":"bg-muted"}`}/>)}</div><p className="eyebrow mt-5">{step+1} / {stages.length} · {stages[step]}</p><h2 className="font-display text-2xl font-extrabold mt-2">{stages[step]}</h2>{step===0 ? <p className="mt-4">Alex hosts · Sunday 6 PM · four friends are here. Game starts in 00:20.</p> : step===1 ? <div className="text-center my-5"><GameWheel compact items={["Emoji story","Window seat","Passport pose","Mystery sound","Next stop","Squad story"]} winner={0} spinKey={step===1?1:null}/><p className="mt-4 font-bold">Jordan goes first · Emoji story · 30 sec</p></div> : step===2 || step===3 ? <div className="card-draw card-draw-reveal bg-green-soft rounded-2xl p-6 mt-5 text-center"><p className="eyebrow">{step===2?"LIGHT":"DEEPER"} · ALEX'S TURN</p><p className="font-display text-xl font-bold mt-4">{step===2?"What is a tiny thing that made you laugh this week?":"What's something a friend who's known you forever might still get wrong about you?"}</p><p className="mt-3">❤️ 😂 🔥</p></div> : step===4 ? <p className="mt-5 text-lg">🎤 Sam tells their funniest story of the night. Everyone listens, then votes.</p> : step===5 ? <div className="grid grid-cols-2 gap-2 mt-5">{names.map((n,i)=><Button key={n} variant={voted===i?"playful":"outline"} onClick={()=>setVoted(i)}>{n}</Button>)}</div> : step===6 ? <p className="mt-5 text-lg">🥁 Jordan won the secret showdown vote! Ballots stayed hidden until this reveal.</p> : step===7 ? <p className="mt-5 text-lg">👑 Jordan · Pre-Flight champion of this sample night!</p> : <p className="mt-5 text-lg">🎡 Riley hosts next week · Theme: wear your funniest shirt.</p>}</div><div className="grid grid-cols-2 gap-2 mt-4"><Button variant="outline" onClick={()=>setPaused(p=>!p)}>{paused?<Play/>:<Pause/>}{paused?"Auto-play":"Pause"}</Button><Button variant="playful" onClick={()=>{setPaused(true);setStep(s=>Math.min(stages.length-1,s+1));}}>Next stop <ArrowRight/></Button></div><Button variant="ghost" className="w-full mt-2" onClick={()=>{setStep(0);setPaused(true);setVoted(null);}}><RotateCcw/> Restart</Button></section>;
+  const [step, setStep] = useState(0),
+    [paused, setPaused] = useState(true),
+    [voted, setVoted] = useState<number | null>(null);
+  useEffect(() => {
+    if (paused || step >= stages.length - 1) return;
+    const t = window.setTimeout(() => setStep((s) => s + 1), 4500);
+    return () => window.clearTimeout(t);
+  }, [step, paused]);
+  if (cinematic && !boarded)
+    return (
+      <section className="pb-12">
+        <Button variant="ghost" onClick={onBack}>
+          <ArrowLeft /> {cinematic ? "Games on Flight" : "Boarding…"}
+        </Button>
+        <BoardingPass
+          title="Card flip"
+          art={cardIcon}
+          rules="Watch the crew play, vote and reveal, then take the next stop."
+          destination="The sample squad"
+          tagline="Your first flight together"
+          accent="blue"
+          length="3 min"
+          gate={2}
+          buddy={buddyAvatars[0] ?? premadeAvatars[0] ?? ""}
+          onBoard={() => setBoarded(true)}
+        />
+      </section>
+    );
+  return (
+    <section className="pb-12">
+      <Button variant="ghost" onClick={onBack}>
+        <ArrowLeft /> {cinematic ? "Games on Flight" : "Boarding…"}
+      </Button>
+      <div className="mt-4">
+        <ArcadeBadge />
+      </div>
+      <h1 className="font-display text-3xl font-extrabold mt-2">Watch a sample flight</h1>
+      <p className="text-sm text-muted-foreground mt-2">A sample game night with your squad.</p>
+      <div className="flex justify-center -space-x-2 my-5">
+        {names.map((n, i) => (
+          <img
+            key={n}
+            src={premadeAvatars[i]}
+            width={48}
+            height={48}
+            className="size-12 rounded-full border-2 border-background object-cover"
+            alt={n}
+          />
+        ))}
+      </div>
+      <div className="app-card">
+        <div className="flex gap-1" aria-label="Flight progress">
+          {stages.map((s, i) => (
+            <span
+              key={`${s}-${i}`}
+              className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-primary" : "bg-muted"}`}
+            />
+          ))}
+        </div>
+        <p className="eyebrow mt-5">
+          {step + 1} / {stages.length} · {stages[step]}
+        </p>
+        <h2 className="font-display text-2xl font-extrabold mt-2">{stages[step]}</h2>
+        {step === 0 ? (
+          <p className="mt-4">
+            Alex hosts · Sunday 6 PM · four friends are here. Game starts in 00:20.
+          </p>
+        ) : step === 1 ? (
+          <div className="text-center my-5">
+            <GameWheel
+              compact
+              items={[
+                "Emoji story",
+                "Window seat",
+                "Passport pose",
+                "Mystery sound",
+                "Next stop",
+                "Squad story",
+              ]}
+              winner={0}
+              spinKey={step === 1 ? 1 : null}
+            />
+            <p className="mt-4 font-bold">Jordan goes first · Emoji story · 30 sec</p>
+          </div>
+        ) : step === 2 || step === 3 ? (
+          <div className="card-draw card-draw-reveal bg-green-soft rounded-2xl p-6 mt-5 text-center">
+            <p className="eyebrow">{step === 2 ? "LIGHT" : "DEEPER"} · ALEX'S TURN</p>
+            <p className="font-display text-xl font-bold mt-4">
+              {step === 2
+                ? "What is a tiny thing that made you laugh this week?"
+                : "What's something a friend who's known you forever might still get wrong about you?"}
+            </p>
+            <p className="mt-3">❤️ 😂 🔥</p>
+          </div>
+        ) : step === 4 ? (
+          <p className="mt-5 text-lg">
+            🎤 Sam tells their funniest story of the night. Everyone listens, then votes.
+          </p>
+        ) : step === 5 ? (
+          <div className="grid grid-cols-2 gap-2 mt-5">
+            {names.map((n, i) => (
+              <Button
+                key={n}
+                variant={voted === i ? "playful" : "outline"}
+                onClick={() => setVoted(i)}
+              >
+                {n}
+              </Button>
+            ))}
+          </div>
+        ) : step === 6 ? (
+          <p className="mt-5 text-lg">
+            🥁 Jordan won the secret showdown vote! Ballots stayed hidden until this reveal.
+          </p>
+        ) : step === 7 ? (
+          <p className="mt-5 text-lg">👑 Jordan · Pre-Flight champion of this sample night!</p>
+        ) : (
+          <p className="mt-5 text-lg">
+            🎡 Riley hosts next week · Theme: wear your funniest shirt.
+          </p>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-2 mt-4">
+        <Button variant="outline" onClick={() => setPaused((p) => !p)}>
+          {paused ? <Play /> : <Pause />}
+          {paused ? "Auto-play" : "Pause"}
+        </Button>
+        <Button
+          variant="playful"
+          onClick={() => {
+            setPaused(true);
+            setStep((s) => Math.min(stages.length - 1, s + 1));
+          }}
+        >
+          Next stop <ArrowRight />
+        </Button>
+      </div>
+      <Button
+        variant="ghost"
+        className="w-full mt-2"
+        onClick={() => {
+          setStep(0);
+          setPaused(true);
+          setVoted(null);
+        }}
+      >
+        <RotateCcw /> Restart
+      </Button>
+    </section>
+  );
 }
 
-export function BoardingPass({ title, art, rules, destination, tagline, accent, length, gate, buddy, onBoard, disabled = false }: { title: string; art: string; rules: string; destination: string; tagline: string; accent: string; length: string; gate: number; buddy: string; onBoard: () => void; disabled?: boolean }) {
+export function BoardingPass({
+  title,
+  art,
+  rules,
+  destination,
+  tagline,
+  accent,
+  length,
+  gate,
+  buddy,
+  onBoard,
+  disabled = false,
+}: {
+  title: string;
+  art: string;
+  rules: string;
+  destination: string;
+  tagline: string;
+  accent: string;
+  length: string;
+  gate: number;
+  buddy: string;
+  onBoard: () => void;
+  disabled?: boolean;
+}) {
   const cinematic = useLook("boarding-pass") === "cinematic";
-  return <div className={`boarding-pass boarding-pass-${accent} ${cinematic ? `cinematic-boarding-pass cinematic-pass-game-${gameSceneFor(title)}` : ""}`} aria-label={`${title} boarding pass`}><div className="boarding-pass-main">{cinematic && <div className="cinematic-pass-hero"><img src={gameSceneArt(title)} alt="" width={1024} height={1024}/><span className="cinematic-pass-ribbon">✈ BOARDING PASS</span></div>}<div className="flex justify-between items-start gap-2"><span className="eyebrow">{cinematic ? "GAMES ON FLIGHT" : "TRIPJUNKIES · BOARDING PASS"}</span><span className="boarding-pass-stamp">{cinematic && `FLIGHT TJ${String(100+gate)} · `}GATE {String(gate).padStart(2,"0")}</span></div><div className="flex items-center gap-3 mt-5"><img src={art} className={cinematic ? "cinematic-pass-icon" : "size-20 object-contain shrink-0"} width={160} height={160} alt=""/><div className="min-w-0"><p className="eyebrow">DESTINATION</p><h2 className="font-display text-2xl font-extrabold leading-tight break-words">{cinematic ? displayGameTitle(title) : title}</h2><span className="game-type-chip">{gate >= 1 && gate <= 15 ? gameType(gate) : arcadeGameType(title)}</span><p className="text-xs font-bold mt-1">{tagline}</p></div></div><div className="boarding-pass-route mt-5"><div><small>FROM</small><strong>Your couch</strong></div><span aria-hidden="true">✈</span><div><small>TO</small><strong>{destination}</strong></div></div><div className="mt-5 flex items-start gap-3"><img src={cinematic ? gamePassBuddyFor(title) : buddy} alt="" className="size-12 rounded-full object-cover shrink-0"/><div>{!cinematic && <><p className="eyebrow">HOW IT WORKS</p><p className="text-sm font-semibold mt-1">{rules}</p></>}</div></div>{cinematic && <><div className="cinematic-pass-rules"><p>✦ <b>How to play</b> {rules}</p><p>★ <b>How to win</b> Play together and give it your best shot.</p><p>✈ <b>Prep</b> {length} · Bring your squad.</p></div><span className="cinematic-pass-ink" aria-hidden="true">TRIPJUNKIES</span></>}</div><div className="boarding-pass-stub"><div><span>SEAT</span><strong>You + squad</strong></div><div><span>BOARDING TIME</span><strong>{length}</strong></div><div className="boarding-pass-barcode" aria-hidden="true"/></div><Button variant="playful" className="w-full mt-4 min-h-12" disabled={disabled} onClick={onBoard}>{cinematic ? "✈ Board now" : "Board now ✈"}</Button></div>;
+  return (
+    <div
+      className={`boarding-pass boarding-pass-${accent} ${cinematic ? `cinematic-boarding-pass cinematic-pass-game-${gameSceneFor(title)}` : ""}`}
+      aria-label={`${title} boarding pass`}
+    >
+      <div className="boarding-pass-main">
+        {cinematic && (
+          <div className="cinematic-pass-hero">
+            <img src={gameSceneArt(title)} alt="" width={1024} height={1024} />
+            <span className="cinematic-pass-ribbon">✈ BOARDING PASS</span>
+          </div>
+        )}
+        <div className="flex justify-between items-start gap-2">
+          <span className="eyebrow">
+            {cinematic ? "GAMES ON FLIGHT" : "TRIPJUNKIES · BOARDING PASS"}
+          </span>
+          <span className="boarding-pass-stamp">
+            {cinematic && `FLIGHT TJ${String(100 + gate)} · `}GATE {String(gate).padStart(2, "0")}
+          </span>
+        </div>
+        <div className="flex items-center gap-3 mt-5">
+          <img
+            src={art}
+            className={cinematic ? "cinematic-pass-icon" : "size-20 object-contain shrink-0"}
+            width={160}
+            height={160}
+            alt=""
+          />
+          <div className="min-w-0">
+            <p className="eyebrow">DESTINATION</p>
+            <h2 className="font-display text-2xl font-extrabold leading-tight break-words">
+              {cinematic ? displayGameTitle(title) : title}
+            </h2>
+            <span className="game-type-chip">
+              {gate >= 1 && gate <= 15 ? gameType(gate) : arcadeGameType(title)}
+            </span>
+            <p className="text-xs font-bold mt-1">{tagline}</p>
+          </div>
+        </div>
+        <div className="boarding-pass-route mt-5">
+          <div>
+            <small>FROM</small>
+            <strong>Your couch</strong>
+          </div>
+          <span aria-hidden="true">✈</span>
+          <div>
+            <small>TO</small>
+            <strong>{destination}</strong>
+          </div>
+        </div>
+        <div className="mt-5 flex items-start gap-3">
+          <img
+            src={cinematic ? gamePassBuddyFor(title) : buddy}
+            alt=""
+            className="size-12 rounded-full object-cover shrink-0"
+          />
+          <div>
+            {!cinematic && (
+              <>
+                <p className="eyebrow">HOW IT WORKS</p>
+                <p className="text-sm font-semibold mt-1">{rules}</p>
+              </>
+            )}
+          </div>
+        </div>
+        {cinematic && (
+          <>
+            <div className="cinematic-pass-rules">
+              <p>
+                ✦ <b>How to play</b> {rules}
+              </p>
+              <p>
+                ★ <b>How to win</b> Play together and give it your best shot.
+              </p>
+              <p>
+                ✈ <b>Prep</b> {length} · Bring your squad.
+              </p>
+            </div>
+            <span className="cinematic-pass-ink" aria-hidden="true">
+              TRIPJUNKIES
+            </span>
+          </>
+        )}
+      </div>
+      <div className="boarding-pass-stub">
+        <div>
+          <span>SEAT</span>
+          <strong>You + squad</strong>
+        </div>
+        <div>
+          <span>BOARDING TIME</span>
+          <strong>{length}</strong>
+        </div>
+        <div className="boarding-pass-barcode" aria-hidden="true" />
+      </div>
+      <Button
+        variant="playful"
+        className="w-full mt-4 min-h-12"
+        disabled={disabled}
+        onClick={onBoard}
+      >
+        {cinematic ? "✈ Board now" : "Board now ✈"}
+      </Button>
+    </div>
+  );
 }
 
-export function GameArcade({ onBack, trips = [], initialGame = null, practiceMode = false, guest = false, activeTripId = null }: { onBack: () => void; trips?: TripWithRole[]; initialGame?: number | null; practiceMode?: boolean; guest?: boolean; activeTripId?: string | null }) {
+export function GameArcade({
+  onBack,
+  trips = [],
+  initialGame = null,
+  practiceMode = false,
+  guest = false,
+  activeTripId = null,
+}: {
+  onBack: () => void;
+  trips?: TripWithRole[];
+  initialGame?: number | null;
+  practiceMode?: boolean;
+  guest?: boolean;
+  activeTripId?: string | null;
+}) {
   const [night, setNight] = useState(false);
   const [resumeNight, setResumeNight] = useState(false);
-  useEffect(() => { try { const saved = localStorage.getItem("tj-game-night"); if (saved && Array.isArray(JSON.parse(saved)?.players) && JSON.parse(saved).players.length >= 2) setResumeNight(true); else localStorage.removeItem("tj-game-night"); } catch { /* private browsing */ } }, []);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("tj-game-night");
+      if (
+        saved &&
+        Array.isArray(JSON.parse(saved)?.players) &&
+        JSON.parse(saved).players.length >= 2
+      )
+        setResumeNight(true);
+      else localStorage.removeItem("tj-game-night");
+    } catch {
+      /* private browsing */
+    }
+  }, []);
   const cinematic = useLook("boarding") === "cinematic";
   const spinLook = useLook("spin") === "cinematic";
-  const [selected,setSelected] = useState<number | "mix" | null>(initialGame), [started,setStarted] = useState(false), [sample,setSample] = useState(false), [flipped,setFlipped]=useState(false), [spin,setSpin]=useState(false),[wheelRound,setWheelRound]=useState(0),[wheelWinner,setWheelWinner]=useState<number|null>(null),[wheelStopped,setWheelStopped]=useState(false), [seconds,setSeconds]=useState(30), [extra,setExtra]=useState(0), [votes,setVotes]=useState<number|null>(null);
-  const [mixed,setMixed] = useState(""), [mixError,setMixError] = useState(""), [mixBusy,setMixBusy] = useState(false), [creditTrip,setCreditTrip] = useState(activeTripId ?? trips[0]?.id ?? "");
-  const [mixUsed,setMixUsed] = useState(0);
+  const [selected, setSelected] = useState<number | "mix" | null>(initialGame),
+    [started, setStarted] = useState(false),
+    [sample, setSample] = useState(false),
+    [flipped, setFlipped] = useState(false),
+    [spin, setSpin] = useState(false),
+    [wheelRound, setWheelRound] = useState(0),
+    [wheelWinner, setWheelWinner] = useState<number | null>(null),
+    [wheelStopped, setWheelStopped] = useState(false),
+    [seconds, setSeconds] = useState(30),
+    [extra, setExtra] = useState(0),
+    [votes, setVotes] = useState<number | null>(null);
+  const [mixed, setMixed] = useState(""),
+    [mixError, setMixError] = useState(""),
+    [mixBusy, setMixBusy] = useState(false),
+    [creditTrip, setCreditTrip] = useState(activeTripId ?? trips[0]?.id ?? "");
+  const [mixUsed, setMixUsed] = useState(0);
   const [practiceOn, setPracticeOn] = useState(false); // hub Practice toggle: local prompts only, no AI tile
   const [practice, setPractice] = useState(() => shuffledPractice(0));
   const [practiceNumber, setPracticeNumber] = useState(0);
   const practiceKey = `tj-practice-${new Date().toLocaleDateString("en-CA")}-${initialGame ?? "none"}`;
-  const [dailyRounds, setDailyRounds] = useState(() => { try { return Number(localStorage.getItem(practiceKey) || 0); } catch { return 0; } });
-  const nextPractice = () => { if (practiceMode || practiceOn) { const count = dailyRounds + 1; setDailyRounds(count); try { localStorage.setItem(practiceKey, String(count)); } catch { /* private browsing */ } } setPracticeNumber(n=>n+1);setFlipped(false);setVotes(null); };
-  const order = useMemo(() => { const items: Array<number | "mix"> = [...demos.map((_, i) => i), "mix"]; for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [items[i], items[j]] = [items[j]!, items[i]!]; } return items; }, []);
-  const loadUsed = () => { void (supabase as unknown as { rpc: (n: string) => PromiseLike<{ data: number | null }> }).rpc("my_mix_used").then(r => setMixUsed(r.data ?? 0)); };
-  useEffect(() => { if (!guest) loadUsed(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [dailyRounds, setDailyRounds] = useState(() => {
+    try {
+      return Number(localStorage.getItem(practiceKey) || 0);
+    } catch {
+      return 0;
+    }
+  });
+  const nextPractice = () => {
+    if (practiceMode || practiceOn) {
+      const count = dailyRounds + 1;
+      setDailyRounds(count);
+      try {
+        localStorage.setItem(practiceKey, String(count));
+      } catch {
+        /* private browsing */
+      }
+    }
+    setPracticeNumber((n) => n + 1);
+    setFlipped(false);
+    setVotes(null);
+  };
+  const order = useMemo(() => {
+    const items: Array<number | "mix"> = [...demos.map((_, i) => i), "mix"];
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [items[i], items[j]] = [items[j]!, items[i]!];
+    }
+    return items;
+  }, []);
+  const loadUsed = () => {
+    void (supabase as unknown as { rpc: (n: string) => PromiseLike<{ data: number | null }> })
+      .rpc("my_mix_used")
+      .then((r) => setMixUsed(r.data ?? 0));
+  };
+  useEffect(() => {
+    if (!guest) loadUsed();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const creditsLeft = trips.length > 0;
-  const mixChip = mixUsed >= 10 || (mixUsed >= 3 && !creditsLeft) ? ["Gate closed","text-muted-foreground"] : mixUsed === 2 ? ["Final call","text-orange"] : ["Now boarding","text-green"];
-  async function runMix() { if (guest) { showOutOfCredits(true); return; } const t = trips.find(x => x.id === creditTrip); if (mixUsed >= 3 && mixUsed < 10 && !(t && (t.myRole === "captain" || t.myRole === "co_captain"))) { showOutOfCredits(); return; } setMixBusy(true); setMixError(""); try { setMixed(await arcadeMix({ data: { tripId: creditTrip || null } })); } catch (e) { { const m = (e as Error)?.message ?? ""; if (m.includes("LEADER_ONLY") || m.includes("OUT_OF_CREDITS")) showOutOfCredits(); else setMixError(friendlyError(e)); } } finally { setMixBusy(false); loadUsed(); } }
-  const canvas = useRef<HTMLCanvasElement>(null), drawing = useRef(false);
-  const [ink, setInk] = useState("var(--ink-draw)"), [brush, setBrush] = useState(3);
+  const mixChip =
+    mixUsed >= 10 || (mixUsed >= 3 && !creditsLeft)
+      ? ["Gate closed", "text-muted-foreground"]
+      : mixUsed === 2
+        ? ["Final call", "text-orange"]
+        : ["Now boarding", "text-green"];
+  async function runMix() {
+    if (guest) {
+      showOutOfCredits(true);
+      return;
+    }
+    const t = trips.find((x) => x.id === creditTrip);
+    if (
+      mixUsed >= 3 &&
+      mixUsed < 10 &&
+      !(t && (t.myRole === "captain" || t.myRole === "co_captain"))
+    ) {
+      showOutOfCredits();
+      return;
+    }
+    setMixBusy(true);
+    setMixError("");
+    try {
+      setMixed(await arcadeMix({ data: { tripId: creditTrip || null } }));
+    } catch (e) {
+      {
+        const m = (e as Error)?.message ?? "";
+        if (m.includes("LEADER_ONLY") || m.includes("OUT_OF_CREDITS")) showOutOfCredits();
+        else setMixError(friendlyError(e));
+      }
+    } finally {
+      setMixBusy(false);
+      loadUsed();
+    }
+  }
+  const canvas = useRef<HTMLCanvasElement>(null),
+    drawing = useRef(false);
+  const [ink, setInk] = useState("var(--ink-draw)"),
+    [brush, setBrush] = useState(3);
   const strokes = useRef<ImageData[]>([]);
   const [strokeCount, setStrokeCount] = useState(0);
-  const palette = ["var(--ink-draw)", "var(--primary)", "var(--orange)", "var(--blue)", "var(--green)", "var(--home-door-violet)", "var(--paper)", "var(--foreground)"];
-  useEffect(()=>{if(!spin||seconds<=0||(selected===1&&!wheelStopped))return;const t=window.setTimeout(()=>setSeconds(s=>s-1),1000);return()=>window.clearTimeout(t);},[seconds,spin,selected,wheelStopped]);
-  const backToBoard = () => { setSelected(null);setStarted(false);setFlipped(false);setSpin(false);setSeconds(30);setExtra(0);setVotes(null);strokes.current=[];setStrokeCount(0); };
-  if(sample)return <SampleNight onBack={()=>setSample(false)}/>;
-  if(night)return <OnePhoneNight games={demos.slice(0,7).map((d,index)=>({index,title:d.title,art:d.art,icon:d.icon}))} onExit={()=>{setNight(false);try {setResumeNight(!!localStorage.getItem("tj-game-night"));} catch {setResumeNight(false);}}}/>;
-  if(resumeNight)return <section className="pb-12"><Button variant="ghost" onClick={()=>setResumeNight(false)}><ArrowLeft/> Games on Flight</Button><h1 className="font-display text-3xl font-extrabold mt-6">Resume your Game Night?</h1><div className="grid grid-cols-2 gap-3 mt-6"><Button variant="playful" className="min-h-12" onClick={()=>{setResumeNight(false);setNight(true);}}>Resume</Button><Button variant="outline" className="min-h-12" onClick={()=>{localStorage.removeItem("tj-game-night");setResumeNight(false);setNight(true);}}>Start fresh</Button></div></section>;
-  if(selected!==null){
-    const isMix=selected==="mix";
-    const game=isMix?null:demos[selected];
-    const title=game?.title??"Mix It Up";
-    const crew = names.map((name,i)=>({name,avatar:premadeAvatars[i] ?? "",done: i === 0 || (selected===5 && votes===i)}));
-    return <section className={`pb-12 ${selected===1 && spinLook ? "cinematic-spin-page" : ""}`}><Button variant="ghost" onClick={backToBoard}><ArrowLeft/> {cinematic ? "Games on Flight" : "Boarding…"}</Button><div className="mt-5"><ArcadeBadge /></div>{!started ? <BoardingPass title={title} art={game?.art??mixIcon} rules={game?.rules??"Shuffle fresh sample formats into a surprise game mix."} destination={game?.destination??"Mystery destination"} tagline={game?.tagline??"Mystery destination, mixed fresh"} accent={game?.accent??"blue"} length={game?.length??"2 min"} gate={isMix?10:selected+1} buddy={gamePassBuddyFor(title)} onBoard={()=>{ if (cinematic && !isMix) { setPractice(shuffledPractice(selected)); setPracticeNumber(0); } setStarted(true); setSeconds(30); setExtra(0); strokes.current=[];setStrokeCount(0); }}/> : isMix ? (cinematic ? <GameScene index={9} title={title} phase="Boarding" icon={mixIcon} crew={crew} onBack={backToBoard}><div className="mt-5"><h1 className="font-display text-3xl font-extrabold">Mix It Up</h1><p className="text-sm text-muted-foreground mt-2">Three mixes per person each day included; after that, one trip AI credit per mix. Daily cap applies. No purchases or trip saves.</p>{trips.length>0&&<label className="block mt-4 text-sm font-bold">Trip credit source<select className="mt-1 w-full min-h-11 rounded-xl border border-border bg-card px-3" value={creditTrip} onChange={e=>setCreditTrip(e.target.value)}><option value="">No trip · free mixes only</option>{trips.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>}<p className={`mt-3 text-sm font-bold ${mixChip[1]}`}>{mixChip[0]}</p><Button variant="playful" className="w-full mt-4" disabled={mixBusy || mixChip[0] === "Gate closed"} onClick={() => void runMix()}>{mixBusy ? "Mixing…" : "Make a sample mix"}</Button>{mixed && <p className="mt-4 whitespace-pre-line rounded-xl bg-muted p-4 text-sm" role="status">{mixed}</p>}{mixError && <p className="mt-3 text-sm text-destructive" role="alert">{mixError}</p>}</div></GameScene> : <div className="mt-5"><h1 className="font-display text-3xl font-extrabold">Mix It Up</h1><p className="text-sm text-muted-foreground mt-2">Three mixes per person each day included; after that, one trip AI credit per mix. Daily cap applies. No purchases or trip saves.</p>{trips.length>0&&<label className="block mt-4 text-sm font-bold">Trip credit source<select className="mt-1 w-full min-h-11 rounded-xl border border-border bg-card px-3" value={creditTrip} onChange={e=>setCreditTrip(e.target.value)}><option value="">No trip · free mixes only</option>{trips.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>}<p className={`mt-3 text-sm font-bold ${mixChip[1]}`}>{mixChip[0]}</p><Button variant="playful" className="w-full mt-4" disabled={mixBusy || mixChip[0] === "Gate closed"} onClick={() => void runMix()}>{mixBusy ? "Mixing…" : "Make a sample mix"}</Button>{mixed && <p className="mt-4 whitespace-pre-line rounded-xl bg-muted p-4 text-sm" role="status">{mixed}</p>}{mixError && <p className="mt-3 text-sm text-destructive" role="alert">{mixError}</p>}</div>) : game ? (cinematic ? <GameScene index={selected as number} title={title} phase={selected===5 ? "Final approach" : selected===1 ? "Boarding" : "Cruising"} icon={game.art} crew={crew} progress={[1,2].includes(selected) ? <span role="timer">{seconds}s remaining</span> : <span>Sample Squad · {game.length}</span>} onBack={backToBoard}><div className="cinematic-game-controls"><p className="eyebrow text-blue mt-4">{selected===5?"Final approach":selected===1?"Boarding":"Cruising"}</p><h1 className="font-display text-3xl font-extrabold mt-2">{selected===1 && spinLook ? "Spin the Wheel" : <>{game.icon} {displayGameTitle(title)}</>}</h1>{selected===1 && spinLook && <p className="text-sm text-muted-foreground">Travel. Play. Win. Anywhere.</p>}{selected===1 && spinLook && <div className="cinematic-spin-sky" aria-hidden="true"/>}<div className={`app-card mt-6 text-center min-h-52 grid place-items-center cinematic-hero-card ${selected===0 ? "cinematic-flip-card" : ""} ${flipped ? "is-flipped" : ""}`} onClick={()=>{if(selected===0)setFlipped(v=>!v);}} role={selected===0 ? "button" : undefined} tabIndex={selected===0 ? 0 : undefined} onKeyDown={e=>{if(selected===0 && (e.key==="Enter"||e.key===" ")){e.preventDefault();setFlipped(v=>!v);}}}><div>{selected===0 && <><span className="cinematic-card-back" aria-hidden="true"/><span className="cinematic-card-back" aria-hidden="true"/><img className="cinematic-card-photo" src={cardIcon} alt=""/></>}{selected===3 && <span className="cinematic-microphone" aria-hidden="true">🎙️</span>}{selected===6 && <span className="cinematic-gate" aria-hidden="true">✦ 1 &nbsp; ✦ 2 &nbsp; ✦ 3</span>}{selected===8 && <span className="cinematic-route" aria-hidden="true">✈ ········· ✦</span>}{selected!==3 && <p className="text-4xl">{game.icon}</p>}{selected===3 && <p className="eyebrow">HUM IT</p>}<p className="font-display text-xl font-bold mt-4">{selected===0&&!flipped?"Tap to flip your card":selected===1&&!wheelStopped?"Spin to reveal your challenge":selected===1?practice[(practiceNumber + (wheelWinner ?? 0)) % practice.length]:practice[practiceNumber % practice.length]}</p></div></div><Button variant="outline" className="w-full mt-3" disabled={practiceMode && false} onClick={nextPractice}>{"Another sample"} <ArrowRight size={16}/></Button>{selected===1&&spinLook&&<div className="cinematic-spin-stamps"><span>✦ Your stamps · 0</span><span className="cinematic-spin-board">Squad board ›</span></div>}{selected===1&&<GameWheel items={practice.slice(practiceNumber, practiceNumber+6).map((prompt)=>prompt.split(":")[0]?.slice(0,22) ?? "Challenge")} winner={wheelWinner} spinKey={wheelRound||null} onStop={()=>setWheelStopped(true)}/>}{[1,2].includes(selected) && <><p className={`text-center font-display text-3xl font-bold my-3 ${selected===2 ? "cinematic-countdown" : ""}`} role="timer">{seconds}s</p><Button variant="playful" className="w-full" onClick={()=>{setSpin(true);setSeconds(selected===2?30:20);setExtra(0);if(selected===1){setWheelStopped(false);setWheelWinner(Math.floor(Math.random()*6));setWheelRound(n=>n+1);}}}>{selected===1 && spinLook ? "✈ Spin now" : selected===1?"Spin for a challenge":"Start 30-second draw"}</Button></>}{selected===2&&<><canvas ref={canvas} width={320} height={210} aria-label="Draw here with your finger" className="mt-4 w-full rounded-2xl border border-border bg-card touch-none cinematic-sketchbook" onPointerDown={e=>{drawing.current=true;e.currentTarget.setPointerCapture(e.pointerId);const c=canvas.current,r=c?.getBoundingClientRect(),ctx=c?.getContext("2d");if(!c||!r||!ctx)return;strokes.current.push(ctx.getImageData(0,0,c.width,c.height));setStrokeCount(strokes.current.length);ctx.beginPath();ctx.moveTo((e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height);}} onPointerMove={e=>{if(!drawing.current)return;const c=canvas.current,r=c?.getBoundingClientRect(),ctx=c?.getContext("2d");if(!c||!r||!ctx)return;ctx.lineWidth=cinematic?brush:3;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle=getComputedStyle(c).getPropertyValue(cinematic ? ink.slice(4,-1) : "--foreground").trim() || getComputedStyle(c).color;ctx.lineTo((e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height);ctx.stroke();}} onPointerUp={()=>drawing.current=false} onPointerCancel={()=>drawing.current=false}/>{cinematic && <><div className="mt-3 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label="Drawing time remaining" aria-valuenow={seconds} aria-valuemin={0} aria-valuemax={selected===2?30+extra:30}><div className="h-full rounded-full bg-primary transition-all" style={{width:`${Math.min(100,seconds/(30+extra)*100)}%`}}/></div><div className="mt-3 flex flex-wrap items-center justify-between gap-2" aria-label="Drawing colors">{palette.map(color=><Button key={color} variant="ghost" size="icon" aria-label={`Color ${color}`} aria-pressed={ink===color} className="size-8 rounded-full border border-border p-1" onClick={()=>setInk(color)}><span className="block size-full rounded-full" style={{backgroundColor:color}}/></Button>)}</div><div className="flex flex-wrap items-center gap-2 mt-3" aria-label="Brush size">{[2,5,9].map(size=><Button key={size} variant={brush===size?"playful":"outline"} size="sm" aria-pressed={brush===size} onClick={()=>setBrush(size)}>Brush {size===2?"S":size===5?"M":"L"}</Button>)}<Button variant="outline" size="sm" disabled={!strokeCount} onClick={()=>{const prev=strokes.current.pop();setStrokeCount(strokes.current.length);if(prev)canvas.current?.getContext("2d")?.putImageData(prev,0,0);}}>Undo</Button></div></>}<div className="grid grid-cols-2 gap-2 mt-2"><Button variant="outline" onClick={()=>{const ctx=canvas.current?.getContext("2d");if(ctx){strokes.current.push(ctx.getImageData(0,0,320,210));setStrokeCount(strokes.current.length);ctx.clearRect(0,0,320,210);}}}>Clear drawing</Button><Button variant="outline" disabled={!spin||seconds<=0||extra>=30} onClick={()=>{setExtra(n=>n+10);setSeconds(s=>s+10);}}>+10 sec</Button></div></>}{selected===5&&<div className="grid grid-cols-2 gap-2 mt-4">{names.map((n,i)=><Button key={n} variant={votes===i?"playful":"outline"} onClick={()=>setVotes(i)}><img src={crew[i]?.avatar} alt="" className="size-7 rounded-full object-cover"/>{n}</Button>)}{votes!==null&&<p className="col-span-2 text-center">🥁 Secret vote revealed: {names[votes]}!</p>}</div>}<p className="text-xs text-muted-foreground mt-5">Play out loud with Sample Squad. This demo never contacts a trip or AI.</p></div></GameScene> : <div className="mt-5"><p className="eyebrow text-blue mt-4">{selected===5?"Final approach":selected===1?"Boarding":"Cruising"}</p><h1 className="font-display text-3xl font-extrabold mt-2">{selected===1 && spinLook ? "Spin the Wheel" : <>{game.icon} {displayGameTitle(title)}</>}</h1>{selected===1 && spinLook && <p className="text-sm text-muted-foreground">Travel. Play. Win. Anywhere.</p>}{selected===1 && spinLook && <div className="cinematic-spin-sky" aria-hidden="true"/>}<div className="app-card mt-6 text-center min-h-52 grid place-items-center" onClick={()=>setFlipped(true)}><div><p className="text-4xl">{game.icon}</p><p className="font-display text-xl font-bold mt-4">{selected===0&&!flipped?"Tap to flip your card":selected===1&&!wheelStopped?"Spin to reveal your challenge":selected===1?(["Emoji story · Tell a tale with three emojis", "Window seat · Share a favorite travel memory", "Passport pose · Strike your best photo pose", "Mystery sound · Make the squad guess", "Next stop · Name a place you dream of", "Squad story · Describe the crew in three words"][wheelWinner??0]):game.prompt}</p></div></div>{selected===1&&spinLook&&<div className="cinematic-spin-stamps"><span>✦ Your stamps · 0</span><span className="cinematic-spin-board">Squad board ›</span></div>}{selected===1&&<GameWheel items={["Emoji story","Window seat","Passport pose","Mystery sound","Next stop","Squad story"]} winner={wheelWinner} spinKey={wheelRound||null} onStop={()=>setWheelStopped(true)}/>}{[1,2].includes(selected) && <><p className="text-center font-display text-3xl font-bold my-3" role="timer">{seconds}s</p><Button variant="playful" className="w-full" onClick={()=>{setSpin(true);setSeconds(selected===2?30:20);setExtra(0);if(selected===1){setWheelStopped(false);setWheelWinner(Math.floor(Math.random()*6));setWheelRound(n=>n+1);}}}>{selected===1 && spinLook ? "✈ Spin now" : selected===1?"Spin for a challenge":"Start 30-second draw"}</Button></>}{selected===2&&<><canvas ref={canvas} width={320} height={210} aria-label="Draw here with your finger" className="mt-4 w-full rounded-2xl border border-border bg-card touch-none" onPointerDown={e=>{drawing.current=true;e.currentTarget.setPointerCapture(e.pointerId);const c=canvas.current,r=c?.getBoundingClientRect(),ctx=c?.getContext("2d");if(!c||!r||!ctx)return;strokes.current.push(ctx.getImageData(0,0,c.width,c.height));setStrokeCount(strokes.current.length);ctx.beginPath();ctx.moveTo((e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height);}} onPointerMove={e=>{if(!drawing.current)return;const c=canvas.current,r=c?.getBoundingClientRect(),ctx=c?.getContext("2d");if(!c||!r||!ctx)return;ctx.lineWidth=cinematic?brush:3;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle=getComputedStyle(c).getPropertyValue(cinematic ? ink.slice(4,-1) : "--foreground").trim() || getComputedStyle(c).color;ctx.lineTo((e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height);ctx.stroke();}} onPointerUp={()=>drawing.current=false} onPointerCancel={()=>drawing.current=false}/>{cinematic && <><div className="mt-3 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label="Drawing time remaining" aria-valuenow={seconds} aria-valuemin={0} aria-valuemax={selected===2?30+extra:30}><div className="h-full rounded-full bg-primary transition-all" style={{width:`${Math.min(100,seconds/(30+extra)*100)}%`}}/></div><div className="mt-3 flex flex-wrap items-center justify-between gap-2" aria-label="Drawing colors">{palette.map(color=><Button key={color} variant="ghost" size="icon" aria-label={`Color ${color}`} aria-pressed={ink===color} className="size-8 rounded-full border border-border p-1" onClick={()=>setInk(color)}><span className="block size-full rounded-full" style={{backgroundColor:color}}/></Button>)}</div><div className="flex flex-wrap items-center gap-2 mt-3" aria-label="Brush size">{[2,5,9].map(size=><Button key={size} variant={brush===size?"playful":"outline"} size="sm" aria-pressed={brush===size} onClick={()=>setBrush(size)}>Brush {size===2?"S":size===5?"M":"L"}</Button>)}<Button variant="outline" size="sm" disabled={!strokeCount} onClick={()=>{const prev=strokes.current.pop();setStrokeCount(strokes.current.length);if(prev)canvas.current?.getContext("2d")?.putImageData(prev,0,0);}}>Undo</Button></div></>}<div className="grid grid-cols-2 gap-2 mt-2"><Button variant="outline" onClick={()=>{const ctx=canvas.current?.getContext("2d");if(ctx){strokes.current.push(ctx.getImageData(0,0,320,210));setStrokeCount(strokes.current.length);ctx.clearRect(0,0,320,210);}}}>Clear drawing</Button><Button variant="outline" disabled={!spin||seconds<=0||extra>=30} onClick={()=>{setExtra(n=>n+10);setSeconds(s=>s+10);}}>+10 sec</Button></div></>}{selected===5&&<div className="grid grid-cols-2 gap-2 mt-4">{names.map((n,i)=><Button key={n} variant={votes===i?"playful":"outline"} onClick={()=>setVotes(i)}>{n}</Button>)}{votes!==null&&<p className="col-span-2 text-center">🥁 Secret vote revealed: {names[votes]}!</p>}</div>}<p className="text-xs text-muted-foreground mt-5">Play out loud with Sample Squad. This demo never contacts a trip or AI.</p></div>) : null}</section>;
+  const palette = [
+    "var(--ink-draw)",
+    "var(--primary)",
+    "var(--orange)",
+    "var(--blue)",
+    "var(--green)",
+    "var(--home-door-violet)",
+    "var(--paper)",
+    "var(--foreground)",
+  ];
+  useEffect(() => {
+    if (!spin || seconds <= 0 || (selected === 1 && !wheelStopped)) return;
+    const t = window.setTimeout(() => setSeconds((s) => s - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [seconds, spin, selected, wheelStopped]);
+  const backToBoard = () => {
+    setSelected(null);
+    setStarted(false);
+    setFlipped(false);
+    setSpin(false);
+    setSeconds(30);
+    setExtra(0);
+    setVotes(null);
+    strokes.current = [];
+    setStrokeCount(0);
+  };
+  if (sample) return <SampleNight onBack={() => setSample(false)} />;
+  if (night)
+    return (
+      <OnePhoneNight
+        games={demos
+          .slice(0, 7)
+          .map((d, index) => ({ index, title: d.title, art: d.art, icon: d.icon }))}
+        onExit={() => {
+          setNight(false);
+          try {
+            setResumeNight(!!localStorage.getItem("tj-game-night"));
+          } catch {
+            setResumeNight(false);
+          }
+        }}
+      />
+    );
+  if (resumeNight)
+    return (
+      <section className="pb-12">
+        <Button variant="ghost" onClick={() => setResumeNight(false)}>
+          <ArrowLeft /> Games on Flight
+        </Button>
+        <h1 className="font-display text-3xl font-extrabold mt-6">Resume your Game Night?</h1>
+        <div className="grid grid-cols-2 gap-3 mt-6">
+          <Button
+            variant="playful"
+            className="min-h-12"
+            onClick={() => {
+              setResumeNight(false);
+              setNight(true);
+            }}
+          >
+            Resume
+          </Button>
+          <Button
+            variant="outline"
+            className="min-h-12"
+            onClick={() => {
+              localStorage.removeItem("tj-game-night");
+              setResumeNight(false);
+              setNight(true);
+            }}
+          >
+            Start fresh
+          </Button>
+        </div>
+      </section>
+    );
+  if (selected !== null) {
+    const isMix = selected === "mix";
+    const game = isMix ? null : demos[selected];
+    const title = game?.title ?? "Mix It Up";
+    const crew = names.map((name, i) => ({
+      name,
+      avatar: premadeAvatars[i] ?? "",
+      done: i === 0 || (selected === 5 && votes === i),
+    }));
+    return (
+      <section className={`pb-12 ${selected === 1 && spinLook ? "cinematic-spin-page" : ""}`}>
+        <Button variant="ghost" onClick={backToBoard}>
+          <ArrowLeft /> {cinematic ? "Games on Flight" : "Boarding…"}
+        </Button>
+        <div className="mt-5">
+          <ArcadeBadge />
+        </div>
+        {!started ? (
+          <BoardingPass
+            title={title}
+            art={game?.art ?? mixIcon}
+            rules={game?.rules ?? "Shuffle fresh sample formats into a surprise game mix."}
+            destination={game?.destination ?? "Mystery destination"}
+            tagline={game?.tagline ?? "Mystery destination, mixed fresh"}
+            accent={game?.accent ?? "blue"}
+            length={game?.length ?? "2 min"}
+            gate={isMix ? 10 : selected + 1}
+            buddy={gamePassBuddyFor(title)}
+            onBoard={() => {
+              if (cinematic && !isMix) {
+                setPractice(shuffledPractice(selected));
+                setPracticeNumber(0);
+              }
+              setStarted(true);
+              setSeconds(30);
+              setExtra(0);
+              strokes.current = [];
+              setStrokeCount(0);
+            }}
+          />
+        ) : isMix ? (
+          cinematic ? (
+            <GameScene
+              index={9}
+              title={title}
+              phase="Boarding"
+              icon={mixIcon}
+              crew={crew}
+              onBack={backToBoard}
+            >
+              <div className="mt-5">
+                <h1 className="font-display text-3xl font-extrabold">Mix It Up</h1>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Three mixes per person each day included; after that, one trip AI credit per mix.
+                  Daily cap applies. No purchases or trip saves.
+                </p>
+                {trips.length > 0 && (
+                  <label className="block mt-4 text-sm font-bold">
+                    Trip credit source
+                    <select
+                      className="mt-1 w-full min-h-11 rounded-xl border border-border bg-card px-3"
+                      value={creditTrip}
+                      onChange={(e) => setCreditTrip(e.target.value)}
+                    >
+                      <option value="">No trip · free mixes only</option>
+                      {trips.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <p className={`mt-3 text-sm font-bold ${mixChip[1]}`}>{mixChip[0]}</p>
+                <Button
+                  variant="playful"
+                  className="w-full mt-4"
+                  disabled={mixBusy || mixChip[0] === "Gate closed"}
+                  onClick={() => void runMix()}
+                >
+                  {mixBusy ? "Mixing…" : "Make a sample mix"}
+                </Button>
+                {mixed && (
+                  <p
+                    className="mt-4 whitespace-pre-line rounded-xl bg-muted p-4 text-sm"
+                    role="status"
+                  >
+                    {mixed}
+                  </p>
+                )}
+                {mixError && (
+                  <p className="mt-3 text-sm text-destructive" role="alert">
+                    {mixError}
+                  </p>
+                )}
+              </div>
+            </GameScene>
+          ) : (
+            <div className="mt-5">
+              <h1 className="font-display text-3xl font-extrabold">Mix It Up</h1>
+              <p className="text-sm text-muted-foreground mt-2">
+                Three mixes per person each day included; after that, one trip AI credit per mix.
+                Daily cap applies. No purchases or trip saves.
+              </p>
+              {trips.length > 0 && (
+                <label className="block mt-4 text-sm font-bold">
+                  Trip credit source
+                  <select
+                    className="mt-1 w-full min-h-11 rounded-xl border border-border bg-card px-3"
+                    value={creditTrip}
+                    onChange={(e) => setCreditTrip(e.target.value)}
+                  >
+                    <option value="">No trip · free mixes only</option>
+                    {trips.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <p className={`mt-3 text-sm font-bold ${mixChip[1]}`}>{mixChip[0]}</p>
+              <Button
+                variant="playful"
+                className="w-full mt-4"
+                disabled={mixBusy || mixChip[0] === "Gate closed"}
+                onClick={() => void runMix()}
+              >
+                {mixBusy ? "Mixing…" : "Make a sample mix"}
+              </Button>
+              {mixed && (
+                <p
+                  className="mt-4 whitespace-pre-line rounded-xl bg-muted p-4 text-sm"
+                  role="status"
+                >
+                  {mixed}
+                </p>
+              )}
+              {mixError && (
+                <p className="mt-3 text-sm text-destructive" role="alert">
+                  {mixError}
+                </p>
+              )}
+            </div>
+          )
+        ) : game ? (
+          cinematic ? (
+            <GameScene
+              index={selected as number}
+              title={title}
+              phase={selected === 5 ? "Final approach" : selected === 1 ? "Boarding" : "Cruising"}
+              icon={game.art}
+              crew={crew}
+              progress={
+                [1, 2].includes(selected) ? (
+                  <span role="timer">{seconds}s remaining</span>
+                ) : (
+                  <span>Sample Squad · {game.length}</span>
+                )
+              }
+              onBack={backToBoard}
+            >
+              <div className="cinematic-game-controls">
+                <p className="eyebrow text-blue mt-4">
+                  {selected === 5 ? "Final approach" : selected === 1 ? "Boarding" : "Cruising"}
+                </p>
+                <h1 className="font-display text-3xl font-extrabold mt-2">
+                  {selected === 1 && spinLook ? (
+                    "Spin the Wheel"
+                  ) : (
+                    <>
+                      {game.icon} {displayGameTitle(title)}
+                    </>
+                  )}
+                </h1>
+                {selected === 1 && spinLook && (
+                  <p className="text-sm text-muted-foreground">Travel. Play. Win. Anywhere.</p>
+                )}
+                {selected === 1 && spinLook && (
+                  <div className="cinematic-spin-sky" aria-hidden="true" />
+                )}
+                <div
+                  className={`app-card mt-6 text-center min-h-52 grid place-items-center cinematic-hero-card ${selected === 0 ? "cinematic-flip-card" : ""} ${flipped ? "is-flipped" : ""}`}
+                  onClick={() => {
+                    if (selected === 0) setFlipped((v) => !v);
+                  }}
+                  role={selected === 0 ? "button" : undefined}
+                  tabIndex={selected === 0 ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (selected === 0 && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      setFlipped((v) => !v);
+                    }
+                  }}
+                >
+                  <div>
+                    {selected === 0 && (
+                      <>
+                        <span className="cinematic-card-back" aria-hidden="true" />
+                        <span className="cinematic-card-back" aria-hidden="true" />
+                        <img className="cinematic-card-photo" src={cardIcon} alt="" />
+                      </>
+                    )}
+                    {selected === 3 && (
+                      <span className="cinematic-microphone" aria-hidden="true">
+                        🎙️
+                      </span>
+                    )}
+                    {selected === 6 && (
+                      <span className="cinematic-gate" aria-hidden="true">
+                        ✦ 1 &nbsp; ✦ 2 &nbsp; ✦ 3
+                      </span>
+                    )}
+                    {selected === 8 && (
+                      <span className="cinematic-route" aria-hidden="true">
+                        ✈ ········· ✦
+                      </span>
+                    )}
+                    {selected !== 3 && <p className="text-4xl">{game.icon}</p>}
+                    {selected === 3 && <p className="eyebrow">HUM IT</p>}
+                    <p className="font-display text-xl font-bold mt-4">
+                      {selected === 0 && !flipped
+                        ? "Tap to flip your card"
+                        : selected === 1 && !wheelStopped
+                          ? "Spin to reveal your challenge"
+                          : selected === 1
+                            ? practice[(practiceNumber + (wheelWinner ?? 0)) % practice.length]
+                            : practice[practiceNumber % practice.length]}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full mt-3"
+                  disabled={practiceMode && false}
+                  onClick={nextPractice}
+                >
+                  {"Another sample"} <ArrowRight size={16} />
+                </Button>
+                {selected === 1 && spinLook && (
+                  <div className="cinematic-spin-stamps">
+                    <span>✦ Your stamps · 0</span>
+                    <span className="cinematic-spin-board">Squad board ›</span>
+                  </div>
+                )}
+                {selected === 1 && (
+                  <GameWheel
+                    items={practice
+                      .slice(practiceNumber, practiceNumber + 6)
+                      .map((prompt) => prompt.split(":")[0]?.slice(0, 22) ?? "Challenge")}
+                    winner={wheelWinner}
+                    spinKey={wheelRound || null}
+                    onStop={() => setWheelStopped(true)}
+                  />
+                )}
+                {[1, 2].includes(selected) && (
+                  <>
+                    <p
+                      className={`text-center font-display text-3xl font-bold my-3 ${selected === 2 ? "cinematic-countdown" : ""}`}
+                      role="timer"
+                    >
+                      {seconds}s
+                    </p>
+                    <Button
+                      variant="playful"
+                      className="w-full"
+                      onClick={() => {
+                        setSpin(true);
+                        setSeconds(selected === 2 ? 30 : 20);
+                        setExtra(0);
+                        if (selected === 1) {
+                          setWheelStopped(false);
+                          setWheelWinner(Math.floor(Math.random() * 6));
+                          setWheelRound((n) => n + 1);
+                        }
+                      }}
+                    >
+                      {selected === 1 && spinLook
+                        ? "✈ Spin now"
+                        : selected === 1
+                          ? "Spin for a challenge"
+                          : "Start 30-second draw"}
+                    </Button>
+                  </>
+                )}
+                {selected === 2 && (
+                  <>
+                    <canvas
+                      ref={canvas}
+                      width={320}
+                      height={210}
+                      aria-label="Draw here with your finger"
+                      className="mt-4 w-full rounded-2xl border border-border bg-card touch-none cinematic-sketchbook"
+                      onPointerDown={(e) => {
+                        drawing.current = true;
+                        e.currentTarget.setPointerCapture(e.pointerId);
+                        const c = canvas.current,
+                          r = c?.getBoundingClientRect(),
+                          ctx = c?.getContext("2d");
+                        if (!c || !r || !ctx) return;
+                        strokes.current.push(ctx.getImageData(0, 0, c.width, c.height));
+                        setStrokeCount(strokes.current.length);
+                        ctx.beginPath();
+                        ctx.moveTo(
+                          ((e.clientX - r.left) * c.width) / r.width,
+                          ((e.clientY - r.top) * c.height) / r.height,
+                        );
+                      }}
+                      onPointerMove={(e) => {
+                        if (!drawing.current) return;
+                        const c = canvas.current,
+                          r = c?.getBoundingClientRect(),
+                          ctx = c?.getContext("2d");
+                        if (!c || !r || !ctx) return;
+                        ctx.lineWidth = cinematic ? brush : 3;
+                        ctx.lineCap = "round";
+                        ctx.lineJoin = "round";
+                        ctx.strokeStyle =
+                          getComputedStyle(c)
+                            .getPropertyValue(cinematic ? ink.slice(4, -1) : "--foreground")
+                            .trim() || getComputedStyle(c).color;
+                        ctx.lineTo(
+                          ((e.clientX - r.left) * c.width) / r.width,
+                          ((e.clientY - r.top) * c.height) / r.height,
+                        );
+                        ctx.stroke();
+                      }}
+                      onPointerUp={() => (drawing.current = false)}
+                      onPointerCancel={() => (drawing.current = false)}
+                    />
+                    {cinematic && (
+                      <>
+                        <div
+                          className="mt-3 h-2 overflow-hidden rounded-full bg-muted"
+                          role="progressbar"
+                          aria-label="Drawing time remaining"
+                          aria-valuenow={seconds}
+                          aria-valuemin={0}
+                          aria-valuemax={selected === 2 ? 30 + extra : 30}
+                        >
+                          <div
+                            className="h-full rounded-full bg-primary transition-all"
+                            style={{ width: `${Math.min(100, (seconds / (30 + extra)) * 100)}%` }}
+                          />
+                        </div>
+                        <div
+                          className="mt-3 flex flex-wrap items-center justify-between gap-2"
+                          aria-label="Drawing colors"
+                        >
+                          {palette.map((color) => (
+                            <Button
+                              key={color}
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Color ${color}`}
+                              aria-pressed={ink === color}
+                              className="size-8 rounded-full border border-border p-1"
+                              onClick={() => setInk(color)}
+                            >
+                              <span
+                                className="block size-full rounded-full"
+                                style={{ backgroundColor: color }}
+                              />
+                            </Button>
+                          ))}
+                        </div>
+                        <div
+                          className="flex flex-wrap items-center gap-2 mt-3"
+                          aria-label="Brush size"
+                        >
+                          {[2, 5, 9].map((size) => (
+                            <Button
+                              key={size}
+                              variant={brush === size ? "playful" : "outline"}
+                              size="sm"
+                              aria-pressed={brush === size}
+                              onClick={() => setBrush(size)}
+                            >
+                              Brush {size === 2 ? "S" : size === 5 ? "M" : "L"}
+                            </Button>
+                          ))}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={!strokeCount}
+                            onClick={() => {
+                              const prev = strokes.current.pop();
+                              setStrokeCount(strokes.current.length);
+                              if (prev) canvas.current?.getContext("2d")?.putImageData(prev, 0, 0);
+                            }}
+                          >
+                            Undo
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          const ctx = canvas.current?.getContext("2d");
+                          if (ctx) {
+                            strokes.current.push(ctx.getImageData(0, 0, 320, 210));
+                            setStrokeCount(strokes.current.length);
+                            ctx.clearRect(0, 0, 320, 210);
+                          }
+                        }}
+                      >
+                        Clear drawing
+                      </Button>
+                      <Button
+                        variant="outline"
+                        disabled={!spin || seconds <= 0 || extra >= 30}
+                        onClick={() => {
+                          setExtra((n) => n + 10);
+                          setSeconds((s) => s + 10);
+                        }}
+                      >
+                        +10 sec
+                      </Button>
+                    </div>
+                  </>
+                )}
+                {selected === 5 && (
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    {names.map((n, i) => (
+                      <Button
+                        key={n}
+                        variant={votes === i ? "playful" : "outline"}
+                        onClick={() => setVotes(i)}
+                      >
+                        <img
+                          src={crew[i]?.avatar}
+                          alt=""
+                          className="size-7 rounded-full object-cover"
+                        />
+                        {n}
+                      </Button>
+                    ))}
+                    {votes !== null && (
+                      <p className="col-span-2 text-center">
+                        🥁 Secret vote revealed: {names[votes]}!
+                      </p>
+                    )}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground mt-5">
+                  Play out loud with Sample Squad. This demo never contacts a trip or AI.
+                </p>
+              </div>
+            </GameScene>
+          ) : (
+            <div className="mt-5">
+              <p className="eyebrow text-blue mt-4">
+                {selected === 5 ? "Final approach" : selected === 1 ? "Boarding" : "Cruising"}
+              </p>
+              <h1 className="font-display text-3xl font-extrabold mt-2">
+                {selected === 1 && spinLook ? (
+                  "Spin the Wheel"
+                ) : (
+                  <>
+                    {game.icon} {displayGameTitle(title)}
+                  </>
+                )}
+              </h1>
+              {selected === 1 && spinLook && (
+                <p className="text-sm text-muted-foreground">Travel. Play. Win. Anywhere.</p>
+              )}
+              {selected === 1 && spinLook && (
+                <div className="cinematic-spin-sky" aria-hidden="true" />
+              )}
+              <div
+                className="app-card mt-6 text-center min-h-52 grid place-items-center"
+                onClick={() => setFlipped(true)}
+              >
+                <div>
+                  <p className="text-4xl">{game.icon}</p>
+                  <p className="font-display text-xl font-bold mt-4">
+                    {selected === 0 && !flipped
+                      ? "Tap to flip your card"
+                      : selected === 1 && !wheelStopped
+                        ? "Spin to reveal your challenge"
+                        : selected === 1
+                          ? [
+                              "Emoji story · Tell a tale with three emojis",
+                              "Window seat · Share a favorite travel memory",
+                              "Passport pose · Strike your best photo pose",
+                              "Mystery sound · Make the squad guess",
+                              "Next stop · Name a place you dream of",
+                              "Squad story · Describe the crew in three words",
+                            ][wheelWinner ?? 0]
+                          : game.prompt}
+                  </p>
+                </div>
+              </div>
+              {selected === 1 && spinLook && (
+                <div className="cinematic-spin-stamps">
+                  <span>✦ Your stamps · 0</span>
+                  <span className="cinematic-spin-board">Squad board ›</span>
+                </div>
+              )}
+              {selected === 1 && (
+                <GameWheel
+                  items={[
+                    "Emoji story",
+                    "Window seat",
+                    "Passport pose",
+                    "Mystery sound",
+                    "Next stop",
+                    "Squad story",
+                  ]}
+                  winner={wheelWinner}
+                  spinKey={wheelRound || null}
+                  onStop={() => setWheelStopped(true)}
+                />
+              )}
+              {[1, 2].includes(selected) && (
+                <>
+                  <p className="text-center font-display text-3xl font-bold my-3" role="timer">
+                    {seconds}s
+                  </p>
+                  <Button
+                    variant="playful"
+                    className="w-full"
+                    onClick={() => {
+                      setSpin(true);
+                      setSeconds(selected === 2 ? 30 : 20);
+                      setExtra(0);
+                      if (selected === 1) {
+                        setWheelStopped(false);
+                        setWheelWinner(Math.floor(Math.random() * 6));
+                        setWheelRound((n) => n + 1);
+                      }
+                    }}
+                  >
+                    {selected === 1 && spinLook
+                      ? "✈ Spin now"
+                      : selected === 1
+                        ? "Spin for a challenge"
+                        : "Start 30-second draw"}
+                  </Button>
+                </>
+              )}
+              {selected === 2 && (
+                <>
+                  <canvas
+                    ref={canvas}
+                    width={320}
+                    height={210}
+                    aria-label="Draw here with your finger"
+                    className="mt-4 w-full rounded-2xl border border-border bg-card touch-none"
+                    onPointerDown={(e) => {
+                      drawing.current = true;
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                      const c = canvas.current,
+                        r = c?.getBoundingClientRect(),
+                        ctx = c?.getContext("2d");
+                      if (!c || !r || !ctx) return;
+                      strokes.current.push(ctx.getImageData(0, 0, c.width, c.height));
+                      setStrokeCount(strokes.current.length);
+                      ctx.beginPath();
+                      ctx.moveTo(
+                        ((e.clientX - r.left) * c.width) / r.width,
+                        ((e.clientY - r.top) * c.height) / r.height,
+                      );
+                    }}
+                    onPointerMove={(e) => {
+                      if (!drawing.current) return;
+                      const c = canvas.current,
+                        r = c?.getBoundingClientRect(),
+                        ctx = c?.getContext("2d");
+                      if (!c || !r || !ctx) return;
+                      ctx.lineWidth = cinematic ? brush : 3;
+                      ctx.lineCap = "round";
+                      ctx.lineJoin = "round";
+                      ctx.strokeStyle =
+                        getComputedStyle(c)
+                          .getPropertyValue(cinematic ? ink.slice(4, -1) : "--foreground")
+                          .trim() || getComputedStyle(c).color;
+                      ctx.lineTo(
+                        ((e.clientX - r.left) * c.width) / r.width,
+                        ((e.clientY - r.top) * c.height) / r.height,
+                      );
+                      ctx.stroke();
+                    }}
+                    onPointerUp={() => (drawing.current = false)}
+                    onPointerCancel={() => (drawing.current = false)}
+                  />
+                  {cinematic && (
+                    <>
+                      <div
+                        className="mt-3 h-2 overflow-hidden rounded-full bg-muted"
+                        role="progressbar"
+                        aria-label="Drawing time remaining"
+                        aria-valuenow={seconds}
+                        aria-valuemin={0}
+                        aria-valuemax={selected === 2 ? 30 + extra : 30}
+                      >
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${Math.min(100, (seconds / (30 + extra)) * 100)}%` }}
+                        />
+                      </div>
+                      <div
+                        className="mt-3 flex flex-wrap items-center justify-between gap-2"
+                        aria-label="Drawing colors"
+                      >
+                        {palette.map((color) => (
+                          <Button
+                            key={color}
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Color ${color}`}
+                            aria-pressed={ink === color}
+                            className="size-8 rounded-full border border-border p-1"
+                            onClick={() => setInk(color)}
+                          >
+                            <span
+                              className="block size-full rounded-full"
+                              style={{ backgroundColor: color }}
+                            />
+                          </Button>
+                        ))}
+                      </div>
+                      <div
+                        className="flex flex-wrap items-center gap-2 mt-3"
+                        aria-label="Brush size"
+                      >
+                        {[2, 5, 9].map((size) => (
+                          <Button
+                            key={size}
+                            variant={brush === size ? "playful" : "outline"}
+                            size="sm"
+                            aria-pressed={brush === size}
+                            onClick={() => setBrush(size)}
+                          >
+                            Brush {size === 2 ? "S" : size === 5 ? "M" : "L"}
+                          </Button>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!strokeCount}
+                          onClick={() => {
+                            const prev = strokes.current.pop();
+                            setStrokeCount(strokes.current.length);
+                            if (prev) canvas.current?.getContext("2d")?.putImageData(prev, 0, 0);
+                          }}
+                        >
+                          Undo
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const ctx = canvas.current?.getContext("2d");
+                        if (ctx) {
+                          strokes.current.push(ctx.getImageData(0, 0, 320, 210));
+                          setStrokeCount(strokes.current.length);
+                          ctx.clearRect(0, 0, 320, 210);
+                        }
+                      }}
+                    >
+                      Clear drawing
+                    </Button>
+                    <Button
+                      variant="outline"
+                      disabled={!spin || seconds <= 0 || extra >= 30}
+                      onClick={() => {
+                        setExtra((n) => n + 10);
+                        setSeconds((s) => s + 10);
+                      }}
+                    >
+                      +10 sec
+                    </Button>
+                  </div>
+                </>
+              )}
+              {selected === 5 && (
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  {names.map((n, i) => (
+                    <Button
+                      key={n}
+                      variant={votes === i ? "playful" : "outline"}
+                      onClick={() => setVotes(i)}
+                    >
+                      {n}
+                    </Button>
+                  ))}
+                  {votes !== null && (
+                    <p className="col-span-2 text-center">
+                      🥁 Secret vote revealed: {names[votes]}!
+                    </p>
+                  )}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-5">
+                Play out loud with Sample Squad. This demo never contacts a trip or AI.
+              </p>
+            </div>
+          )
+        ) : null}
+      </section>
+    );
   }
-  return <section className={`pb-12 ${cinematic ? "cinematic-boarding" : ""}`}><Button variant="ghost" onClick={onBack}><ArrowLeft/> Home</Button>{!cinematic && <BrandLockup className="text-3xl mt-3"/>}<div className="mt-7"><ArcadeBadge /></div><h1 className="font-display text-3xl font-extrabold mt-2 flex items-center gap-2">Games on Flight <img src={gameOptionA} alt="" width={40} height={40} className="size-10 object-contain"/></h1><p className="text-muted-foreground text-sm mt-1">{ROOM_COPY.games}</p>{cinematic && <div className="mt-4 grid grid-cols-2 gap-2" aria-label="Mode"><Button variant={practiceOn ? "playful" : "outline"} className="min-h-12 rounded-full" aria-pressed={practiceOn} onClick={()=>setPracticeOn(v=>!v)}>{practiceOn ? "Practice ✓" : "Practice"}</Button><Button variant={practiceOn ? "outline" : "playful"} className="min-h-12 rounded-full" onClick={()=>setNight(true)}>Start a Game Night</Button></div>}{cinematic && !guest && <div className="mt-3"><WalletLine tripId={activeTripId ?? undefined}/></div>}{cinematic && practiceOn && <p className="mt-2 text-xs text-muted-foreground">Practice mode: free local prompts, nothing saved. Tap Practice again to switch off.</p>}<div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-5">{order.filter(item=>!(practiceOn && item==="mix")).map((item,position)=>{const game=item==="mix"?null:demos[item];return <Button key={item} variant="ghost" className="boarding-game-tile min-w-0 h-40 sm:h-44 flex-col gap-1 p-1 whitespace-normal" onClick={()=>setSelected(item)}><img src={game?.art??mixIcon} width={item === "mix" ? 256 : 512} height={item === "mix" ? 256 : 512} loading="lazy" alt="" className={`boarding-game-icon size-24 sm:size-28 object-contain boarding-float-${position%3}`}/><span className="font-display text-sm font-extrabold text-center leading-tight whitespace-normal">{cinematic ? displayGameTitle(game?.title??"Mix It Up") : game?.title??"Mix It Up"}</span><span className="game-type-chip">{arcadeGameType(game?.title??"Mix It Up")}</span>{cinematic && <small>{item===0 ? "Flip · Talk · Connect" : item===1 ? "Spin · Play · Win" : item===2 ? "Sketch · Guess · Laugh" : item==="mix" ? "Mix · Make · Play" : "Play · Share · Win"}</small>}</Button>;})}</div><Button variant="playful" className="w-full h-20 mt-4 whitespace-normal" onClick={()=>setSample(true)}><Clapperboard className="size-8 shrink-0"/> <span>Watch a sample flight</span> <ArrowRight/></Button></section>;
+  return (
+    <section className={`pb-12 ${cinematic ? "cinematic-boarding" : ""}`}>
+      <Button variant="ghost" onClick={onBack}>
+        <ArrowLeft /> Home
+      </Button>
+      {!cinematic && <BrandLockup className="text-3xl mt-3" />}
+      <div className="mt-7">
+        <ArcadeBadge />
+      </div>
+      <h1 className="font-display text-3xl font-extrabold mt-2 flex items-center gap-2">
+        Games on Flight{" "}
+        <img src={gameOptionA} alt="" width={40} height={40} className="size-10 object-contain" />
+      </h1>
+      <p className="text-muted-foreground text-sm mt-1">{ROOM_COPY.games}</p>
+      {cinematic && (
+        <div className="mt-4 grid grid-cols-2 gap-2" aria-label="Mode">
+          <Button
+            variant={practiceOn ? "playful" : "outline"}
+            className="min-h-12 rounded-full"
+            aria-pressed={practiceOn}
+            onClick={() => setPracticeOn((v) => !v)}
+          >
+            {practiceOn ? "Practice ✓" : "Practice"}
+          </Button>
+          <Button
+            variant={practiceOn ? "outline" : "playful"}
+            className="min-h-12 rounded-full"
+            onClick={() => setNight(true)}
+          >
+            Start a Game Night
+          </Button>
+        </div>
+      )}
+      {cinematic && !guest && (
+        <div className="mt-3">
+          <WalletLine tripId={activeTripId ?? undefined} />
+        </div>
+      )}
+      {cinematic && practiceOn && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Practice mode: free local prompts, nothing saved. Tap Practice again to switch off.
+        </p>
+      )}
+      <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-5">
+        {order
+          .filter((item) => !(practiceOn && item === "mix"))
+          .map((item, position) => {
+            const game = item === "mix" ? null : demos[item];
+            return (
+              <Button
+                key={item}
+                variant="ghost"
+                className="boarding-game-tile min-w-0 h-40 sm:h-44 flex-col gap-1 p-1 whitespace-normal"
+                onClick={() => setSelected(item)}
+              >
+                <img
+                  src={game?.art ?? mixIcon}
+                  width={item === "mix" ? 256 : 512}
+                  height={item === "mix" ? 256 : 512}
+                  loading="lazy"
+                  alt=""
+                  className={`boarding-game-icon size-24 sm:size-28 object-contain boarding-float-${position % 3}`}
+                />
+                <span className="font-display text-sm font-extrabold text-center leading-tight whitespace-normal">
+                  {cinematic
+                    ? displayGameTitle(game?.title ?? "Mix It Up")
+                    : (game?.title ?? "Mix It Up")}
+                </span>
+                <span className="game-type-chip">{arcadeGameType(game?.title ?? "Mix It Up")}</span>
+                {cinematic && (
+                  <small>
+                    {item === 0
+                      ? "Flip · Talk · Connect"
+                      : item === 1
+                        ? "Spin · Play · Win"
+                        : item === 2
+                          ? "Sketch · Guess · Laugh"
+                          : item === "mix"
+                            ? "Mix · Make · Play"
+                            : "Play · Share · Win"}
+                  </small>
+                )}
+              </Button>
+            );
+          })}
+      </div>
+      <Button
+        variant="playful"
+        className="w-full h-20 mt-4 whitespace-normal"
+        onClick={() => setSample(true)}
+      >
+        <Clapperboard className="size-8 shrink-0" /> <span>Watch a sample flight</span>{" "}
+        <ArrowRight />
+      </Button>
+    </section>
+  );
 }

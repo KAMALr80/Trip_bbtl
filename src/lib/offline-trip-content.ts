@@ -6,11 +6,26 @@ import { readOfflineRoster } from "@/lib/play-arrangement";
  * score, Passport or crown writes. The 12 culture-grounded templates below (6 daily, 6 sealed) are the
  * only new content; games themselves reuse OnePhoneNight. Filled with place + learning lens + format.
  */
-const LENSES = ["culture", "food", "music", "language", "history", "traditions", "landmarks", "sports"] as const;
-type Lens = typeof LENSES[number];
+const LENSES = [
+  "culture",
+  "food",
+  "music",
+  "language",
+  "history",
+  "traditions",
+  "landmarks",
+  "sports",
+] as const;
+type Lens = (typeof LENSES)[number];
 const ANGLE: Record<Lens, string> = {
-  culture: "an everyday custom", food: "a regional dish", music: "a local song or instrument", language: "a useful local phrase",
-  history: "a moment in local history", traditions: "a festival or celebration", landmarks: "a world-famous landmark", sports: "a local sports tradition",
+  culture: "an everyday custom",
+  food: "a regional dish",
+  music: "a local song or instrument",
+  language: "a useful local phrase",
+  history: "a moment in local history",
+  traditions: "a festival or celebration",
+  landmarks: "a world-famous landmark",
+  sports: "a local sports tradition",
 };
 
 // 6 daily templates — quick, no photo, culture-tied.
@@ -32,9 +47,19 @@ const SEALED = [
   "Vote It: everyone pitches the best way to experience {angle} in {place} on this trip. Majority vote wins.",
 ];
 
-const hash = (value: string) => [...value].reduce((n, c) => ((n * 31) + c.charCodeAt(0)) >>> 0, 2166136261);
-const localDay = (trip: TripWithRole) => new Intl.DateTimeFormat("en-CA", { timeZone: (trip as { trip_timezone?: string | null }).trip_timezone || trip.home_timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-const dayIndex = (trip: TripWithRole, iso = localDay(trip)) => Math.floor((Date.parse(`${iso}T12:00:00Z`) - Date.parse(`${trip.start_date}T12:00:00Z`)) / 86400000);
+const hash = (value: string) =>
+  [...value].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 2166136261);
+const localDay = (trip: TripWithRole) =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: (trip as { trip_timezone?: string | null }).trip_timezone || trip.home_timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+const dayIndex = (trip: TripWithRole, iso = localDay(trip)) =>
+  Math.floor(
+    (Date.parse(`${iso}T12:00:00Z`) - Date.parse(`${trip.start_date}T12:00:00Z`)) / 86400000,
+  );
 
 /**
  * Deterministic per room and day. Daily and sealed use different lenses on the same day and different
@@ -48,6 +73,9 @@ export function offlineCard(trip: TripWithRole, kind: "daily" | "quest", iso?: s
   const tpl = pool[Math.floor(d / LENSES.length) % pool.length]!;
   const players = readOfflineRoster(trip.id).length;
   const text = tpl.replaceAll("{angle}", ANGLE[lens]).replaceAll("{place}", trip.destination);
-  const small = kind === "quest" && players > 0 && players < 4 ? text.replace(/split into two teams and each find/i, "take turns finding") : text;
+  const small =
+    kind === "quest" && players > 0 && players < 4
+      ? text.replace(/split into two teams and each find/i, "take turns finding")
+      : text;
   return small;
 }

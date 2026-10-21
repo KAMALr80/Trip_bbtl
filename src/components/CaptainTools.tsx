@@ -41,52 +41,806 @@ import { PendingMissions } from "./SecretMissions";
 import { FeatureGate } from "@/lib/features";
 import { SealedQuests } from "./SealedQuests";
 
-type Props = { trip: TripWithRole; members: Member[]; cards: PlayerWithAvatar[]; onBack: () => void; onUpdated: () => Promise<void>; onViewAsPlayer: () => void; onMember: (id: string) => void };
-const field = "w-full mt-2 h-12 rounded-2xl border-2 border-border bg-card px-4 outline-none focus:border-primary";
-export function CaptainTools({ trip, members, cards, onBack, onUpdated, onViewAsPlayer, onMember, userId }: Props & {userId:string}) {
+type Props = {
+  trip: TripWithRole;
+  members: Member[];
+  cards: PlayerWithAvatar[];
+  onBack: () => void;
+  onUpdated: () => Promise<void>;
+  onViewAsPlayer: () => void;
+  onMember: (id: string) => void;
+};
+const field =
+  "w-full mt-2 h-12 rounded-2xl border-2 border-border bg-card px-4 outline-none focus:border-primary";
+export function CaptainTools({
+  trip,
+  members,
+  cards,
+  onBack,
+  onUpdated,
+  onViewAsPlayer,
+  onMember,
+  userId,
+}: Props & { userId: string }) {
   const cinematic = useLook("journey") === "cinematic";
-  const [name, setName] = useState(trip.name), [destination, setDestination] = useState(trip.destination), [start, setStart] = useState(trip.start_date), [end, setEnd] = useState(trip.end_date);
-  const tx = trip as TripWithRole & { motto?: string | null; call_link?: string | null; backup_call_link?: string | null };
-  const [motto, setMotto] = useState(tx.motto ?? ""), [call, setCall] = useState(tx.call_link ?? ""), [backup, setBackup] = useState(tx.backup_call_link ?? "");
-  const [busy, setBusy] = useState(false), [error, setError] = useState(""), [success, setSuccess] = useState("");
+  const [name, setName] = useState(trip.name),
+    [destination, setDestination] = useState(trip.destination),
+    [start, setStart] = useState(trip.start_date),
+    [end, setEnd] = useState(trip.end_date);
+  const tx = trip as TripWithRole & {
+    motto?: string | null;
+    call_link?: string | null;
+    backup_call_link?: string | null;
+  };
+  const [motto, setMotto] = useState(tx.motto ?? ""),
+    [call, setCall] = useState(tx.call_link ?? ""),
+    [backup, setBackup] = useState(tx.backup_call_link ?? "");
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState(""),
+    [success, setSuccess] = useState("");
   const [wrapped, setWrapped] = useState(false);
   const [bingoPhoto, setBingoPhoto] = useState(trip.bingo_needs_photo);
   const [practice, setPractice] = useState(false);
-  const [confirmAction,setConfirmAction] = useState<{label:string;action:()=>void}|null>(null);
-   const [section, setSection] = useState<string | null>(null);
-   const [deleteStep, setDeleteStep] = useState(0), [typedName, setTypedName] = useState("");
-  const [passportCountry, setPassportCountry] = useState(trip.passport_country ?? ""), [passportState, setPassportState] = useState(trip.passport_state ?? ""), [passportCity, setPassportCity] = useState(trip.passport_city ?? "");
+  const [confirmAction, setConfirmAction] = useState<{ label: string; action: () => void } | null>(
+    null,
+  );
+  const [section, setSection] = useState<string | null>(null);
+  const [deleteStep, setDeleteStep] = useState(0),
+    [typedName, setTypedName] = useState("");
+  const [passportCountry, setPassportCountry] = useState(trip.passport_country ?? ""),
+    [passportState, setPassportState] = useState(trip.passport_state ?? ""),
+    [passportCity, setPassportCity] = useState(trip.passport_city ?? "");
   const captain = trip.myRole === "captain";
   async function run(action: () => PromiseLike<{ error: { message: string } | null }>) {
-    setBusy(true); setError(""); setSuccess("");
-    const result = await action(); setBusy(false);
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    const result = await action();
+    setBusy(false);
     if (result.error) setError(friendlyError(result.error));
-    else { await onUpdated(); setSuccess("All set ✨"); }
+    else {
+      await onUpdated();
+      setSuccess("All set ✨");
+    }
   }
   function manage(userId: string, action: string, label: string) {
-    setConfirmAction({label,action:()=>void run(async () => { const r = await supabase.rpc("manage_trip_member", { p_trip: trip.id, p_user: userId, p_action: action }); if (action === "promote" && r.error?.message.includes("UNDER_21")) { const who = cards.find(c => c.user_id === userId)?.game_name || members.find(m => m.user_id === userId)?.display_name || "this player"; if (!await confirmInApp(`Make ${who} Co-Captain? They're under 21.`)) return { error: null }; return supabase.rpc("manage_trip_member", { p_trip: trip.id, p_user: userId, p_action: "promote_under21" }); } return r; })});
+    setConfirmAction({
+      label,
+      action: () =>
+        void run(async () => {
+          const r = await supabase.rpc("manage_trip_member", {
+            p_trip: trip.id,
+            p_user: userId,
+            p_action: action,
+          });
+          if (action === "promote" && r.error?.message.includes("UNDER_21")) {
+            const who =
+              cards.find((c) => c.user_id === userId)?.game_name ||
+              members.find((m) => m.user_id === userId)?.display_name ||
+              "this player";
+            if (!(await confirmInApp(`Make ${who} Co-Captain? They're under 21.`)))
+              return { error: null };
+            return supabase.rpc("manage_trip_member", {
+              p_trip: trip.id,
+              p_user: userId,
+              p_action: "promote_under21",
+            });
+          }
+          return r;
+        }),
+    });
   }
-  function save(event: FormEvent) { event.preventDefault(); if (end < start) { setError("Your return date should be after your start date."); return; } { const days=Math.round((Date.parse(`${end}T12:00:00Z`)-Date.parse(`${start}T12:00:00Z`))/86400000)+1; if (days < 2 || days > 30) { setError("Trips can be 2 to 30 days long."); return; } } void run(async () => { const r = await supabase.rpc("edit_trip", { p_trip: trip.id, p_name: name, p_destination: destination, p_start_date: start, p_end_date: end }); if (r.error) return r; return supabase.rpc("set_trip_extras" as never, { p_trip: trip.id, p_motto: motto, p_call: tx.call_link ?? null, p_backup: tx.backup_call_link ?? null } as never); }); }
-  function saveCalls(event: FormEvent) { event.preventDefault(); const bad = [call, backup].some((l) => l.trim() && !/^https:\/\//i.test(l.trim())); if (bad) { setError("Call links should start with https://"); return; } void run(() => supabase.rpc("set_trip_extras" as never, { p_trip: trip.id, p_motto: tx.motto ?? null, p_call: call, p_backup: backup } as never)); }
-  if (practice) return <PracticeDay trip={trip} onBack={() => setPractice(false)}/>;
-   if (deleteStep) return <main className={`px-6 pb-28 ${cinematic ? "cinematic-captain-tools" : ""}`}><Button variant="ghost" onClick={() => { setDeleteStep(0); setTypedName(""); }}><ArrowLeft/> Captain Tools</Button><div className="app-card mt-5"><h1 className="font-display text-2xl font-extrabold">Cancel trip</h1><p className="mt-3">Once it's cancelled, it's gone — photos, games, scores and Wrapped.</p><p className="text-sm text-muted-foreground mt-2">Download your photos below before cancelling.</p>{deleteStep === 1 ? <div className="grid gap-2 mt-5"><Button variant="outline" onClick={() => document.getElementById("delete-photo-download")?.scrollIntoView({behavior:"smooth"})}>Download photos first</Button><Button variant="outline" onClick={() => setDeleteStep(0)}>Cancel</Button><Button variant="ghost" className="text-destructive" onClick={() => setDeleteStep(2)}>Continue to confirmation</Button></div> : <div className="mt-5"><p className="mt-4 text-sm">This cancels {tripDisplayName(trip.name)} for everyone — game nights, points and photos. Type DELETE to confirm.</p><label className="block mt-4 text-sm font-bold">Confirmation<input className={field} value={typedName} onChange={e => setTypedName(e.target.value)} autoComplete="off"/></label>{error && <p role="alert" className="text-destructive text-sm mt-3">{error}</p>}<Button variant="ghost" className="mt-4 w-full text-destructive" disabled={busy || typedName.trim().toUpperCase() !== "DELETE"} onClick={async () => { setBusy(true); setError(""); try { await permanentlyDeleteTrip({ data: { tripId: trip.id, name: typedName } }); await onUpdated(); onBack(); } catch (e) { setError(friendlyError(e)); } finally { setBusy(false); } }}>Cancel trip</Button><Button variant="outline" className="w-full mt-2" onClick={() => setDeleteStep(0)}>Keep trip</Button></div>}</div>{deleteStep === 1 && <div id="delete-photo-download"><PhotoWall trip={trip} members={members} cards={cards} userId={userId}/></div>}</main>;
-   if (!section) return <main className={`px-6 pb-28 ${cinematic ? "cinematic-captain-tools" : ""}`}><Button variant="ghost" onClick={onBack} className="-ml-3"><ArrowLeft/> Back</Button><h1 className="font-display text-3xl font-extrabold mt-5 flex items-center gap-2">Captain Tools{cinematic && captain && <CaptainCrown/>}</h1><div className="grid grid-cols-2 gap-3 mt-5">{["Setup & access","Game nights","Trip days & prizes","Trip pot","Trip details","Members & hand-off"].map(s => <Button key={s} variant="outline" className="home-bubble min-h-28 h-auto whitespace-normal font-display font-bold" onClick={() => setSection(s)}><img src={({"Setup & access":setupIcon,"Game nights":nightsIcon,"Trip days & prizes":prizesIcon,"Trip pot":potIcon,"Trip details":detailsIcon,"Members & hand-off":membersIcon} as Record<string,string>)[s]} className="size-10 mb-2 object-contain" alt=""/>{s}</Button>)}</div><PendingMissions trip={trip} members={members} cards={cards} userId={userId}/>{captain ? <Button variant="ghost" className="w-full text-destructive mt-10" onClick={() => setDeleteStep(1)}><Trash2/> Cancel trip</Button> : <div className="mt-10"><TripActions trip={trip} members={members} cards={cards} userId={userId} trigger="button" onDone={async () => { await onUpdated(); onBack(); }}/></div>}</main>;
-   const show = (group: string) => section === group;
-   return <main className={`px-6 pb-28 ${cinematic ? "cinematic-captain-tools" : ""}`}><Button variant="ghost" onClick={() => setSection(null)} className="-ml-3"><ArrowLeft/> Captain Tools</Button><div className="flex items-center gap-3 mt-5"><div className="bg-orange-soft text-orange rounded-2xl p-3">{cinematic && captain ? <CaptainCrown/> : <Crown size={30}/>}</div><div><p className="text-primary text-xs font-extrabold">THE CROWN ROOM</p><h1 className="font-display text-3xl font-extrabold">{section}</h1></div></div>
-     {show("Setup & access") && <><div className="mt-5 flex items-center justify-between gap-3 border-b border-border pb-4"><span className="font-bold">View as player</span><Button variant="outline" role="switch" aria-checked={false} onClick={onViewAsPlayer}>Off</Button></div>
-    <p className="mt-3 text-xs text-muted-foreground">Itinerary, vibe, {cinematic ? "Pre-Flight start date" : "Game Day start date"}, time zone and teams are edited with the ✏️ pencils on the Trip tab.{!captain && " As Co-Captain you run game nights; setup stays with the Captain."}</p>{captain && <RememberedSection id={`${trip.id}-captain-unlock`} title="Unlock the full trip 🔓" defaultOpen={!isUnlocked(trip)}><TripUnlock trip={trip} memberCount={members.length} onUnlocked={onUpdated}/></RememberedSection>}<RememberedSection id={`${trip.id}-captain-checklist`} title="Captain checklist ✅" defaultOpen><CaptainChecklist trip={trip} members={members}/></RememberedSection><Button variant="outline" className="mt-4 w-full" onClick={() => setPractice(true)}>Preview trip-day games</Button>
-    {captain && <div className="mt-4 flex items-center justify-between gap-3 border-b border-border pb-4"><span className="font-bold">Bingo needs a photo<small className="block text-muted-foreground font-normal">On by default. Failed uploads become Proof pending.</small></span><Button variant={bingoPhoto?"subtle":"outline"} role="switch" aria-checked={bingoPhoto} disabled={busy} onClick={()=>void run(async()=>{const result=await supabase.rpc("set_bingo_needs_photo",{p_trip:trip.id,p_required:!bingoPhoto});if(!result.error)setBingoPhoto(v=>!v);return result;})}>{bingoPhoto?"On":"Off"}</Button></div>}
-    {captain && <RememberedSection id={`${trip.id}-captain-coc`} title="Co-Captain & step down ⭐"><CoCaptainPicker trip={trip} members={members} cards={cards} onChanged={onUpdated}/></RememberedSection>}
-     {captain && <RememberedSection id={`${trip.id}-captain-invites`} title="Invites & approval 💌"><TripAccessTools trip={trip} avatarUrl={(st, sd) => dicebearUrl(st, sd)} onSaved={onUpdated}/></RememberedSection>}
-     {captain && !trip.is_sandbox && trip.kind !== "at_home" && <RememberedSection id={`${trip.id}-captain-rooms`} title="Game Rooms listing 🏆"><RoomListingSettings trip={trip} onSaved={onUpdated}/><h3 className="font-bold mt-5 mb-2">Join requests</h3><RoomRequests tripId={trip.id} onChanged={() => void onUpdated()}/></RememberedSection>}</>}
-      {show("Game nights") && <><div className="mt-6"><ReadOnlyBanner trip={trip}/></div><GameNightTools trip={trip} members={members} userId={userId}/><SealedQuests trip={trip} members={members} cards={cards} userId={userId} viewOnly={false} proofOnly/><RememberedSection id={`${trip.id}-captain-hosts`} title="Host swaps 🔁"><HostSwapsAdmin trip={trip} people={members.map(m=>({user_id:m.user_id,name:cards.find(c=>c.user_id===m.user_id)?.game_name||m.display_name||"Player"}))}/></RememberedSection><RememberedSection id={`${trip.id}-captain-qotw`} title="Question of the Week"><QotwTools trip={trip}/></RememberedSection></>}
-     {show("Trip days & prizes") && <><RememberedSection id={`${trip.id}-captain-gamedays`} title="Trip-day game days"><GameDayTools trip={trip} onUpdated={onUpdated}/></RememberedSection><RememberedSection id={`${trip.id}-captain-prizes`} title="Prizes & crowning"><SeasonPrizeTools trip={trip} members={members} cards={cards} onPreviewWrapped={() => setWrapped(true)}/></RememberedSection><RememberedSection id={`${trip.id}-captain-end`} title="End trip"><EndTripTool trip={trip} onEnded={onUpdated}/></RememberedSection>{wrapped && <TripWrapped trip={trip} members={members} cards={cards} onClose={() => setWrapped(false)}/>}</>}
-      {show("Trip pot") && <RememberedSection id={`${trip.id}-captain-costs`} title="Trip pot 💸" defaultOpen><FeatureGate tripId={trip.id} feature="trip_pot" compact><TripCostsCaptain trip={trip} members={members} cards={cards}/></FeatureGate></RememberedSection>}
-     {show("Trip details") && <>{captain && <RememberedSection id={`${trip.id}-captain-adults`} title="21+ cards"><AdultControls trip={trip} members={members}/></RememberedSection>}{captain && !trip.is_sandbox && trip.kind === "trip" && <RememberedSection id={`${trip.id}-passport-destination`} title="Passport destination ✈️"><p className="text-sm text-muted-foreground mt-2">We use your itinerary destination to choose each traveler’s stamp. Correct the country, state or city here if needed. Travelers choose their own home country in My Passport.</p><form className="mt-4 space-y-3" onSubmit={e => { e.preventDefault(); void run(() => supabase.rpc("set_passport_destination", { p_trip: trip.id, p_country: passportCountry.trim(), p_state: passportState.trim(), p_city: passportCity.trim() })); }}><label className="block text-sm font-bold">Country<input className={field} required maxLength={80} value={passportCountry} onChange={e => setPassportCountry(e.target.value)} placeholder="e.g. Thailand or United States"/></label><label className="block text-sm font-bold">State (for U.S. road trips)<input className={field} maxLength={80} value={passportState} onChange={e => setPassportState(e.target.value)} placeholder="e.g. Nevada"/></label><label className="block text-sm font-bold">City<input className={field} maxLength={80} value={passportCity} onChange={e => setPassportCity(e.target.value)} placeholder="e.g. Las Vegas"/></label><Button variant="outline" type="submit" disabled={busy}>Save passport destination</Button></form></RememberedSection>}
-    {captain && <RememberedSection id={`${trip.id}-captain-details`} title="Trip details"><p className="text-sm text-muted-foreground mt-1">{friendlyRange(start,end)}</p><form className="mt-4 space-y-4" onSubmit={save}><label className="block text-sm font-bold">Trip name<input className={field} required maxLength={100} value={name} onChange={(e) => setName(e.target.value)}/></label><label className="block text-sm font-bold">Destination<input className={field} required maxLength={120} value={destination} onChange={(e) => setDestination(e.target.value)}/></label><MottoField value={motto} onChange={setMotto} name={name} destination={destination} className={field}/><div className="grid grid-cols-2 gap-3"><label className="block text-sm font-bold">Start date<input type="date" className={`${field} px-2 text-xs`} required value={start} onChange={(e) => setStart(e.target.value)}/></label><label className="block text-sm font-bold">End date<input type="date" min={start} className={`${field} px-2 text-xs`} required value={end} onChange={(e) => setEnd(e.target.value)}/></label></div><Button type="submit" variant="playful" className="w-full" disabled={busy}>Save details</Button></form></RememberedSection>}
-     <RememberedSection id={`${trip.id}-captain-call`} title="Game night call"><p className="text-sm text-muted-foreground mt-1">The Join the call button shows on Home and Play from 15 minutes before game night until 3 hours after.</p><form className="mt-4 space-y-4" onSubmit={saveCalls}><label className="block text-sm font-bold">Game night call link<input className={field} type="url" inputMode="url" maxLength={500} value={call} onChange={(e) => setCall(e.target.value)} placeholder="https://facetime.apple.com/join#…"/><span className="block text-xs font-normal text-muted-foreground mt-1">On iPhone: FaceTime → Create Link → Copy.</span></label><label className="block text-sm font-bold">Backup call link <span className="text-muted-foreground font-normal">(optional)</span><input className={field} type="url" inputMode="url" maxLength={500} value={backup} onChange={(e) => setBackup(e.target.value)} placeholder="https://meet.google.com/…"/><span className="text-xs font-normal text-muted-foreground mt-1">For anyone who can't use the main link, e.g. Google Meet.</span></label><Button type="submit" variant="playful" className="w-full" disabled={busy}>Save call links</Button></form></RememberedSection></>}
-     {show("Members & hand-off") && <><RememberedSection id={`${trip.id}-captain-members`} title="Members">
-     <div className="flex items-center justify-between mt-10"><h2 className="font-display font-extrabold text-xl">Members</h2><span className="text-muted-foreground text-sm">{members.length}/30</span></div><div className="mt-3 divide-y divide-border"><ShortList items={members} id={`captain-members-${trip.id}`}>{(m) => { const card = cards.find(c => c.user_id === m.user_id); const playerName = card?.game_name || m.display_name || "Player"; return <div key={m.user_id} className="py-4"><div className="flex items-center gap-3"><span className={cinematic ? "captain-avatar-wrap" : ""}><AvatarButton userId={m.user_id} onOpen={onMember} name={playerName} url={card?.avatarUrl || dicebearUrl("street", m.user_id)} className={`h-11 w-11 ${cinematic ? "rounded-2xl" : ""}`}/>{cinematic && m.role === "captain" && <CaptainCrown badge/>}</span><div className="min-w-0 flex-1"><p className="font-bold truncate">{playerName}</p><p className="text-xs text-muted-foreground">{m.role === "captain" ? "Captain" : m.role === "co_captain" ? "Co-Captain" : "Player"}</p></div></div>{m.role !== "captain" && captain && <div className="flex flex-wrap gap-2 mt-3 pl-14">{m.role !== "co_captain" && <Button variant="subtle" size="sm" disabled={busy} onClick={() => manage(m.user_id,"promote",`Make ${m.display_name} Co-Captain`)}><Star/> Promote</Button>}{captain && <Button variant="subtle" size="sm" disabled={busy} onClick={() => manage(m.user_id,"pass_crown",`Pass the crown to ${m.display_name}`)}><Crown/> Pass crown</Button>}<Button variant="ghost" size="sm" className="text-destructive" disabled={busy} onClick={() => manage(m.user_id,"remove",`Remove ${m.display_name} from this trip`)}><Trash2/> Remove</Button></div>}</div>; }}</ShortList></div>
-     <div className="mt-8 bg-orange-soft rounded-2xl p-4"><p className="text-sm font-bold">Invite code: <span className="font-display text-lg">{trip.join_code}</span></p><p className="text-xs text-ink-soft mt-1">Resetting it makes old invite links stop working.</p><Button variant="outline" className="mt-3 bg-card" disabled={busy || !captain} onClick={() => setConfirmAction({label:"Reset invite code? Old links will stop working.",action:()=>void run(() => supabase.rpc("reset_trip_code", { p_trip: trip.id }))})}><RefreshCw/> Reset code</Button></div></RememberedSection>{captain && <RememberedSection id={`${trip.id}-captain-handoff`} title="Hand off Captain"><HandOffCaptain trip={trip} members={members} onDone={async () => { await onUpdated(); onBack(); }}/></RememberedSection>}<RememberedSection id={`${trip.id}-captain-bugs`} title="Bug reports"><BugReportsList tripId={trip.id}/></RememberedSection></>}{error && <p role="alert" className="text-destructive text-sm mt-4">{error}</p>}{success && <p role="status" className="text-green text-sm mt-4">{success}</p>}{confirmAction && <div className="fixed inset-0 z-[80] flex items-end justify-center"><div className="absolute inset-0 bg-foreground/60" onClick={()=>setConfirmAction(null)}/><div role="dialog" aria-modal="true" aria-label="Confirm action" className="relative w-full max-w-lg rounded-t-2xl border border-border bg-card p-6 pb-[max(2rem,env(safe-area-inset-bottom))]"><h2 className="font-display text-xl font-extrabold">{confirmAction.label}?</h2><div className="flex gap-3 mt-5"><Button variant="outline" className="flex-1" onClick={()=>setConfirmAction(null)}>Cancel</Button><Button variant="ghost" className="flex-1 text-destructive" onClick={()=>{confirmAction.action();setConfirmAction(null);}}>Confirm</Button></div></div></div>}
-  </main>;
+  function save(event: FormEvent) {
+    event.preventDefault();
+    if (end < start) {
+      setError("Your return date should be after your start date.");
+      return;
+    }
+    {
+      const days =
+        Math.round((Date.parse(`${end}T12:00:00Z`) - Date.parse(`${start}T12:00:00Z`)) / 86400000) +
+        1;
+      if (days < 2 || days > 30) {
+        setError("Trips can be 2 to 30 days long.");
+        return;
+      }
+    }
+    void run(async () => {
+      const r = await supabase.rpc("edit_trip", {
+        p_trip: trip.id,
+        p_name: name,
+        p_destination: destination,
+        p_start_date: start,
+        p_end_date: end,
+      });
+      if (r.error) return r;
+      return supabase.rpc(
+        "set_trip_extras" as never,
+        {
+          p_trip: trip.id,
+          p_motto: motto,
+          p_call: tx.call_link ?? null,
+          p_backup: tx.backup_call_link ?? null,
+        } as never,
+      );
+    });
+  }
+  function saveCalls(event: FormEvent) {
+    event.preventDefault();
+    const bad = [call, backup].some((l) => l.trim() && !/^https:\/\//i.test(l.trim()));
+    if (bad) {
+      setError("Call links should start with https://");
+      return;
+    }
+    void run(() =>
+      supabase.rpc(
+        "set_trip_extras" as never,
+        { p_trip: trip.id, p_motto: tx.motto ?? null, p_call: call, p_backup: backup } as never,
+      ),
+    );
+  }
+  if (practice) return <PracticeDay trip={trip} onBack={() => setPractice(false)} />;
+  if (deleteStep)
+    return (
+      <main className={`px-6 pb-28 ${cinematic ? "cinematic-captain-tools" : ""}`}>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setDeleteStep(0);
+            setTypedName("");
+          }}
+        >
+          <ArrowLeft /> Captain Tools
+        </Button>
+        <div className="app-card mt-5">
+          <h1 className="font-display text-2xl font-extrabold">Cancel trip</h1>
+          <p className="mt-3">
+            Once it's cancelled, it's gone — photos, games, scores and Wrapped.
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Download your photos below before cancelling.
+          </p>
+          {deleteStep === 1 ? (
+            <div className="grid gap-2 mt-5">
+              <Button
+                variant="outline"
+                onClick={() =>
+                  document
+                    .getElementById("delete-photo-download")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+              >
+                Download photos first
+              </Button>
+              <Button variant="outline" onClick={() => setDeleteStep(0)}>
+                Cancel
+              </Button>
+              <Button variant="ghost" className="text-destructive" onClick={() => setDeleteStep(2)}>
+                Continue to confirmation
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-5">
+              <p className="mt-4 text-sm">
+                This cancels {tripDisplayName(trip.name)} for everyone — game nights, points and
+                photos. Type DELETE to confirm.
+              </p>
+              <label className="block mt-4 text-sm font-bold">
+                Confirmation
+                <input
+                  className={field}
+                  value={typedName}
+                  onChange={(e) => setTypedName(e.target.value)}
+                  autoComplete="off"
+                />
+              </label>
+              {error && (
+                <p role="alert" className="text-destructive text-sm mt-3">
+                  {error}
+                </p>
+              )}
+              <Button
+                variant="ghost"
+                className="mt-4 w-full text-destructive"
+                disabled={busy || typedName.trim().toUpperCase() !== "DELETE"}
+                onClick={async () => {
+                  setBusy(true);
+                  setError("");
+                  try {
+                    await permanentlyDeleteTrip({ data: { tripId: trip.id, name: typedName } });
+                    await onUpdated();
+                    onBack();
+                  } catch (e) {
+                    setError(friendlyError(e));
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                Cancel trip
+              </Button>
+              <Button variant="outline" className="w-full mt-2" onClick={() => setDeleteStep(0)}>
+                Keep trip
+              </Button>
+            </div>
+          )}
+        </div>
+        {deleteStep === 1 && (
+          <div id="delete-photo-download">
+            <PhotoWall trip={trip} members={members} cards={cards} userId={userId} />
+          </div>
+        )}
+      </main>
+    );
+  if (!section)
+    return (
+      <main className={`px-6 pb-28 ${cinematic ? "cinematic-captain-tools" : ""}`}>
+        <Button variant="ghost" onClick={onBack} className="-ml-3">
+          <ArrowLeft /> Back
+        </Button>
+        <h1 className="font-display text-3xl font-extrabold mt-5 flex items-center gap-2">
+          Captain Tools{cinematic && captain && <CaptainCrown />}
+        </h1>
+        <div className="grid grid-cols-2 gap-3 mt-5">
+          {[
+            "Setup & access",
+            "Game nights",
+            "Trip days & prizes",
+            "Trip pot",
+            "Trip details",
+            "Members & hand-off",
+          ].map((s) => (
+            <Button
+              key={s}
+              variant="outline"
+              className="home-bubble min-h-28 h-auto whitespace-normal font-display font-bold"
+              onClick={() => setSection(s)}
+            >
+              <img
+                src={
+                  (
+                    {
+                      "Setup & access": setupIcon,
+                      "Game nights": nightsIcon,
+                      "Trip days & prizes": prizesIcon,
+                      "Trip pot": potIcon,
+                      "Trip details": detailsIcon,
+                      "Members & hand-off": membersIcon,
+                    } as Record<string, string>
+                  )[s]
+                }
+                className="size-10 mb-2 object-contain"
+                alt=""
+              />
+              {s}
+            </Button>
+          ))}
+        </div>
+        <PendingMissions trip={trip} members={members} cards={cards} userId={userId} />
+        {captain ? (
+          <Button
+            variant="ghost"
+            className="w-full text-destructive mt-10"
+            onClick={() => setDeleteStep(1)}
+          >
+            <Trash2 /> Cancel trip
+          </Button>
+        ) : (
+          <div className="mt-10">
+            <TripActions
+              trip={trip}
+              members={members}
+              cards={cards}
+              userId={userId}
+              trigger="button"
+              onDone={async () => {
+                await onUpdated();
+                onBack();
+              }}
+            />
+          </div>
+        )}
+      </main>
+    );
+  const show = (group: string) => section === group;
+  return (
+    <main className={`px-6 pb-28 ${cinematic ? "cinematic-captain-tools" : ""}`}>
+      <Button variant="ghost" onClick={() => setSection(null)} className="-ml-3">
+        <ArrowLeft /> Captain Tools
+      </Button>
+      <div className="flex items-center gap-3 mt-5">
+        <div className="bg-orange-soft text-orange rounded-2xl p-3">
+          {cinematic && captain ? <CaptainCrown /> : <Crown size={30} />}
+        </div>
+        <div>
+          <p className="text-primary text-xs font-extrabold">THE CROWN ROOM</p>
+          <h1 className="font-display text-3xl font-extrabold">{section}</h1>
+        </div>
+      </div>
+      {show("Setup & access") && (
+        <>
+          <div className="mt-5 flex items-center justify-between gap-3 border-b border-border pb-4">
+            <span className="font-bold">View as player</span>
+            <Button variant="outline" role="switch" aria-checked={false} onClick={onViewAsPlayer}>
+              Off
+            </Button>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Itinerary, vibe, {cinematic ? "Pre-Flight start date" : "Game Day start date"}, time
+            zone and teams are edited with the ✏️ pencils on the Trip tab.
+            {!captain && " As Co-Captain you run game nights; setup stays with the Captain."}
+          </p>
+          {captain && (
+            <RememberedSection
+              id={`${trip.id}-captain-unlock`}
+              title="Unlock the full trip 🔓"
+              defaultOpen={!isUnlocked(trip)}
+            >
+              <TripUnlock trip={trip} memberCount={members.length} onUnlocked={onUpdated} />
+            </RememberedSection>
+          )}
+          <RememberedSection
+            id={`${trip.id}-captain-checklist`}
+            title="Captain checklist ✅"
+            defaultOpen
+          >
+            <CaptainChecklist trip={trip} members={members} />
+          </RememberedSection>
+          <Button variant="outline" className="mt-4 w-full" onClick={() => setPractice(true)}>
+            Preview trip-day games
+          </Button>
+          {captain && (
+            <div className="mt-4 flex items-center justify-between gap-3 border-b border-border pb-4">
+              <span className="font-bold">
+                Bingo needs a photo
+                <small className="block text-muted-foreground font-normal">
+                  On by default. Failed uploads become Proof pending.
+                </small>
+              </span>
+              <Button
+                variant={bingoPhoto ? "subtle" : "outline"}
+                role="switch"
+                aria-checked={bingoPhoto}
+                disabled={busy}
+                onClick={() =>
+                  void run(async () => {
+                    const result = await supabase.rpc("set_bingo_needs_photo", {
+                      p_trip: trip.id,
+                      p_required: !bingoPhoto,
+                    });
+                    if (!result.error) setBingoPhoto((v) => !v);
+                    return result;
+                  })
+                }
+              >
+                {bingoPhoto ? "On" : "Off"}
+              </Button>
+            </div>
+          )}
+          {captain && (
+            <RememberedSection id={`${trip.id}-captain-coc`} title="Co-Captain & step down ⭐">
+              <CoCaptainPicker trip={trip} members={members} cards={cards} onChanged={onUpdated} />
+            </RememberedSection>
+          )}
+          {captain && (
+            <RememberedSection id={`${trip.id}-captain-invites`} title="Invites & approval 💌">
+              <TripAccessTools
+                trip={trip}
+                avatarUrl={(st, sd) => dicebearUrl(st, sd)}
+                onSaved={onUpdated}
+              />
+            </RememberedSection>
+          )}
+          {captain && !trip.is_sandbox && trip.kind !== "at_home" && (
+            <RememberedSection id={`${trip.id}-captain-rooms`} title="Game Rooms listing 🏆">
+              <RoomListingSettings trip={trip} onSaved={onUpdated} />
+              <h3 className="font-bold mt-5 mb-2">Join requests</h3>
+              <RoomRequests tripId={trip.id} onChanged={() => void onUpdated()} />
+            </RememberedSection>
+          )}
+        </>
+      )}
+      {show("Game nights") && (
+        <>
+          <div className="mt-6">
+            <ReadOnlyBanner trip={trip} />
+          </div>
+          <GameNightTools trip={trip} members={members} userId={userId} />
+          <SealedQuests
+            trip={trip}
+            members={members}
+            cards={cards}
+            userId={userId}
+            viewOnly={false}
+            proofOnly
+          />
+          <RememberedSection id={`${trip.id}-captain-hosts`} title="Host swaps 🔁">
+            <HostSwapsAdmin
+              trip={trip}
+              people={members.map((m) => ({
+                user_id: m.user_id,
+                name:
+                  cards.find((c) => c.user_id === m.user_id)?.game_name ||
+                  m.display_name ||
+                  "Player",
+              }))}
+            />
+          </RememberedSection>
+          <RememberedSection id={`${trip.id}-captain-qotw`} title="Question of the Week">
+            <QotwTools trip={trip} />
+          </RememberedSection>
+        </>
+      )}
+      {show("Trip days & prizes") && (
+        <>
+          <RememberedSection id={`${trip.id}-captain-gamedays`} title="Trip-day game days">
+            <GameDayTools trip={trip} onUpdated={onUpdated} />
+          </RememberedSection>
+          <RememberedSection id={`${trip.id}-captain-prizes`} title="Prizes & crowning">
+            <SeasonPrizeTools
+              trip={trip}
+              members={members}
+              cards={cards}
+              onPreviewWrapped={() => setWrapped(true)}
+            />
+          </RememberedSection>
+          <RememberedSection id={`${trip.id}-captain-end`} title="End trip">
+            <EndTripTool trip={trip} onEnded={onUpdated} />
+          </RememberedSection>
+          {wrapped && (
+            <TripWrapped
+              trip={trip}
+              members={members}
+              cards={cards}
+              onClose={() => setWrapped(false)}
+            />
+          )}
+        </>
+      )}
+      {show("Trip pot") && (
+        <RememberedSection id={`${trip.id}-captain-costs`} title="Trip pot 💸" defaultOpen>
+          <FeatureGate tripId={trip.id} feature="trip_pot" compact>
+            <TripCostsCaptain trip={trip} members={members} cards={cards} />
+          </FeatureGate>
+        </RememberedSection>
+      )}
+      {show("Trip details") && (
+        <>
+          {captain && (
+            <RememberedSection id={`${trip.id}-captain-adults`} title="21+ cards">
+              <AdultControls trip={trip} members={members} />
+            </RememberedSection>
+          )}
+          {captain && !trip.is_sandbox && trip.kind === "trip" && (
+            <RememberedSection
+              id={`${trip.id}-passport-destination`}
+              title="Passport destination ✈️"
+            >
+              <p className="text-sm text-muted-foreground mt-2">
+                We use your itinerary destination to choose each traveler’s stamp. Correct the
+                country, state or city here if needed. Travelers choose their own home country in My
+                Passport.
+              </p>
+              <form
+                className="mt-4 space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void run(() =>
+                    supabase.rpc("set_passport_destination", {
+                      p_trip: trip.id,
+                      p_country: passportCountry.trim(),
+                      p_state: passportState.trim(),
+                      p_city: passportCity.trim(),
+                    }),
+                  );
+                }}
+              >
+                <label className="block text-sm font-bold">
+                  Country
+                  <input
+                    className={field}
+                    required
+                    maxLength={80}
+                    value={passportCountry}
+                    onChange={(e) => setPassportCountry(e.target.value)}
+                    placeholder="e.g. Thailand or United States"
+                  />
+                </label>
+                <label className="block text-sm font-bold">
+                  State (for U.S. road trips)
+                  <input
+                    className={field}
+                    maxLength={80}
+                    value={passportState}
+                    onChange={(e) => setPassportState(e.target.value)}
+                    placeholder="e.g. Nevada"
+                  />
+                </label>
+                <label className="block text-sm font-bold">
+                  City
+                  <input
+                    className={field}
+                    maxLength={80}
+                    value={passportCity}
+                    onChange={(e) => setPassportCity(e.target.value)}
+                    placeholder="e.g. Las Vegas"
+                  />
+                </label>
+                <Button variant="outline" type="submit" disabled={busy}>
+                  Save passport destination
+                </Button>
+              </form>
+            </RememberedSection>
+          )}
+          {captain && (
+            <RememberedSection id={`${trip.id}-captain-details`} title="Trip details">
+              <p className="text-sm text-muted-foreground mt-1">{friendlyRange(start, end)}</p>
+              <form className="mt-4 space-y-4" onSubmit={save}>
+                <label className="block text-sm font-bold">
+                  Trip name
+                  <input
+                    className={field}
+                    required
+                    maxLength={100}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </label>
+                <label className="block text-sm font-bold">
+                  Destination
+                  <input
+                    className={field}
+                    required
+                    maxLength={120}
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                  />
+                </label>
+                <MottoField
+                  value={motto}
+                  onChange={setMotto}
+                  name={name}
+                  destination={destination}
+                  className={field}
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block text-sm font-bold">
+                    Start date
+                    <input
+                      type="date"
+                      className={`${field} px-2 text-xs`}
+                      required
+                      value={start}
+                      onChange={(e) => setStart(e.target.value)}
+                    />
+                  </label>
+                  <label className="block text-sm font-bold">
+                    End date
+                    <input
+                      type="date"
+                      min={start}
+                      className={`${field} px-2 text-xs`}
+                      required
+                      value={end}
+                      onChange={(e) => setEnd(e.target.value)}
+                    />
+                  </label>
+                </div>
+                <Button type="submit" variant="playful" className="w-full" disabled={busy}>
+                  Save details
+                </Button>
+              </form>
+            </RememberedSection>
+          )}
+          <RememberedSection id={`${trip.id}-captain-call`} title="Game night call">
+            <p className="text-sm text-muted-foreground mt-1">
+              The Join the call button shows on Home and Play from 15 minutes before game night
+              until 3 hours after.
+            </p>
+            <form className="mt-4 space-y-4" onSubmit={saveCalls}>
+              <label className="block text-sm font-bold">
+                Game night call link
+                <input
+                  className={field}
+                  type="url"
+                  inputMode="url"
+                  maxLength={500}
+                  value={call}
+                  onChange={(e) => setCall(e.target.value)}
+                  placeholder="https://facetime.apple.com/join#…"
+                />
+                <span className="block text-xs font-normal text-muted-foreground mt-1">
+                  On iPhone: FaceTime → Create Link → Copy.
+                </span>
+              </label>
+              <label className="block text-sm font-bold">
+                Backup call link{" "}
+                <span className="text-muted-foreground font-normal">(optional)</span>
+                <input
+                  className={field}
+                  type="url"
+                  inputMode="url"
+                  maxLength={500}
+                  value={backup}
+                  onChange={(e) => setBackup(e.target.value)}
+                  placeholder="https://meet.google.com/…"
+                />
+                <span className="text-xs font-normal text-muted-foreground mt-1">
+                  For anyone who can't use the main link, e.g. Google Meet.
+                </span>
+              </label>
+              <Button type="submit" variant="playful" className="w-full" disabled={busy}>
+                Save call links
+              </Button>
+            </form>
+          </RememberedSection>
+        </>
+      )}
+      {show("Members & hand-off") && (
+        <>
+          <RememberedSection id={`${trip.id}-captain-members`} title="Members">
+            <div className="flex items-center justify-between mt-10">
+              <h2 className="font-display font-extrabold text-xl">Members</h2>
+              <span className="text-muted-foreground text-sm">{members.length}/30</span>
+            </div>
+            <div className="mt-3 divide-y divide-border">
+              <ShortList items={members} id={`captain-members-${trip.id}`}>
+                {(m) => {
+                  const card = cards.find((c) => c.user_id === m.user_id);
+                  const playerName = card?.game_name || m.display_name || "Player";
+                  return (
+                    <div key={m.user_id} className="py-4">
+                      <div className="flex items-center gap-3">
+                        <span className={cinematic ? "captain-avatar-wrap" : ""}>
+                          <AvatarButton
+                            userId={m.user_id}
+                            onOpen={onMember}
+                            name={playerName}
+                            url={card?.avatarUrl || dicebearUrl("street", m.user_id)}
+                            className={`h-11 w-11 ${cinematic ? "rounded-2xl" : ""}`}
+                          />
+                          {cinematic && m.role === "captain" && <CaptainCrown badge />}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold truncate">{playerName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {m.role === "captain"
+                              ? "Captain"
+                              : m.role === "co_captain"
+                                ? "Co-Captain"
+                                : "Player"}
+                          </p>
+                        </div>
+                      </div>
+                      {m.role !== "captain" && captain && (
+                        <div className="flex flex-wrap gap-2 mt-3 pl-14">
+                          {m.role !== "co_captain" && (
+                            <Button
+                              variant="subtle"
+                              size="sm"
+                              disabled={busy}
+                              onClick={() =>
+                                manage(m.user_id, "promote", `Make ${m.display_name} Co-Captain`)
+                              }
+                            >
+                              <Star /> Promote
+                            </Button>
+                          )}
+                          {captain && (
+                            <Button
+                              variant="subtle"
+                              size="sm"
+                              disabled={busy}
+                              onClick={() =>
+                                manage(
+                                  m.user_id,
+                                  "pass_crown",
+                                  `Pass the crown to ${m.display_name}`,
+                                )
+                              }
+                            >
+                              <Crown /> Pass crown
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive"
+                            disabled={busy}
+                            onClick={() =>
+                              manage(m.user_id, "remove", `Remove ${m.display_name} from this trip`)
+                            }
+                          >
+                            <Trash2 /> Remove
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }}
+              </ShortList>
+            </div>
+            <div className="mt-8 bg-orange-soft rounded-2xl p-4">
+              <p className="text-sm font-bold">
+                Invite code: <span className="font-display text-lg">{trip.join_code}</span>
+              </p>
+              <p className="text-xs text-ink-soft mt-1">
+                Resetting it makes old invite links stop working.
+              </p>
+              <Button
+                variant="outline"
+                className="mt-3 bg-card"
+                disabled={busy || !captain}
+                onClick={() =>
+                  setConfirmAction({
+                    label: "Reset invite code? Old links will stop working.",
+                    action: () =>
+                      void run(() => supabase.rpc("reset_trip_code", { p_trip: trip.id })),
+                  })
+                }
+              >
+                <RefreshCw /> Reset code
+              </Button>
+            </div>
+          </RememberedSection>
+          {captain && (
+            <RememberedSection id={`${trip.id}-captain-handoff`} title="Hand off Captain">
+              <HandOffCaptain
+                trip={trip}
+                members={members}
+                onDone={async () => {
+                  await onUpdated();
+                  onBack();
+                }}
+              />
+            </RememberedSection>
+          )}
+          <RememberedSection id={`${trip.id}-captain-bugs`} title="Bug reports">
+            <BugReportsList tripId={trip.id} />
+          </RememberedSection>
+        </>
+      )}
+      {error && (
+        <p role="alert" className="text-destructive text-sm mt-4">
+          {error}
+        </p>
+      )}
+      {success && (
+        <p role="status" className="text-green text-sm mt-4">
+          {success}
+        </p>
+      )}
+      {confirmAction && (
+        <div className="fixed inset-0 z-[80] flex items-end justify-center">
+          <div
+            className="absolute inset-0 bg-foreground/60"
+            onClick={() => setConfirmAction(null)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm action"
+            className="relative w-full max-w-lg rounded-t-2xl border border-border bg-card p-6 pb-[max(2rem,env(safe-area-inset-bottom))]"
+          >
+            <h2 className="font-display text-xl font-extrabold">{confirmAction.label}?</h2>
+            <div className="flex gap-3 mt-5">
+              <Button variant="outline" className="flex-1" onClick={() => setConfirmAction(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="ghost"
+                className="flex-1 text-destructive"
+                onClick={() => {
+                  confirmAction.action();
+                  setConfirmAction(null);
+                }}
+              >
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
 }

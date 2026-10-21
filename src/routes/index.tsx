@@ -300,9 +300,11 @@ function Index() {
   }, [viewAsPlayer]);
   const [itineraryVersion, setItineraryVersion] = useState(0);
   const [about, setAbout] = useState(false);
-  const [meView, setMeView] = useState<"help" | "bug" | "delete" | "feedback" | "lab" | "reports" | null>(null);
-   const [publicView, setPublicView] = useState<"overview" | "story" | "games" | null>(null);
-   const [meSection, setMeSection] = useState<string | null>(null);
+  const [meView, setMeView] = useState<
+    "help" | "bug" | "delete" | "feedback" | "lab" | "reports" | null
+  >(null);
+  const [publicView, setPublicView] = useState<"overview" | "story" | "games" | null>(null);
+  const [meSection, setMeSection] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
     void supabase.rpc("is_app_admin").then((r) => {
@@ -374,7 +376,11 @@ function Index() {
   const loadAccess = async () => {
     // Call through the client so `this` stays bound (a detached `.rpc` crashes with "reading 'rest'").
     const rpc = (n: string, a?: object) =>
-      (supabase as unknown as { rpc: (n: string, a?: object) => Promise<{ data: any; error: unknown }> }).rpc(n, a);
+      (
+        supabase as unknown as {
+          rpc: (n: string, a?: object) => Promise<{ data: any; error: unknown }>;
+        }
+      ).rpc(n, a);
     let r = await rpc("my_access");
     let next = r.data?.[0] ?? { beta: false, has_dob: false, age_range: "Unknown" };
     // A saved /beta/<CODE> is redeemed automatically after the first sign-in (server-checked).
@@ -391,7 +397,10 @@ function Index() {
       // Only forget the saved code once it has actually worked — it was being
       // cleared even when the server rejected it, which left people stuck with
       // nothing to retry and nothing on screen to act on.
-      if (next.beta) { setBetaNotice(""); clearPendingBeta(); }
+      if (next.beta) {
+        setBetaNotice("");
+        clearPendingBeta();
+      }
     }
     setAccess(next);
   };
@@ -569,15 +578,140 @@ function Index() {
     }
   }
 
-  if (splashLook === "cinematic" && !splashLogin && ((!splashReady && !splashTimedOut) || (loading || (user && !profile) || (!user && launch === null)))) return <CinematicSplash failed={splashTimedOut} onLogin={() => setSplashLogin(true)}/>;
-  if (loading || (user && !profile)) return <div className="min-h-dvh flex items-center justify-center"><BrandLockup className="text-3xl"/></div>;
-   if (!user) { if (launch === null) return splashLook === "cinematic" ? <AuthScreen allowSignup={false} onExplore={() => setPublicView("overview")} onStory={() => setPublicView("story")}/> : null; if (publicView === "games") return <main className="min-h-dvh max-w-lg mx-auto px-[18px] pt-[max(1rem,env(safe-area-inset-top))] pb-8"><header className="cinematic-home-header"><BrandLockup className="cinematic-home-brand" compact/><div className="cinematic-home-controls"><Button variant="playful" size="sm" className="rounded-full" onClick={() => setPublicView(null)}>Sign in</Button></div></header><GameArcade guest onBack={() => setPublicView(null)}/><OutOfCreditsHost onSignIn={() => setPublicView(null)}/></main>; if (publicView === "overview" && exploreLook === "cinematic") return <ExploreTour onFinish={() => setPublicView(null)} onPlayNow={() => setPublicView("games")}/>; if (publicView) return <main className="min-h-dvh max-w-lg mx-auto px-[18px] py-8"><Button variant="ghost" onClick={() => setPublicView(null)}><ArrowLeft/> Back</Button>{publicView === "story" ? <AboutContent onBack={() => setPublicView(null)} backLabel="Welcome"/> : <><p className="eyebrow mt-6">TRIPJUNKIES · SAMPLE PREVIEW</p><h1 className="font-display text-3xl font-extrabold mt-2">Collect the world with your squad.</h1><p className="text-muted-foreground mt-2">See the adventure before you join one.</p><div className="grid gap-3 mt-6">{[["Game nights", "Break the ice before takeoff."],["Trip days", "Little challenges make bigger memories."],["At Home", "Explore together from your couch."],["My Passport", "Keep the places you've collected."]].map(([title,copy]) => <div className="app-card flex items-center gap-3" key={title}><img src={title === "Game nights" ? iconBoarding : title === "Trip days" ? iconMap : title === "At Home" ? iconHome : iconPassport} alt="" className="size-16 shrink-0 object-contain"/><div><h2 className="font-display text-lg font-extrabold">{title}</h2><p className="text-sm text-muted-foreground mt-1">{copy}</p></div></div>)}</div><Button variant="outline" className="mt-5 w-full" onClick={() => setPublicView("story")}>Read the founder's story <ArrowRight/></Button></>}</main>; return <AuthScreen allowSignup={launch || !!anonCode} onBetaSaved={() => setAnonCode(readPendingBeta())} onExplore={() => setPublicView("overview")} onStory={() => setPublicView("story")}/>; }
-  if (legal.status === 'loading') return <main className="min-h-dvh grid place-items-center"><BrandLockup className="text-3xl"/></main>;
-  if (legal.status === 'required') return <LegalConsent onAccepted={legal.accept}/>;
+  if (
+    splashLook === "cinematic" &&
+    !splashLogin &&
+    ((!splashReady && !splashTimedOut) ||
+      loading ||
+      (user && !profile) ||
+      (!user && launch === null))
+  )
+    return <CinematicSplash failed={splashTimedOut} onLogin={() => setSplashLogin(true)} />;
+  if (loading || (user && !profile))
+    return (
+      <div className="min-h-dvh flex items-center justify-center">
+        <BrandLockup className="text-3xl" />
+      </div>
+    );
+  if (!user) {
+    if (launch === null)
+      return splashLook === "cinematic" ? (
+        <AuthScreen
+          allowSignup={false}
+          onExplore={() => setPublicView("overview")}
+          onStory={() => setPublicView("story")}
+        />
+      ) : null;
+    if (publicView === "games")
+      return (
+        <main className="min-h-dvh max-w-lg mx-auto px-[18px] pt-[max(1rem,env(safe-area-inset-top))] pb-8">
+          <header className="cinematic-home-header">
+            <BrandLockup className="cinematic-home-brand" compact />
+            <div className="cinematic-home-controls">
+              <Button
+                variant="playful"
+                size="sm"
+                className="rounded-full"
+                onClick={() => setPublicView(null)}
+              >
+                Sign in
+              </Button>
+            </div>
+          </header>
+          <GameArcade guest onBack={() => setPublicView(null)} />
+          <OutOfCreditsHost onSignIn={() => setPublicView(null)} />
+        </main>
+      );
+    if (publicView === "overview" && exploreLook === "cinematic")
+      return (
+        <ExploreTour
+          onFinish={() => setPublicView(null)}
+          onPlayNow={() => setPublicView("games")}
+        />
+      );
+    if (publicView)
+      return (
+        <main className="min-h-dvh max-w-lg mx-auto px-[18px] py-8">
+          <Button variant="ghost" onClick={() => setPublicView(null)}>
+            <ArrowLeft /> Back
+          </Button>
+          {publicView === "story" ? (
+            <AboutContent onBack={() => setPublicView(null)} backLabel="Welcome" />
+          ) : (
+            <>
+              <p className="eyebrow mt-6">TRIPJUNKIES · SAMPLE PREVIEW</p>
+              <h1 className="font-display text-3xl font-extrabold mt-2">
+                Collect the world with your squad.
+              </h1>
+              <p className="text-muted-foreground mt-2">See the adventure before you join one.</p>
+              <div className="grid gap-3 mt-6">
+                {[
+                  ["Game nights", "Break the ice before takeoff."],
+                  ["Trip days", "Little challenges make bigger memories."],
+                  ["At Home", "Explore together from your couch."],
+                  ["My Passport", "Keep the places you've collected."],
+                ].map(([title, copy]) => (
+                  <div className="app-card flex items-center gap-3" key={title}>
+                    <img
+                      src={
+                        title === "Game nights"
+                          ? iconBoarding
+                          : title === "Trip days"
+                            ? iconMap
+                            : title === "At Home"
+                              ? iconHome
+                              : iconPassport
+                      }
+                      alt=""
+                      className="size-16 shrink-0 object-contain"
+                    />
+                    <div>
+                      <h2 className="font-display text-lg font-extrabold">{title}</h2>
+                      <p className="text-sm text-muted-foreground mt-1">{copy}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                className="mt-5 w-full"
+                onClick={() => setPublicView("story")}
+              >
+                Read the founder's story <ArrowRight />
+              </Button>
+            </>
+          )}
+        </main>
+      );
+    return (
+      <AuthScreen
+        allowSignup={launch || !!anonCode}
+        onBetaSaved={() => setAnonCode(readPendingBeta())}
+        onExplore={() => setPublicView("overview")}
+        onStory={() => setPublicView("story")}
+      />
+    );
+  }
+  if (legal.status === "loading")
+    return (
+      <main className="min-h-dvh grid place-items-center">
+        <BrandLockup className="text-3xl" />
+      </main>
+    );
+  if (legal.status === "required") return <LegalConsent onAccepted={legal.accept} />;
   if (!access) return null;
   if (!access.has_dob) return <AgeGate onDone={() => void loadAccess()} />;
-  if (access.age_range.startsWith("Teen") && trips.length === 0) return <TeenJoinGate onJoined={() => { void refreshTrips(); void loadAccess(); }} />;
-  if (!access.beta && !pendingCode) return <WaitingGate notice={betaNotice} onRedeemed={() => void loadAccess()} />;
+  if (access.age_range.startsWith("Teen") && trips.length === 0)
+    return (
+      <TeenJoinGate
+        onJoined={() => {
+          void refreshTrips();
+          void loadAccess();
+        }}
+      />
+    );
+  if (!access.beta && !pendingCode)
+    return <WaitingGate notice={betaNotice} onRedeemed={() => void loadAccess()} />;
   if (previewLock)
     return (
       <div>
@@ -737,7 +871,18 @@ function Index() {
         </header>
       )}
       {active && !welcomeOpen && !tools && !viewAsPlayer && (
-        <VoteNow key={`vn-${active.id}`} trip={active} userId={user.id} cards={cards} isPlay={tab === "Play"} onGoPlay={() => { setSheet(null); setTab("Play"); window.scrollTo({ top: 0, behavior: "instant" }); }} />
+        <VoteNow
+          key={`vn-${active.id}`}
+          trip={active}
+          userId={user.id}
+          cards={cards}
+          isPlay={tab === "Play"}
+          onGoPlay={() => {
+            setSheet(null);
+            setTab("Play");
+            window.scrollTo({ top: 0, behavior: "instant" });
+          }}
+        />
       )}
       {meView && tab === "Me" ? (
         <div className="px-[18px]">
@@ -777,11 +922,33 @@ function Index() {
             <DeleteAccount onBack={() => setMeView(null)} />
           )}
         </div>
-       ) : showcaseCode ? (
-         <div className="px-[18px]"><ShowcaseGuest code={showcaseCode} onBack={() => { setShowcaseCode(null); const url = new URL(window.location.href); url.searchParams.delete("showcase"); window.history.replaceState({}, "", url); setTab("Home"); setHomeScreen("dashboard"); }}/></div>
-       ) : about && tab === "Me" ? (
+      ) : showcaseCode ? (
         <div className="px-[18px]">
-          <AboutContent backLabel={welcomeStoryReturn ? "Home" : "Me"} onBack={() => { setAbout(false); if (welcomeStoryReturn) { setTab("Home"); setHomeScreen("dashboard"); setWelcomeStoryReturn(false); } }} />
+          <ShowcaseGuest
+            code={showcaseCode}
+            onBack={() => {
+              setShowcaseCode(null);
+              const url = new URL(window.location.href);
+              url.searchParams.delete("showcase");
+              window.history.replaceState({}, "", url);
+              setTab("Home");
+              setHomeScreen("dashboard");
+            }}
+          />
+        </div>
+      ) : about && tab === "Me" ? (
+        <div className="px-[18px]">
+          <AboutContent
+            backLabel={welcomeStoryReturn ? "Home" : "Me"}
+            onBack={() => {
+              setAbout(false);
+              if (welcomeStoryReturn) {
+                setTab("Home");
+                setHomeScreen("dashboard");
+                setWelcomeStoryReturn(false);
+              }
+            }}
+          />
         </div>
       ) : tools && active ? (
         <CaptainTools
@@ -931,7 +1098,7 @@ function Index() {
                   url.searchParams.delete("quest");
                   window.history.replaceState({}, "", url);
                 }}
-                 onWelcome={() => setWelcomeOpen(true)}
+                onWelcome={() => setWelcomeOpen(true)}
                 onMember={setSelectedMember}
               />
             )
@@ -1054,8 +1221,7 @@ function Index() {
                   } else if (phase === "culture" || phase === "athome") {
                     setTab("Home");
                     setHomeScreen("inspiration");
-                  }
-                  else if (phase === "preflight") setTab("Play");
+                  } else if (phase === "preflight") setTab("Play");
                   else {
                     setTab("Trip");
                     setHomeScreen("dashboard");
@@ -1095,15 +1261,39 @@ function Index() {
           </Button>
         ))}
       </nav>
-      {welcomeOpen && !sheet && !tools && !viewAsPlayer && <FirstRunWelcome
-        canStart={access.age_range === "21+"}
-        onTrip={() => { if (access.age_range === "21+") { closeWelcome(); setSheet("Start a trip"); } }}
-        onHome={() => { closeWelcome(); setTab("Home"); setHomeScreen("inspiration"); }}
-        onInspire={() => { closeWelcome(); setTab("Home"); setHomeScreen("window"); }}
-        onGames={() => { closeWelcome(); setTab("Home"); setHomeScreen("arcade"); }}
-        onStory={() => { closeWelcome(); setWelcomeStoryReturn(true); setTab("Me"); setAbout(true); }}
-        onClose={closeWelcome}
-      />}
+      {welcomeOpen && !sheet && !tools && !viewAsPlayer && (
+        <FirstRunWelcome
+          canStart={access.age_range === "21+"}
+          onTrip={() => {
+            if (access.age_range === "21+") {
+              closeWelcome();
+              setSheet("Start a trip");
+            }
+          }}
+          onHome={() => {
+            closeWelcome();
+            setTab("Home");
+            setHomeScreen("inspiration");
+          }}
+          onInspire={() => {
+            closeWelcome();
+            setTab("Home");
+            setHomeScreen("window");
+          }}
+          onGames={() => {
+            closeWelcome();
+            setTab("Home");
+            setHomeScreen("arcade");
+          }}
+          onStory={() => {
+            closeWelcome();
+            setWelcomeStoryReturn(true);
+            setTab("Me");
+            setAbout(true);
+          }}
+          onClose={closeWelcome}
+        />
+      )}
       <AppSheet
         title={sheet}
         onClose={() => setSheet(null)}
@@ -1115,9 +1305,7 @@ function Index() {
         <CrownCelebration trips={trips} userId={user.id} cards={cards} />
       )}
       {active && !welcomeOpen && !tools && !viewAsPlayer && (
-        <>
-          {!sheet && <RoleTips key={`rt-${active.id}`} trip={active} userId={user.id} />}
-        </>
+        <>{!sheet && <RoleTips key={`rt-${active.id}`} trip={active} userId={user.id} />}</>
       )}
       {selectedMember && active && (
         <PlayerCardView
@@ -1423,8 +1611,8 @@ function AuthScreen({
                             onChange={(e) => setSignupDob(e.target.value)}
                           />
                           <small>
-                            Saved once. Contact support to correct it later. Ages 13 and up can sign up;
-                            13–17 join a trip with their Captain's code and approval.
+                            Saved once. Contact support to correct it later. Ages 13 and up can sign
+                            up; 13–17 join a trip with their Captain's code and approval.
                           </small>
                         </label>
                         <LegalCheckbox checked={legalChecked} onChange={setLegalChecked} />
@@ -1446,7 +1634,11 @@ function AuthScreen({
                         Forgot password?
                       </Button>
                     )}
-                    {!allowSignup && onBetaSaved && <div className="w-full mt-3"><BetaCodeField signedIn={false} onRedeemed={onBetaSaved}/></div>}
+                    {!allowSignup && onBetaSaved && (
+                      <div className="w-full mt-3">
+                        <BetaCodeField signedIn={false} onRedeemed={onBetaSaved} />
+                      </div>
+                    )}
                     {allowSignup && (
                       <Button
                         variant="link"
@@ -1645,8 +1837,8 @@ function AuthScreen({
                       className="mt-2 w-full h-13 px-4 rounded-2xl border border-border bg-card text-center"
                     />
                     <small className="block mt-1 text-muted-foreground">
-                      Saved once. Contact support to correct it later. Ages 13 and up can sign up; 13–17 join a trip
-                      with their Captain's code and approval.
+                      Saved once. Contact support to correct it later. Ages 13 and up can sign up;
+                      13–17 join a trip with their Captain's code and approval.
                     </small>
                   </label>
                 )}
@@ -1672,7 +1864,11 @@ function AuthScreen({
                     Forgot password?
                   </Button>
                 )}
-                {!allowSignup && onBetaSaved && <div className="w-full mt-3"><BetaCodeField signedIn={false} onRedeemed={onBetaSaved}/></div>}
+                {!allowSignup && onBetaSaved && (
+                  <div className="w-full mt-3">
+                    <BetaCodeField signedIn={false} onRedeemed={onBetaSaved} />
+                  </div>
+                )}
                 {allowSignup && (
                   <Button
                     variant="link"
@@ -1802,9 +1998,19 @@ function TabContent({
     );
     return (
       <>
-        <PhaseNotice trip={active} viewOnly={viewOnly}/>
+        <PhaseNotice trip={active} viewOnly={viewOnly} />
         <div className={`app-card ${cinematicHomeTrip ? "cinematic-trip-countdown" : ""}`}>
-          {cinematicHomeTrip && <img className="cinematic-trip-art-strip" src={tripCoast} srcSet={`${tripCoastSmall} 768w, ${tripCoast} 1536w`} sizes="(max-width: 520px) 100vw, 768px" alt="" width={1536} height={1920}/>}
+          {cinematicHomeTrip && (
+            <img
+              className="cinematic-trip-art-strip"
+              src={tripCoast}
+              srcSet={`${tripCoastSmall} 768w, ${tripCoast} 1536w`}
+              sizes="(max-width: 520px) 100vw, 768px"
+              alt=""
+              width={1536}
+              height={1920}
+            />
+          )}
           <h1 className="font-display text-xl font-extrabold">{active.name}</h1>
           {(active as { motto?: string | null }).motto && (
             <p className="italic text-green text-[13px] mt-1">
@@ -1829,11 +2035,21 @@ function TabContent({
             </p>
           </div>
         </div>
-        <div className={`grid grid-cols-2 gap-3 mt-[14px] ${cinematicHomeTrip ? "cinematic-trip-actions" : ""}`}>
-          <Button variant="outline" className={`h-12 ${cinematicHomeTrip ? "rounded-full" : ""}`} onClick={() => open("Invite")}>
+        <div
+          className={`grid grid-cols-2 gap-3 mt-[14px] ${cinematicHomeTrip ? "cinematic-trip-actions" : ""}`}
+        >
+          <Button
+            variant="outline"
+            className={`h-12 ${cinematicHomeTrip ? "rounded-full" : ""}`}
+            onClick={() => open("Invite")}
+          >
             <Ticket /> Invite squad
           </Button>
-          <Button variant="outline" className={`h-12 ${cinematicHomeTrip ? "rounded-full" : ""}`} onClick={() => open("Quick actions")}>
+          <Button
+            variant="outline"
+            className={`h-12 ${cinematicHomeTrip ? "rounded-full" : ""}`}
+            onClick={() => open("Quick actions")}
+          >
             <Sparkles /> More
           </Button>
         </div>
@@ -1850,17 +2066,19 @@ function TabContent({
               cards.find((c) => c.user_id === m.user_id)?.game_name || m.display_name || "Player",
           }))}
         />
-        <div className={cinematicHomeTrip ? "cinematic-trip-extras" : ""}><QotwCard key={`qc-${active.id}`} trip={active} userId={userId} viewOnly={viewOnly} />
-        <HomeSeasons
-          key={`hs-${active.id}`}
-          trip={active}
-          members={members}
-          cards={cards}
-          userId={userId}
-          onMember={onMember}
-          {...(canStart ? { onPlanTrip: () => open("Start a trip") } : {})}
-          onAtHome={() => open("At Home")}
-        /></div>
+        <div className={cinematicHomeTrip ? "cinematic-trip-extras" : ""}>
+          <QotwCard key={`qc-${active.id}`} trip={active} userId={userId} viewOnly={viewOnly} />
+          <HomeSeasons
+            key={`hs-${active.id}`}
+            trip={active}
+            members={members}
+            cards={cards}
+            userId={userId}
+            onMember={onMember}
+            {...(canStart ? { onPlanTrip: () => open("Start a trip") } : {})}
+            onAtHome={() => open("At Home")}
+          />
+        </div>
       </>
     );
   }
@@ -1930,7 +2148,19 @@ function TabContent({
     return (
       <>
         <ReadOnlyBanner trip={active} />
-        <PlayHub key={active.id} trip={active} members={members} cards={cards} userId={userId} viewOnly={viewOnly} onManage={onManage} onCalendar={onCalendar} onWrapped={onWrapped} onMember={onMember} refresh={refresh} />
+        <PlayHub
+          key={active.id}
+          trip={active}
+          members={members}
+          cards={cards}
+          userId={userId}
+          viewOnly={viewOnly}
+          onManage={onManage}
+          onCalendar={onCalendar}
+          onWrapped={onWrapped}
+          onMember={onMember}
+          refresh={refresh}
+        />
       </>
     );
   if (tab === "Play")
@@ -2266,7 +2496,10 @@ function TabContent({
                   variant="outline"
                   className="home-bubble min-h-24 h-auto whitespace-normal"
                   onClick={() =>
-                    key === "welcome" || key === "features" || key === "icon-options" || key === "ai-guard"
+                    key === "welcome" ||
+                    key === "features" ||
+                    key === "icon-options" ||
+                    key === "ai-guard"
                       ? setMeSection(key)
                       : onMe(key as "reports" | "feedback" | "lab")
                   }
@@ -2748,7 +2981,11 @@ function AppSheet({
                 <InviteCode code={active.join_code} />
               </div>
             </div>
-            <SeatCap tripId={active.id} isCaptain={active.myRole === "captain"} room={active.kind === "at_home" || active.a2e_room ? "culture" : "trip"} />
+            <SeatCap
+              tripId={active.id}
+              isCaptain={active.myRole === "captain"}
+              room={active.kind === "at_home" || active.a2e_room ? "culture" : "trip"}
+            />
             <div className="grid grid-cols-2 gap-3 mt-5">
               <Button
                 variant="outline"
@@ -2824,7 +3061,6 @@ function AppSheet({
     </div>
   );
 }
-
 
 function SquadView({
   trip,
@@ -2997,7 +3233,14 @@ function HomeSeasons({
           }}
         />
       )}
-      <MysteryPrizes trip={trip} members={members} cards={cards} userId={userId} data={data} onMember={onMember} />
+      <MysteryPrizes
+        trip={trip}
+        members={members}
+        cards={cards}
+        userId={userId}
+        data={data}
+        onMember={onMember}
+      />
       <ActiveSeasonBoard trip={trip} members={members} cards={cards} userId={userId} />
       {wrapped && (
         <TripWrapped
@@ -3005,8 +3248,18 @@ function HomeSeasons({
           members={members}
           cards={cards}
           onClose={() => setWrapped(false)}
-          {...(onPlanTrip ? { onPlanTrip: () => { setWrapped(false); onPlanTrip(); } } : {})}
-          onAtHome={() => { setWrapped(false); onAtHome(); }}
+          {...(onPlanTrip
+            ? {
+                onPlanTrip: () => {
+                  setWrapped(false);
+                  onPlanTrip();
+                },
+              }
+            : {})}
+          onAtHome={() => {
+            setWrapped(false);
+            onAtHome();
+          }}
         />
       )}
     </>

@@ -13,5 +13,9 @@ export const Route = createFileRoute("/home-mockups")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => <div className="min-h-screen px-4 py-6"><HomeLayoutMockups standalone /></div>,
+  component: () => (
+    <div className="min-h-screen px-4 py-6">
+      <HomeLayoutMockups standalone />
+    </div>
+  ),
 });

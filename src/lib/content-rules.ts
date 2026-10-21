@@ -2,5 +2,8 @@
 export const RULES = `Fun, positive, inclusive and educational. No politics, sexual content, slurs, hate, harassment, illegal acts, drugs or dangerous stunts. Religion may appear only as respectful cultural facts; no debates, preaching or jokes. Celebrate cultures without stereotypes, accents, caricatures or costumes of a people. Alcohol is allowed only for approved 21+ players when the Trip allows it, always optional as "sip or skip", never quantities, drunkenness or driving. For clean or teen content, no alcohol at all. Follow local laws and venue rules, ask before photographing people, never hold up a line. No named businesses or addresses. World-famous landmarks only in today's itinerary city. No GPS, tracking or exact locations. Teens get Family/clean content. Never repeat previously used material.`;
 
 /** Conservative output guard; rejects rather than trying to rewrite unsafe generated content. */
-const unsafe = /\b(?:chang\s+toast|elephant\s+pants|margarita|hangover|drunk|drunken|wasted|blackout|vodka|tequila|whiskey|jagermeister|budweiser|coca[ -]?cola|starbucks|mcdonald'?s|nigg\w*|fagg?\w*|cunt\w*|retard\w*|rape\w*|nazi\w*|tsa|precheck)\b|\bdress\s+(?:up\s+)?like\s+(?:a|an|the)\s+\w+/i;
-export function safeContent(text: string) { return !unsafe.test(text); }
+const unsafe =
+  /\b(?:chang\s+toast|elephant\s+pants|margarita|hangover|drunk|drunken|wasted|blackout|vodka|tequila|whiskey|jagermeister|budweiser|coca[ -]?cola|starbucks|mcdonald'?s|nigg\w*|fagg?\w*|cunt\w*|retard\w*|rape\w*|nazi\w*|tsa|precheck)\b|\bdress\s+(?:up\s+)?like\s+(?:a|an|the)\s+\w+/i;
+export function safeContent(text: string) {
+  return !unsafe.test(text);
+}
