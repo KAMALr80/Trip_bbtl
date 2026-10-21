@@ -9,6 +9,8 @@ M0-11 characterisation tests. They pin **today's** behaviour of the rules we kee
 | `database/03_takeoff.test.sql` | Airport Missions (departure-day window, order, layovers, 2/2/2/3/3 = 12 cap, verify, proof deadline), "We've arrived" and the automatic backup |
 | `database/04_sealed_quests.test.sql` | drop schedule, cutoff, hidden text, open/expire/submit/self-destruct, leader review, `sealed_award` scoring, Showcase |
 | `database/05_delete_and_rls.test.sql` | read isolation (non-member, pending, anon, birthdays), no direct client writes on game tables, delete trip |
+| `database/06_cron_jobs.test.sql` | scheduled jobs exist, the photo purge is authenticated and not Lovable-hosted |
+| `database/07_seed.test.sql` | the local seed gives a playable setup (accounts, buckets, trips, quests, missions) |
 
 ## Run locally (no Docker)
 
@@ -17,7 +19,7 @@ scripts/db/test.sh                                         # all files
 scripts/db/test.sh supabase/tests/database/03_takeoff.test.sql
 ```
 
-- The script replays all migrations onto a throwaway Postgres (`scripts/db/replay-migrations.sh`) and runs each file.
+- The script replays all migrations onto a throwaway Postgres (`scripts/db/replay-migrations.sh`), applies `supabase/seed.sql` twice (like `supabase db reset`, and to prove it can be re-run), then runs each file.
 - If the real pgTAP extension isn't installed, it loads `scripts/db/pgtap-lite.sql`. That's a small subset of pgTAP with the same function names and output.
 - Needs Postgres server binaries (`initdb`, `pg_ctl`). It takes about 20 seconds.
 
@@ -44,7 +46,7 @@ These are documented as today's behaviour in the tests; they are **not fixed** h
 | # | Finding | Rule | Where it gets fixed |
 |---|---|---|---|
 | T1 | **Teens can join any a2c trip with the plain join code** (pending Captain approval). Every new trip is a2c. Legacy trips require a teen invite. The published Terms and Privacy pages (`src/routes/legal/$document.tsx`) promise exactly this. The repo-root `AGENTS.md` ("13–17 only via guardian-confirmed teen invites") and the deck (R-904) say otherwise. Changing it needs new legal text and fresh consent. | R-904, Q12 | M6-03 + M6-09 |
-| T2 | Email self sign-up is allowed from **13**. The deck says self sign-up is 18+. | R-904, Q12 | M6-03 |
+| T2 | Email self sign-up is allowed from **13**, and the Terms say 13+. The deck says self sign-up is 18+, and the sign-in screen's checkbox already reads "I'm 18 or older". | R-904, Q12 | M6-03 |
 | T3 | Sealed-quest speed bonus is **+5 if proof is submitted within 3h of opening**. The deck says **+5 if opened within 3h of the drop**. | R-322 | M3-05 |
 | T4 | Sealed drops are worth **5 or 10** at random. The deck says 5–15 by difficulty. | R-322, Q4 | M3-05 |
 | T5 | Quests close at **00:00 home time the day before takeoff**. The deck's Pre-Flight closes at **23:59** that day. | R-101 | M2-03 |

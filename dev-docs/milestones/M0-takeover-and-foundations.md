@@ -23,6 +23,24 @@
 | M0-12 | Sentry + basic analytics | S |
 | M0-13 | Founder sign-off on rules & open questions | S (PM) |
 
+## Status (Oct 21, 2026)
+
+| ID | State | What's done · what's left |
+|---|---|---|
+| M0-01 | 🟡 | Lovable history archived to `docs/history/`, `.lovable/` and `null` removed, rule files indexed in `docs/decisions/`. **Left (repo admin):** branch protection on `main`, confirm team access. |
+| M0-02 | ⬜ | **Needs dashboard access** to project `kymflipjxxpyxksdfgdw`. Also export the sealed-quest card pool and bucket settings (not in migrations). |
+| M0-03 | ⬜ | **Needs accounts:** staging Supabase project, Cloudflare Workers (staging + prod), DNS, secrets. |
+| M0-04 | 🟡 | `supabase/config.toml` (CLI-validated) and `supabase/seed.sql` (accounts, buckets, trips, placeholder cards), tested on the migration replay; `.env.example`. **Left:** first real `supabase start` (CI job `supabase` runs it). |
+| M0-05 | ✅ | CI: web (typecheck, lint, Vitest, build, Playwright), database (replay + pgTAP + snapshot freshness), Supabase stack (non-blocking until first green). **Left:** make CI required in branch protection. |
+| M0-06 | ✅ | `supabase/baseline/` snapshot, `docs/inventory/` inventory and findings. **Left:** diff against a real dump after M0-02. |
+| M0-07 | 🟡 | Google sign-in uses `supabase.auth.signInWithOAuth`; preview auth storage removed. **Left (dashboard):** own Google OAuth client + redirect URLs in Supabase Auth; custom SMTP. |
+| M0-08 | ✅ | `src/integrations/ai/index.server.ts`; all 12 call sites moved. **Left:** set `AI_API_KEY` + `AI_MODEL` per environment, then remove the Lovable fallback. |
+| M0-09 | ⬜ | **Blocked:** the 13 images are only on Lovable's CDN and this environment can't reach it. Run `scripts/rescue-lovable-assets.sh` from a machine that can, then switch the imports. |
+| M0-10 | ✅ | Explicit `vite.config.ts`, no `@lovable.dev` packages, `CRON_SECRET*`, authenticated purge job reading `trip_private.cron_endpoints`. **Left:** insert the endpoint URL per environment after deploy. |
+| M0-11 | 🟡 | 141 pgTAP assertions (7 files), 12 Vitest tests, 4 signed-out Playwright specs. **Left:** signed-in E2E specs (create trip, join in two browsers, open Play) once the local stack runs. |
+| M0-12 | 🟡 | Browser errors go to Sentry when `VITE_SENTRY_DSN` is set. **Left:** Worker-side Sentry, source map upload, DSN; optional analytics. |
+| M0-13 | 🟡 | Q1, Q6, Q15, Q20 answered (defaults) in 06. **Left:** founder read-through of 02 / 05 for anything to change. |
+
 ---
 
 ### M0-01 · Repo & access takeover
