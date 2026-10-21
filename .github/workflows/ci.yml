@@ -1,8 +1,9 @@
 # M0-05 · CI pipeline.
-# The database job needs no package install: it replays every migration onto the runner's
-# preinstalled Postgres and runs the pgTAP tests (see supabase/tests/README.md).
-# A web job (typecheck, lint, build) is added once bun.lock no longer points at Lovable's private
-# npm cache, which returns 403 outside Lovable (see dev-docs/07 §3.10).
+#   web       install → typecheck → lint → unit tests → build → end-to-end smoke (signed out)
+#   database  replays every migration onto the runner's Postgres and runs the pgTAP tests; checks the
+#             committed schema snapshot is current (no Docker, see supabase/tests/README.md)
+#   supabase  the same pgTAP tests on the real Supabase local stack (`supabase start` + real pgTAP).
+#             Non-blocking until its first green run; then drop `continue-on-error`.
 name: CI
 
 on:
@@ -19,6 +20,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  web:
+    name: Web (typecheck, lint, tests, build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      # Existing violations are recorded in eslint-suppressions.json; new ones fail. After fixing
+      # some, run `npx eslint . --prune-suppressions` and commit the smaller file.
+      - run: npx eslint . --quiet
+      - run: bun run test
+      - run: bun run build
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
+
   database:
     name: Database (migrations + pgTAP)
     runs-on: ubuntu-24.04
@@ -29,7 +55,7 @@ jobs:
       - name: Show Postgres version
         run: ls -d /usr/lib/postgresql/*/bin && pg_dump --version
 
-      - name: Replay migrations and run pgTAP tests
+      - name: Replay migrations, apply the seed, run pgTAP tests
         run: scripts/db/test.sh
 
       - name: Schema snapshot and inventory are up to date
@@ -39,3 +65,18 @@ jobs:
             echo "::error::A migration changed the schema. Run: REPLAY_HOOK='python3 scripts/db/inventory.py' scripts/db/replay-migrations.sh and commit the result."
             exit 1
           fi
+
+  supabase:
+    name: Supabase local stack (real pgTAP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+      - run: supabase start
+      - run: supabase test db
+      - if: always()
+        run: supabase stop --no-backup

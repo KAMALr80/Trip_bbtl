@@ -33,3 +33,7 @@ dist-ssr
 
 # Local env (only the publishable key belongs here)
 .env
+
+# Playwright
+test-results/
+playwright-report/
