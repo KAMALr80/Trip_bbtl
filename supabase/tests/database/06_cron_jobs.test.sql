@@ -13,7 +13,7 @@ SELECT ok((SELECT length(key) >= 32 FROM trip_private.cron_keys WHERE name = 'pu
           'the purge key exists and is long enough for check_cron_key');
 
 SELECT tests.authenticate_as(tests.create_user('p1', 30));
-SELECT throws_ok($$SELECT * FROM trip_private.cron_endpoints$$, '42501', 'players cannot read cron endpoints');
+SELECT throws_ok($$SELECT * FROM trip_private.cron_endpoints$$, '42501', NULL, 'players cannot read cron endpoints');
 SELECT tests.clear_authentication();
 
 SELECT * FROM finish();

@@ -51,16 +51,16 @@ SELECT tests.clear_authentication();
 -- ---------------------------------------------------------------- no direct writes
 SELECT tests.authenticate_as(tests.user_id('cap'));
 SELECT throws_ok($$INSERT INTO public.trip_members (trip_id, user_id, role) VALUES ((SELECT trip FROM f), tests.user_id('stranger'), 'player')$$,
-                 '42501', 'even the Captain cannot add members by writing trip_members directly');
+                 '42501', NULL, 'even the Captain cannot add members by writing trip_members directly');
 -- UPDATE with no matching RLS policy silently changes 0 rows (no error), so check the data afterwards.
 UPDATE public.trip_members SET role = 'captain' WHERE trip_id = (SELECT trip FROM f) AND user_id = tests.user_id('p1');
 UPDATE public.trips SET name = 'Renamed' WHERE id = (SELECT trip FROM f);
 SELECT throws_ok($$INSERT INTO public.mission_claims (trip_id, user_id, slot, category, mission_text, points, phase) VALUES ((SELECT trip FROM f), tests.user_id('cap'), 1, 'x', 'x', 99, 'takeoff')$$,
-                 '42501', 'mission points cannot be written directly');
+                 '42501', NULL, 'mission points cannot be written directly');
 SELECT throws_ok($$INSERT INTO public.sealed_quests (trip_id, user_id, kind, drop_no, drop_at, value, title) VALUES ((SELECT trip FROM f), tests.user_id('cap'), 'sealed', 9, now(), 99, 'x')$$,
-                 '42501', 'sealed quests cannot be written directly');
+                 '42501', NULL, 'sealed quests cannot be written directly');
 SELECT throws_ok($$INSERT INTO public.season_champions (trip_id, season, user_id) VALUES ((SELECT trip FROM f), 'trip', tests.user_id('cap'))$$,
-                 '42501', 'crowns cannot be forged');
+                 '42501', NULL, 'crowns cannot be forged');
 SELECT tests.clear_authentication();
 SELECT is((SELECT role FROM public.trip_members WHERE trip_id = (SELECT trip FROM f) AND user_id = tests.user_id('p1')),
           'player', 'roles cannot be changed by writing trip_members directly');

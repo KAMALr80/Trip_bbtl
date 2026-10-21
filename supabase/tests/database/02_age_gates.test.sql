@@ -6,32 +6,33 @@ BEGIN;
 SELECT plan(18);
 
 -- ---------------------------------------------------------------- sign-up trigger on auth.users
+-- Supabase Auth always sets created_at; the trigger skips rows without it.
 SELECT throws_like($$
-  INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data)
-  VALUES (gen_random_uuid(), 'a@x.test', '{"provider":"email"}', '{"legal_version":"2026-10-03"}')$$,
+  INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data, created_at)
+  VALUES (gen_random_uuid(), 'a@x.test', '{"provider":"email"}', '{"legal_version":"2026-10-03"}', now())$$,
   'A birthday is required to sign up', 'email sign-up without a birthday is refused');
 
 SELECT throws_like(format($$
-  INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data)
-  VALUES (gen_random_uuid(), 'b@x.test', '{"provider":"email"}', '{"legal_version":"2026-10-03","birthday":"%s"}')$$,
+  INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data, created_at)
+  VALUES (gen_random_uuid(), 'b@x.test', '{"provider":"email"}', '{"legal_version":"2026-10-03","birthday":"%s"}', now())$$,
   (current_date - interval '12 years')::date),
   'Family Mode is coming soon%', 'email sign-up under 13 is refused');
 
 SELECT lives_ok(format($$
-  INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data)
-  VALUES (gen_random_uuid(), 'c@x.test', '{"provider":"email"}', '{"legal_version":"2026-10-03","birthday":"%s"}')$$,
+  INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data, created_at)
+  VALUES (gen_random_uuid(), 'c@x.test', '{"provider":"email"}', '{"legal_version":"2026-10-03","birthday":"%s"}', now())$$,
   (current_date - interval '15 years')::date),
   'email sign-up at 15 is allowed (today; deck R-904 says self sign-up is 18+ — M6-03 / Q12)');
 
 SELECT throws_like($$
-  INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data)
-  VALUES (gen_random_uuid(), 'd@x.test', '{"provider":"email"}', '{}')$$,
+  INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data, created_at)
+  VALUES (gen_random_uuid(), 'd@x.test', '{"provider":"email"}', '{}', now())$$,
   'Please provide your birthday and accept the current Terms',
   'email sign-up without the current legal version is refused');
 
 SELECT lives_ok($$
-  INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data)
-  VALUES (gen_random_uuid(), 'e@x.test', '{"provider":"google"}', '{}')$$,
+  INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data, created_at)
+  VALUES (gen_random_uuid(), 'e@x.test', '{"provider":"google"}', '{}', now())$$,
   'Google sign-up needs no birthday at sign-up (it is asked before joining)');
 
 -- ---------------------------------------------------------------- set_my_dob

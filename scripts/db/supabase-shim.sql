@@ -48,8 +48,9 @@ CREATE TABLE IF NOT EXISTS auth.users (
   raw_app_meta_data jsonb DEFAULT '{}'::jsonb,
   raw_user_meta_data jsonb DEFAULT '{}'::jsonb,
   is_anonymous boolean NOT NULL DEFAULT false,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now(),
+  -- No defaults, like the real table: Supabase Auth sets these itself.
+  created_at timestamptz,
+  updated_at timestamptz,
   deleted_at timestamptz
 );
 CREATE TABLE IF NOT EXISTS auth.identities (

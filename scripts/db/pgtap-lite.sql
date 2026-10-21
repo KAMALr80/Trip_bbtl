@@ -82,9 +82,11 @@ EXCEPTION WHEN OTHERS THEN
     SQLSTATE, SQLERRM, coalesce($2, '*****'), coalesce($3, '(any message)')));
 END $$;
 
--- pgTAP's 3-argument form: a 5-character second argument is an errcode, anything else a message.
+-- pgTAP's 3-argument form: a 5-character second argument is an errcode and the third is then the
+-- expected error MESSAGE (not a description); otherwise they are (errmsg, description). To check
+-- only an errcode with a description, use the 4-argument form: throws_ok(sql, code, NULL, descr).
 CREATE OR REPLACE FUNCTION public.throws_ok(text, text, text) RETURNS text LANGUAGE sql AS $$
-  SELECT CASE WHEN octet_length($2) = 5 THEN public.throws_ok($1, $2::char(5), NULL, $3)
+  SELECT CASE WHEN octet_length($2) = 5 THEN public.throws_ok($1, $2::char(5), $3, NULL)
               ELSE public.throws_ok($1, NULL, $2, $3) END
 $$;
 CREATE OR REPLACE FUNCTION public.throws_ok(text, text) RETURNS text LANGUAGE sql AS $$

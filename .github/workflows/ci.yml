@@ -2,8 +2,8 @@
 #   web       install → typecheck → lint → unit tests → build → end-to-end smoke (signed out)
 #   database  replays every migration onto the runner's Postgres and runs the pgTAP tests; checks the
 #             committed schema snapshot is current (no Docker, see supabase/tests/README.md)
-#   supabase  the same pgTAP tests on the real Supabase local stack (`supabase start` + real pgTAP).
-#             Non-blocking until its first green run; then drop `continue-on-error`.
+#   supabase  the same pgTAP tests on the real Supabase local stack (`supabase start` + real pgTAP),
+#             which catches differences from the local stand-ins in scripts/db/
 name: CI
 
 on:
@@ -70,7 +70,6 @@ jobs:
     name: Supabase local stack (real pgTAP)
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1

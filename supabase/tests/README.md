@@ -38,6 +38,8 @@ supabase start && supabase test db
 - Only use the pgTAP functions `pgtap-lite.sql` implements: `plan`, `finish`, `ok`, `is`, `isnt`, `throws_ok`, `throws_like`, `lives_ok`, `pass`, `fail`, `diag`. Add more there if you need them.
 - Some rules use `now()` (mission windows, sealed drops). Fixtures place trip dates relative to today, or move timestamps (`opened_at`, `revealed_at`) into the past. Don't depend on the wall clock beyond that. The phase engine (M2-03) takes `p_at` to remove this problem.
 - An `UPDATE` that no RLS policy allows changes 0 rows **without an error**. Assert on the data afterwards, not on an exception.
+- To check only an error code, use the 4-argument `throws_ok(sql, '42501', NULL, 'description')`. In pgTAP's 3-argument form, a 5-character second argument is the error code and the third is the expected **message**, not a description.
+- Supabase Auth sets `auth.users.created_at` itself, and the sign-up age trigger skips rows without it. Raw inserts into `auth.users` must set it (`tests.create_user` does).
 
 ## What the tests found (Oct 21, 2026)
 
