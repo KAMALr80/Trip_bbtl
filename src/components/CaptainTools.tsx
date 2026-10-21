@@ -29,6 +29,7 @@ import { AvatarButton } from "./PlayerCards";
 import { CaptainCrown } from "./CaptainCrown";
 import { useLook } from "@/lib/look";
 import { SealedQuests } from "./SealedQuests";
+import { PendingMissions } from "./AirportMissions";
 
 type Props = {
   trip: TripWithRole;
@@ -299,6 +300,7 @@ export function CaptainTools({
             </Button>
           ))}
         </div>
+        <PendingMissions trip={trip} members={members} cards={cards} userId={userId} />
         {captain ? (
           <Button
             variant="ghost"

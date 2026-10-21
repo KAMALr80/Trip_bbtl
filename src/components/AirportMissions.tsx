@@ -66,7 +66,7 @@ const STATUS: Record<Claim["status"], string> = {
 };
 
 /** Security Check · Secret Missions — cinematic Takeoff / Home Missions page. Points and caps live on the server. */
-export function SecretMissions({
+export function AirportMissions({
   trip,
   userId,
   viewOnly,

@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { AvatarButton, PlayerCardView } from "@/components/PlayerCards";
 import { SealedQuests } from "@/components/SealedQuests";
 import { SeasonGames, seasonGamesApply, todaysSeasonGame } from "@/components/SeasonGames";
-import { SecretMissions } from "@/components/SecretMissions";
+import { AirportMissions } from "@/components/AirportMissions";
 import { TripDayGames, tripIsLive } from "@/components/TripDayGames";
 import { PlayNights } from "@/components/GameNights";
 import { GameNightCabin } from "@/components/GameNightCabin";
@@ -1561,7 +1561,7 @@ function PlayDetail(
         />
       )}{" "}
       {detail === "missions" && (
-        <SecretMissions
+        <AirportMissions
           trip={trip}
           userId={userId}
           viewOnly={viewOnly}
