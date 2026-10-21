@@ -36,7 +36,7 @@ function retry(error: unknown, fallback: () => void) {
 }
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { reportClientError } from "../lib/error-reporting";
 
 function NotFoundComponent() {
   return (
@@ -68,7 +68,7 @@ function ErrorView({ error, reset }: ErrorComponentProps) {
   const [report, setReport] = useState<"idle" | "sending" | "sent" | "failed">("idle");
   const [reportError, setReportError] = useState("");
   useEffect(() => {
-    reportLovableError(error instanceof Error ? error : new Error(String(error)), { boundary: "tanstack_root_error_component" });
+    reportClientError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
   if (cinematic) return <main className="cinematic-error min-h-dvh px-5 pb-[var(--nav-clearance)] grid place-items-center"><div className="w-full max-w-md text-center"><BrandLockup className="text-2xl mb-5"/><img src={errorPilot} alt="A friendly bunny pilot" className="cinematic-error-pilot" width={900} height={900}/><p className="cinematic-error-board">FLIGHT TJ404 · DELAYED</p><h1 className="font-display text-4xl font-extrabold mt-5">This page missed its flight</h1><p className="mt-3 text-sm">Something went wrong on our end. Your trips and stamps are safe. Try again, or head back to the lounge.</p><div className="grid gap-3 mt-6"><button className="cinematic-error-primary" onClick={() => retry(error, () => {router.invalidate();reset();})}>Try again</button><a className="cinematic-error-secondary" href="/">Back to Home</a></div>{report === "sent" ? <p role="status" className="mt-5 text-cyan-300">Thanks — the founder has it.</p> : <><button className="mt-5 text-cyan-300 underline" disabled={report === "sending"} onClick={async () => {setReport("sending");const {data} = await supabase.auth.getUser();if (!data.user) {setReport("failed");setReportError("Sign in to report this problem.");return;}const {error: insertError} = await supabase.from("bug_reports").insert({user_id:data.user.id,trip_id:null,page:typeof window !== "undefined" ? window.location.pathname.slice(0,80) : "/",description:`App error: ${error instanceof Error ? error.message : String(error)}`.slice(0,2000),screenshot_path:null,user_agent:navigator.userAgent.slice(0,400),app_version:APP_VERSION});if(insertError){setReport("failed");setReportError("Couldn't send the report. Please try again.");}else setReport("sent");}}>⚑ {report === "sending" ? "Sending…" : "Report this problem"}</button>{reportError && <p role="alert" className="text-red-300 text-sm mt-2">{reportError}</p>}</>}<p className="mt-4 text-xs text-muted-foreground leading-relaxed">Need a hand? <a href="mailto:hello@tripjunkies.app" className="underline">hello@tripjunkies.app</a> · <a href="mailto:support@tripjunkies.app" className="underline">support@tripjunkies.app</a> · <a href="mailto:safety@tripjunkies.app" className="underline">safety@tripjunkies.app</a></p></div></main>;

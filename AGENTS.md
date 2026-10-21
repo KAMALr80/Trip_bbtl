@@ -1,11 +1,13 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting published git history — force pushing, or rebasing/amending/squashing commits that are already pushed — as it rewrites history on Lovable's side and the user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in the editor, so keep the branch in a working state.
+# Architecture rules (from the Lovable build rounds)
+
+These are the database and app rules the code was built against. They still describe the current
+code; the target design and the rules from the founder deck are in [`dev-docs/`](dev-docs/README.md).
+When a rule here conflicts with the deck spec ([`dev-docs/02-game-rules-spec.md`](dev-docs/02-game-rules-spec.md)),
+the deck wins and this list is updated. More rules: `src/AGENTS.md`, `src/components/AGENTS.md`,
+`supabase/AGENTS.md`. Index: [`docs/decisions/`](docs/decisions/README.md).
+
 - Season prizes are read only through season_info (hidden until crowning); champions are locked in server-side by finalize_season so they can't be forged.
 - Photo wall unions existing game-photo tables via trip_photos; Captain deletes hide photos via photo_removed rather than deleting game rows.
-<!-- LOVABLE:END -->
 
 - Keep sign-in, onboarding, the on-demand welcome page, five tabs and About at `/`; invite links return there so navigation stays inside the shared app shell.
 - Read the founder-controlled visual look from the public app_settings row so signed-out splash and sign-in honor it without changing account permissions.
@@ -37,7 +39,7 @@
 
 - Account consent and Founding Member eligibility use identity-checked private functions, while public legal pages stay readable without sign-in; this keeps legal history and badges private.
 - New real Trips default to FULL through the existing insert trigger, while the founder can still control existing levels; this avoids Preview walls without changing established Trips.
-- Age tiers (18+ self sign-up, 13–17 only via guardian-confirmed teen invites, Captains 21+, under-21 joins pending) are enforced in trip_private functions/triggers (guard_auth_signup_age, set_teen_dob, join_trip, manage_trip_member, inspiration_age_gate), so the client can't bypass them.
+- Age tiers (13+ self sign-up; 13–17 join a trip only with Captain approval — via the join code on a2c trips, or a guardian-confirmed teen invite — and in one trip at a time; Captains 21+; under-21 joins pending; see supabase/tests/database/02_age_gates.test.sql. The deck's target, 18+ self sign-up and teen invites only, is M6-03) are enforced in trip_private functions/triggers (guard_auth_signup_age, set_teen_dob, join_trip, manage_trip_member, inspiration_age_gate), so the client can't bypass them.
 - Play uses shared flight cards and raw-point footer in both looks; a2c rooms enter the full-screen live cabin and show Home/Play reminders and .ics exports. Legacy Play remains unchanged; no scoring fork.
 - Use season_rule to opt new Trips and At Home rooms into short-season timing; preserve legacy schedules and quest behavior so existing rooms are not retroactively changed.
 - Window Seat prep is creator-checked; A2c quest templates use filtered tags/insights and minor proof excludes squad; legacy stays unchanged.

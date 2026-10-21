@@ -45,19 +45,18 @@ export async function markSeen(admin: Admin, tripId: string, kind: string, texts
 
 /** App-paid AI (not the user's limit): returns a list of short strings, or [] on any failure. */
 export async function askList(instructions: string, payload: object, tripId: string | null = null, paid?: { log: import("./ai-quota.server").UsageLog }, userId: string | null = null): Promise<string[]> {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key) { if (paid) throw new Error("AI unavailable"); return []; }
+  const { getAiModel } = await import("@/integrations/ai/index.server");
+  const ai = getAiModel();
+  if (!ai) { if (paid) throw new Error("AI unavailable"); return []; }
   // Paid calls were already gated by spend_credits; app-paid top-ups check the guard and fall back to pre-written pools.
   if (!paid && !(await (await import("./ai-quota.server")).appAiAllowed("auto_refresh", tripId, userId))) return [];
   try {
-    const { createOpenAI } = await import("@ai-sdk/openai");
     const { streamText } = await import("ai");
-    const provider = createOpenAI({ baseURL: "https://ai.gateway.lovable.dev/v1", apiKey: key, headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" } });
-    const result = streamText({ model: provider.responses("openai/gpt-6-astra"), instructions: `${instructions} ${RULES} Return ONLY a JSON array of strings.`, messages: [{ role: "user", content: JSON.stringify(payload) }], providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", store: false } } });
+    const result = streamText({ model: ai.model, instructions: `${instructions} ${RULES} Return ONLY a JSON array of strings.`, messages: [{ role: "user", content: JSON.stringify(payload) }], providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", store: false } } });
     const text = await result.text;
     const { logAppAi } = await import("./ai-quota.server");
-    if (paid) await paid.log("openai/gpt-6-astra", await result.usage);
-    else await logAppAi(tripId, "auto_refresh", "openai/gpt-6-astra", await result.usage, userId);
+    if (paid) await paid.log(ai.modelId, await result.usage);
+    else await logAppAi(tripId, "auto_refresh", ai.modelId, await result.usage, userId);
     const arr = JSON.parse(text.match(/\[[\s\S]*\]/)?.[0] ?? "[]");
     return Array.isArray(arr) ? arr.filter((s): s is string => typeof s === "string" && s.trim().length > 3 && s.length <= 200 && safeContent(s)).map((s) => s.trim()) : [];
   } catch (cause) { if (paid) throw cause; return []; }
@@ -66,14 +65,13 @@ export async function askList(instructions: string, payload: object, tripId: str
 export type CheckinTask = { category: string; title: string; what: string; backstory: string; keywords: string[] };
 /** Paid AI for Early Check-In tasks in the card format; throws on failure so the caller refunds. */
 export async function askTasks(instructions: string, payload: object, paid: { log: import("./ai-quota.server").UsageLog }): Promise<CheckinTask[]> {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("AI unavailable");
-  const { createOpenAI } = await import("@ai-sdk/openai");
+  const { getAiModel } = await import("@/integrations/ai/index.server");
+  const ai = getAiModel();
+  if (!ai) throw new Error("AI unavailable");
   const { streamText } = await import("ai");
-  const provider = createOpenAI({ baseURL: "https://ai.gateway.lovable.dev/v1", apiKey: key, headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" } });
-  const result = streamText({ model: provider.responses("openai/gpt-6-astra"), instructions: `${instructions} ${RULES} Return ONLY a JSON array of objects with keys category, title, what, backstory, keywords (array of 2-4 strings).`, messages: [{ role: "user", content: JSON.stringify(payload) }], providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", store: false } } });
+  const result = streamText({ model: ai.model, instructions: `${instructions} ${RULES} Return ONLY a JSON array of objects with keys category, title, what, backstory, keywords (array of 2-4 strings).`, messages: [{ role: "user", content: JSON.stringify(payload) }], providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", store: false } } });
   const text = await result.text;
-  await paid.log("openai/gpt-6-astra", await result.usage);
+  await paid.log(ai.modelId, await result.usage);
   const arr = JSON.parse(text.match(/\[[\s\S]*\]/)?.[0] ?? "[]") as unknown;
   if (!Array.isArray(arr)) return [];
   return arr.filter((t): t is CheckinTask => !!t && typeof t === "object" && typeof (t as CheckinTask).title === "string" && typeof (t as CheckinTask).what === "string")

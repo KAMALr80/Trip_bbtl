@@ -1,0 +1,953 @@
+{
+  "src/components/AboutStory.tsx": {
+    "prettier/prettier": {
+      "count": 4
+    }
+  },
+  "src/components/ActivityAlternative.tsx": {
+    "prettier/prettier": {
+      "count": 11
+    }
+  },
+  "src/components/AdultCards.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "prettier/prettier": {
+      "count": 12
+    }
+  },
+  "src/components/AiCredits.tsx": {
+    "prettier/prettier": {
+      "count": 41
+    }
+  },
+  "src/components/AiGuard.tsx": {
+    "prettier/prettier": {
+      "count": 34
+    }
+  },
+  "src/components/AtHome.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "prettier/prettier": {
+      "count": 134
+    }
+  },
+  "src/components/BetaAccess.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    },
+    "prettier/prettier": {
+      "count": 117
+    }
+  },
+  "src/components/BetaCodes.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "prettier/prettier": {
+      "count": 67
+    }
+  },
+  "src/components/BrandLockup.tsx": {
+    "prettier/prettier": {
+      "count": 6
+    }
+  },
+  "src/components/BugInbox.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "prettier/prettier": {
+      "count": 110
+    }
+  },
+  "src/components/CaptainChecklist.tsx": {
+    "prettier/prettier": {
+      "count": 38
+    }
+  },
+  "src/components/CaptainCrown.tsx": {
+    "prettier/prettier": {
+      "count": 2
+    }
+  },
+  "src/components/CaptainExtras.tsx": {
+    "prettier/prettier": {
+      "count": 55
+    }
+  },
+  "src/components/CaptainTools.tsx": {
+    "prettier/prettier": {
+      "count": 38
+    }
+  },
+  "src/components/CheckinShowTell.tsx": {
+    "prettier/prettier": {
+      "count": 18
+    }
+  },
+  "src/components/Checkout.tsx": {
+    "prettier/prettier": {
+      "count": 38
+    }
+  },
+  "src/components/CinematicMonthCalendar.tsx": {
+    "prettier/prettier": {
+      "count": 36
+    }
+  },
+  "src/components/CinematicSplash.tsx": {
+    "prettier/prettier": {
+      "count": 22
+    }
+  },
+  "src/components/CinematicTourSlides.tsx": {
+    "prettier/prettier": {
+      "count": 21
+    }
+  },
+  "src/components/ConfirmHost.tsx": {
+    "prettier/prettier": {
+      "count": 4
+    }
+  },
+  "src/components/ContentVote.tsx": {
+    "prettier/prettier": {
+      "count": 19
+    }
+  },
+  "src/components/CountryFlag.tsx": {
+    "prettier/prettier": {
+      "count": 2
+    }
+  },
+  "src/components/CrewGuide.tsx": {
+    "prettier/prettier": {
+      "count": 44
+    }
+  },
+  "src/components/CrownCelebration.tsx": {
+    "prettier/prettier": {
+      "count": 49
+    }
+  },
+  "src/components/CultureA2eSetup.tsx": {
+    "prettier/prettier": {
+      "count": 48
+    }
+  },
+  "src/components/CultureBadgeRow.tsx": {
+    "prettier/prettier": {
+      "count": 2
+    }
+  },
+  "src/components/CultureExperiences.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "prettier/prettier": {
+      "count": 201
+    }
+  },
+  "src/components/CultureQuest.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "prettier/prettier": {
+      "count": 32
+    }
+  },
+  "src/components/CultureShowcase.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "prettier/prettier": {
+      "count": 28
+    }
+  },
+  "src/components/DeletedTripNotes.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "prettier/prettier": {
+      "count": 3
+    }
+  },
+  "src/components/EarlyCheckIn.tsx": {
+    "prettier/prettier": {
+      "count": 58
+    }
+  },
+  "src/components/ExperiencePreviews.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    },
+    "prettier/prettier": {
+      "count": 73
+    }
+  },
+  "src/components/ExploreTour.tsx": {
+    "prettier/prettier": {
+      "count": 32
+    }
+  },
+  "src/components/FirstRunWelcome.tsx": {
+    "prettier/prettier": {
+      "count": 28
+    }
+  },
+  "src/components/FounderFeatures.tsx": {
+    "prettier/prettier": {
+      "count": 40
+    }
+  },
+  "src/components/GameArcade.tsx": {
+    "prettier/prettier": {
+      "count": 47
+    }
+  },
+  "src/components/GameExtrasC2.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "prettier/prettier": {
+      "count": 56
+    }
+  },
+  "src/components/GameNightCabin.tsx": {
+    "prettier/prettier": {
+      "count": 28
+    }
+  },
+  "src/components/GameNightCalendar.tsx": {
+    "prettier/prettier": {
+      "count": 46
+    }
+  },
+  "src/components/GameNightExtras.tsx": {
+    "prettier/prettier": {
+      "count": 49
+    }
+  },
+  "src/components/GameNights.tsx": {
+    "prettier/prettier": {
+      "count": 160
+    }
+  },
+  "src/components/GamePlanPicker.tsx": {
+    "prettier/prettier": {
+      "count": 51
+    }
+  },
+  "src/components/GameRooms.tsx": {
+    "prettier/prettier": {
+      "count": 116
+    }
+  },
+  "src/components/GameScene.tsx": {
+    "prettier/prettier": {
+      "count": 18
+    }
+  },
+  "src/components/GameWheel.tsx": {
+    "prettier/prettier": {
+      "count": 14
+    }
+  },
+  "src/components/HomeDashboard.tsx": {
+    "prettier/prettier": {
+      "count": 92
+    }
+  },
+  "src/components/HomeDayFlow.tsx": {
+    "prettier/prettier": {
+      "count": 38
+    }
+  },
+  "src/components/HomeLayoutMockups.tsx": {
+    "prettier/prettier": {
+      "count": 97
+    }
+  },
+  "src/components/HostSwaps.tsx": {
+    "prettier/prettier": {
+      "count": 58
+    }
+  },
+  "src/components/Inspiration.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "prettier/prettier": {
+      "count": 78
+    }
+  },
+  "src/components/InviteCode.tsx": {
+    "prettier/prettier": {
+      "count": 4
+    }
+  },
+  "src/components/InvitePreview.tsx": {
+    "prettier/prettier": {
+      "count": 25
+    }
+  },
+  "src/components/Itinerary.tsx": {
+    "prettier/prettier": {
+      "count": 43
+    }
+  },
+  "src/components/JourneyMap.tsx": {
+    "prettier/prettier": {
+      "count": 85
+    }
+  },
+  "src/components/JourneyPhases.tsx": {
+    "prettier/prettier": {
+      "count": 8
+    }
+  },
+  "src/components/LegalConsent.tsx": {
+    "prettier/prettier": {
+      "count": 19
+    }
+  },
+  "src/components/MeExtras.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "prettier/prettier": {
+      "count": 90
+    }
+  },
+  "src/components/MottoField.tsx": {
+    "prettier/prettier": {
+      "count": 12
+    }
+  },
+  "src/components/NightGamePicker.tsx": {
+    "prettier/prettier": {
+      "count": 18
+    }
+  },
+  "src/components/OfflineTripCards.tsx": {
+    "prettier/prettier": {
+      "count": 7
+    }
+  },
+  "src/components/OnePhoneNight.tsx": {
+    "prettier/prettier": {
+      "count": 70
+    }
+  },
+  "src/components/PassportBook.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "prettier/prettier": {
+      "count": 71
+    }
+  },
+  "src/components/PassportCollage.tsx": {
+    "prettier/prettier": {
+      "count": 9
+    }
+  },
+  "src/components/PhaseCountdown.tsx": {
+    "prettier/prettier": {
+      "count": 6
+    }
+  },
+  "src/components/PhaseNotice.tsx": {
+    "prettier/prettier": {
+      "count": 8
+    }
+  },
+  "src/components/PlaceBrowser.tsx": {
+    "prettier/prettier": {
+      "count": 10
+    }
+  },
+  "src/components/PlacePicker.tsx": {
+    "prettier/prettier": {
+      "count": 24
+    }
+  },
+  "src/components/PlayFooter.tsx": {
+    "prettier/prettier": {
+      "count": 12
+    }
+  },
+  "src/components/PlayHub.tsx": {
+    "prettier/prettier": {
+      "count": 112
+    }
+  },
+  "src/components/PlayerCards.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "prettier/prettier": {
+      "count": 75
+    }
+  },
+  "src/components/PlayingChoice.tsx": {
+    "prettier/prettier": {
+      "count": 6
+    }
+  },
+  "src/components/PracticeDay.tsx": {
+    "prettier/prettier": {
+      "count": 22
+    }
+  },
+  "src/components/PublicStamp.tsx": {
+    "prettier/prettier": {
+      "count": 3
+    }
+  },
+  "src/components/RememberedSection.tsx": {
+    "prettier/prettier": {
+      "count": 6
+    }
+  },
+  "src/components/ReportSheet.tsx": {
+    "prettier/prettier": {
+      "count": 11
+    }
+  },
+  "src/components/RoomExperienceCard.tsx": {
+    "prettier/prettier": {
+      "count": 16
+    }
+  },
+  "src/components/SampleExperience.tsx": {
+    "prettier/prettier": {
+      "count": 53
+    }
+  },
+  "src/components/SealedQuests.tsx": {
+    "prettier/prettier": {
+      "count": 47
+    }
+  },
+  "src/components/Season.tsx": {
+    "prettier/prettier": {
+      "count": 153
+    }
+  },
+  "src/components/SeasonGames.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "prettier/prettier": {
+      "count": 52
+    }
+  },
+  "src/components/SeasonQuests.tsx": {
+    "prettier/prettier": {
+      "count": 22
+    }
+  },
+  "src/components/Seasons.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "prettier/prettier": {
+      "count": 261
+    }
+  },
+  "src/components/SeatCap.tsx": {
+    "prettier/prettier": {
+      "count": 13
+    }
+  },
+  "src/components/SecretMissions.tsx": {
+    "prettier/prettier": {
+      "count": 82
+    }
+  },
+  "src/components/ShortList.tsx": {
+    "prettier/prettier": {
+      "count": 6
+    }
+  },
+  "src/components/SoloGuide.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "prettier/prettier": {
+      "count": 55
+    }
+  },
+  "src/components/StampBadge.tsx": {
+    "prettier/prettier": {
+      "count": 8
+    }
+  },
+  "src/components/TestLab.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "prettier/prettier": {
+      "count": 201
+    }
+  },
+  "src/components/TripActions.tsx": {
+    "prettier/prettier": {
+      "count": 8
+    }
+  },
+  "src/components/TripCosts.tsx": {
+    "prettier/prettier": {
+      "count": 136
+    }
+  },
+  "src/components/TripDayGames.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "prettier/prettier": {
+      "count": 162
+    }
+  },
+  "src/components/TripFeedback.tsx": {
+    "prettier/prettier": {
+      "count": 51
+    }
+  },
+  "src/components/TripFlag.tsx": {
+    "prettier/prettier": {
+      "count": 9
+    }
+  },
+  "src/components/TripList.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "prettier/prettier": {
+      "count": 26
+    }
+  },
+  "src/components/TripOverview.tsx": {
+    "prettier/prettier": {
+      "count": 37
+    }
+  },
+  "src/components/TripSectionIcon.tsx": {
+    "prettier/prettier": {
+      "count": 3
+    }
+  },
+  "src/components/TripSheets.tsx": {
+    "prettier/prettier": {
+      "count": 39
+    }
+  },
+  "src/components/TripTimezoneField.tsx": {
+    "prettier/prettier": {
+      "count": 13
+    }
+  },
+  "src/components/TripUnlock.tsx": {
+    "prettier/prettier": {
+      "count": 23
+    }
+  },
+  "src/components/UpdatePrompt.tsx": {
+    "prettier/prettier": {
+      "count": 4
+    }
+  },
+  "src/components/WeeklyQuestion.tsx": {
+    "prettier/prettier": {
+      "count": 85
+    }
+  },
+  "src/components/WelcomeCopy.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "prettier/prettier": {
+      "count": 18
+    }
+  },
+  "src/components/WelcomeLockup.tsx": {
+    "prettier/prettier": {
+      "count": 4
+    }
+  },
+  "src/components/WindowSeatView.tsx": {
+    "prettier/prettier": {
+      "count": 4
+    }
+  },
+  "src/components/ui/button.tsx": {
+    "prettier/prettier": {
+      "count": 2
+    }
+  },
+  "src/integrations/supabase/auth-attacher.ts": {
+    "prettier/prettier": {
+      "count": 7
+    }
+  },
+  "src/integrations/supabase/auth-middleware.ts": {
+    "prettier/prettier": {
+      "count": 41
+    }
+  },
+  "src/integrations/supabase/client.server.ts": {
+    "prettier/prettier": {
+      "count": 13
+    }
+  },
+  "src/integrations/supabase/types.ts": {
+    "prettier/prettier": {
+      "count": 6069
+    }
+  },
+  "src/lib/account.functions.ts": {
+    "prettier/prettier": {
+      "count": 9
+    }
+  },
+  "src/lib/ai-quota.server.ts": {
+    "prettier/prettier": {
+      "count": 25
+    }
+  },
+  "src/lib/app-version.ts": {
+    "prettier/prettier": {
+      "count": 2
+    }
+  },
+  "src/lib/arcade-mix.functions.ts": {
+    "prettier/prettier": {
+      "count": 1
+    }
+  },
+  "src/lib/arcade-mix.server.ts": {
+    "prettier/prettier": {
+      "count": 2
+    }
+  },
+  "src/lib/auth-context.tsx": {
+    "prettier/prettier": {
+      "count": 1
+    }
+  },
+  "src/lib/bug-ai.functions.ts": {
+    "prettier/prettier": {
+      "count": 9
+    }
+  },
+  "src/lib/challenge-category.ts": {
+    "prettier/prettier": {
+      "count": 6
+    }
+  },
+  "src/lib/checkout.functions.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "prettier/prettier": {
+      "count": 1
+    }
+  },
+  "src/lib/compress-image.ts": {
+    "prettier/prettier": {
+      "count": 5
+    }
+  },
+  "src/lib/confirm.ts": {
+    "prettier/prettier": {
+      "count": 1
+    }
+  },
+  "src/lib/content-rules.ts": {
+    "prettier/prettier": {
+      "count": 2
+    }
+  },
+  "src/lib/content.functions.ts": {
+    "prettier/prettier": {
+      "count": 36
+    }
+  },
+  "src/lib/content.server.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "prettier/prettier": {
+      "count": 25
+    }
+  },
+  "src/lib/culture-exp.functions.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    },
+    "prettier/prettier": {
+      "count": 16
+    }
+  },
+  "src/lib/culture-pool.ts": {
+    "prettier/prettier": {
+      "count": 39
+    }
+  },
+  "src/lib/culture-quest.functions.ts": {
+    "prettier/prettier": {
+      "count": 7
+    }
+  },
+  "src/lib/delete-trip.functions.ts": {
+    "prettier/prettier": {
+      "count": 14
+    }
+  },
+  "src/lib/display-game-title.ts": {
+    "prettier/prettier": {
+      "count": 15
+    }
+  },
+  "src/lib/features.tsx": {
+    "prettier/prettier": {
+      "count": 9
+    }
+  },
+  "src/lib/flight-calendar.ts": {
+    "prettier/prettier": {
+      "count": 7
+    }
+  },
+  "src/lib/flight-reminders.ts": {
+    "prettier/prettier": {
+      "count": 8
+    }
+  },
+  "src/lib/friendly-error.ts": {
+    "prettier/prettier": {
+      "count": 1
+    }
+  },
+  "src/lib/game-name.ts": {
+    "prettier/prettier": {
+      "count": 2
+    }
+  },
+  "src/lib/game-night-ai.functions.ts": {
+    "prettier/prettier": {
+      "count": 24
+    }
+  },
+  "src/lib/haptics.ts": {
+    "prettier/prettier": {
+      "count": 1
+    }
+  },
+  "src/lib/inspiration-samples.ts": {
+    "prettier/prettier": {
+      "count": 28
+    }
+  },
+  "src/lib/inspiration.functions.ts": {
+    "prettier/prettier": {
+      "count": 6
+    }
+  },
+  "src/lib/itinerary-ai.functions.ts": {
+    "prettier/prettier": {
+      "count": 7
+    }
+  },
+  "src/lib/itinerary-ai.server.ts": {
+    "prettier/prettier": {
+      "count": 10
+    }
+  },
+  "src/lib/itinerary.ts": {
+    "prettier/prettier": {
+      "count": 19
+    }
+  },
+  "src/lib/lab-mode.ts": {
+    "prettier/prettier": {
+      "count": 6
+    }
+  },
+  "src/lib/lab.functions.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    },
+    "prettier/prettier": {
+      "count": 13
+    }
+  },
+  "src/lib/legal.ts": {
+    "prettier/prettier": {
+      "count": 4
+    }
+  },
+  "src/lib/look.tsx": {
+    "prettier/prettier": {
+      "count": 12
+    }
+  },
+  "src/lib/missions.functions.ts": {
+    "prettier/prettier": {
+      "count": 32
+    }
+  },
+  "src/lib/next-game-night.ts": {
+    "prettier/prettier": {
+      "count": 3
+    }
+  },
+  "src/lib/offline-trip-content.ts": {
+    "prettier/prettier": {
+      "count": 8
+    }
+  },
+  "src/lib/pending-beta.ts": {
+    "prettier/prettier": {
+      "count": 3
+    }
+  },
+  "src/lib/pending-bingo.ts": {
+    "prettier/prettier": {
+      "count": 12
+    }
+  },
+  "src/lib/pending-code.ts": {
+    "prettier/prettier": {
+      "count": 3
+    }
+  },
+  "src/lib/places.ts": {
+    "prettier/prettier": {
+      "count": 4
+    }
+  },
+  "src/lib/play-arrangement.ts": {
+    "prettier/prettier": {
+      "count": 8
+    }
+  },
+  "src/lib/player-cards.ts": {
+    "prettier/prettier": {
+      "count": 14
+    }
+  },
+  "src/lib/practice-prompts.ts": {
+    "prettier/prettier": {
+      "count": 25
+    }
+  },
+  "src/lib/prices.tsx": {
+    "prettier/prettier": {
+      "count": 13
+    }
+  },
+  "src/lib/room-copy.ts": {
+    "prettier/prettier": {
+      "count": 3
+    }
+  },
+  "src/lib/safe-storage.ts": {
+    "prettier/prettier": {
+      "count": 1
+    }
+  },
+  "src/lib/season-games.functions.ts": {
+    "prettier/prettier": {
+      "count": 14
+    }
+  },
+  "src/lib/season-plan.ts": {
+    "prettier/prettier": {
+      "count": 11
+    }
+  },
+  "src/lib/trip-dates.ts": {
+    "prettier/prettier": {
+      "count": 2
+    }
+  },
+  "src/lib/trip-day.functions.ts": {
+    "prettier/prettier": {
+      "count": 77
+    }
+  },
+  "src/lib/trip-display-name.ts": {
+    "prettier/prettier": {
+      "count": 2
+    }
+  },
+  "src/lib/trip-games.ts": {
+    "prettier/prettier": {
+      "count": 32
+    }
+  },
+  "src/lib/trip-names.functions.ts": {
+    "prettier/prettier": {
+      "count": 11
+    }
+  },
+  "src/lib/trip-names.server.ts": {
+    "prettier/prettier": {
+      "count": 14
+    }
+  },
+  "src/lib/trips.ts": {
+    "prettier/prettier": {
+      "count": 6
+    }
+  },
+  "src/lib/viewer-time.ts": {
+    "prettier/prettier": {
+      "count": 13
+    }
+  },
+  "src/routes/__root.tsx": {
+    "prettier/prettier": {
+      "count": 34
+    }
+  },
+  "src/routes/api/public/purge-photos.ts": {
+    "prettier/prettier": {
+      "count": 5
+    }
+  },
+  "src/routes/beta.$code.tsx": {
+    "prettier/prettier": {
+      "count": 10
+    }
+  },
+  "src/routes/home-mockups.tsx": {
+    "prettier/prettier": {
+      "count": 1
+    }
+  },
+  "src/routes/index.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 4
+    },
+    "prettier/prettier": {
+      "count": 57
+    }
+  },
+  "src/routes/join.$code.tsx": {
+    "prettier/prettier": {
+      "count": 9
+    }
+  },
+  "src/routes/legal/$document.tsx": {
+    "prettier/prettier": {
+      "count": 35
+    }
+  }
+}

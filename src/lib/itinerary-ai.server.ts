@@ -1,12 +1,12 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import { getAiModel } from "@/integrations/ai/index.server";
 import { streamText } from "ai";
 import type { UsageLog } from "./ai-quota.server";
 import { PDFDocument } from "pdf-lib";
 import type { ItineraryDay } from "./itinerary";
 
 export async function extractItinerary(input: { text?: string | undefined; mime?: string | undefined; base64?: string | undefined; filename?: string | undefined; destination: string; startDate:string; endDate:string }, log?: UsageLog): Promise<ItineraryDay[]> {
-  const apiKey = process.env['LOVABLE_API_KEY'];
-  if (!apiKey) throw new Error("AI extraction is unavailable right now. Try the quick form instead.");
+  const ai = getAiModel();
+  if (!ai) throw new Error("AI extraction is unavailable right now. Try the quick form instead.");
   if (input.base64 && input.mime === "application/pdf") {
     const pdf = await PDFDocument.load(Uint8Array.from(atob(input.base64), c => c.charCodeAt(0)), { ignoreEncryption:false });
     if (pdf.getPageCount() > 3) throw new Error("Please choose a PDF with 3 pages or fewer.");
@@ -16,10 +16,9 @@ export async function extractItinerary(input: { text?: string | undefined; mime?
   ];
   if (input.base64 && input.mime?.startsWith("image/")) content.push({type:"image",image:new URL(`data:${input.mime};base64,${input.base64}`)});
   if (input.base64 && input.mime === "application/pdf") content.push({type:"file",filename:input.filename || "itinerary.pdf",data:input.base64,mediaType:"application/pdf"});
-  const provider = createOpenAI({baseURL:"https://ai.gateway.lovable.dev/v1",apiKey,headers:{"Lovable-API-Key":apiKey,"X-Lovable-AIG-SDK":"vercel-ai-sdk"}});
-   const result = streamText({model:provider.responses("openai/gpt-6-astra"),instructions:"Extract only itinerary details explicitly present in the source. Return ONLY a JSON array of days, each object exactly {date: YYYY-MM-DD, city: string, note: string, stays: [{name,checkIn,checkOut}], flights: [{date,from,to}], spots: [{name}]}. Dates must fall within the provided trip range. Use empty strings for unknown checkIn/checkOut; do not invent details. A stay may appear on its check-in day only. At most 3 spots per day. For any day describing travel, a flight, an in-air day, or a departure, preserve the original short line in note even if the destination or flight endpoints are unknown. Never infer a flight endpoint. No markdown.",messages:[{role:"user",content}],providerOptions:{openai:{forceReasoning:true,reasoningEffort:"low",reasoningSummary:"auto",store:false,include:["reasoning.encrypted_content"]}}});
+   const result = streamText({model:ai.model,instructions:"Extract only itinerary details explicitly present in the source. Return ONLY a JSON array of days, each object exactly {date: YYYY-MM-DD, city: string, note: string, stays: [{name,checkIn,checkOut}], flights: [{date,from,to}], spots: [{name}]}. Dates must fall within the provided trip range. Use empty strings for unknown checkIn/checkOut; do not invent details. A stay may appear on its check-in day only. At most 3 spots per day. For any day describing travel, a flight, an in-air day, or a departure, preserve the original short line in note even if the destination or flight endpoints are unknown. Never infer a flight endpoint. No markdown.",messages:[{role:"user",content}],providerOptions:{openai:{forceReasoning:true,reasoningEffort:"low",reasoningSummary:"auto",store:false,include:["reasoning.encrypted_content"]}}});
   const response = await result.text;
-  await log?.("openai/gpt-6-astra", await result.usage);
+  await log?.(ai.modelId, await result.usage);
   const match = response.match(/\[[\s\S]*\]/);
   if (!match) throw new Error("Could not read that plan. Try pasting the details or use the quick form.");
   try {

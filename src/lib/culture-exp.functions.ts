@@ -20,14 +20,13 @@ async function loadForAi(ctx: Ctx, id: string) {
 }
 
 async function runAi(instructions: string, payload: object, log: (m: string, u: any) => Promise<void>) {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("AI help is unavailable right now.");
-  const { createOpenAI } = await import("@ai-sdk/openai");
+  const { getAiModel } = await import("@/integrations/ai/index.server");
+  const ai = getAiModel();
+  if (!ai) throw new Error("AI help is unavailable right now.");
   const { streamText } = await import("ai");
-  const provider = createOpenAI({ baseURL: "https://ai.gateway.lovable.dev/v1", apiKey: key, headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" } });
-  const result = streamText({ model: provider.responses("openai/gpt-6-astra"), instructions: `${instructions} ${POLICY}`, messages: [{ role: "user", content: JSON.stringify(payload) }], providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false, include: ["reasoning.encrypted_content"] } } });
+  const result = streamText({ model: ai.model, instructions: `${instructions} ${POLICY}`, messages: [{ role: "user", content: JSON.stringify(payload) }], providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false, include: ["reasoning.encrypted_content"] } } });
   const text = await result.text;
-  await log("openai/gpt-6-astra", await result.usage);
+  await log(ai.modelId, await result.usage);
   return text;
 }
 

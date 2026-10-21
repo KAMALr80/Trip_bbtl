@@ -1,23 +1,18 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import { getAiModel } from "@/integrations/ai/index.server";
 import { streamText } from "ai";
 import type { UsageLog } from "./ai-quota.server";
 
 export async function generateTripNames(input: { destination: string; startDate?: string | undefined; endDate?: string | undefined; tripType?: string | undefined }, log?: UsageLog) {
-  const apiKey = process.env['LOVABLE_API_KEY'];
-  if (!apiKey) throw new Error("Trip name suggestions are unavailable right now. Try a name of your own.");
-  const provider = createOpenAI({
-    baseURL: "https://ai.gateway.lovable.dev/v1",
-    apiKey,
-    headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-  });
+  const ai = getAiModel();
+  if (!ai) throw new Error("Trip name suggestions are unavailable right now. Try a name of your own.");
   const result = streamText({
-    model: provider.responses("openai/gpt-6-astra"),
+    model: ai.model,
     instructions: "Suggest exactly three distinctive, short, fun, inclusive group trip names. Trip-neutral: do not assume international travel, flights, passports, drinking, gender, or age. Use the destination and trip type where helpful; dates may inspire a season. Keep it clean. Return ONLY a JSON array of three strings, each under 55 characters. No markdown.",
     messages: [{ role: "user", content: JSON.stringify(input) }],
     providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false, include: ["reasoning.encrypted_content"] } },
   });
   const text = await result.text;
-  await log?.("openai/gpt-6-astra", await result.usage);
+  await log?.(ai.modelId, await result.usage);
   const match = text.match(/\[[\s\S]*\]/);
   if (!match) throw new Error("Couldn't come up with names this time. Try again or type your own.");
   let names: unknown;
@@ -27,17 +22,16 @@ export async function generateTripNames(input: { destination: string; startDate?
 }
 
 export async function generateTripMottos(input: { name: string; destination: string; tripType?: string | undefined }, log?: UsageLog) {
-  const apiKey = process.env['LOVABLE_API_KEY'];
-  if (!apiKey) throw new Error("Motto ideas are unavailable right now. Try writing your own.");
-  const provider = createOpenAI({ baseURL: "https://ai.gateway.lovable.dev/v1", apiKey, headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" } });
+  const ai = getAiModel();
+  if (!ai) throw new Error("Motto ideas are unavailable right now. Try writing your own.");
   const result = streamText({
-    model: provider.responses("openai/gpt-6-astra"),
+    model: ai.model,
     instructions: "Write exactly three short, fun, inclusive trip mottos. Each is one line playing on what the group's trip name means, but NEVER include or repeat the trip name itself and never start with it or a 'Name:' prefix. Trip-neutral: don't assume flights, drinking, gender or age. Keep it clean. Each must be 60 characters or fewer. Return ONLY a JSON array of three strings. No markdown.",
     messages: [{ role: "user", content: JSON.stringify(input) }],
     providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false, include: ["reasoning.encrypted_content"] } },
   });
   const text = await result.text;
-  await log?.("openai/gpt-6-astra", await result.usage);
+  await log?.(ai.modelId, await result.usage);
   const match = text.match(/\[[\s\S]*\]/);
   let list: unknown = null;
   try { list = match ? JSON.parse(match[0]) : null; } catch { list = null; }

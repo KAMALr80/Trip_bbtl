@@ -1,24 +1,37 @@
-# Squad Goals
+# TripJunkies™
 
-Build "Squad Season" (working name), a mobile-first web app for group trips. Groups bond before the trip with weekly game nights on video calls, compete during the trip with daily challenges, and get a shareable recap after. It only works for trips with dates (friends trips, bachelorettes, birthdays, weddings, reunions) - it is not a general party game. Never hardcode any destination; every trip's content comes from what its Captain enters. LOOK AND FEEL (most important): it must feel awesome, cute, fun and engaging, like a polished consumer app people want to screenshot - not a dashboard or a template. Bright playful palette inspired by Bangkok taxis (hot pink #E8247C, green #1D9A5B, orange #F2731D, blue #2A5BD7) on a soft pink-tinted off-white, with a matching dark mode (deep plum background). Fonts: Bricolage Grotesque (chunky display, headings and big numbers) and Figtree (body). Rounded cards with soft colored tints, chunky pill buttons, playful emoji accents, bouncy micro-animations on taps, confetti for wins, sticker-like badges, cute empty states with friendly copy. Big tap targets, one-hand phone use. Bottom tab bar with 5 tabs and icons: Home, Play, Trip, Squad, Me. Quick actions open as bottom-sheet pop-ups. For now build the shell of each tab with tasteful placeholder content. AUTH: use Lovable Cloud for database and auth. Sign in with Google, Apple or email; stay signed in. After first sign-in, show 4 swipeable illustrated How it works screens: (1) Join your trip with a link or code, (2) Game nights before you go with a spinning wheel, (3) Play during the trip: daily bingo, quests, secret missions, (4) Get crowned: two seasons, two champions, mystery prizes. Then a welcome screen with two big buttons: Start a trip and Join a trip (wire them up in the next step). Make it an installable web app (PWA): app icon, opens full screen from the iPhone home screen, light and fast on slow mobile data abroad.
+A mobile-first game for group trips: crews play through Pre-Flight, Takeoff, Trip Season and Baggage Claim, earn two crowns, and keep a passport of stamps and postcards.
 
-This project was built with [Lovable](https://lovable.dev).
+- **Handover pack, plans and rules:** [`dev-docs/`](dev-docs/README.md). Start with [`01-current-state`](dev-docs/01-current-state.md) and the [milestones](dev-docs/milestones/).
+- **Architecture rules for the current code:** [`docs/decisions/`](docs/decisions/README.md).
 
-## Build with Lovable
+## Stack
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/ff8fd31b-2c16-4b96-b5ff-87031aed303d).
+TypeScript, React 19, TanStack Start / Router / Query, Tailwind v4, shadcn/ui. The app is served by a Cloudflare Worker (Nitro). Supabase provides Postgres, Auth, Storage and pg_cron. Game rules are `SECURITY DEFINER` functions in the `trip_private` schema.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+## Setup
 
-## Development
+Requirements: [bun](https://bun.sh) 1.x and Node 22. For the database tools you also need the PostgreSQL 16 server binaries (`initdb`, `pg_ctl`); Docker isn't required.
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+```bash
+bun install
+cp .env.example .env.local     # then fill in the Supabase URL and publishable key
+bun run dev                    # http://localhost:8080
 ```
+
+> Point `.env.local` at a local or staging Supabase project, not production (see [dev-docs/07](dev-docs/07-dev-setup-and-lovable-exit.md)).
+
+## Scripts
+
+| Command | What it does |
+|---|---|
+| `bun run dev` | Dev server with SSR |
+| `bun run build` | Production build into `.output/` (Cloudflare Worker + static assets) |
+| `npx tsc --noEmit` | Typecheck |
+| `bun run lint` | ESLint |
+| `scripts/db/test.sh` | Replays every migration onto a throwaway Postgres and runs the pgTAP tests ([details](supabase/tests/README.md)) |
+| `REPLAY_HOOK='python3 scripts/db/inventory.py' scripts/db/replay-migrations.sh` | Regenerates the schema snapshot and DB inventory ([details](docs/inventory/README.md)) |
+
+## Configuration
+
+All environment variables are listed in [`.env.example`](.env.example). Server secrets (`SUPABASE_SERVICE_ROLE_KEY`, `AI_API_KEY`, `CRON_SECRET`) are set per environment with `wrangler secret put` and never go in the client bundle.

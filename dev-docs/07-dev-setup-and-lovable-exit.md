@@ -27,9 +27,10 @@ bun run lint         # eslint
 | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` | client (`.env`) | browser Supabase client | Publishable / anon key, safe in the client |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | server | SSR / server functions | |
 | `SUPABASE_SERVICE_ROLE_KEY` | **server secret** | `client.server.ts` (admin client: sandbox, AI top-ups, purge) | **Never** expose to the client |
-| `LOVABLE_API_KEY` | server secret | AI gateway (12 call sites) | **Replace** (§3.5) |
-| `LOVABLE_CRON_SECRET`, `LOVABLE_CRON_SECRET_PREVIOUS` | server secret | `/api/public/purge-photos` auth (`cron-auth.ts`) | **Replace** (§3.6). pg_cron also uses a DB-held key (`trip_private.cron_keys`, `check_cron_key`) |
-| *(new)* `AI_PROVIDER_API_KEY`, `SENTRY_DSN`, `FCM_SERVICE_ACCOUNT`, `EMAIL_API_KEY`, `PLACES_API_KEY` | server secrets | M0/M4 | |
+| `AI_API_KEY`, `AI_MODEL`, `AI_BASE_URL` (optional) | server secret | AI provider for all 12 call sites (`src/integrations/ai/index.server.ts`) | Done (M0-08). While `AI_API_KEY` is unset, an existing `LOVABLE_API_KEY` still uses the Lovable gateway; remove it once every environment has the new key |
+| `CRON_SECRET`, `CRON_SECRET_PREVIOUS` | server secret | `/api/public/*` cron auth (`cron-auth.ts`) | Renamed (M0-10). The photo-purge job authenticates with the DB-held key in `trip_private.cron_keys` and reads its URL from `trip_private.cron_endpoints` (set per environment) |
+| `VITE_SENTRY_DSN` | client | Browser error reporting (`src/lib/error-reporting.ts`) | Done (M0-12, browser side) |
+| *(new)* `SENTRY_DSN` (Worker), `FCM_SERVICE_ACCOUNT`, `EMAIL_API_KEY`, `PLACES_API_KEY` | server secrets | M0/M4 | |
 
 ### Regenerating DB types
 ```bash
@@ -102,7 +103,7 @@ The project is tied to Lovable in **ten places**. Do them in this order (it's M0
 - [ ] Set server secrets with `wrangler secret put …` for each environment.
 
 ### 3.5 AI gateway
-- [ ] Twelve call sites read `LOVABLE_API_KEY` and call `https://ai.gateway.lovable.dev/v1` with Lovable model ids (e.g. `openai/gpt-6-astra` in `arcade-mix.server.ts`). Files:
+- [x] *(Done Oct 21, 2026, see M0 status.)* Twelve call sites read `LOVABLE_API_KEY` and call `https://ai.gateway.lovable.dev/v1` with Lovable model ids (e.g. `openai/gpt-6-astra` in `arcade-mix.server.ts`). Files:
   - `inspiration.functions.ts`, `itinerary-ai.server.ts`, `bug-ai.functions.ts`
   - `content.server.ts`, `arcade-mix.server.ts`, `culture-exp.functions.ts`
   - `trip-day.functions.ts`, `trip-names.server.ts`, `culture-quest.functions.ts`
@@ -111,7 +112,7 @@ The project is tied to Lovable in **ten places**. Do them in this order (it's M0
 - [ ] Keep `trip_private.ai_gate` / `ai_usage` logging and `content-rules.ts` + `safeContent` on every path.
 
 ### 3.6 Cron secret
-- [ ] Rename `LOVABLE_CRON_SECRET` → `CRON_SECRET` in `src/integrations/supabase/cron-auth.ts`. Keep the rotation support (`_PREVIOUS`).
+- [x] *(Done.)* Rename `LOVABLE_CRON_SECRET` → `CRON_SECRET` in `src/integrations/supabase/cron-auth.ts`. Keep the rotation support (`_PREVIOUS`).
 - [ ] Re-check that the `purge-expired-trip-photos` pg_cron job calls the right URL for each environment.
 
 ### 3.7 Error reporting

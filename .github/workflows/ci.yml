@@ -1,0 +1,81 @@
+# M0-05 · CI pipeline.
+#   web       install → typecheck → lint → unit tests → build → end-to-end smoke (signed out)
+#   database  replays every migration onto the runner's Postgres and runs the pgTAP tests; checks the
+#             committed schema snapshot is current (no Docker, see supabase/tests/README.md)
+#   supabase  the same pgTAP tests on the real Supabase local stack (`supabase start` + real pgTAP),
+#             which catches differences from the local stand-ins in scripts/db/
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web (typecheck, lint, tests, build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      # Existing violations are recorded in eslint-suppressions.json; new ones fail. After fixing
+      # some, run `npx eslint . --prune-suppressions` and commit the smaller file.
+      - run: npx eslint . --quiet
+      - run: bun run test
+      - run: bun run build
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
+
+  database:
+    name: Database (migrations + pgTAP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Postgres version
+        run: ls -d /usr/lib/postgresql/*/bin && pg_dump --version
+
+      - name: Replay migrations, apply the seed, run pgTAP tests
+        run: scripts/db/test.sh
+
+      - name: Schema snapshot and inventory are up to date
+        run: |
+          REPLAY_HOOK='python3 scripts/db/inventory.py' scripts/db/replay-migrations.sh
+          if ! git diff --exit-code -- supabase/baseline docs/inventory; then
+            echo "::error::A migration changed the schema. Run: REPLAY_HOOK='python3 scripts/db/inventory.py' scripts/db/replay-migrations.sh and commit the result."
+            exit 1
+          fi
+
+  supabase:
+    name: Supabase local stack (real pgTAP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+      - run: supabase start
+      - run: supabase test db
+      - if: always()
+        run: supabase stop --no-backup
