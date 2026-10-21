@@ -1,0 +1,103 @@
+# M1 — Cleanup & Restructure
+
+**Goal:**
+- Remove what the deck dropped.
+- Get down to **one visual look**, **real routes** and a **data layer**.
+- Freeze old trips as archives.
+
+After M1 the codebase has one path per feature and is ready for the new engine.
+**Depends on:** M0 (tests + founder decisions Q1, Q6, Q15, Q20).
+**Exit criteria:**
+- [05](../05-legacy-retire-list.md) items are hidden and their writes revoked.
+- `index.tsx` is gone; tabs have URLs.
+- No `look` switch remains.
+- Components don't import the Supabase client.
+- The M0 characterisation tests are still green (updated only where a feature was removed on purpose).
+
+| ID | Task | Size |
+|---|---|---|
+| M1-01 | Archive mode for existing trips (`rules_version`) | M |
+| M1-02 | Remove retired features from the UI | L |
+| M1-03 | One look: remove "Original", set Airline Look tokens | L |
+| M1-04 | Split `index.tsx` into real routes + new tab bar | L |
+| M1-05 | Data layer (`src/data`) + regenerated types | L |
+| M1-06 | Feature folders + Prettier pass | M |
+| M1-07 | i18n scaffolding (English catalog) | M |
+| M1-08 | Revoke + archive retired DB objects | M |
+| M1-09 | Migration baseline for new environments | M |
+| M1-10 | Remove FULL/PREVIEW levels and per-trip feature switches | M |
+| M1-11 | Mine retired content into a seed file | S |
+| M1-12 | Contrast & readability fixes (beta notes) | S |
+
+---
+
+### M1-01 · Archive mode for existing trips
+- Add `trips.rules_version smallint NOT NULL DEFAULT 2`. Set it to `1` for every trip created before the cutover (legacy, a2c, a2e).
+- Build **one read-only `ArchivedTrip` view** showing name, dates, place, crew avatars, crowns already won, photos (until purge), passport stamps.
+- All play actions are refused on the server for `rules_version = 1` (one guard in a shared helper used by every write function).
+- Tell the active groups (Siam Vibes `VRFQQM`) before release (Q1).
+- **Acceptance:** an old trip opens read-only; no write RPC succeeds on it (pgTAP); stamps and profiles are untouched.
+
+### M1-02 · Remove retired features from the UI
+- Work through [05 §2](../05-legacy-retire-list.md) **L1–L23**, one PR per item group:
+  - game night (L1–L3)
+  - Question of the Week + Quick Vote (L4–L5)
+  - Trip pot (L6)
+  - rank, credits, teams, party (L7–L10)
+  - check-in, secret missions, trip-day games (L11–L13)
+  - rooms, inspiration, Wrapped (L14–L16)
+  - mockups, preview levels, scoring readouts, card facts (L18–L22)
+- Big mixed files (`Seasons.tsx` 68k, `Season.tsx`, `GameNights.tsx`, `PlayHub.tsx`) get **split first**, then pruned.
+- Leave **placeholders** in the Play hub for the cards M2/M3 will fill: Daily Card, Crew Check, Game Night Live, Postcard Picks.
+- **Acceptance:** no route or button reaches a retired feature; bundle size drops; the remaining E2E smoke tests pass.
+
+### M1-03 · One look: Airline Look tokens
+- Remove `src/lib/look.tsx`, `useLook`, `LOOK_KEYS`, every `cinematic ? … : …` branch (keep the Cinematic branch; it's closer to the deck), the `app_settings.look` reads, and the look switcher.
+- Create `src/design/tokens.css` from deck slide 21 (navy, indigo, cyan, pink, orange, sun yellow) + `docs/BRAND.md`. Strip unused CSS from the 227 KB `styles.css`.
+- Base components: `PhaseBanner`, `AvatarRing` (sunset glow), `FaceCard`, `ScoreStrip`. The airline set (boarding pass, ticket stub, luggage tag) comes in M2/M3 with their screens.
+- **Acceptance:** no `look` references; CSS < 80 KB; screens look the same as today's Cinematic look at 390px (screenshot diff for the founder).
+
+### M1-04 · Split `index.tsx` into real routes
+- Implement the URL map in [03 §3](../03-target-architecture.md): `/welcome`, `/signin`, `/home`, `/t/$tripId/play`, `/t/$tripId/play/$phase`, `/t/$tripId/trip`, `/me`, `/p/$userId`, `/admin/*`, …
+- Add a `/t/$tripId` layout route that loads trip + role + server phase + room config once (TanStack Router loader + Query).
+- Tab bar per **Q6** (default Home · Play · Trip · Me) as `<Link>`s. "Current trip" is remembered per user (today it's local state).
+- Keep `/join/$code` and `/beta/$code` behaviour (invite code preserved through auth for 24h, `pending-code.ts`).
+- **Acceptance:** every tab and sub-page has a URL; refresh and back/forward work; `/join/ABC123` signed-out → sign in → lands in the trip; `index.tsx` is under 150 lines.
+
+### M1-05 · Data layer + regenerated types
+- Regenerate `types.ts` (with RPCs). Create `src/data/<domain>.ts` with typed RPC wrappers + Query hooks (`useTrip`, `useMembers`, `usePhase`, `useStandings`, …).
+- Move the 57 components' direct `supabase.rpc/.from` calls into hooks. Remove `as unknown as { rpc … }` casts.
+- Add a lint rule banning `@/integrations/supabase/client` imports outside `src/data` and `src/features/auth`.
+- **Acceptance:** the lint rule passes; cast count reduced to under 10 (documented exceptions).
+
+### M1-06 · Feature folders + Prettier pass
+- Move files into `src/features/*` ([03 §4](../03-target-architecture.md)). This is a mechanical move.
+- Run Prettier (`printWidth: 100`) once over `src/`, in its own PR.
+- **Acceptance:** no file has lines over 160 chars (except generated); `src/components` holds only `ui/` and truly shared pieces.
+
+### M1-07 · i18n scaffolding
+- Add a small i18n library (e.g. `i18next` / `react-i18next`, or `@lingui`). Extract user-facing strings from kept screens into `src/i18n/en.json`. Detect locale from the device; English only for now (Q15).
+- **Acceptance:** new code has no hard-coded copy (lint rule or review); the catalog covers the kept screens.
+
+### M1-08 · Revoke + archive retired DB objects
+- For each retired feature: `REVOKE EXECUTE` on its public wrappers, then move its tables to a `legacy_archive` schema. Drop cron jobs that only served retired features. Export the data to CSV for the founder.
+- **Acceptance:** pgTAP confirms the wrappers are gone or denied; the app works; archive exports are delivered.
+- The final `DROP` happens in a later release (procedure in [05 §1](../05-legacy-retire-list.md)).
+
+### M1-09 · Migration baseline for new environments
+- Generate `supabase/migrations/00000000000000_baseline.sql` from the cleaned schema. Move the 299 old files to `supabase/migrations_archive/`. On existing databases, mark the baseline as applied with `supabase migration repair`.
+- **Rehearse on a staging copy of production first.**
+- **Acceptance:** `supabase db reset` locally gives the same schema as production (`supabase db diff` is empty).
+
+### M1-10 · Remove FULL/PREVIEW levels and feature switches
+- Remove `trips.level`, `trip_features`, `feature_on` / `require_feature`, `FeatureGate`, `FounderFeatures` and the Test Lab "preview" mode. Replace with a few **environment-level flags** for unfinished features (`FEATURE_MAP=false`).
+- **Acceptance:** no per-trip feature branching left.
+
+### M1-11 · Mine retired content into a seed
+- Export the useful text from `game_cards`, `game_catalog`, `weekly_question_pool`, `security_missions`, `trip_day_games` templates, `at_home_pack_items` and `practice-prompts.ts` into `supabase/seed/content_candidates.csv`, with suggested `kind` / `rooms` / `modes` tags for M3's `content_items`.
+- **Acceptance:** CSV delivered to the founder for review and tagging.
+
+### M1-12 · Contrast & readability fixes (beta notes, slide 20)
+- Dark dropdown suggestions; chips, tabs and +/− buttons faint until tapped → fix to AA contrast in the new tokens.
+- Rename confusing copy: "I'll write it", "optional preparation before travel".
+- **Acceptance:** an axe / Lighthouse a11y pass on the kept screens; the founder confirms on a phone.
