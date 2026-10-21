@@ -5,40 +5,29 @@ import { friendlyError } from "@/lib/friendly-error";
 import setupIcon from "@/assets/icon-suitcase.webp";
 import nightsIcon from "@/assets/icon-boarding-pass.webp";
 import prizesIcon from "@/assets/icon-trophy.webp";
-import potIcon from "@/assets/icon-postcard.webp";
 import detailsIcon from "@/assets/icon-map.webp";
 import membersIcon from "@/assets/icon-passport.webp";
 import { CaptainChecklist, HandOffCaptain } from "./CaptainChecklist";
-import { QotwTools } from "./WeeklyQuestion";
-import { TripCostsCaptain } from "./TripCosts";
 import { useState, type FormEvent } from "react";
 import { CoCaptainPicker } from "./CaptainExtras";
 import { ArrowLeft, Crown, RefreshCw, Star, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import type { Member, TripWithRole } from "@/lib/trips";
-import { GameNightTools } from "./GameNights";
-import { GameDayTools } from "./TripDayGames";
-import { EndTripTool, ReadOnlyBanner, SeasonPrizeTools, TripWrapped, PhotoWall } from "./Seasons";
+import { EndTripTool, SeasonPrizeTools, PhotoWall } from "./Seasons";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
 import { BugReportsList } from "./MeExtras";
 import { MottoField } from "./MottoField";
 import { friendlyRange } from "@/lib/trip-dates";
-import { AdultControls } from "./AdultCards";
 import { RememberedSection } from "./RememberedSection";
-import { PracticeDay } from "./PracticeDay";
-import { HostSwapsAdmin } from "./HostSwaps";
 import { TripUnlock, isUnlocked } from "./TripUnlock";
 import { TripAccessTools } from "./BetaAccess";
-import { RoomListingSettings, RoomRequests } from "./GameRooms";
 import { dicebearUrl } from "@/lib/player-cards";
 import { permanentlyDeleteTrip } from "@/lib/delete-trip.functions";
 import { ShortList } from "./ShortList";
 import { AvatarButton } from "./PlayerCards";
 import { CaptainCrown } from "./CaptainCrown";
 import { useLook } from "@/lib/look";
-import { PendingMissions } from "./SecretMissions";
-import { FeatureGate } from "@/lib/features";
 import { SealedQuests } from "./SealedQuests";
 
 type Props = {
@@ -78,9 +67,6 @@ export function CaptainTools({
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [success, setSuccess] = useState("");
-  const [wrapped, setWrapped] = useState(false);
-  const [bingoPhoto, setBingoPhoto] = useState(trip.bingo_needs_photo);
-  const [practice, setPractice] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ label: string; action: () => void } | null>(
     null,
   );
@@ -179,7 +165,6 @@ export function CaptainTools({
       ),
     );
   }
-  if (practice) return <PracticeDay trip={trip} onBack={() => setPractice(false)} />;
   if (deleteStep)
     return (
       <main className={`px-6 pb-28 ${cinematic ? "cinematic-captain-tools" : ""}`}>
@@ -284,9 +269,8 @@ export function CaptainTools({
         <div className="grid grid-cols-2 gap-3 mt-5">
           {[
             "Setup & access",
-            "Game nights",
-            "Trip days & prizes",
-            "Trip pot",
+            "Sealed quests",
+            "Prizes & crowning",
             "Trip details",
             "Members & hand-off",
           ].map((s) => (
@@ -301,9 +285,8 @@ export function CaptainTools({
                   (
                     {
                       "Setup & access": setupIcon,
-                      "Game nights": nightsIcon,
-                      "Trip days & prizes": prizesIcon,
-                      "Trip pot": potIcon,
+                      "Sealed quests": nightsIcon,
+                      "Prizes & crowning": prizesIcon,
                       "Trip details": detailsIcon,
                       "Members & hand-off": membersIcon,
                     } as Record<string, string>
@@ -316,7 +299,6 @@ export function CaptainTools({
             </Button>
           ))}
         </div>
-        <PendingMissions trip={trip} members={members} cards={cards} userId={userId} />
         {captain ? (
           <Button
             variant="ghost"
@@ -366,9 +348,9 @@ export function CaptainTools({
             </Button>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Itinerary, vibe, {cinematic ? "Pre-Flight start date" : "Game Day start date"}, time
-            zone and teams are edited with the ✏️ pencils on the Trip tab.
-            {!captain && " As Co-Captain you run game nights; setup stays with the Captain."}
+            Itinerary, vibe, {cinematic ? "Pre-Flight start date" : "Game Day start date"} and time
+            zone are edited with the ✏️ pencils on the Trip tab.
+            {!captain && " As Co-Captain you review quests; setup stays with the Captain."}
           </p>
           {captain && (
             <RememberedSection
@@ -386,37 +368,6 @@ export function CaptainTools({
           >
             <CaptainChecklist trip={trip} members={members} />
           </RememberedSection>
-          <Button variant="outline" className="mt-4 w-full" onClick={() => setPractice(true)}>
-            Preview trip-day games
-          </Button>
-          {captain && (
-            <div className="mt-4 flex items-center justify-between gap-3 border-b border-border pb-4">
-              <span className="font-bold">
-                Bingo needs a photo
-                <small className="block text-muted-foreground font-normal">
-                  On by default. Failed uploads become Proof pending.
-                </small>
-              </span>
-              <Button
-                variant={bingoPhoto ? "subtle" : "outline"}
-                role="switch"
-                aria-checked={bingoPhoto}
-                disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    const result = await supabase.rpc("set_bingo_needs_photo", {
-                      p_trip: trip.id,
-                      p_required: !bingoPhoto,
-                    });
-                    if (!result.error) setBingoPhoto((v) => !v);
-                    return result;
-                  })
-                }
-              >
-                {bingoPhoto ? "On" : "Off"}
-              </Button>
-            </div>
-          )}
           {captain && (
             <RememberedSection id={`${trip.id}-captain-coc`} title="Co-Captain & step down ⭐">
               <CoCaptainPicker trip={trip} members={members} cards={cards} onChanged={onUpdated} />
@@ -431,86 +382,30 @@ export function CaptainTools({
               />
             </RememberedSection>
           )}
-          {captain && !trip.is_sandbox && trip.kind !== "at_home" && (
-            <RememberedSection id={`${trip.id}-captain-rooms`} title="Game Rooms listing 🏆">
-              <RoomListingSettings trip={trip} onSaved={onUpdated} />
-              <h3 className="font-bold mt-5 mb-2">Join requests</h3>
-              <RoomRequests tripId={trip.id} onChanged={() => void onUpdated()} />
-            </RememberedSection>
-          )}
         </>
       )}
-      {show("Game nights") && (
-        <>
-          <div className="mt-6">
-            <ReadOnlyBanner trip={trip} />
-          </div>
-          <GameNightTools trip={trip} members={members} userId={userId} />
-          <SealedQuests
-            trip={trip}
-            members={members}
-            cards={cards}
-            userId={userId}
-            viewOnly={false}
-            proofOnly
-          />
-          <RememberedSection id={`${trip.id}-captain-hosts`} title="Host swaps 🔁">
-            <HostSwapsAdmin
-              trip={trip}
-              people={members.map((m) => ({
-                user_id: m.user_id,
-                name:
-                  cards.find((c) => c.user_id === m.user_id)?.game_name ||
-                  m.display_name ||
-                  "Player",
-              }))}
-            />
-          </RememberedSection>
-          <RememberedSection id={`${trip.id}-captain-qotw`} title="Question of the Week">
-            <QotwTools trip={trip} />
-          </RememberedSection>
-        </>
+      {show("Sealed quests") && (
+        <SealedQuests
+          trip={trip}
+          members={members}
+          cards={cards}
+          userId={userId}
+          viewOnly={false}
+          proofOnly
+        />
       )}
-      {show("Trip days & prizes") && (
+      {show("Prizes & crowning") && (
         <>
-          <RememberedSection id={`${trip.id}-captain-gamedays`} title="Trip-day game days">
-            <GameDayTools trip={trip} onUpdated={onUpdated} />
-          </RememberedSection>
-          <RememberedSection id={`${trip.id}-captain-prizes`} title="Prizes & crowning">
-            <SeasonPrizeTools
-              trip={trip}
-              members={members}
-              cards={cards}
-              onPreviewWrapped={() => setWrapped(true)}
-            />
+          <RememberedSection id={`${trip.id}-captain-prizes`} title="Prizes & crowning" defaultOpen>
+            <SeasonPrizeTools trip={trip} members={members} cards={cards} />
           </RememberedSection>
           <RememberedSection id={`${trip.id}-captain-end`} title="End trip">
             <EndTripTool trip={trip} onEnded={onUpdated} />
           </RememberedSection>
-          {wrapped && (
-            <TripWrapped
-              trip={trip}
-              members={members}
-              cards={cards}
-              onClose={() => setWrapped(false)}
-            />
-          )}
         </>
-      )}
-      {show("Trip pot") && (
-        <RememberedSection id={`${trip.id}-captain-costs`} title="Trip pot 💸" defaultOpen>
-          <FeatureGate tripId={trip.id} feature="trip_pot" compact>
-            <TripCostsCaptain trip={trip} members={members} cards={cards} />
-          </FeatureGate>
-        </RememberedSection>
       )}
       {show("Trip details") && (
         <>
-          {captain && (
-            <RememberedSection id={`${trip.id}-captain-adults`} title="21+ cards">
-              <AdultControls trip={trip} members={members} />
-            </RememberedSection>
-          )}
           {captain && !trip.is_sandbox && trip.kind === "trip" && (
             <RememberedSection
               id={`${trip.id}-passport-destination`}

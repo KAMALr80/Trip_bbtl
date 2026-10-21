@@ -832,12 +832,7 @@ function TeamBoard({
 }
 
 /* ---------- Captain Tools: prizes + teams ---------- */
-export function SeasonPrizeTools({
-  trip,
-  members,
-  cards,
-  onPreviewWrapped,
-}: Omit<Base, "userId"> & { onPreviewWrapped: () => void }) {
+export function SeasonPrizeTools({ trip, members, cards }: Omit<Base, "userId">) {
   const data = useSeasonsData(trip.id);
   return (
     <>
@@ -855,16 +850,6 @@ export function SeasonPrizeTools({
           onSaved={data.refresh}
         />
       ))}
-      <h2 className="font-display font-extrabold text-xl mt-9">Trip Wrapped 🎬</h2>
-      <p className="text-sm text-ink-soft mt-1">The squad sees it the day after the trip ends.</p>
-      <Button
-        variant="subtle"
-        className="w-full h-14 mt-3 bg-blue-soft justify-between"
-        onClick={onPreviewWrapped}
-      >
-        <span>Preview Trip Wrapped</span>
-        <span>→</span>
-      </Button>
     </>
   );
 }
