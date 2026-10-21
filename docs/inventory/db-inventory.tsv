@@ -128,6 +128,7 @@ table	public	weekly_questions				t	2	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRU
 table	public	window_guide_items				t	1	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261005091250_b590b1f5-aee7-4936-8a83-94a070ff743f.sql	1	1	src/components/CrewGuide.tsx
 table	trip_private	ai_guard_log				f	0				20261004090455_61dd7fb0-7787-4328-9dd7-7925eb46d988.sql	1	0	
 table	trip_private	code_attempts				f	0				20261002053604_c6470a40-9d7e-46d6-be84-00a03103769d.sql	1	0	
+table	trip_private	cron_endpoints				f	0				20261021120000_cron_purge_photos_endpoint.sql	1	0	
 table	trip_private	cron_keys				f	0				20261002053838_b7659f69-b4b8-4979-8045-9aad85611feb.sql	1	0	
 table	trip_private	inspiration_moderation				f	0				20261002164011_bb8f0d95-7fe3-4564-9209-82172fa80008.sql	1	0	
 table	trip_private	lab_views				f	0				20261002111230_103a7690-3b6f-49f7-8fba-610c330d5549.sql	1	0	

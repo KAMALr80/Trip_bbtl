@@ -12,7 +12,7 @@
 
 | | public | trip_private |
 |---|---|---|
-| Tables | 127 | 11 |
+| Tables | 127 | 12 |
 | Views | 0 | 0 |
 | Functions | 303 | 392 |
 | Triggers | 5 | 42 |
@@ -283,6 +283,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `window_guide_items` | table | ✅ | 1 | — | 1 |
 | trip_private | `ai_guard_log` | table | ❌ | 0 | — | — |
 | trip_private | `code_attempts` | table | ❌ | 0 | — | — |
+| trip_private | `cron_endpoints` | table | ❌ | 0 | — | — |
 | trip_private | `cron_keys` | table | ❌ | 0 | — | — |
 | trip_private | `inspiration_moderation` | table | ❌ | 0 | — | — |
 | trip_private | `lab_views` | table | ❌ | 0 | — | — |

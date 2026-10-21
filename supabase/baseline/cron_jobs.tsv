@@ -1,2 +1,2 @@
 crown-due-seasons	*/15 * * * *	SELECT trip_private.crown_due();
-purge-expired-trip-photos	17 4 * * *	 SELECT net.http_post( url := 'https://project--ff8fd31b-2c16-4b96-b5ff-87031aed303d.lovable.app/api/public/purge-photos', headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb ); 
+purge-expired-trip-photos	17 4 * * *	 SELECT net.http_post( url := e.url, headers := jsonb_build_object( 'Content-Type', 'application/json', 'Authorization', 'Bearer ' || k.key ), body := '{}'::jsonb ) FROM trip_private.cron_endpoints e JOIN trip_private.cron_keys k ON k.name = e.name WHERE e.name = 'purge_photos'; 

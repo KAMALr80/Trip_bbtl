@@ -43,7 +43,7 @@ These are documented as today's behaviour in the tests; they are **not fixed** h
 
 | # | Finding | Rule | Where it gets fixed |
 |---|---|---|---|
-| T1 | **Teens can join any a2c trip with the plain join code** (pending Captain approval). Every new trip is a2c. Legacy trips require a teen invite. The repo-root `AGENTS.md` says "13–17 only via guardian-confirmed teen invites". | R-904, Q12 | M6-03, or sooner if the founder wants |
+| T1 | **Teens can join any a2c trip with the plain join code** (pending Captain approval). Every new trip is a2c. Legacy trips require a teen invite. The published Terms and Privacy pages (`src/routes/legal/$document.tsx`) promise exactly this. The repo-root `AGENTS.md` ("13–17 only via guardian-confirmed teen invites") and the deck (R-904) say otherwise. Changing it needs new legal text and fresh consent. | R-904, Q12 | M6-03 + M6-09 |
 | T2 | Email self sign-up is allowed from **13**. The deck says self sign-up is 18+. | R-904, Q12 | M6-03 |
 | T3 | Sealed-quest speed bonus is **+5 if proof is submitted within 3h of opening**. The deck says **+5 if opened within 3h of the drop**. | R-322 | M3-05 |
 | T4 | Sealed drops are worth **5 or 10** at random. The deck says 5–15 by difficulty. | R-322, Q4 | M3-05 |

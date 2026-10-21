@@ -14196,6 +14196,18 @@ ALTER SEQUENCE trip_private.code_attempts_id_seq OWNED BY trip_private.code_atte
 
 
 --
+-- Name: cron_endpoints; Type: TABLE; Schema: trip_private; Owner: -
+--
+
+CREATE TABLE trip_private.cron_endpoints (
+    name text NOT NULL,
+    url text NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT cron_endpoints_url_check CHECK ((url ~ '^https?://'::text))
+);
+
+
+--
 -- Name: cron_keys; Type: TABLE; Schema: trip_private; Owner: -
 --
 
@@ -15620,6 +15632,14 @@ ALTER TABLE ONLY trip_private.ai_guard_log
 
 ALTER TABLE ONLY trip_private.code_attempts
     ADD CONSTRAINT code_attempts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cron_endpoints cron_endpoints_pkey; Type: CONSTRAINT; Schema: trip_private; Owner: -
+--
+
+ALTER TABLE ONLY trip_private.cron_endpoints
+    ADD CONSTRAINT cron_endpoints_pkey PRIMARY KEY (name);
 
 
 --
