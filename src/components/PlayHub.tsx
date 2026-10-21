@@ -7,7 +7,6 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  CircleGauge,
   Crown,
   Gamepad2,
   Image,
@@ -22,11 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AvatarButton, PlayerCardView } from "@/components/PlayerCards";
 import { SealedQuests } from "@/components/SealedQuests";
-import { SeasonGames, seasonGamesApply, todaysSeasonGame } from "@/components/SeasonGames";
 import { AirportMissions } from "@/components/AirportMissions";
-import { TripDayGames, tripIsLive } from "@/components/TripDayGames";
-import { PlayNights } from "@/components/GameNights";
-import { GameNightCabin } from "@/components/GameNightCabin";
 import { PhaseNotice } from "@/components/PhaseNotice";
 import { PhaseCountdown } from "@/components/PhaseCountdown";
 import { GameArcade } from "@/components/GameArcade";
@@ -36,16 +31,12 @@ import { SoloGuide } from "@/components/SoloGuide";
 import { CrewGuide } from "@/components/CrewGuide";
 import { AtHomePlay, isAtHome } from "@/components/AtHome";
 import { HomeDayFlow } from "@/components/HomeDayFlow";
-import { LockedNote, isUnlocked } from "@/components/TripUnlock";
-import { FeatureGate } from "@/lib/features";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { datePhase, noFlight, readOfflineRoster } from "@/lib/play-arrangement";
 import { tripToday, tripTz } from "@/lib/itinerary";
 import { friendlyRange } from "@/lib/trip-dates";
 import { tripDisplayName } from "@/lib/trip-display-name";
-import { fmtWhen } from "@/lib/viewer-time";
-import { nextGameNight } from "@/lib/next-game-night";
 import { hapticTap } from "@/lib/haptics";
 import preflightArt from "@/assets/play-phase-preflight.jpg";
 import takeoffArt from "@/assets/play-phase-takeoff.jpg";
@@ -55,27 +46,7 @@ import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
 
 type Phase = "preflight" | "takeoff" | "trip" | "wrapped";
-type Detail =
-  | "quests"
-  | "missions"
-  | "night"
-  | "trip-day"
-  | "arcade"
-  | "offline-night"
-  | "solo"
-  | "home"
-  | "guide"
-  | "season"
-  | null;
-type Night = {
-  week_number: number;
-  starts_at: string;
-  skipped: boolean;
-  host_id: string | null;
-  game_number?: number | null;
-  game_revealed?: boolean | null;
-  place?: string | null;
-};
+type Detail = "quests" | "missions" | "arcade" | "offline-night" | "solo" | "home" | "guide" | null;
 type Score = {
   user_id: string;
   games: number;
@@ -162,21 +133,6 @@ const daysBetween = (a: string, b: string) =>
   Math.max(0, Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86400000));
 const shortDate = (value: string) =>
   new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-const tripLocalDate = (value: string, timeZone: string) => {
-  try {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).formatToParts(new Date(value));
-    const part = (type: Intl.DateTimeFormatPartTypes) =>
-      parts.find((item) => item.type === type)?.value ?? "";
-    return `${part("year")}-${part("month")}-${part("day")}`;
-  } catch {
-    return new Date(value).toISOString().slice(0, 10);
-  }
-};
 const stampLabel = (value: string) => {
   const words = value.trim().toUpperCase().split(/\s+/).filter(Boolean);
   let label = "";
@@ -254,6 +210,21 @@ function FaceCard({
       </span>
     </Button>
   );
+}
+
+/** Cards the new engine adds in M2/M3; shown so every phase page lists what it will hold. */
+function ComingCard({
+  icon,
+  tone,
+  title,
+  line,
+}: {
+  icon: ReactNode;
+  tone: string;
+  title: string;
+  line: string;
+}) {
+  return <FaceCard icon={icon} tone={tone} title={title} line={line} pill="Coming in this phase" />;
 }
 
 function SquadAvatars({
@@ -415,18 +386,15 @@ export function PlayHub(props: Props) {
     [detail, setDetail] = useState<Detail>(null),
     [breakdown, setBreakdown] = useState(false),
     [fullBoard, setFullBoard] = useState(false),
-    [cabin, setCabin] = useState(false),
     [passport, setPassport] = useState(false),
     [pointPop, setPointPop] = useState(0),
     [displayPoints, setDisplayPoints] = useState(0),
     [error, setError] = useState("");
-  const [nights, setNights] = useState<Night[]>([]),
-    [scores, setScores] = useState<Score[]>([]),
+  const [scores, setScores] = useState<Score[]>([]),
     [tripScores, setTripScores] = useState<TripSeasonScore[]>([]),
     [quests, setQuests] = useState<Quest[]>([]),
     [missions, setMissions] = useState<Mission[]>([]),
     [champions, setChampions] = useState<Champion[]>([]),
-    [live, setLive] = useState(false),
     [tripStarted, setTripStarted] = useState(false),
     [missionWindow, setMissionWindow] = useState<MissionWindow | null>(null),
     [cultureKind, setCultureKind] = useState<string | null>(null),
@@ -446,22 +414,15 @@ export function PlayHub(props: Props) {
           ? "preflight"
           : "home";
     const [
-      nightResult,
       scoreResult,
       tripResult,
       questResult,
       missionResult,
       championResult,
-      liveResult,
       startedResult,
       windowResult,
       cultureResult,
     ] = await Promise.all([
-      supabase
-        .from("game_nights")
-        .select("week_number,starts_at,skipped,host_id,game_number,game_revealed,place")
-        .eq("trip_id", trip.id)
-        .order("starts_at"),
       local
         ? Promise.resolve({ data: [], error: null })
         : rpc.rpc("season_points", { p_trip: trip.id, p_season: season }),
@@ -482,7 +443,6 @@ export function PlayHub(props: Props) {
         .select("season,user_id,score,stamps")
         .eq("trip_id", trip.id)
         .in("season", ["game", "trip"]),
-      rpc.rpc("games_live", { p_trip: trip.id }),
       rpc.rpc("trip_season_started", { p_trip: trip.id }),
       rpc.rpc("mission_window", { p_trip: trip.id }),
       trip.a2e_room
@@ -496,26 +456,22 @@ export function PlayHub(props: Props) {
         : Promise.resolve({ data: null, error: null }),
     ]);
     const issue = [
-      nightResult,
       scoreResult,
       tripResult,
       questResult,
       missionResult,
       championResult,
-      liveResult,
       startedResult,
       windowResult,
       cultureResult,
     ].find((r) => r.error)?.error;
     if (issue) setError(friendlyError(issue));
     else setError("");
-    setNights((nightResult.data as Night[]) ?? []);
     setScores((scoreResult.data as Score[]) ?? []);
     setTripScores((tripResult.data as TripSeasonScore[]) ?? []);
     setQuests((questResult.data as Quest[]) ?? []);
     setMissions((missionResult.data as Mission[]) ?? []);
     setChampions((championResult.data as Champion[]) ?? []);
-    setLive(liveResult.data === true);
     setTripStarted(startedResult.data === true);
     setMissionWindow(
       (Array.isArray(windowResult.data)
@@ -537,7 +493,6 @@ export function PlayHub(props: Props) {
       window.clearInterval(timer);
     };
   }, [load]);
-  const next = nextGameNight(nights, now);
   const mine = scores.find((s) => s.user_id === userId);
   const rank =
     [...scores].sort((a, b) => b.total - a.total).findIndex((s) => s.user_id === userId) + 1;
@@ -598,10 +553,8 @@ export function PlayHub(props: Props) {
         {...props}
         detail={detail}
         phase={shownPhase}
-        live={live}
         tripStarted={tripStarted}
         onBack={closeDetail}
-        onCabin={() => setCabin(true)}
       />
     );
   if (phase)
@@ -611,13 +564,11 @@ export function PlayHub(props: Props) {
         phase={shownPhase}
         current={active}
         preview={preview}
-        nights={nights}
         scores={scores}
         tripScores={tripScores}
         quests={quests}
         missions={missions}
         champions={champions}
-        live={live}
         tripStarted={tripStarted}
         missionWindow={missionWindow}
         now={now}
@@ -626,7 +577,6 @@ export function PlayHub(props: Props) {
         onFullBoard={() => setFullBoard((v) => !v)}
         onBack={backHub}
         onDetail={openDetail}
-        onCabin={() => setCabin(true)}
       />
     );
   const currentQuest = quests.find(
@@ -674,16 +624,6 @@ export function PlayHub(props: Props) {
       points: `${currentQuest.value} pts`,
       pill: currentQuest.state === "sealed" ? "New" : "Open",
       action: () => openDetail("quests"),
-    });
-  if (up.length < 2 && active === "trip" && tripIsLive(trip) && onlineGroup)
-    up.push({
-      key: "today",
-      icon: <CircleGauge />,
-      tone: "blue",
-      title: "Today’s games",
-      line: "Open today’s released Trip Season activities",
-      pill: "Today",
-      action: () => openDetail("trip-day"),
     });
   if (up.length < 2 && pending)
     up.push({
@@ -765,9 +705,6 @@ export function PlayHub(props: Props) {
       {breakdown && mine && (
         <div className="play-breakdown-panel">
           <span>
-            Game nights <b>{mine.games}</b>
-          </span>
-          <span>
             Sealed quests <b>{mine.quests}</b>
           </span>
           <span>
@@ -798,49 +735,21 @@ export function PlayHub(props: Props) {
             <div>
               <strong>You’re all caught up</strong>
               <small>
-                {next
-                  ? `Next drop: ${fmtWhen(next.starts_at, trip.home_timezone)}`
-                  : active === "wrapped"
-                    ? "Your trip has wrapped"
-                    : active === "takeoff"
-                      ? "Next phase: after arrival"
-                      : `Next phase: ${shortDate(active === "preflight" ? trip.start_date : trip.end_date)}`}
+                {active === "wrapped"
+                  ? "Your trip has wrapped"
+                  : active === "takeoff"
+                    ? "Next phase: after arrival"
+                    : `Next phase: ${shortDate(active === "preflight" ? trip.start_date : trip.end_date)}`}
               </small>
             </div>
           </div>
         )}
       </div>
-      {next && !local && (
-        <>
-          <div className="play-section-heading">
-            <h2>Next up</h2>
-          </div>
-          <FaceCard
-            icon={<CalendarClock />}
-            tone="cyan"
-            title="Game Night"
-            line={`${fmtWhen(next.starts_at, trip.home_timezone)} · ${live ? "Join now" : "opens when live"}`}
-            points="up to 15"
-            pill={live ? "Live" : undefined}
-            live={live}
-            onClick={() =>
-              live
-                ? setCabin(true)
-                : openPhase(
-                    tripLocalDate(next.starts_at, tripTz(trip)) < trip.start_date
-                      ? "preflight"
-                      : "trip",
-                  )
-            }
-          />
-        </>
-      )}
       {error && (
         <p role="alert" className="mt-3 text-sm text-destructive">
           {error}
         </p>
       )}
-      {cabin && <GameNightCabin {...props} onClose={() => setCabin(false)} />}
       {passport && (
         <PlayerCardView
           tripId={trip.id}
@@ -859,13 +768,11 @@ function PhasePage(
     phase: Phase;
     current: Phase;
     preview: boolean;
-    nights: Night[];
     scores: Score[];
     tripScores: TripSeasonScore[];
     quests: Quest[];
     missions: Mission[];
     champions: Champion[];
-    live: boolean;
     tripStarted: boolean;
     missionWindow: MissionWindow | null;
     now: number;
@@ -874,7 +781,6 @@ function PhasePage(
     onFullBoard: () => void;
     onBack: () => void;
     onDetail: (d: Detail) => void;
-    onCabin: () => void;
   },
 ) {
   const {
@@ -885,20 +791,17 @@ function PhasePage(
     phase,
     current,
     preview,
-    nights,
     scores,
     tripScores,
     quests,
     missions,
     champions,
-    live,
     tripStarted,
     missionWindow,
     now,
     onMember,
     onBack,
     onDetail,
-    onCabin,
     fullBoard,
     onFullBoard,
   } = props;
@@ -908,7 +811,6 @@ function PhasePage(
   const culture = noFlight(trip);
   const windowSeat = props.cultureKind === "inspire";
   const noCrown = local || trip.season_scoring === false || windowSeat;
-  const next = nextGameNight(nights, Date.now());
   const groupRows =
     phase === "trip" || phase === "wrapped"
       ? tripScores.map((r) => ({ user_id: r.user_id, total: r.score }))
@@ -917,20 +819,6 @@ function PhasePage(
     showcase = quests.find((q) => q.kind === "showcase");
   const waiting = sealed.filter((q) => q.state === "sealed").length;
   const opened = sealed.filter((q) => ["open", "counted", "show_pending"].includes(q.state)).length;
-  const zone = tripTz(trip);
-  const phaseNights = nights.filter((n) => {
-    const localDate = tripLocalDate(n.starts_at, zone);
-    return (
-      !n.skipped &&
-      (phase === "preflight"
-        ? localDate < trip.start_date
-        : phase === "trip"
-          ? localDate >= trip.start_date
-          : false)
-    );
-  });
-  const phaseNight =
-    next && phaseNights.some((n) => n.week_number === next.week_number) ? next : phaseNights.at(-1);
   const missionBefore = !!missionWindow && now < Date.parse(missionWindow.opens_at),
     missionAfter = !!missionWindow && now > Date.parse(missionWindow.closes_at),
     inFlight = phase === "takeoff" && !culture && missionAfter && !tripStarted;
@@ -1097,20 +985,12 @@ function PhasePage(
               pill={waiting ? "New" : sealed.length ? "Done" : "Soon"}
               onClick={sealed.length ? () => onDetail("quests") : undefined}
             />
-            {!local && !windowSeat && (
-              <FaceCard
+            {!local && (
+              <ComingCard
                 icon={<CalendarClock />}
                 tone="cyan"
-                title="Game Night"
-                line={
-                  phaseNight
-                    ? `${fmtWhen(phaseNight.starts_at, trip.home_timezone)} · ${live ? "live now" : "opens when live"}`
-                    : "The next night is being planned"
-                }
-                points="up to 15"
-                pill={live ? "Live" : undefined}
-                live={live}
-                onClick={phaseNight ? () => (live ? onCabin() : onDetail("night")) : undefined}
+                title="Game Night Live"
+                line="Present on the call, tap 👍 for each other and vote the awards"
               />
             )}
             <FaceCard
@@ -1126,26 +1006,11 @@ function PhasePage(
               pill={showcase ? (showcase.state === "approved" ? "Done" : "Set") : "Soon"}
               onClick={showcase ? () => onDetail("quests") : undefined}
             />
-            {!windowSeat && (
-              <FaceCard
-                icon={<Sparkles />}
-                tone="blue"
-                title="Mystery Game"
-                line={
-                  phaseNight?.game_revealed
-                    ? "Tonight’s game has been revealed"
-                    : "Unlocks with your Game Night"
-                }
-                pill={phaseNight?.game_revealed ? "Open" : "Locked"}
-                onClick={phaseNight ? () => onDetail("night") : undefined}
-              />
-            )}
-            <FaceCard
+            <ComingCard
               icon={<BookOpen />}
               tone="gold"
               title="Daily Card"
-              line="A quick daily challenge is queued for a later round"
-              pill="Soon"
+              line="One quick challenge a day · 1–2 pts"
             />
           </>
         )}
@@ -1272,32 +1137,6 @@ function PhasePage(
                 onClick={() => onDetail("guide")}
               />
             )}{" "}
-            {!windowSeat && (
-              <FaceCard
-                icon={<CircleGauge />}
-                tone="blue"
-                title="Today’s games"
-                line={
-                  tripIsLive(trip)
-                    ? "Open today’s released Trip Season activities"
-                    : `Opens on ${shortDate(trip.start_date)}`
-                }
-                points="up to 10"
-                pill={tripIsLive(trip) ? "Today" : "Locked"}
-                onClick={tripIsLive(trip) && !local ? () => onDetail("trip-day") : undefined}
-              />
-            )}{" "}
-            {!windowSeat && (
-              <FaceCard
-                icon={<Image />}
-                tone="pink"
-                title="Photo of the Day"
-                line="One per person · the squad votes"
-                points="up to 3"
-                pill={tripIsLive(trip) ? "Open" : "Locked"}
-                onClick={tripIsLive(trip) && !local ? () => onDetail("trip-day") : undefined}
-              />
-            )}{" "}
             {sealed.length > 0 && (
               <FaceCard
                 icon={<Ticket />}
@@ -1313,45 +1152,34 @@ function PhasePage(
                 onClick={() => onDetail("quests")}
               />
             )}{" "}
-            {!local && !windowSeat && phaseNight && (
-              <FaceCard
+            <ComingCard
+              icon={<Sparkles />}
+              tone="gold"
+              title="Surprise Drops"
+              line="Bingo, Scavenger Hunt, Speed or Photo Challenge on random days"
+            />
+            {!local && (
+              <ComingCard
+                icon={<Camera />}
+                tone="blue"
+                title="Crew Check"
+                line="One 👍 from the crew approves a photo proof"
+              />
+            )}
+            <ComingCard
+              icon={<Image />}
+              tone="pink"
+              title="Postcard Picks"
+              line="Pick your 2 favourite photos for the trip postcard"
+            />
+            {!local && (
+              <ComingCard
                 icon={<CalendarClock />}
                 tone="cyan"
-                title="Game Night"
-                line={`${fmtWhen(phaseNight.starts_at, trip.home_timezone)} · ${live ? "live now" : "opens when live"}`}
-                points="up to 15"
-                pill={live ? "Live" : undefined}
-                live={live}
-                onClick={() => (live ? onCabin() : onDetail("night"))}
+                title="Game Night Live"
+                line="Crowning night: present your trip quest and vote the awards"
               />
-            )}{" "}
-            {seasonGamesApply(trip, windowSeat) &&
-              (() => {
-                const g = todaysSeasonGame(trip);
-                return (
-                  <FaceCard
-                    icon={<Sparkles />}
-                    tone="gold"
-                    title="Bingo · Scavenger · Speed"
-                    line={
-                      g
-                        ? `Today: ${g === "bingo" ? "Bingo" : g === "scavenger" ? "Scavenger Hunt" : "Speed Challenge"}`
-                        : `Opens on ${shortDate(trip.start_date)}`
-                    }
-                    points={
-                      g === "bingo"
-                        ? "up to 33"
-                        : g === "scavenger"
-                          ? "up to 25"
-                          : g
-                            ? "up to 15"
-                            : undefined
-                    }
-                    pill={g ? "Today" : "Locked"}
-                    onClick={g ? () => onDetail("season") : undefined}
-                  />
-                );
-              })()}
+            )}
           </>
         )}
         {phase === "wrapped" && (
@@ -1364,7 +1192,6 @@ function PhasePage(
             tripScores={tripScores}
             champions={champions}
             onMember={onMember}
-            onWrapped={props.onWrapped}
           />
         )}
       </div>
@@ -1395,7 +1222,6 @@ function WrappedSummary({
   tripScores,
   champions,
   onMember,
-  onWrapped,
 }: {
   trip: TripWithRole;
   members: Member[];
@@ -1405,7 +1231,6 @@ function WrappedSummary({
   tripScores: TripSeasonScore[];
   champions: Champion[];
   onMember?: ((id: string) => void) | undefined;
-  onWrapped?: (() => void) | undefined;
 }) {
   const [celebrate, setCelebrate] = useState(false);
   useEffect(() => {
@@ -1462,7 +1287,6 @@ function WrappedSummary({
           me > 0 ? `You finished #${me} of ${sorted.length}` : "Final places appear after crowning"
         }
         points={`${(sorted.find((r) => r.user_id === userId)?.total ?? 0) + (tripScores.find((r) => r.user_id === userId)?.score ?? 0)} pts`}
-        onClick={onWrapped}
       />
       <FaceCard
         icon={<Image />}
@@ -1485,10 +1309,8 @@ function PlayDetail(
   props: Props & {
     detail: Detail;
     phase: Phase;
-    live: boolean;
     tripStarted: boolean;
     onBack: () => void;
-    onCabin: () => void;
   },
 ) {
   const { detail, trip, members, cards, userId, viewOnly, onBack } = props;
@@ -1550,7 +1372,6 @@ function PlayDetail(
       <Button variant="ghost" className="min-h-11" onClick={onBack}>
         <ArrowLeft /> {PHASES[indexOf(props.phase)]?.label}
       </Button>
-      {detail === "season" && <SeasonGames trip={trip} userId={userId} viewOnly={viewOnly} />}{" "}
       {detail === "quests" && (
         <SealedQuests
           trip={trip}
@@ -1568,33 +1389,6 @@ function PlayDetail(
           canPlay={datePhase(trip, props.tripStarted) === "airport"}
         />
       )}{" "}
-      {detail === "night" && (
-        <PlayNights
-          trip={trip}
-          members={members}
-          userId={userId}
-          players={cards}
-          viewOnly={viewOnly}
-          onManage={props.onManage}
-          onCalendar={props.onCalendar}
-          onWrapped={props.onWrapped}
-          onMember={props.onMember}
-        />
-      )}{" "}
-      {detail === "trip-day" &&
-        (isUnlocked(trip) ? (
-          <FeatureGate tripId={trip.id} feature="challenges">
-            <TripDayGames
-              trip={trip}
-              members={members}
-              cards={cards}
-              userId={userId}
-              viewOnly={viewOnly}
-            />
-          </FeatureGate>
-        ) : (
-          <LockedNote trip={trip} what="trip-day games" />
-        ))}{" "}
       {detail === "home" &&
         (trip.at_home_length?.startsWith("d") ? (
           <>
