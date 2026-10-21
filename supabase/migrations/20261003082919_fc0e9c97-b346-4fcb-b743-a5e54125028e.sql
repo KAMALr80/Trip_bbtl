@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS appearance text DEFAULT NULL CHECK (appearance IS NULL OR appearance IN ('light', 'dark'));

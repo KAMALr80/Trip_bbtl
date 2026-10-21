@@ -1,0 +1,6 @@
+CREATE OR REPLACE FUNCTION trip_private.adult_badge(p_trip uuid,p_user uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $fn$ SELECT trip_private.is_trip_member(p_trip,auth.uid()) AND EXISTS (SELECT 1 FROM public.trip_adult_settings s JOIN public.trip_adult_approvals a ON a.trip_id=s.trip_id AND a.user_id=p_user JOIN public.player_birthdays b ON b.user_id=p_user WHERE s.trip_id=p_trip AND s.enabled AND b.birthday <= (current_date - interval '21 years')::date AND EXISTS (SELECT 1 FROM public.trip_members m WHERE m.trip_id=p_trip AND m.user_id=p_user)) $fn$;
+REVOKE ALL ON FUNCTION trip_private.adult_badge(uuid,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION trip_private.adult_badge(uuid,uuid) TO authenticated;
+CREATE OR REPLACE FUNCTION public.adult_badge(p_trip uuid,p_user uuid) RETURNS boolean LANGUAGE sql SECURITY INVOKER SET search_path=public AS $fn$ SELECT trip_private.adult_badge(p_trip,p_user) $fn$;
+REVOKE ALL ON FUNCTION public.adult_badge(uuid,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.adult_badge(uuid,uuid) TO authenticated;

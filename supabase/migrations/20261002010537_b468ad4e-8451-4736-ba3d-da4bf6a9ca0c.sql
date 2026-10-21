@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "Read seed and member cards" ON public.game_cards;
+CREATE POLICY "Read seed and member cards" ON public.game_cards FOR SELECT TO authenticated USING ((trip_id IS NULL AND category<>'spicy') OR (trip_id IS NOT NULL AND trip_private.is_trip_member(trip_id,auth.uid())));

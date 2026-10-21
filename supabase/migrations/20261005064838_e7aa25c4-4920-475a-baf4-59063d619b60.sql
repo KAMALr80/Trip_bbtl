@@ -1,0 +1,11 @@
+CREATE OR REPLACE FUNCTION trip_private.check_trip_length() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN IF NEW.end_date - NEW.start_date + 1 NOT BETWEEN 2 AND 30 AND NOT (NEW.season_rule='a2c' AND NEW.kind='trip' AND NEW.end_date-NEW.start_date+1 BETWEEN 1 AND 3650) THEN RAISE EXCEPTION 'Trips can be 2 to 30 days long'; END IF; RETURN NEW; END $$;
+ALTER TABLE public.culture_experiences DROP CONSTRAINT culture_experiences_days_check;
+ALTER TABLE public.culture_experiences ADD CONSTRAINT culture_experiences_days_check CHECK (days BETWEEN 1 AND 12 OR (a2e_kind='inspire' AND days>12 AND days<=3650));
+CREATE OR REPLACE FUNCTION trip_private.culture_a2e_start_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN IF NEW.a2e_kind IS NOT NULL AND NEW.started_at IS NOT NULL AND OLD.started_at IS NULL AND (SELECT count(*) FROM public.culture_exp_days WHERE experience_id=NEW.id)<NEW.days THEN RAISE EXCEPTION 'Plan every day before starting'; END IF; RETURN NEW; END $$;
+CREATE TRIGGER culture_a2e_start_guard BEFORE UPDATE OF started_at ON public.culture_experiences FOR EACH ROW WHEN (NEW.a2e_kind IS NOT NULL) EXECUTE FUNCTION trip_private.culture_a2e_start_guard();
+REVOKE ALL ON FUNCTION trip_private.culture_a2e_start_guard() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION trip_private.culture_a2e_start_guard() TO service_role;
+CREATE OR REPLACE FUNCTION trip_private.culture_a2e_signup_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN IF NEW.a2e_kind IS NOT NULL AND NEW.a2e_kind='explore' AND NEW.play_mode<>'group' THEN RAISE EXCEPTION 'Explore a Culture is played with others'; END IF; RETURN NEW; END $$;
+CREATE TRIGGER culture_a2e_signup_guard BEFORE INSERT OR UPDATE OF play_mode ON public.culture_experiences FOR EACH ROW WHEN (NEW.a2e_kind IS NOT NULL) EXECUTE FUNCTION trip_private.culture_a2e_signup_guard();
+REVOKE ALL ON FUNCTION trip_private.culture_a2e_signup_guard() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION trip_private.culture_a2e_signup_guard() TO service_role;

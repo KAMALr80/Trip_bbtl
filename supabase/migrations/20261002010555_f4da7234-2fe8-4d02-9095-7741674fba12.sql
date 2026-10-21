@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Members see cards" ON public.game_cards;

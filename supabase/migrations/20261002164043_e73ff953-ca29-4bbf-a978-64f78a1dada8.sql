@@ -1,0 +1,4 @@
+CREATE OR REPLACE FUNCTION trip_private.hide_inspiration(p_card uuid) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Founder only'; END IF; UPDATE public.cultural_inspirations SET hidden_at=now() WHERE id=p_card AND hidden_at IS NULL; IF FOUND THEN INSERT INTO trip_private.inspiration_moderation(card_id,actor,action) VALUES(p_card,auth.uid(),'hide'); END IF; END $$;
+REVOKE ALL ON FUNCTION trip_private.hide_inspiration(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION trip_private.hide_inspiration(uuid) TO authenticated;
+CREATE OR REPLACE FUNCTION public.hide_inspiration(p_card uuid) RETURNS void LANGUAGE sql SECURITY INVOKER SET search_path=public AS $$ SELECT trip_private.hide_inspiration(p_card) $$;

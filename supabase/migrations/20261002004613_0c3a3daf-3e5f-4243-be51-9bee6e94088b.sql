@@ -1,0 +1,1 @@
+DROP POLICY "Signed in see games" ON public.game_catalog;

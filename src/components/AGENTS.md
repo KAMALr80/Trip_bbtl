@@ -1,0 +1,2 @@
+- Trip Season games UI lives in SeasonGames.tsx; its seasonGamesApply mirrors trip_private.season_games_ok (sandboxes included) so the card and server agree on which rooms play.
+- Play phase selection reads trip_season_started and Airport Mission countdowns read mission_window, so client dates never override server timing.

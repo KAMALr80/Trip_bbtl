@@ -1,0 +1,6 @@
+CREATE OR REPLACE FUNCTION trip_private.refund_failed_ai(p_usage uuid) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE v public.ai_usage%ROWTYPE; BEGIN SELECT * INTO v FROM public.ai_usage WHERE id=p_usage AND user_id=auth.uid() AND kind IN ('custom_game','regen_set','mission_topup') AND created_at>now()-interval '20 minutes' FOR UPDATE; IF NOT FOUND THEN RAISE EXCEPTION 'AI usage unavailable'; END IF; IF v.kind LIKE 'failed_%' THEN RETURN false; END IF; UPDATE public.ai_usage SET kind='failed_'||v.kind,credits=0 WHERE id=v.id; RETURN true; END $$;
+REVOKE EXECUTE ON FUNCTION trip_private.refund_failed_ai(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION trip_private.refund_failed_ai(uuid) TO authenticated;
+CREATE OR REPLACE FUNCTION public.refund_failed_ai(p_usage uuid) RETURNS boolean LANGUAGE sql SET search_path=public AS $$ SELECT trip_private.refund_failed_ai(p_usage) $$;
+REVOKE EXECUTE ON FUNCTION public.refund_failed_ai(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.refund_failed_ai(uuid) TO authenticated;

@@ -1,0 +1,3 @@
+CREATE OR REPLACE FUNCTION public.culture_quest_card(p_session uuid) RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT s.card_id FROM public.culture_quest_sessions s WHERE s.id=p_session AND EXISTS(SELECT 1 FROM public.culture_quest_players p WHERE p.session_id=s.id AND p.user_id=auth.uid()) AND trip_private.quest_access(s.card_id,auth.uid()) $$;
+REVOKE ALL ON FUNCTION public.culture_quest_card(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.culture_quest_card(uuid) TO authenticated;

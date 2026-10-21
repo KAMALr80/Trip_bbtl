@@ -1,0 +1,2 @@
+ALTER TABLE public.trips DROP CONSTRAINT trips_game_plan_check;
+ALTER TABLE public.trips ADD CONSTRAINT trips_game_plan_check CHECK (game_plan = ANY (ARRAY['recommended'::text,'short'::text,'custom'::text,'date_driven'::text]));

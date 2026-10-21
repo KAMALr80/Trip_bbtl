@@ -1,0 +1,21 @@
+- Keep Night Flight/Neon Night Out dark by default, persist optional light appearance locally, and follow approved visuals. Store founder photos as CDN pointers, not git media.
+- Keep Trip section choices per trip locally and full itinerary separate; reuse GameNightCalendar with existing night actions across views so schedules cannot diverge.
+- Keep the first tour optional and replayable without resetting completion on replay, so returning members are never forced through onboarding.
+- Keep Explore tour content as local display-only sample data using shared presentation pieces, so replay never reads or mutates a real trip.
+- Keep optional haptics in the browser-only shared helper, never required for play; reduced-motion users get the same gameplay.
+- Night Flight page textures and orbit controls are presentation-only over existing trip data and shared actions; appearance never changes access rules.
+- Journey is a read-only client view over member-scoped schedules and results; opening it must not change trip rules or reveal gated content.
+- Manifest-only PWA, no service worker, so previews never go stale.
+- Boarding… art falls back to tile A while its founder setting loads.
+- Appearance: profile, saved, dark. Share nav clearance to avoid overlaps.
+- Cinematic look is a switchable skin (src/lib/look.tsx, app_settings.look, founder-only writes); original components stay as the fallback branch so any page can revert.
+- Read public visual settings from the public app_settings row, not the restricted look RPC, so signed-out splash and sign-in follow the founder's choice.
+- Share cinematic play framing through GameScene without changing game actions or the original branch.
+- Explore previews and Arcade/sample-night practice use local pretend prompts, not live trip decks, trip writes or AI calls; Mix It Up retains its existing quota path.
+- Use the shared next-night helper across Home, Play and Calendar; cinematic month views read member-scoped schedules and write changes only through identity-checked functions, leaving Original unchanged.
+- Preview gating UI is src/lib/features.tsx (FeatureGate → Coming soon) over the server trip_features map.
+- Place entry and browsing use shared PlacePicker (Country → Region → City); PlaceBrowser wraps it for filtered results.
+- Keep cinematic sign-in artwork responsive with its lower fade; retain the Original sign-in branch for reversible Looks.
+- Keep cinematic-only Home controls and Captain crown badges look-scoped; preserve Original markup and server-authoritative roles.
+- Source cinematic boarding passes from shared GameScene mapping so practice and live play use the same art without duplicating game logic.
+- Keep game display titles presentation-only; catalog names and stored timer labels must remain compatible with private timer validation.

@@ -1,0 +1,7 @@
+CREATE OR REPLACE FUNCTION trip_private.a2e_culture_access(p_exp uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM public.culture_experiences e WHERE e.id=p_exp AND e.a2e_kind IS NOT NULL AND (e.creator_id=auth.uid() OR (e.play_mode='group' AND e.trip_id IS NOT NULL AND trip_private.is_trip_member(e.trip_id,auth.uid())))) $$;
+REVOKE ALL ON FUNCTION trip_private.a2e_culture_access(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION trip_private.a2e_culture_access(uuid) TO authenticated,service_role;
+CREATE OR REPLACE FUNCTION trip_private.a2e_showcase_code() RETURNS text LANGUAGE sql VOLATILE SET search_path=public,extensions AS $$ SELECT upper(substr(translate(encode(extensions.gen_random_bytes(12),'hex'),'01','AB'),1,16)) $$;
+REVOKE ALL ON FUNCTION trip_private.a2e_showcase_code() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION trip_private.a2e_showcase_code() TO service_role;
+DO $migration$ DECLARE def text; BEGIN SELECT pg_get_functiondef('trip_private.culture_showcase(text,uuid,text,jsonb)'::regprocedure) INTO def; def:=replace(def,'upper(substr(translate(encode(gen_random_bytes(12),''hex''),''01'',''AB''),1,16))','trip_private.a2e_showcase_code()'); def:=replace(def,'''story'',left(coalesce(d.note,d.what_to_do),500)','''story'',left(coalesce(d.what_to_do,'''') ,500)'); EXECUTE def; END $migration$;

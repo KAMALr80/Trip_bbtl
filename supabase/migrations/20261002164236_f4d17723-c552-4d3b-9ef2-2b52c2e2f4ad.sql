@@ -1,0 +1,1 @@
+CREATE OR REPLACE FUNCTION trip_private.credit_cost(p_action text) RETURNS integer LANGUAGE sql IMMUTABLE SET search_path=public AS $$ SELECT CASE p_action WHEN 'custom_game' THEN 3 WHEN 'regen_set' THEN 5 WHEN 'dest_activities' THEN 3 WHEN 'team_challenges' THEN 3 WHEN 'athome_pack' THEN 5 WHEN 'itinerary_extra' THEN 2 WHEN 'inspiration_guide' THEN 2 ELSE NULL END $$;

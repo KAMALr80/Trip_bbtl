@@ -1,0 +1,6 @@
+CREATE FUNCTION trip_private.culture_creator_badge(p_user uuid) RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT CASE WHEN count(DISTINCT (s.card_id,p.user_id))>=250 THEN 'Heritage Hero' WHEN count(DISTINCT (s.card_id,p.user_id))>=50 THEN 'Culture Ambassador' WHEN count(DISTINCT (s.card_id,p.user_id))>=10 THEN 'Storyteller' ELSE NULL END FROM public.culture_quest_players p JOIN public.culture_quest_sessions s ON s.id=p.session_id JOIN public.cultural_inspirations c ON c.id=s.card_id WHERE p.completed_at IS NOT NULL AND (c.creator_id=p_user OR c.partner_id=p_user) AND trip_private.quest_access(c.id,auth.uid()) $$;
+REVOKE ALL ON FUNCTION trip_private.culture_creator_badge(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION trip_private.culture_creator_badge(uuid) TO authenticated;
+CREATE FUNCTION public.culture_creator_badge(p_user uuid) RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public AS $$ SELECT trip_private.culture_creator_badge(p_user) $$;
+REVOKE ALL ON FUNCTION public.culture_creator_badge(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.culture_creator_badge(uuid) TO authenticated;

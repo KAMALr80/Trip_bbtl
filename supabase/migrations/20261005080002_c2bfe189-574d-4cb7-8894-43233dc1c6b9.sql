@@ -1,0 +1,12 @@
+ALTER FUNCTION public.create_trip_play_mode(text,text,date,date,text,text) SECURITY DEFINER;
+ALTER FUNCTION public.create_trip_play_mode(text,text,date,date,text,text) SET search_path = pg_catalog, public, trip_private;
+ALTER FUNCTION public.create_trip_play_mode_v2(text,text,date,date,text,text,text) SECURITY DEFINER;
+ALTER FUNCTION public.create_trip_play_mode_v2(text,text,date,date,text,text,text) SET search_path = pg_catalog, public, trip_private;
+ALTER FUNCTION public.create_trip_play_mode_v3(text,text,date,date,text,text,text,text[]) SECURITY DEFINER;
+ALTER FUNCTION public.create_trip_play_mode_v3(text,text,date,date,text,text,text,text[]) SET search_path = pg_catalog, public, trip_private;
+ALTER FUNCTION public.create_window_play_mode(text,text,text,text,text,date,int,text,text[],int) SECURITY DEFINER;
+ALTER FUNCTION public.create_window_play_mode(text,text,text,text,text,date,int,text,text[],int) SET search_path = pg_catalog, public, trip_private;
+ALTER FUNCTION public.confirm_departure(uuid) SECURITY DEFINER;
+ALTER FUNCTION public.confirm_departure(uuid) SET search_path = pg_catalog, public, trip_private;
+REVOKE ALL ON FUNCTION public.create_trip_play_mode(text,text,date,date,text,text), public.create_trip_play_mode_v2(text,text,date,date,text,text,text), public.create_trip_play_mode_v3(text,text,date,date,text,text,text,text[]), public.create_window_play_mode(text,text,text,text,text,date,int,text,text[],int), public.confirm_departure(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_trip_play_mode(text,text,date,date,text,text), public.create_trip_play_mode_v2(text,text,date,date,text,text,text), public.create_trip_play_mode_v3(text,text,date,date,text,text,text,text[]), public.create_window_play_mode(text,text,text,text,text,date,int,text,text[],int), public.confirm_departure(uuid) TO authenticated;

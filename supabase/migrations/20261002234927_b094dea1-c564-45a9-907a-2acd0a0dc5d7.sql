@@ -1,0 +1,1 @@
+ALTER TABLE public.app_settings ALTER COLUMN boarding_tile SET DEFAULT 'a';

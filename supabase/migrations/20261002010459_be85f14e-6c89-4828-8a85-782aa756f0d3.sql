@@ -1,0 +1,4 @@
+DROP POLICY IF EXISTS "Approved adults see featured spicy cards" ON public.game_cards;
+DROP POLICY IF EXISTS "Anyone can read base cards" ON public.game_cards;
+CREATE POLICY "Members see clean base cards" ON public.game_cards FOR SELECT TO authenticated USING (trip_id IS NULL AND category<>'spicy');
+CREATE POLICY "Approved adults see spicy base cards" ON public.game_cards FOR SELECT TO authenticated USING (trip_id IS NULL AND category='spicy' AND EXISTS (SELECT 1 FROM public.trip_members m JOIN public.game_nights n ON n.trip_id=m.trip_id AND n.game_number=game_cards.game_number WHERE m.user_id=auth.uid() AND trip_private.is_approved_adult(m.trip_id,auth.uid())));

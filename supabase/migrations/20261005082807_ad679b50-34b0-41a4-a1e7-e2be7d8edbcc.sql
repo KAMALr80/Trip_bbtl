@@ -1,0 +1,2 @@
+ALTER TABLE public.profiles ADD COLUMN home_layout text NOT NULL DEFAULT 'classic' CONSTRAINT profiles_home_layout_check CHECK (home_layout IN ('classic','trips_first'));
+COMMENT ON COLUMN public.profiles.home_layout IS 'Per-account future Home layout preference; the live Home remains Classic until founder approval.';

@@ -1,0 +1,5 @@
+CREATE OR REPLACE FUNCTION trip_private.legal_current(p_user uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM public.account_consents WHERE user_id=p_user AND legal_version='2026-10-02' AND accepted_at IS NOT NULL) $$;
+CREATE OR REPLACE FUNCTION trip_private.require_legal() RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN IF auth.uid() IS NULL OR NOT trip_private.legal_current(auth.uid()) THEN RAISE EXCEPTION 'Please agree to the current Terms before continuing'; END IF; END $$;
+CREATE OR REPLACE FUNCTION trip_private.legal_dob_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN IF NOT trip_private.legal_current(NEW.user_id) THEN RAISE EXCEPTION 'Please agree to the current Terms before continuing'; END IF; RETURN NEW; END $$;
+REVOKE ALL ON FUNCTION trip_private.legal_current(uuid),trip_private.require_legal(),trip_private.legal_dob_guard() FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION trip_private.legal_current(uuid),trip_private.require_legal() TO authenticated;

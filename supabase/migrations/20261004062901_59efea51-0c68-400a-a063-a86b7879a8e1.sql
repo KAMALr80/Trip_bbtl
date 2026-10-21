@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS checkin_presentation_before_decision ON public.mission_claims; DROP FUNCTION IF EXISTS trip_private.require_checkin_presentation();

@@ -1,0 +1,1 @@
+ALTER FUNCTION trip_private.lab_become(uuid) SET search_path TO 'public';

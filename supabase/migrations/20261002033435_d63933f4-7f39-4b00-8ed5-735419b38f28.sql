@@ -1,0 +1,2 @@
+DROP POLICY "Own or leader view hosting misses" ON public.host_penalties;
+CREATE POLICY "Members view hosting misses" ON public.host_penalties FOR SELECT TO authenticated USING (trip_private.is_trip_member(trip_id, auth.uid()));

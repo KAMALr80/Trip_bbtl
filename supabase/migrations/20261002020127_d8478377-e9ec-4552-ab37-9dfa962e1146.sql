@@ -1,0 +1,7 @@
+DROP TRIGGER cost_items_clear_review ON public.cost_items; DROP FUNCTION trip_private.clear_cost_review();
+CREATE OR REPLACE FUNCTION trip_private.is_app_admin() RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $fn$ SELECT EXISTS (SELECT 1 FROM public.app_admins WHERE user_id = auth.uid()) $fn$;
+REVOKE ALL ON FUNCTION trip_private.is_app_admin() FROM PUBLIC; GRANT EXECUTE ON FUNCTION trip_private.is_app_admin() TO authenticated;
+DROP POLICY "App owner reads feedback" ON public.trip_feedback;
+CREATE POLICY "App owner reads feedback" ON public.trip_feedback FOR SELECT TO authenticated USING (trip_private.is_app_admin());
+CREATE OR REPLACE FUNCTION public.is_app_admin() RETURNS boolean LANGUAGE sql STABLE SET search_path=public AS $fn$ SELECT trip_private.is_app_admin() $fn$;
+CREATE OR REPLACE FUNCTION trip_private.mark_cost_reviewed() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $fn$ BEGIN IF current_user <> 'postgres' OR NEW.title IS DISTINCT FROM OLD.title OR NEW.total_cents IS DISTINCT FROM OLD.total_cents OR NEW.split IS DISTINCT FROM OLD.split OR NEW.due_date IS DISTINCT FROM OLD.due_date OR NEW.category IS DISTINCT FROM OLD.category THEN NEW.needs_review := false; END IF; RETURN NEW; END $fn$;

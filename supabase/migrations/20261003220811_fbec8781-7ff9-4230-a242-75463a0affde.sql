@@ -1,0 +1,2 @@
+CREATE POLICY "Read sessions through checked view only" ON public.home_day_sessions FOR SELECT TO authenticated USING (false);
+CREATE POLICY "Read results through checked view only" ON public.home_day_results FOR SELECT TO authenticated USING (false);

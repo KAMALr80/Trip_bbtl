@@ -1,0 +1,2 @@
+CREATE POLICY "No direct deletion audit access" ON public.trip_deletion_log FOR ALL TO authenticated USING (false) WITH CHECK (false);
+CREATE OR REPLACE FUNCTION public.welcome_copy() RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path TO 'public' AS $fn$ SELECT jsonb_build_object('founder_intro',founder_intro,'faq',welcome_faq) FROM public.app_settings WHERE id=true $fn$;

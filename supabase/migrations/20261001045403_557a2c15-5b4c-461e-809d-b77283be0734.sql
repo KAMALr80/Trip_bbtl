@@ -1,0 +1,17 @@
+CREATE TABLE public.trip_itineraries (trip_id uuid PRIMARY KEY REFERENCES public.trips(id) ON DELETE CASCADE, days jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(days)='array' AND jsonb_array_length(days)<=90 AND pg_column_size(days)<100000), created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT, INSERT, UPDATE ON public.trip_itineraries TO authenticated;
+GRANT ALL ON public.trip_itineraries TO service_role;
+ALTER TABLE public.trip_itineraries ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Members read itinerary" ON public.trip_itineraries FOR SELECT TO authenticated USING (public.is_trip_member(trip_id,auth.uid()));
+CREATE POLICY "Leaders add itinerary" ON public.trip_itineraries FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM public.trip_members WHERE trip_id=trip_itineraries.trip_id AND user_id=auth.uid() AND role IN ('captain','co_captain')));
+CREATE POLICY "Leaders change itinerary" ON public.trip_itineraries FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM public.trip_members WHERE trip_id=trip_itineraries.trip_id AND user_id=auth.uid() AND role IN ('captain','co_captain'))) WITH CHECK (EXISTS (SELECT 1 FROM public.trip_members WHERE trip_id=trip_itineraries.trip_id AND user_id=auth.uid() AND role IN ('captain','co_captain')));
+CREATE TRIGGER set_trip_itinerary_updated_at BEFORE UPDATE ON public.trip_itineraries FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();
+CREATE TABLE public.trip_day_tags (trip_id uuid NOT NULL REFERENCES public.trips(id) ON DELETE CASCADE, day_date date NOT NULL, tag text NOT NULL CHECK (tag IN ('Party','Explore','Chill','Travel')), created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (trip_id, day_date));
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.trip_day_tags TO authenticated;
+GRANT ALL ON public.trip_day_tags TO service_role;
+ALTER TABLE public.trip_day_tags ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Members read day tags" ON public.trip_day_tags FOR SELECT TO authenticated USING (public.is_trip_member(trip_id,auth.uid()));
+CREATE POLICY "Captain adds day tags" ON public.trip_day_tags FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM public.trip_members m JOIN public.trips t ON t.id=m.trip_id WHERE m.trip_id=trip_day_tags.trip_id AND m.user_id=auth.uid() AND m.role='captain' AND trip_day_tags.day_date BETWEEN t.start_date AND t.end_date));
+CREATE POLICY "Captain changes day tags" ON public.trip_day_tags FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM public.trip_members WHERE trip_id=trip_day_tags.trip_id AND user_id=auth.uid() AND role='captain')) WITH CHECK (EXISTS (SELECT 1 FROM public.trip_members m JOIN public.trips t ON t.id=m.trip_id WHERE m.trip_id=trip_day_tags.trip_id AND m.user_id=auth.uid() AND m.role='captain' AND trip_day_tags.day_date BETWEEN t.start_date AND t.end_date));
+CREATE POLICY "Captain clears day tags" ON public.trip_day_tags FOR DELETE TO authenticated USING (EXISTS (SELECT 1 FROM public.trip_members WHERE trip_id=trip_day_tags.trip_id AND user_id=auth.uid() AND role='captain'));
+CREATE TRIGGER set_trip_day_tag_updated_at BEFORE UPDATE ON public.trip_day_tags FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();

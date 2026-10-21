@@ -1,0 +1,1 @@
+CREATE POLICY "Pool is read only by secure functions" ON public.weekly_question_pool FOR SELECT TO authenticated USING (false);

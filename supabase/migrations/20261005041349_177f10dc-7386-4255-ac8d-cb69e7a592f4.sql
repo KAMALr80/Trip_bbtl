@@ -1,0 +1,1 @@
+ALTER FUNCTION trip_private.sealed_award(public.sealed_quests) SET search_path = public;

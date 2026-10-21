@@ -1,0 +1,1 @@
+CREATE POLICY "Members may see game choices" ON public.game_pick_log FOR SELECT TO authenticated USING (trip_private.is_trip_member(trip_id, auth.uid()));

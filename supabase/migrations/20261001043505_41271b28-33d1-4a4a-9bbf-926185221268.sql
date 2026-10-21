@@ -1,0 +1,1 @@
+CREATE OR REPLACE FUNCTION public.is_trip_member(p_trip uuid,p_user uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$ SELECT p_user = auth.uid() AND trip_private.is_trip_member(p_trip,auth.uid()) $$;

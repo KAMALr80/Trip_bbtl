@@ -1,0 +1,1 @@
+REVOKE ALL ON public.sealed_quests FROM anon, authenticated;

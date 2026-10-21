@@ -1,0 +1,7 @@
+DROP POLICY IF EXISTS "Members view trip photos" ON storage.objects;
+DROP POLICY IF EXISTS "Captain adds day tags" ON public.trip_day_tags;
+DROP POLICY IF EXISTS "Captain changes day tags" ON public.trip_day_tags;
+DROP POLICY IF EXISTS "Captain clears day tags" ON public.trip_day_tags;
+CREATE POLICY "Leaders add day tags" ON public.trip_day_tags FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM public.trip_members m JOIN public.trips t ON t.id=m.trip_id WHERE m.trip_id=trip_day_tags.trip_id AND m.user_id=auth.uid() AND m.role IN ('captain','co_captain') AND trip_day_tags.day_date BETWEEN t.start_date AND t.end_date));
+CREATE POLICY "Leaders change day tags" ON public.trip_day_tags FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM public.trip_members m WHERE m.trip_id=trip_day_tags.trip_id AND m.user_id=auth.uid() AND m.role IN ('captain','co_captain'))) WITH CHECK (EXISTS (SELECT 1 FROM public.trip_members m JOIN public.trips t ON t.id=m.trip_id WHERE m.trip_id=trip_day_tags.trip_id AND m.user_id=auth.uid() AND m.role IN ('captain','co_captain') AND trip_day_tags.day_date BETWEEN t.start_date AND t.end_date));
+CREATE POLICY "Leaders clear day tags" ON public.trip_day_tags FOR DELETE TO authenticated USING (EXISTS (SELECT 1 FROM public.trip_members m WHERE m.trip_id=trip_day_tags.trip_id AND m.user_id=auth.uid() AND m.role IN ('captain','co_captain')));

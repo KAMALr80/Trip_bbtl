@@ -1,0 +1,2 @@
+CREATE OR REPLACE FUNCTION trip_private.guard_public_leaderboard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN IF coalesce(trip_private.age_of(NEW.user_id),0) < 18 THEN NEW.public_leaderboard := false; END IF; RETURN NEW; END $$;
+CREATE TRIGGER guard_public_leaderboard BEFORE INSERT OR UPDATE OF public_leaderboard ON public.player_profiles FOR EACH ROW EXECUTE FUNCTION trip_private.guard_public_leaderboard();

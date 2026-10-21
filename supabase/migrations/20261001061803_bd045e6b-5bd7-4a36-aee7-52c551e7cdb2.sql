@@ -1,0 +1,2 @@
+CREATE POLICY "Upload own bug screenshots" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='bug-screenshots' AND split_part(name,'/',1)=auth.uid()::text);
+CREATE POLICY "View bug screenshots" ON storage.objects FOR SELECT TO authenticated USING (bucket_id='bug-screenshots' AND (split_part(name,'/',1)=auth.uid()::text OR EXISTS (SELECT 1 FROM public.bug_reports r WHERE r.screenshot_path=objects.name AND r.trip_id IS NOT NULL AND trip_private.is_leader(r.trip_id))));

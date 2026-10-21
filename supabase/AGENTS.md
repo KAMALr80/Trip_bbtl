@@ -1,0 +1,68 @@
+# Database rules
+
+- Trip Season stamps are computed on read in trip_private.trip_season with per-day caps (no ledger), so votes and thumbs-up changes never drift out of sync.
+- Question of the Week lives in weekly_questions/weekly_answers, written only via identity-checked private functions; answers stay owner-only until revealed, and answer stamps are computed on read so they never drift.
+- Trip costs are tracking-only: cost_items member-readable, cost_shares own-row or leader-readable, group totals only via trip_pot aggregates; all writes via leader-checked/owner-checked private functions that log to cost_log, so balances cant be forged and every change is traceable.
+- End-of-trip feedback lives in trip_feedback readable only by app_admins (via trip_private.is_app_admin); squad messages reach members only through trip_squad_messages. Even cost splits recalc via a trip_members insert trigger; custom splits get needs_review.
+- QOTW reveals run read → vote → reveal through identity-checked private functions (qotw_action, vote_weekly_answer); anonymous answers are served by qotw_answers so names never reach clients before the reveal.
+- Game Season stamps are computed in trip_private.game_stamps (incl. late-joiner start_stamps and QOTW win bonus) and crowning time via effective_crowning, so client, join and finalize share one formula.
+- The pre-trip window starts at trips.game_start (trip_private.season_start); night count, question rhythm, skip passes and arc stages all derive from that window. Season size comes from plan_game_nights/plan_nights; recalculations go through reschedule_preview/apply_reschedule, which keep played nights and only apply on Captain confirm, so confirmed schedules never shift silently.
+- Late-joiner starting stamps are stored once per person per trip in trip_private.trip_join_grants and reused on rejoin, so leaving and rejoining can't farm the average.
+- Trip-day game days are decided server-side in trip_private.game_day_status (travel, rest, every-other, surprise), so surprise days don't leak to players early.
+- Game plans are built by plan_game_nights/apply_game_plan: played nights and the next confirmed night are kept, the last night is always Takeoff Night, and only the Captain can apply.
+- Turn trackers are keyed by (trip_id, room) — 'all' or a team id — so team rooms advance independently while scores share one leaderboard.
+- Bonus questions use week_number >= 1000 (no game night) and auto-reveal after trip_private.bonus_window.
+
+- Host swaps (host_swaps) and hosting misses (host_penalties) are written only by identity-checked private functions; game_stamps and the client leaderboard both subtract penalties floored at 0, so totals match.
+
+- Trip unlock status (trips.unlocked_at) is set only by the Captain-checked unlock_trip function and prices come from trip_price on the server, so clients can never mark a trip paid; locked trips are blocked server-side past week 1 and for trip-day releases.
+
+- Test Lab sandbox trips are flagged trips.is_sandbox and driven only through founder-guarded trip_private.lab_* functions (bots act by switching request claims), so the real rules run while sandbox data stays out of stats and other users never see it.
+- trip_private functions are executable only by authenticated/service_role when a public wrapper or policy references them; anon never reaches them, keeping the private API surface minimal.
+- Join-code/invite lookups record misses in trip_private.code_attempts and return empty/NULL instead of raising, so the rate limit survives transaction rollback.
+- Game logic counts only status='approved' members; join caps count approved + pending so trips can't overflow; host rotation orders by coalesce(approved_at, joined_at) so approvals append without reshuffling.
+- Late-joiner baselines are applied once via trip_private.apply_join_baseline when a member becomes approved (join or approval), reusing trip_join_grants on rejoin.
+- Host no-show penalties apply only without host_checked_in_at (set by check-in or any host night action) and never on skipped nights, on both server and client.
+
+- Content ratings in content_feedback carry no user or trip column and are written only through rate_content, so reports can't identify raters.
+
+- The photo-purge cron route accepts the platform cron secret or the scheduler's DB-held key (checked via service-role-only `check_cron_key`), because pg_cron cannot read platform secrets.
+- trips.trip_timezone drives trip-day "today" (trip_today, game days, day votes, client tripTz); pre-trip nights and departure crowning stay on home_timezone.
+- Team picks go through pick_team, which locks the team row before checking capacity, so two players can never take the last spot.
+- AI credits are computed on read (tier when unlocked + webhook-only ai_credit_purchases − ai_usage.credits) and spent only via trip_private.spend_credits, which locks the trip row, so balances can't drift or double-spend; AI calls log model/tokens/cost on ai_usage.
+- At Home trips are trips.kind='at_home' with season_scoring=false, so every season/badge/level path that already checks season_scoring skips them; their plan lives in at_home_activities and is read only through at_home_plan, which releases by the viewer's own date.
+- Checkout writes one orders row via checkout_beta (server-priced, single best discount from reward_codes or returning At Home history); unlock follows the order so later only a verified webhook flips status to paid.
+- Bug triage (status, issues, check-ins) is read/written only through founder-checked trip_private functions; status changes on an issue cascade to its reports, and reporters see only their own updates via my_bug_updates, so triage can't leak across users.
+- Trip levels (trips.level full/preview) and Preview feature switches are decided only in trip_private (feature_on/require_feature, restrictive SELECT policies, in_slice draw ordering, preview_room_ok limits); the client FeatureGate only displays, so hidden features can't be unlocked from the app.
+- Itinerary days are member-readable in `trip_itineraries`; Captain-only tags in `trip_day_tags`.
+- Content draws prefer items unseen in content_seen for the trip, then unused by the Captain's other trips; low pools get app-paid AI variants (content_variants/trip-scoped game_cards) via topUpContent with a cooldown, and typed-in content is never altered.
+- Inspiration experiences carry country/region/city; public reach needs creator feature_later plus founder approval via moderate_inspiration (logged), enforced in inspiration_public/quest_access, so clients can't self-publish. Sample experiences are local read-only display data, never DB rows.
+- Trip-day games auto-generate but stay hidden from players (RLS on released_at) until a leader calls release_trip_day; skipped game nights are a leader-set flag excluded from season maxima on both client and finalize_season, so nobody loses points.
+- Game-night format moments, reactions, and per-night card skips use approved-member reads and identity-checked private actions; this preserves hidden votes and prevents pending members from seeing play.
+- Scavenger proof keeps photos optional and awards extra points only after two other members verify or the Captain approves a challenge; this avoids Captain work for ordinary submissions.
+- Game Rooms listing lives on trips.room_* and is written only by Captain-checked set_room_listing; outsiders read rooms only through game_rooms (nicknames/scores/nights), and join requests (room_requests/room_blocks) are created/decided through identity-checked private functions with 18+, expiry and rate limits enforced server-side, so nothing private leaks and approvals are recorded.
+
+- Trip time zone and every trip-pot write (save/delete cost, confirm/undo payment) check trip_private.is_captain; a Co-Captain gets these only by becoming Captain via the takeover/hand-off flow, while invites and game-night scheduling stay leader-level.
+- Public leaderboard visibility is per person only (player_profiles.public_leaderboard, forced off under 18); there is no trip-level switch, so a Captain can't expose players who opted out.
+- Leaving a trip records a trip_removals row like a removal, so the join code only re-adds former members as pending; read-only peeks for waiting/former members come only from trip_peek/my_past_trips, which return name, place, dates, squad size and top 3.
+- Live votes need at least one ballot to reveal (close_live_vote ends an empty vote as "No votes"); vote options, score targets and day votes accept only approved members; the night's host can't set their own win.
+- Secret Missions live in mission_claims (points fixed by slot: 1–3 = 2, 4–5 = 3) and change only via trip_private.mission_action; Airport proof closes at the later of the shared Trip Season start or 24 hours after reveal, and released points are capped at 12 in Trip Season scoring.
+- Early Check-In tasks reuse security_missions/mission_claims with phase='checkin' (kind 'checkin', 4/3/3 slots, cap 10) through mission_action, so Takeoff and Check-In share one approval list and one bonus path in mission_bonus.
+- Experience previews are text-only snapshots in experience_previews written by trip_private.share_preview from server data (Captain/creator, ended, non-sandbox); Destinations reads only those rows, so no live trip data or member info can leak. Junkie Rank is computed on read in trip_private.junkie_rank with a high-water mark in junkie_ranks, so tiers never drop and scores never mix in.
+
+- Mission/task pool text (security_missions) is unreadable by clients and AI top-ups are inserted only by server functions with the service role after the credit spend, so Reveal is a real reveal and clients never supply mission text.
+- Outsiders read shared Cultural Inspiration days only via culture_days (city-level place, no tagged squad) and previews without trip/experience ids (column grants + my_preview_shared/preview_culture_link), so shared content can't be traced to a trip.
+- At Home crowns are season_champions rows with season='home' written when the last Home Day is revealed; competitive views filter to game/trip seasons so they only feed Junkie Rank.
+- Trigger functions on auth.users must be executable by supabase_auth_admin (grant USAGE on their schema + EXECUTE on the function).
+- Every AI authoring route must include the shared `RULES` from `src/lib/content-rules.ts`, then validate generated text with `safeContent`; the DB text guard rejects disallowed phrases in seeded/game content. Keep all content fun, inclusive, lawful, culturally respectful and family-clean by default. Never stereotype or impersonate a culture, name businesses/addresses, track people or send a group to an unverified landmark. Alcohol is only optional sip-or-skip for approved 21+ players when the trip permits it. Find It uses existing trip-day proof, content_seen and scoring caps.
+
+- Private beta codes live in beta_codes (founder-read only) and are redeemed only via trip_private.redeem_beta_code, which writes beta_access; join lock/max squad are Captain-only via set_join_controls and logged in trip_role_changes.
+- Every AI gateway call passes trip_private.ai_gate (founder on/off + daily global/per-user caps on ai_usage): spend paths call it first in use_ai_quota/spend_credits/mix_ai_quota, app-paid paths via service-only ai_gate_server and log user_id, so one switch stops all AI spend and automatic paths fall back to pre-written pools.
+- Sealed quests/Showcase live in sealed_quests with no client grants; drop days are computed on read by trip_private.sealed_drops and every timer/award is decided in trip_private, so sealed or self-destructed text never reaches clients and points can't drift. Raw season totals come from season_points.
+- New short seasons use trips.season_rule='a2c' for cutoff/drop/crowning timing and Captain scheduling; legacy rooms keep their prior behavior and Siam Vibes never materializes sealed rows.
+- A2c quest templates are chosen privately by presentation_tag with an insight and budget option; when an approved minor joins, proof_read_ok limits photos to uploader/leaders.
+- Part 3 expands to 30 templates per active tag; a2c_quest_card first chooses unused, then least-recently-used with new-angle text unique to that player. It remains service_role-only. Legacy scoring and the four publish-switch functions are unchanged.
+- Under-18 trips are marked trips.has_minors (new rooms only, via Captain-checked set_trip_minors or auto on approving a teen); a trips trigger forces Family vibe, and adult checks/quest handouts exclude these trips, so content can't drift from the age rule.
+- Trip Season speed bonus uses server-stamped first finishes per person per day in trip_private.trip_speed_finishes (insert triggers, snapshot of released_at, no client grants) and is read only in season_points, so it can't be forged or farmed.
+- Solo culture experiences (culture_experiences.play_mode='solo') never link to a trip (trigger), and their quests live in solo_quests, owner-read-only, written only via solo_action; fare classes are a server-computed share of available points, so solo players never reach group leaderboards or crowns.
+- List prices live only in public.price_rules (price_list / trip_private.price, used by trip_price and order_quote); default-on app_settings.beta_free fails closed in checkout_beta, unlock_extra_seats and an orders trigger, so nothing is charged in beta.

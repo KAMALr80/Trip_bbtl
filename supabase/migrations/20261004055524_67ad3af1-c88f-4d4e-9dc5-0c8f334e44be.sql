@@ -1,0 +1,46 @@
+CREATE TABLE public.game_pick_log (id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, trip_id uuid NOT NULL REFERENCES public.trips(id) ON DELETE CASCADE, week_number integer NOT NULL, game_number integer NOT NULL REFERENCES public.game_catalog(number), actor uuid NOT NULL, method text NOT NULL CHECK (method IN ('picked','surprise')), created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
+GRANT ALL ON public.game_pick_log TO service_role;
+ALTER TABLE public.game_pick_log ENABLE ROW LEVEL SECURITY;
+CREATE TRIGGER game_pick_log_updated BEFORE UPDATE ON public.game_pick_log FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();
+CREATE OR REPLACE FUNCTION trip_private.pick_night_game(p_trip uuid, p_week integer, p_game integer) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $fn$
+DECLARE v_night public.game_nights; v_used integer[];
+BEGIN
+ IF auth.uid() IS NULL OR NOT trip_private.is_trip_member(p_trip,auth.uid()) THEN RAISE EXCEPTION 'Not in this trip'; END IF;
+ IF NOT trip_private.trip_open(p_trip) THEN RAISE EXCEPTION 'This trip has ended'; END IF;
+ PERFORM trip_private.require_feature(p_trip,'spin_wheel');
+ SELECT * INTO v_night FROM public.game_nights WHERE trip_id=p_trip AND week_number=p_week FOR UPDATE;
+ IF NOT FOUND OR v_night.skipped OR v_night.starts_at <= now() OR v_night.game_number IS NOT NULL THEN RAISE EXCEPTION 'Choose an unassigned upcoming night'; END IF;
+ IF NOT (trip_private.is_leader(p_trip,auth.uid()) OR v_night.host_id=auth.uid()) THEN RAISE EXCEPTION 'Only a leader or this night''s host can choose'; END IF;
+ IF p_game IS NULL OR NOT EXISTS(SELECT 1 FROM public.game_catalog WHERE number=p_game) THEN RAISE EXCEPTION 'Choose a catalog game'; END IF;
+ INSERT INTO public.trip_play_state(trip_id) VALUES(p_trip) ON CONFLICT DO NOTHING;
+ SELECT coalesce(used_games,'{}'::integer[]) INTO v_used FROM public.trip_play_state WHERE trip_id=p_trip FOR UPDATE;
+ IF p_game=ANY(v_used) AND EXISTS(SELECT 1 FROM public.game_catalog WHERE NOT(number=ANY(v_used))) THEN RAISE EXCEPTION 'Pick a game this Trip has not played yet'; END IF;
+ UPDATE public.game_nights SET game_number=p_game WHERE trip_id=p_trip AND week_number=p_week AND game_number IS NULL;
+ UPDATE public.trip_play_state SET used_games=array_append(v_used,p_game) WHERE trip_id=p_trip;
+ INSERT INTO public.game_pick_log(trip_id,week_number,game_number,actor,method) VALUES(p_trip,p_week,p_game,auth.uid(),'picked');
+END $fn$;
+REVOKE ALL ON FUNCTION trip_private.pick_night_game(uuid,integer,integer) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION trip_private.pick_night_game(uuid,integer,integer) TO authenticated;
+CREATE FUNCTION public.pick_night_game(p_trip uuid,p_week integer,p_game integer) RETURNS void LANGUAGE sql SECURITY INVOKER SET search_path=public AS $fn$ SELECT trip_private.pick_night_game(p_trip,p_week,p_game) $fn$;
+REVOKE ALL ON FUNCTION public.pick_night_game(uuid,integer,integer) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.pick_night_game(uuid,integer,integer) TO authenticated;
+CREATE OR REPLACE FUNCTION trip_private.spin_next_game(p_trip uuid) RETURNS TABLE(game_number integer,week_number integer,spin_time timestamptz) LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $fn$
+DECLARE v_target integer; v_current integer; v_game integer; v_used integer[]; v_now timestamptz:=clock_timestamp(); BEGIN PERFORM trip_private.require_feature(p_trip, 'spin_wheel');
+IF NOT trip_private.is_trip_member(p_trip,auth.uid()) THEN RAISE EXCEPTION 'Not in this trip'; END IF;
+IF NOT trip_private.trip_open(p_trip) THEN RAISE EXCEPTION 'This trip has ended'; END IF;
+SELECT n.week_number INTO v_current FROM public.game_nights n WHERE n.trip_id=p_trip AND n.starts_at<=v_now ORDER BY n.starts_at DESC LIMIT 1;
+SELECT n.week_number INTO v_target FROM public.game_nights n WHERE n.trip_id=p_trip AND n.game_number IS NULL AND n.starts_at>v_now AND NOT n.skipped AND (v_current IS NULL OR n.week_number>v_current) ORDER BY n.week_number LIMIT 1;
+IF v_target IS NULL THEN RAISE EXCEPTION 'No upcoming week needs a game'; END IF;
+IF v_target=1 THEN RAISE EXCEPTION 'The Captain chooses the first game'; END IF;
+IF NOT EXISTS (SELECT 1 FROM public.trip_members m WHERE m.trip_id=p_trip AND m.user_id=auth.uid() AND m.status='approved' AND (m.role IN ('captain','co_captain') OR m.user_id=(SELECT n.host_id FROM public.game_nights n WHERE n.trip_id=p_trip AND n.week_number=coalesce(v_current,1)))) THEN RAISE EXCEPTION 'Only a leader or this week''s host can spin'; END IF;
+IF NOT EXISTS (SELECT 1 FROM public.game_nights n WHERE n.trip_id=p_trip AND n.week_number=v_target-1 AND n.game_number IS NOT NULL) THEN RAISE EXCEPTION 'Choose the previous week''s game first'; END IF;
+INSERT INTO public.trip_play_state(trip_id) VALUES(p_trip) ON CONFLICT DO NOTHING;
+SELECT coalesce(s.used_games,'{}'::integer[]) INTO v_used FROM public.trip_play_state s WHERE s.trip_id=p_trip FOR UPDATE;
+SELECT g.number INTO v_game FROM public.game_catalog g WHERE NOT(g.number=ANY(v_used)) ORDER BY random() LIMIT 1;
+IF v_game IS NULL THEN SELECT g.number INTO v_game FROM public.game_catalog g WHERE g.number<>(SELECT n.game_number FROM public.game_nights n WHERE n.trip_id=p_trip AND n.week_number=v_target-1) ORDER BY random() LIMIT 1; v_used:='{}'; END IF;
+IF v_game IS NULL THEN RAISE EXCEPTION 'No game available'; END IF;
+UPDATE public.game_nights n SET game_number=v_game WHERE n.trip_id=p_trip AND n.week_number=v_target AND n.game_number IS NULL;
+IF NOT FOUND THEN RAISE EXCEPTION 'That week already has a game'; END IF;
+UPDATE public.trip_play_state s SET used_games=array_append(v_used,v_game),spin_game=v_game,spin_week=v_target,spin_at=v_now WHERE s.trip_id=p_trip;
+INSERT INTO public.game_pick_log(trip_id,week_number,game_number,actor,method) VALUES(p_trip,v_target,v_game,auth.uid(),'surprise');
+RETURN QUERY SELECT v_game,v_target,v_now; END $fn$;

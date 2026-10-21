@@ -1,0 +1,3 @@
+REVOKE ALL ON FUNCTION trip_private.a2c_quest_card(uuid,uuid,text,integer,text) FROM authenticated;
+CREATE OR REPLACE FUNCTION trip_private.a2c_quest_insights(p_trip uuid) RETURNS TABLE(quest_id uuid,insight text) LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT q.id,q.insight FROM public.sealed_quests q JOIN public.trips t ON t.id=q.trip_id WHERE t.season_rule='a2c' AND q.trip_id=p_trip AND q.user_id=auth.uid() AND trip_private.is_trip_member(p_trip,auth.uid()) AND q.insight IS NOT NULL AND (q.kind='showcase' OR (q.opened_at IS NOT NULL AND now()<least(q.opened_at+interval '24 hours',trip_private.quest_cutoff(p_trip)))) $$;
+GRANT EXECUTE ON FUNCTION trip_private.a2c_quest_card(uuid,uuid,text,integer,text) TO service_role;

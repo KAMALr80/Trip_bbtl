@@ -1,0 +1,3 @@
+CREATE OR REPLACE FUNCTION trip_private.revoke_changed_birthday_approvals() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $fn$ BEGIN IF TG_OP='DELETE' OR (TG_OP='UPDATE' AND NEW.birthday IS DISTINCT FROM OLD.birthday) THEN DELETE FROM public.trip_adult_approvals WHERE user_id=OLD.user_id; END IF; RETURN COALESCE(NEW,OLD); END $fn$;
+REVOKE ALL ON FUNCTION trip_private.revoke_changed_birthday_approvals() FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER birthday_change_revokes_adult_approval AFTER UPDATE OR DELETE ON public.player_birthdays FOR EACH ROW EXECUTE FUNCTION trip_private.revoke_changed_birthday_approvals();

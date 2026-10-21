@@ -1,0 +1,1 @@
+CREATE POLICY "No direct access to join grants" ON trip_private.trip_join_grants FOR ALL USING (false) WITH CHECK (false);
