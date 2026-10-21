@@ -64,7 +64,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/lib/auth-context";
 import { TripSheets } from "@/components/TripSheets";
 import { SeatCap } from "@/components/SeatCap";
@@ -1270,14 +1269,18 @@ function AuthScreen({
     setBusy(true);
     setMessage("");
     try {
-      const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: window.location.origin,
+      // Supabase redirects the browser to Google and back to this origin, where the session is
+      // picked up from the URL. The Google provider and redirect URLs live in Supabase Auth settings.
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: window.location.origin },
       });
-      if (result.error)
+      if (error) {
         setMessage(
-          `Google sign-in didn't work: ${friendlyError(result.error) || "please try again"}. You can also use email below.`,
+          `Google sign-in didn't work: ${friendlyError(error) || "please try again"}. You can also use email below.`,
         );
-      if (!result.redirected) setBusy(false);
+        setBusy(false);
+      }
     } catch (error) {
       setMessage(
         `Google sign-in didn't work: ${friendlyError(error) || "please try again"}. Pop-ups may be blocked — try again or use email below.`,
