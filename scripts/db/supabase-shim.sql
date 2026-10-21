@@ -32,8 +32,15 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, au
 CREATE SCHEMA IF NOT EXISTS auth;
 GRANT USAGE ON SCHEMA auth TO anon, authenticated, service_role;
 CREATE TABLE IF NOT EXISTS auth.users (
+  instance_id uuid,
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  aud text,
+  role text,
   email text,
+  confirmation_token text,
+  recovery_token text,
+  email_change_token_new text,
+  email_change text,
   phone text,
   encrypted_password text,
   email_confirmed_at timestamptz,
@@ -44,6 +51,17 @@ CREATE TABLE IF NOT EXISTS auth.users (
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now(),
   deleted_at timestamptz
+);
+CREATE TABLE IF NOT EXISTS auth.identities (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider_id text NOT NULL,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  identity_data jsonb NOT NULL,
+  provider text NOT NULL,
+  last_sign_in_at timestamptz,
+  created_at timestamptz,
+  updated_at timestamptz,
+  UNIQUE (provider_id, provider)
 );
 -- Session claims are read from GUCs, like PostgREST does: set request.jwt.claims / request.jwt.claim.sub.
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$

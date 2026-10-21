@@ -1,1 +1,36 @@
-project_id = "kymflipjxxpyxksdfgdw"
+# Supabase CLI config for local development (`supabase start`, `supabase db reset`, `supabase test db`).
+# The hosted projects are selected with `supabase link --project-ref <ref>`; this file only shapes
+# the local stack. Production ref today: kymflipjxxpyxksdfgdw (Lovable Cloud, see dev-docs/07 §3.2).
+project_id = "tripjunkies"
+
+[api]
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+
+[db]
+port = 54322
+# Match the hosted project's major version once confirmed (M0-02).
+major_version = 17
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[studio]
+port = 54323
+
+[local_smtp]
+# Local inbox for auth emails (sign-up codes, password resets): http://127.0.0.1:54324
+port = 54324
+
+[auth]
+site_url = "http://localhost:8080"
+additional_redirect_urls = ["http://localhost:8080", "http://127.0.0.1:8080"]
+enable_signup = true
+
+[auth.external.google]
+# Set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET in supabase/.env to test Google sign-in locally.
+enabled = false
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_CLIENT_SECRET)"

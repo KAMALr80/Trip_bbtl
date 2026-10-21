@@ -17,6 +17,8 @@ set -uo pipefail
 if ! psql -X -At -c "SELECT 1 FROM pg_available_extensions WHERE name = '"'"'pgtap'"'"'" | grep -q 1; then
   psql -X -q -v ON_ERROR_STOP=1 -f "'"$ROOT"'/scripts/db/pgtap-lite.sql" >/dev/null
 fi
+# Like `supabase db reset`: apply the seed after the migrations. Twice, to prove it can be re-run.
+for _ in 1 2; do psql -X -q -v ON_ERROR_STOP=1 -f "'"$ROOT"'/supabase/seed.sql" >/dev/null || exit 1; done
 failed=0; total=0
 for f in $TEST_FILES; do
   total=$((total + 1))
