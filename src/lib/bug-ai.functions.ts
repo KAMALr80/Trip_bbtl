@@ -20,16 +20,15 @@ export const suggestSimilarReports = createServerFn({ method: "POST" })
     const scrub = (s: string) => s.replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, "[email]").replace(/https?:\/\/\S+/g, "[link]").slice(0, 400);
     const others = rows.filter((r) => r.id !== target.id).slice(0, 120).map((r) => ({ id: r.id, screen: r.page, text: scrub(r.description), issue: r.issue_title }));
     if (!others.length) return { ids: [] as string[] };
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("AI is unavailable right now.");
+    const { getAiModel } = await import("@/integrations/ai/index.server");
+    const ai = getAiModel();
+    if (!ai) throw new Error("AI is unavailable right now.");
     const guard = await import("./ai-quota.server");
     if (!(await guard.appAiAllowed("bug_triage", null, context.userId))) throw new Error(guard.AI_BREAK);
-    const { createOpenAI } = await import("@ai-sdk/openai");
     const { generateText } = await import("ai");
-    const provider = createOpenAI({ baseURL: "https://ai.gateway.lovable.dev/v1", apiKey, headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" } });
-    const model = "openai/gpt-6-astra";
+    const model = ai.modelId;
     const result = await generateText({
-      model: provider.responses(model),
+      model: ai.model,
       system: "You triage bug reports for a mobile app. Given a TARGET report and a list of OTHER reports, return ONLY a JSON array of the ids of OTHER reports that most likely describe the same underlying bug (max 8). Return [] if none. No markdown.",
       prompt: JSON.stringify({ target: { screen: target.page, text: scrub(target.description) }, others }),
       providerOptions: { openai: { store: false } },

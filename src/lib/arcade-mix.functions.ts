@@ -10,7 +10,7 @@ export const arcadeMix = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Same single AI path as every other feature; "arcade_mix" applies the existing mix rules (3 free, then 1 credit, daily cap).
     const log = await spendAiQuota(context.supabase, "arcade_mix", data.tripId);
-    const { text, usage } = await generateArcadeMix();
-    await log("openai/gpt-6-astra", usage);
+    const { text, usage, modelId } = await generateArcadeMix();
+    await log(modelId, usage);
     return text;
   });

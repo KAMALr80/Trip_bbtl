@@ -11,20 +11,19 @@ type AiOut = { bingo?: string[]; quests?: string[]; trivia?: Trivia[] };
 function todayIn(tz: string) { try { return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); } catch { return new Date().toISOString().slice(0, 10); } }
 
 async function askAi(payload: object, want: { bingo: boolean; quests: boolean; trivia: boolean }, log: (m: string, u: { inputTokens?: number | undefined; outputTokens?: number | undefined } | undefined) => Promise<void>): Promise<AiOut> {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key || (!want.bingo && !want.quests && !want.trivia)) return {};
-  const { createOpenAI } = await import("@ai-sdk/openai");
+  const { getAiModel } = await import("@/integrations/ai/index.server");
+  const ai = getAiModel();
+  if (!ai || (!want.bingo && !want.quests && !want.trivia)) return {};
   const { streamText } = await import("ai");
-  const provider = createOpenAI({ baseURL: "https://ai.gateway.lovable.dev/v1", apiKey: key, headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" } });
   const shape = [want.bingo && '"bingo": 9 short bingo squares (under 70 chars)', want.quests && `"quests": 3 Find It tasks (under 120 chars), each starting with a different hunt kind from: ${FIND_IT_KINDS.join(", ")}; use Landmark Quest only if a world-famous landmark is verified in today's itinerary city`, want.trivia && '"trivia": 6 multiple-choice questions about the destination, each {"q": string, "options": [4 strings], "answer": index 0-3}'].filter(Boolean).join("; ");
   const result = streamText({
-    model: provider.responses("openai/gpt-6-astra"),
+    model: ai.model,
     instructions: `You write quick, fun group-trip mini games. Return ONLY a JSON object with: ${shape}. Ground content in today's itinerary city: culture, food, colors, words, music and customs. World-famous landmarks are allowed only if they are in today's itinerary city; never invent a landmark or send the group to another place. Each task takes only a few minutes, is free or nearly free, and can be done in public where the squad already is. Apply to every quest: ${FIND_IT_SAFETY} Trivia uses verifiable facts. ${RULES}`,
     messages: [{ role: "user", content: JSON.stringify(payload) }],
     providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false, include: ["reasoning.encrypted_content"] } },
   });
   const text = await result.text;
-  await log("openai/gpt-6-astra", await result.usage);
+  await log(ai.modelId, await result.usage);
   try { return JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? "{}") as AiOut; } catch { return {}; }
 }
 
