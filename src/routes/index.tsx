@@ -1,5 +1,6 @@
 import { safeSetItem } from "@/lib/safe-storage";
 import { friendlyError } from "@/lib/friendly-error";
+import { ArchivedTrip } from "@/components/ArchivedTrip";
 import { JourneyPhases } from "@/components/JourneyPhases";
 import { BrandLockup } from "@/components/BrandLockup";
 import { CaptainCrown } from "@/components/CaptainCrown";
@@ -1991,6 +1992,9 @@ function TabContent({
         <Skeleton className="h-20" />
       </div>
     );
+  // M1-01: trips archived at the new-engine cutover get one read-only view instead of their tabs.
+  if (active && active.rules_version === 1 && tab !== "Me")
+    return <ArchivedTrip trip={active} cards={cards} userId={userId} onMember={onMember} />;
   if (tab === "Home" && active && isAtHome(active)) return <AtHomeHome trip={active} open={open} />;
   if (tab === "Home" && active) {
     const days = Math.ceil(

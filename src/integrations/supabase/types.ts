@@ -5043,6 +5043,7 @@ export type Database = {
           room_nickname: string | null;
           room_region: string | null;
           schedule_every: number;
+          rules_version: number;
           season_rule: string;
           season_scoring: boolean;
           solo_experience_id: string | null;
@@ -5103,6 +5104,7 @@ export type Database = {
           room_nickname?: string | null;
           room_region?: string | null;
           schedule_every?: number;
+          rules_version?: number;
           season_rule?: string;
           season_scoring?: boolean;
           solo_experience_id?: string | null;
@@ -5163,6 +5165,7 @@ export type Database = {
           room_nickname?: string | null;
           room_region?: string | null;
           schedule_every?: number;
+          rules_version?: number;
           season_rule?: string;
           season_scoring?: boolean;
           solo_experience_id?: string | null;

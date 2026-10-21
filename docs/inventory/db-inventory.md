@@ -12,10 +12,10 @@
 
 | | public | trip_private |
 |---|---|---|
-| Tables | 127 | 12 |
+| Tables | 127 | 13 |
 | Views | 0 | 0 |
-| Functions | 303 | 392 |
-| Triggers | 5 | 42 |
+| Functions | 305 | 395 |
+| Triggers | 5 | 44 |
 
 Objects (re)defined in 5 or more migrations: **18**. This is why the snapshot, not the migration history, is the reference (gotcha G5).
 
@@ -91,7 +91,7 @@ revoke `anon` (09 §2).
 
 ## Client usage
 
-### Public functions callable by clients but not referenced in `src/`: 46
+### Public functions callable by clients but not referenced in `src/`: 48
 
 Candidates to revoke (M1-08). Some may be called from SQL, cron or the Test Lab only: check
 before removing. Reference matching is by quoted name, so dynamic names built from strings
@@ -100,6 +100,7 @@ are still found.
 - `adult_badge(p_trip uuid, p_user uuid)`
 - `advance_play_phase(p_trip uuid, p_current integer)`
 - `apply_reschedule(p_trip uuid, p_every integer, p_count integer)`
+- `archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text)`
 - `captain_pass_limit(p_trip uuid)`
 - `claim_airport(p_trip uuid, p_date date, p_mission integer, p_photo text, p_guess text)`
 - `create_at_home(p_pack text, p_length text, p_start date, p_vibe text, p_tz text)`
@@ -136,6 +137,7 @@ are still found.
 - `set_game_night_host(p_trip uuid, p_week integer, p_host uuid)`
 - `set_home_ready_start(p_trip uuid, p_start date)`
 - `set_price_rule(p_key text, p_cents integer)`
+- `set_trip_archived(p_trip uuid, p_archived boolean, p_note text)`
 - `set_wheels_up(p_trip uuid, p_date date, p_time text)`
 - `start_game_turns(p_trip uuid, p_week integer, p_cards integer, p_random boolean)`
 - `traveler_level(p_user uuid)`
@@ -144,11 +146,11 @@ are still found.
 - `vote_mission(p_trip uuid, p_date date, p_owner uuid, p_caught boolean)`
 - `week_game_action(p_trip uuid, p_week integer, p_action text)`
 
-### Public tables/views not referenced by name in `src/`: 38
+### Public tables/views not referenced by name in `src/`: 37
 
 Usually fine: most are read and written only through `trip_private` functions.
 
-`account_consents`, `ai_credit_purchases`, `app_admins`, `at_home_answers`, `at_home_votes`, `beta_access`, `beta_codes`, `bug_issues`, `content_feedback`, `cost_log`, `culture_exp_hidden`, `culture_exp_likes`, `culture_quest_answers`, `culture_quest_players`, `culture_quest_sessions`, `culture_showcase_ballots`, `culture_showcase_rewards`, `culture_showcase_viewers`, `game_pick_log`, `home_day_results`, `home_day_sessions`, `junkie_ranks`, `passport_stamps`, `player_birthdays`, `player_private`, `price_rules`, `room_blocks`, `room_requests`, `sealed_quests`, `season_quests`, `season_settings`, `solo_quests`, `trip_deletion_log`, `trip_role_changes`, `user_credits`, `waitlist`, `weekly_answer_votes`, `weekly_questions`
+`account_consents`, `ai_credit_purchases`, `app_admins`, `at_home_answers`, `at_home_votes`, `beta_access`, `beta_codes`, `bug_issues`, `content_feedback`, `cost_log`, `culture_exp_hidden`, `culture_exp_likes`, `culture_quest_answers`, `culture_quest_players`, `culture_quest_sessions`, `culture_showcase_ballots`, `culture_showcase_rewards`, `culture_showcase_viewers`, `game_pick_log`, `home_day_results`, `home_day_sessions`, `junkie_ranks`, `player_birthdays`, `player_private`, `price_rules`, `room_blocks`, `room_requests`, `sealed_quests`, `season_quests`, `season_settings`, `solo_quests`, `trip_deletion_log`, `trip_role_changes`, `user_credits`, `waitlist`, `weekly_answer_votes`, `weekly_questions`
 
 ## Tables
 
@@ -221,7 +223,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `mission_claims` | table | ✅ | 1 | — | 4 |
 | public | `mission_votes` | table | ✅ | 1 | — | 2 |
 | public | `orders` | table | ✅ | 1 | — | 1 |
-| public | `passport_stamps` | table | ✅ | 1 | — | 0 |
+| public | `passport_stamps` | table | ✅ | 1 | — | 1 |
 | public | `photo_posts` | table | ✅ | 2 | — | 1 |
 | public | `photo_reactions` | table | ✅ | 3 | DELETE,INSERT | 1 |
 | public | `photo_removed` | table | ✅ | 1 | — | 1 |
@@ -242,7 +244,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `sandbox_bots` | table | ✅ | 1 | — | 1 |
 | public | `sandbox_trips` | table | ✅ | 1 | — | 2 |
 | public | `sealed_quests` | table | ✅ | 0 | — | 0 |
-| public | `season_champions` | table | ✅ | 1 | — | 3 |
+| public | `season_champions` | table | ✅ | 1 | — | 4 |
 | public | `season_quests` | table | ✅ | 1 | — | 0 |
 | public | `season_settings` | table | ✅ | 1 | — | 0 |
 | public | `secret_missions` | table | ✅ | 1 | — | 3 |
@@ -290,6 +292,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | trip_private | `preview_log` | table | ❌ | 0 | — | — |
 | trip_private | `preview_settings` | table | ❌ | 0 | — | — |
 | trip_private | `teen_accounts` | table | ❌ | 0 | — | — |
+| trip_private | `trip_archive_log` | table | ❌ | 0 | — | — |
 | trip_private | `trip_join_grants` | table | ✅ | 1 | ALL | — |
 | trip_private | `trip_removals` | table | ❌ | 0 | — | — |
 | trip_private | `trip_speed_finishes` | table | ❌ | 0 | — | — |

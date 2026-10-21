@@ -242,6 +242,18 @@ CREATE FUNCTION public.approve_member(p_trip uuid, p_user uuid, p_approve boolea
 
 
 --
+-- Name: archive_legacy_trips(timestamp with time zone, uuid[], text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text) RETURNS integer
+    LANGUAGE sql
+    SET search_path TO 'public'
+    AS $$
+  SELECT trip_private.archive_legacy_trips(p_created_before, p_keep, p_note)
+$$;
+
+
+--
 -- Name: at_home_answer(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2724,6 +2736,18 @@ CREATE FUNCTION public.set_trip_access(p_trip uuid, p_code_enabled boolean, p_re
 
 
 --
+-- Name: set_trip_archived(uuid, boolean, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_trip_archived(p_trip uuid, p_archived boolean, p_note text) RETURNS void
+    LANGUAGE sql
+    SET search_path TO 'public'
+    AS $$
+  SELECT trip_private.set_trip_archived(p_trip, p_archived, p_note)
+$$;
+
+
+--
 -- Name: set_trip_extras(uuid, text, text, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3795,6 +3819,30 @@ BEGIN IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Only the Capt
   PERFORM trip_private.apply_join_baseline(p_trip, p_user);
   INSERT INTO public.beta_access(user_id, source) VALUES (p_user, 'invite') ON CONFLICT DO NOTHING;
  ELSE DELETE FROM public.trip_members WHERE trip_id=p_trip AND user_id=p_user; END IF; END $$;
+
+
+--
+-- Name: archive_legacy_trips(timestamp with time zone, uuid[], text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text) RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE n integer;
+BEGIN
+  IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'App admins only'; END IF;
+  IF p_created_before IS NULL THEN RAISE EXCEPTION 'Choose a cutover time'; END IF;
+  WITH changed AS (
+    UPDATE public.trips SET rules_version = 1
+    WHERE rules_version = 2 AND created_at < p_created_before AND id <> ALL (coalesce(p_keep, '{}'))
+    RETURNING id
+  )
+  INSERT INTO trip_private.trip_archive_log (trip_id, archived, changed_by, note)
+  SELECT id, true, auth.uid(), p_note FROM changed;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  RETURN n;
+END $$;
 
 
 --
@@ -6033,6 +6081,44 @@ CREATE FUNCTION trip_private.games_live(p_trip uuid) RETURNS boolean
 BEGIN
   IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RETURN false; END IF;
   RETURN trip_private.lab_bypass(p_trip) OR EXISTS (SELECT 1 FROM public.game_nights n WHERE n.trip_id=p_trip AND NOT n.skipped AND trip_private.night_open(p_trip, n.week_number));
+END $$;
+
+
+--
+-- Name: guard_archived_trip(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.guard_archived_trip() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF auth.uid() IS NULL OR trip_private.is_app_admin() THEN RETURN NEW; END IF;
+  IF trip_private.trip_is_archived(NEW.trip_id)
+     OR (TG_OP = 'UPDATE' AND trip_private.trip_is_archived(OLD.trip_id)) THEN
+    RAISE EXCEPTION 'TRIP_ARCHIVED: This trip is archived and can''t be changed.';
+  END IF;
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: guard_archived_trip_row(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.guard_archived_trip_row() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF auth.uid() IS NULL OR trip_private.is_app_admin() THEN RETURN NEW; END IF;
+  IF NEW.rules_version IS DISTINCT FROM OLD.rules_version THEN
+    RAISE EXCEPTION 'Only an app admin can archive or restore a trip';
+  END IF;
+  IF OLD.rules_version = 1 THEN
+    RAISE EXCEPTION 'TRIP_ARCHIVED: This trip is archived and can''t be changed.';
+  END IF;
+  RETURN NEW;
 END $$;
 
 
@@ -10514,6 +10600,25 @@ BEGIN IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Captain only'
 
 
 --
+-- Name: set_trip_archived(uuid, boolean, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_trip_archived(p_trip uuid, p_archived boolean, p_note text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'App admins only'; END IF;
+  UPDATE public.trips SET rules_version = CASE WHEN p_archived THEN 1 ELSE 2 END
+  WHERE id = p_trip AND rules_version <> CASE WHEN p_archived THEN 1 ELSE 2 END;
+  IF FOUND THEN
+    INSERT INTO trip_private.trip_archive_log (trip_id, archived, changed_by, note)
+    VALUES (p_trip, p_archived, auth.uid(), p_note);
+  END IF;
+END $$;
+
+
+--
 -- Name: set_trip_extras(uuid, text, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -11319,6 +11424,18 @@ CREATE FUNCTION trip_private.trip_invite_preview(p_code text) RETURNS TABLE(name
   LIMIT 1) x;
  IF NOT FOUND THEN INSERT INTO trip_private.code_attempts(user_id) VALUES (auth.uid()); END IF;
 END $$;
+
+
+--
+-- Name: trip_is_archived(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.trip_is_archived(p_trip uuid) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT EXISTS (SELECT 1 FROM public.trips WHERE id = p_trip AND rules_version = 1)
+$$;
 
 
 --
@@ -13961,6 +14078,7 @@ CREATE TABLE public.trips (
     solo_experience_id uuid,
     extra_seats boolean DEFAULT false NOT NULL,
     guide_published_at timestamp with time zone,
+    rules_version smallint DEFAULT 2 NOT NULL,
     CONSTRAINT trips_a2e_length_check CHECK (((NOT a2e_room) OR ((season_rule = 'a2c'::text) AND (end_date >= start_date) AND ((end_date - start_date) < 3650)))),
     CONSTRAINT trips_at_home_length_check CHECK (((at_home_length IS NULL) OR (at_home_length = ANY (ARRAY['weekend'::text, 'week'::text, 'two_weeks'::text])) OR (at_home_length ~ '^d([1-9]|1[0-2])$'::text))),
     CONSTRAINT trips_backup_call_link_check CHECK (((backup_call_link IS NULL) OR ((length(backup_call_link) <= 500) AND (backup_call_link ~* '^https://'::text)))),
@@ -13978,10 +14096,18 @@ CREATE TABLE public.trips (
     CONSTRAINT trips_name_check CHECK (((length(TRIM(BOTH FROM name)) >= 1) AND (length(TRIM(BOTH FROM name)) <= 100))),
     CONSTRAINT trips_pay_note_check CHECK (((pay_note IS NULL) OR (char_length(pay_note) <= 200))),
     CONSTRAINT trips_play_arrangement_check CHECK (((play_arrangement IS NULL) OR (play_arrangement = ANY (ARRAY['solo'::text, 'online'::text, 'offline'::text])))),
+    CONSTRAINT trips_rules_version_check CHECK ((rules_version = ANY (ARRAY[1, 2]))),
     CONSTRAINT trips_schedule_every_check CHECK (((schedule_every >= 1) AND (schedule_every <= 2))),
     CONSTRAINT trips_team_mode_check CHECK ((team_mode = ANY (ARRAY['assign'::text, 'pick'::text]))),
     CONSTRAINT trips_vibe_check CHECK ((vibe = ANY (ARRAY['family'::text, 'chill'::text, 'party'::text])))
 );
+
+
+--
+-- Name: COLUMN trips.rules_version; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.trips.rules_version IS '1 = archived (pre-new-engine trip, read-only for players), 2 = current. See trip_private.archive_legacy_trips.';
 
 
 --
@@ -14325,6 +14451,34 @@ CREATE TABLE trip_private.teen_accounts (
     invite_id uuid NOT NULL,
     trip_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: trip_archive_log; Type: TABLE; Schema: trip_private; Owner: -
+--
+
+CREATE TABLE trip_private.trip_archive_log (
+    id bigint NOT NULL,
+    trip_id uuid NOT NULL,
+    archived boolean NOT NULL,
+    changed_by uuid,
+    note text,
+    changed_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: trip_archive_log_id_seq; Type: SEQUENCE; Schema: trip_private; Owner: -
+--
+
+ALTER TABLE trip_private.trip_archive_log ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME trip_private.trip_archive_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
 );
 
 
@@ -15691,6 +15845,14 @@ ALTER TABLE ONLY trip_private.teen_accounts
 
 
 --
+-- Name: trip_archive_log trip_archive_log_pkey; Type: CONSTRAINT; Schema: trip_private; Owner: -
+--
+
+ALTER TABLE ONLY trip_private.trip_archive_log
+    ADD CONSTRAINT trip_archive_log_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: trip_join_grants trip_join_grants_pkey; Type: CONSTRAINT; Schema: trip_private; Owner: -
 --
 
@@ -15904,6 +16066,34 @@ CREATE TRIGGER adult_settings_minor_guard BEFORE INSERT OR UPDATE ON public.trip
 
 
 --
+-- Name: age_guesses age_guesses_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER age_guesses_archive_guard BEFORE INSERT OR UPDATE ON public.age_guesses FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: ai_credit_purchases ai_credit_purchases_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER ai_credit_purchases_archive_guard BEFORE INSERT OR UPDATE ON public.ai_credit_purchases FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: airport_claims airport_claims_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER airport_claims_archive_guard BEFORE INSERT OR UPDATE ON public.airport_claims FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: at_home_activities at_home_activities_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER at_home_activities_archive_guard BEFORE INSERT OR UPDATE ON public.at_home_activities FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: trip_members at_home_cap; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -15915,6 +16105,13 @@ CREATE TRIGGER at_home_cap BEFORE INSERT ON public.trip_members FOR EACH ROW EXE
 --
 
 CREATE TRIGGER at_home_tier AFTER INSERT OR UPDATE OF status ON public.trip_members FOR EACH ROW EXECUTE FUNCTION trip_private.at_home_tier();
+
+
+--
+-- Name: bingo_marks bingo_marks_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER bingo_marks_archive_guard BEFORE INSERT OR UPDATE ON public.bingo_marks FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -15932,6 +16129,13 @@ CREATE TRIGGER bug_report_defaults BEFORE INSERT ON public.bug_reports FOR EACH 
 
 
 --
+-- Name: cost_items cost_items_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER cost_items_archive_guard BEFORE INSERT OR UPDATE ON public.cost_items FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: cost_items cost_items_updated; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -15939,10 +16143,38 @@ CREATE TRIGGER cost_items_updated BEFORE UPDATE ON public.cost_items FOR EACH RO
 
 
 --
+-- Name: cost_log cost_log_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER cost_log_archive_guard BEFORE INSERT OR UPDATE ON public.cost_log FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: cost_notes cost_notes_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER cost_notes_archive_guard BEFORE INSERT OR UPDATE ON public.cost_notes FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: cost_shares cost_shares_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER cost_shares_archive_guard BEFORE INSERT OR UPDATE ON public.cost_shares FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: cost_shares cost_shares_updated; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER cost_shares_updated BEFORE UPDATE ON public.cost_shares FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();
+
+
+--
+-- Name: cultural_inspirations cultural_inspirations_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER cultural_inspirations_archive_guard BEFORE INSERT OR UPDATE ON public.cultural_inspirations FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -15957,6 +16189,13 @@ CREATE TRIGGER culture_a2e_signup_guard BEFORE INSERT OR UPDATE OF play_mode ON 
 --
 
 CREATE TRIGGER culture_a2e_start_guard BEFORE UPDATE OF started_at ON public.culture_experiences FOR EACH ROW WHEN ((new.a2e_kind IS NOT NULL)) EXECUTE FUNCTION trip_private.culture_a2e_start_guard();
+
+
+--
+-- Name: culture_experiences culture_experiences_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER culture_experiences_archive_guard BEFORE INSERT OR UPDATE ON public.culture_experiences FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -15995,10 +16234,24 @@ CREATE TRIGGER culture_showcase_viewers_updated BEFORE UPDATE ON public.culture_
 
 
 --
+-- Name: day_votes day_votes_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER day_votes_archive_guard BEFORE INSERT OR UPDATE ON public.day_votes FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: trips default_trip_timezone; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER default_trip_timezone BEFORE INSERT ON public.trips FOR EACH ROW EXECUTE FUNCTION trip_private.default_trip_timezone();
+
+
+--
+-- Name: experience_previews experience_previews_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER experience_previews_archive_guard BEFORE INSERT OR UPDATE ON public.experience_previews FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -16009,10 +16262,31 @@ CREATE TRIGGER fill_card_from_profile BEFORE INSERT OR UPDATE ON public.trip_pla
 
 
 --
+-- Name: game_cards game_cards_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER game_cards_archive_guard BEFORE INSERT OR UPDATE ON public.game_cards FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: game_format_prompts game_format_prompts_updated; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER game_format_prompts_updated BEFORE UPDATE ON public.game_format_prompts FOR EACH ROW EXECUTE FUNCTION public.game_format_prompts_updated_at();
+
+
+--
+-- Name: game_night_card_skips game_night_card_skips_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER game_night_card_skips_archive_guard BEFORE INSERT OR UPDATE ON public.game_night_card_skips FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: game_night_flow game_night_flow_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER game_night_flow_archive_guard BEFORE INSERT OR UPDATE ON public.game_night_flow FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -16023,6 +16297,34 @@ CREATE TRIGGER game_night_flow_updated BEFORE UPDATE ON public.game_night_flow F
 
 
 --
+-- Name: game_night_moments game_night_moments_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER game_night_moments_archive_guard BEFORE INSERT OR UPDATE ON public.game_night_moments FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: game_night_polls game_night_polls_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER game_night_polls_archive_guard BEFORE INSERT OR UPDATE ON public.game_night_polls FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: game_night_reactions game_night_reactions_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER game_night_reactions_archive_guard BEFORE INSERT OR UPDATE ON public.game_night_reactions FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: game_night_turns game_night_turns_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER game_night_turns_archive_guard BEFORE INSERT OR UPDATE ON public.game_night_turns FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: game_night_turns game_night_turns_updated; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -16030,10 +16332,38 @@ CREATE TRIGGER game_night_turns_updated BEFORE UPDATE ON public.game_night_turns
 
 
 --
+-- Name: game_night_votes game_night_votes_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER game_night_votes_archive_guard BEFORE INSERT OR UPDATE ON public.game_night_votes FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: game_nights game_nights_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER game_nights_archive_guard BEFORE INSERT OR UPDATE ON public.game_nights FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: game_pick_log game_pick_log_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER game_pick_log_archive_guard BEFORE INSERT OR UPDATE ON public.game_pick_log FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: game_pick_log game_pick_log_updated; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER game_pick_log_updated BEFORE UPDATE ON public.game_pick_log FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();
+
+
+--
+-- Name: game_scores game_scores_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER game_scores_archive_guard BEFORE INSERT OR UPDATE ON public.game_scores FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -16282,10 +16612,31 @@ CREATE TRIGGER home_day_results_updated BEFORE UPDATE ON public.home_day_results
 
 
 --
+-- Name: home_day_sessions home_day_sessions_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER home_day_sessions_archive_guard BEFORE INSERT OR UPDATE ON public.home_day_sessions FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: home_day_sessions home_day_sessions_updated; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER home_day_sessions_updated BEFORE UPDATE ON public.home_day_sessions FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();
+
+
+--
+-- Name: host_penalties host_penalties_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER host_penalties_archive_guard BEFORE INSERT OR UPDATE ON public.host_penalties FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: host_swaps host_swaps_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER host_swaps_archive_guard BEFORE INSERT OR UPDATE ON public.host_swaps FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -16331,6 +16682,27 @@ CREATE TRIGGER inspiration_vote_validate BEFORE UPDATE ON public.inspiration_vot
 
 
 --
+-- Name: live_votes live_votes_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER live_votes_archive_guard BEFORE INSERT OR UPDATE ON public.live_votes FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: mission_claims mission_claims_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER mission_claims_archive_guard BEFORE INSERT OR UPDATE ON public.mission_claims FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: mission_votes mission_votes_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER mission_votes_archive_guard BEFORE INSERT OR UPDATE ON public.mission_votes FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: orders orders_money_guard; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -16345,6 +16717,27 @@ CREATE TRIGGER passport_stamp_updated BEFORE UPDATE ON public.passport_stamps FO
 
 
 --
+-- Name: passport_stamps passport_stamps_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER passport_stamps_archive_guard BEFORE INSERT OR UPDATE ON public.passport_stamps FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: photo_posts photo_posts_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER photo_posts_archive_guard BEFORE INSERT OR UPDATE ON public.photo_posts FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: photo_reactions photo_reactions_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER photo_reactions_archive_guard BEFORE INSERT OR UPDATE ON public.photo_reactions FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: player_birthdays player_birthdays_updated; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -16356,6 +16749,13 @@ CREATE TRIGGER player_birthdays_updated BEFORE UPDATE ON public.player_birthdays
 --
 
 CREATE TRIGGER player_private_legal_age BEFORE INSERT ON public.player_private FOR EACH ROW EXECUTE FUNCTION trip_private.legal_dob_guard();
+
+
+--
+-- Name: postcard_stickers postcard_stickers_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER postcard_stickers_archive_guard BEFORE INSERT OR UPDATE ON public.postcard_stickers FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -16380,6 +16780,27 @@ CREATE TRIGGER quest_challenge_updated BEFORE UPDATE ON public.quest_challenges 
 
 
 --
+-- Name: quest_challenges quest_challenges_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER quest_challenges_archive_guard BEFORE INSERT OR UPDATE ON public.quest_challenges FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: quest_posts quest_posts_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER quest_posts_archive_guard BEFORE INSERT OR UPDATE ON public.quest_posts FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: quest_thumbs quest_thumbs_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER quest_thumbs_archive_guard BEFORE INSERT OR UPDATE ON public.quest_thumbs FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: bingo_marks record_speed_finish; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -16394,10 +16815,31 @@ CREATE TRIGGER record_speed_finish AFTER INSERT ON public.quest_posts FOR EACH R
 
 
 --
+-- Name: room_blocks room_blocks_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER room_blocks_archive_guard BEFORE INSERT OR UPDATE ON public.room_blocks FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: room_requests room_requests_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER room_requests_archive_guard BEFORE INSERT OR UPDATE ON public.room_requests FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: room_requests room_requests_updated; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER room_requests_updated BEFORE UPDATE ON public.room_requests FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();
+
+
+--
+-- Name: sealed_quests sealed_quests_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER sealed_quests_archive_guard BEFORE INSERT OR UPDATE ON public.sealed_quests FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -16408,10 +16850,45 @@ CREATE TRIGGER sealed_quests_updated BEFORE UPDATE ON public.sealed_quests FOR E
 
 
 --
+-- Name: season_champions season_champions_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER season_champions_archive_guard BEFORE INSERT OR UPDATE ON public.season_champions FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: season_quests season_quest_updated; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER season_quest_updated BEFORE UPDATE ON public.season_quests FOR EACH ROW EXECUTE FUNCTION trip_private.touch_season_quest();
+
+
+--
+-- Name: season_quests season_quests_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER season_quests_archive_guard BEFORE INSERT OR UPDATE ON public.season_quests FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: season_settings season_settings_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER season_settings_archive_guard BEFORE INSERT OR UPDATE ON public.season_settings FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: secret_missions secret_missions_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER secret_missions_archive_guard BEFORE INSERT OR UPDATE ON public.secret_missions FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: security_missions security_missions_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER security_missions_archive_guard BEFORE INSERT OR UPDATE ON public.security_missions FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -16562,10 +17039,31 @@ CREATE TRIGGER set_weekly_questions_updated_at BEFORE UPDATE ON public.weekly_qu
 
 
 --
+-- Name: skip_passes skip_passes_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER skip_passes_archive_guard BEFORE INSERT OR UPDATE ON public.skip_passes FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: culture_experiences solo_no_trip; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER solo_no_trip BEFORE INSERT OR UPDATE ON public.culture_experiences FOR EACH ROW EXECUTE FUNCTION trip_private.solo_no_trip();
+
+
+--
+-- Name: song_discs song_discs_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER song_discs_archive_guard BEFORE INSERT OR UPDATE ON public.song_discs FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: stamp_settings stamp_settings_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER stamp_settings_archive_guard BEFORE INSERT OR UPDATE ON public.stamp_settings FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -16576,10 +17074,24 @@ CREATE TRIGGER sync_profile_to_cards AFTER INSERT OR UPDATE ON public.player_pro
 
 
 --
+-- Name: trip_adult_activities trip_adult_activities_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_adult_activities_archive_guard BEFORE INSERT OR UPDATE ON public.trip_adult_activities FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: trip_adult_activities trip_adult_activities_updated; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER trip_adult_activities_updated BEFORE UPDATE ON public.trip_adult_activities FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();
+
+
+--
+-- Name: trip_adult_approvals trip_adult_approvals_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_adult_approvals_archive_guard BEFORE INSERT OR UPDATE ON public.trip_adult_approvals FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -16590,10 +17102,38 @@ CREATE TRIGGER trip_adult_approvals_updated BEFORE UPDATE ON public.trip_adult_a
 
 
 --
+-- Name: trip_adult_settings trip_adult_settings_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_adult_settings_archive_guard BEFORE INSERT OR UPDATE ON public.trip_adult_settings FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: trip_adult_settings trip_adult_settings_updated; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER trip_adult_settings_updated BEFORE UPDATE ON public.trip_adult_settings FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();
+
+
+--
+-- Name: trip_day_games trip_day_games_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_day_games_archive_guard BEFORE INSERT OR UPDATE ON public.trip_day_games FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: trip_day_tags trip_day_tags_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_day_tags_archive_guard BEFORE INSERT OR UPDATE ON public.trip_day_tags FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: trip_day_trivia_keys trip_day_trivia_keys_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_day_trivia_keys_archive_guard BEFORE INSERT OR UPDATE ON public.trip_day_trivia_keys FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -16604,10 +17144,38 @@ CREATE TRIGGER trip_feedback_updated BEFORE UPDATE ON public.trip_feedback FOR E
 
 
 --
+-- Name: trip_invites trip_invites_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_invites_archive_guard BEFORE INSERT OR UPDATE ON public.trip_invites FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: trip_item_alternatives trip_item_alternatives_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_item_alternatives_archive_guard BEFORE INSERT OR UPDATE ON public.trip_item_alternatives FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: trip_item_alternatives trip_item_alternatives_updated; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER trip_item_alternatives_updated BEFORE UPDATE ON public.trip_item_alternatives FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();
+
+
+--
+-- Name: trip_itineraries trip_itineraries_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_itineraries_archive_guard BEFORE INSERT OR UPDATE ON public.trip_itineraries FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: trip_members trip_members_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_members_archive_guard BEFORE INSERT OR UPDATE ON public.trip_members FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -16636,6 +17204,62 @@ CREATE TRIGGER trip_members_resplit_on_change AFTER DELETE OR UPDATE OF status O
 --
 
 CREATE TRIGGER trip_members_seat_cap BEFORE INSERT OR UPDATE OF status ON public.trip_members FOR EACH ROW EXECUTE FUNCTION trip_private.enforce_seat_cap();
+
+
+--
+-- Name: trip_play_state trip_play_state_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_play_state_archive_guard BEFORE INSERT OR UPDATE ON public.trip_play_state FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: trip_player_cards trip_player_cards_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_player_cards_archive_guard BEFORE INSERT OR UPDATE ON public.trip_player_cards FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: trip_season_finds trip_season_finds_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_season_finds_archive_guard BEFORE INSERT OR UPDATE ON public.trip_season_finds FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: trip_season_games trip_season_games_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_season_games_archive_guard BEFORE INSERT OR UPDATE ON public.trip_season_games FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: trip_season_reveals trip_season_reveals_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_season_reveals_archive_guard BEFORE INSERT OR UPDATE ON public.trip_season_reveals FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: trip_team_members trip_team_members_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_team_members_archive_guard BEFORE INSERT OR UPDATE ON public.trip_team_members FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: trip_teams trip_teams_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_teams_archive_guard BEFORE INSERT OR UPDATE ON public.trip_teams FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: trips trips_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trips_archive_guard BEFORE UPDATE ON public.trips FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip_row();
 
 
 --
@@ -16671,6 +17295,41 @@ CREATE TRIGGER trips_minor_guard BEFORE INSERT OR UPDATE OF vibe, has_minors ON 
 --
 
 CREATE TRIGGER trips_opt_in_no_quick_start BEFORE INSERT OR UPDATE OF game_plan, play_arrangement ON public.trips FOR EACH ROW EXECUTE FUNCTION trip_private.prevent_opt_in_quick_start();
+
+
+--
+-- Name: trivia_answers trivia_answers_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trivia_answers_archive_guard BEFORE INSERT OR UPDATE ON public.trivia_answers FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: weekly_answer_votes weekly_answer_votes_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER weekly_answer_votes_archive_guard BEFORE INSERT OR UPDATE ON public.weekly_answer_votes FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: weekly_answers weekly_answers_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER weekly_answers_archive_guard BEFORE INSERT OR UPDATE ON public.weekly_answers FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: weekly_questions weekly_questions_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER weekly_questions_archive_guard BEFORE INSERT OR UPDATE ON public.weekly_questions FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: window_guide_items window_guide_items_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER window_guide_items_archive_guard BEFORE INSERT OR UPDATE ON public.window_guide_items FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -20082,6 +20741,15 @@ GRANT ALL ON FUNCTION public.approve_member(p_trip uuid, p_user uuid, p_approve 
 
 
 --
+-- Name: FUNCTION archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text) TO authenticated;
+GRANT ALL ON FUNCTION public.archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text) TO service_role;
+
+
+--
 -- Name: FUNCTION at_home_answer(p_activity uuid, p_answer text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -22218,6 +22886,15 @@ GRANT ALL ON FUNCTION public.set_trip_access(p_trip uuid, p_code_enabled boolean
 
 
 --
+-- Name: FUNCTION set_trip_archived(p_trip uuid, p_archived boolean, p_note text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_trip_archived(p_trip uuid, p_archived boolean, p_note text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_trip_archived(p_trip uuid, p_archived boolean, p_note text) TO authenticated;
+GRANT ALL ON FUNCTION public.set_trip_archived(p_trip uuid, p_archived boolean, p_note text) TO service_role;
+
+
+--
 -- Name: FUNCTION set_trip_extras(p_trip uuid, p_motto text, p_call text, p_backup text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -22940,6 +23617,14 @@ GRANT ALL ON FUNCTION trip_private.approve_inspiration(p_card uuid, p_approve bo
 REVOKE ALL ON FUNCTION trip_private.approve_member(p_trip uuid, p_user uuid, p_approve boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.approve_member(p_trip uuid, p_user uuid, p_approve boolean) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.approve_member(p_trip uuid, p_user uuid, p_approve boolean) TO service_role;
+
+
+--
+-- Name: FUNCTION archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text) TO authenticated;
 
 
 --
@@ -23927,6 +24612,20 @@ GRANT ALL ON FUNCTION trip_private.game_stamps(p_trip uuid) TO service_role;
 REVOKE ALL ON FUNCTION trip_private.games_live(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.games_live(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.games_live(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION guard_archived_trip(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.guard_archived_trip() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION guard_archived_trip_row(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.guard_archived_trip_row() FROM PUBLIC;
 
 
 --
@@ -25725,6 +26424,14 @@ GRANT ALL ON FUNCTION trip_private.set_teen_dob(p_dob date, p_agree boolean, p_i
 REVOKE ALL ON FUNCTION trip_private.set_trip_access(p_trip uuid, p_code_enabled boolean, p_require_approval boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.set_trip_access(p_trip uuid, p_code_enabled boolean, p_require_approval boolean) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.set_trip_access(p_trip uuid, p_code_enabled boolean, p_require_approval boolean) TO service_role;
+
+
+--
+-- Name: FUNCTION set_trip_archived(p_trip uuid, p_archived boolean, p_note text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_trip_archived(p_trip uuid, p_archived boolean, p_note text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_trip_archived(p_trip uuid, p_archived boolean, p_note text) TO authenticated;
 
 
 --

@@ -44,3 +44,4 @@ the deck wins and this list is updated. More rules: `src/AGENTS.md`, `src/compon
 - Use season_rule to opt new Trips and At Home rooms into short-season timing; preserve legacy schedules and quest behavior so existing rooms are not retroactively changed.
 - Window Seat prep is creator-checked; A2c quest templates use filtered tags/insights and minor proof excludes squad; legacy stays unchanged.
 - A2e uses a2e_kind/a2e_room opt-in; group rooms share with approved members, solo quests stay private, and Showcase guests only vote, so old rooms and scores stay isolated.
+- Archived trips (`trips.rules_version = 1`, set only by app admins via `archive_legacy_trips` / `set_trip_archived`, logged) are read-only for players: every public table with a `trip_id` has a `<table>_archive_guard` trigger calling `trip_private.guard_archived_trip()`. Give new trip tables the same trigger (08_archive_mode.test.sql fails otherwise). The client shows `ArchivedTrip` for them.
