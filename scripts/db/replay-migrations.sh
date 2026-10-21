@@ -51,8 +51,9 @@ pg_dump -h "$WORK" -p "$PORT" -U postgres -d "$DB" --schema-only --no-owner \
   -f "$OUT/current_schema.sql" 2>/dev/null || \
 pg_dump -h "$WORK" -p "$PORT" -U postgres -d "$DB" --schema-only --no-owner \
   --schema=public --schema=trip_private -f "$OUT/current_schema.sql"
-# pg_dump adds a random \restrict token per run; drop it so the snapshot only changes with the schema.
-sed -i -E '/^\\(un)?restrict /d' "$OUT/current_schema.sql"
+# pg_dump adds a random \restrict token per run and the server/client versions; drop them so the
+# snapshot only changes with the schema (CI checks it is up to date).
+sed -i -E '/^\\(un)?restrict /d; /^-- Dumped (from|by) /d' "$OUT/current_schema.sql"
 "${PSQL[@]}" -d "$DB" -At -c "SELECT jobname || E'\t' || schedule || E'\t' || regexp_replace(command, '\s+', ' ', 'g') FROM cron.job ORDER BY jobname" \
   > "$OUT/cron_jobs.tsv"
 # Objects our migrations attach to Supabase-owned schemas (not covered by the dump above):

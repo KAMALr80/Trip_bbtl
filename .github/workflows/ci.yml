@@ -1,0 +1,41 @@
+# M0-05 · CI pipeline.
+# The database job needs no package install: it replays every migration onto the runner's
+# preinstalled Postgres and runs the pgTAP tests (see supabase/tests/README.md).
+# A web job (typecheck, lint, build) is added once bun.lock no longer points at Lovable's private
+# npm cache, which returns 403 outside Lovable (see dev-docs/07 §3.10).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  database:
+    name: Database (migrations + pgTAP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Postgres version
+        run: ls -d /usr/lib/postgresql/*/bin && pg_dump --version
+
+      - name: Replay migrations and run pgTAP tests
+        run: scripts/db/test.sh
+
+      - name: Schema snapshot and inventory are up to date
+        run: |
+          REPLAY_HOOK='python3 scripts/db/inventory.py' scripts/db/replay-migrations.sh
+          if ! git diff --exit-code -- supabase/baseline docs/inventory; then
+            echo "::error::A migration changed the schema. Run: REPLAY_HOOK='python3 scripts/db/inventory.py' scripts/db/replay-migrations.sh and commit the result."
+            exit 1
+          fi
