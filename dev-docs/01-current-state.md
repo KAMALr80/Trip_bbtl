@@ -156,7 +156,7 @@ Legend:
 |---|---|---|
 | Rooms: Going on a Trip, Window Seat, Explore a Culture, Show Your Culture, Game Night (2) | 🟡 | All exist, but as separate implementations (`kind`, `a2e_kind`, `AtHome`, `CultureExperiences`, `SoloGuide`, `GameArcade`) instead of one engine with room config |
 | Four phases + banners (3) | 🟡 | `datePhase` / `phaseBanner` in `play-arrangement.ts`; phase 4 is called **"Wrapped"**, not Baggage Claim; banners exist; late start works for new rooms |
-| "We've arrived" + automatic backup at 11:59 PM next night (3) | 🟡 | `confirm_departure` + `trip_season_start_at` ✅. **Captain-only**; the deck says Captain **or Co-Captain** |
+| "We've arrived" + automatic backup at 11:59 PM next night (3) | ✅ | `confirm_departure` + `trip_season_start_at` ✅. Captain **or Co-Captain** (`is_leader`), in SQL and in `PlayHub` (confirmed by `supabase/tests/database/03_takeoff.test.sql`) |
 | Who's playing: Just me / Crew / Friends off the app (4) | ✅ | `PlayingChoice` (`solo` / `online` / `offline`); offline roster is device-local. Roster starts at 2 names (beta note) |
 | Captain view & tools per phase (6, 16) | 🟡 | `CaptainTools`, `CaptainExtras`, `CaptainChecklist` exist; not one tile per phase |
 | Co-Captain = every power except delete (6, 16) | 🟡 | `co_captain` role exists, but time zone, trip pot and some setup are `is_captain`-only |

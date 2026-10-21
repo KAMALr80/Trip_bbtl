@@ -1,0 +1,110 @@
+-- Shared helpers for the pgTAP tests in supabase/tests/database/.
+-- Include at the top of each test file, inside its transaction:   \ir ../_helpers.psql
+-- Everything here is created inside the test's transaction and rolled back with it.
+--
+-- Pattern (same as Supabase's own test examples):
+--   SELECT tests.authenticate_as(tests.user_id('cap'));   -- act as a signed-in user
+--   SELECT throws_like($$SELECT public.some_rpc(...)$$, '%message%', 'description');
+--   SELECT tests.clear_authentication();                  -- back to the test superuser
+
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_available_extensions WHERE name = 'pgtap') THEN
+    CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
+  END IF;
+END $$;
+
+CREATE SCHEMA IF NOT EXISTS tests;
+GRANT USAGE ON SCHEMA tests TO PUBLIC;
+
+CREATE TABLE IF NOT EXISTS tests.users (handle text PRIMARY KEY, id uuid NOT NULL UNIQUE);
+GRANT SELECT ON tests.users TO PUBLIC;
+
+-- Create an email sign-up the way Supabase Auth does (so the auth.users triggers run), with a saved
+-- birthday. p_age_years is the age today; NULL = no birthday saved (e.g. a fresh Google sign-in).
+CREATE OR REPLACE FUNCTION tests.create_user(p_handle text, p_age_years int DEFAULT 30)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_id uuid := gen_random_uuid(); v_dob date;
+BEGIN
+  v_dob := CASE WHEN p_age_years IS NULL THEN NULL
+                ELSE (current_date - make_interval(years => p_age_years) - interval '30 days')::date END;
+  INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data, created_at)
+  VALUES (v_id, p_handle || '@test.tripjunkies.local',
+          jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email')),
+          jsonb_build_object('legal_version', '2026-10-03',
+                             'birthday', coalesce(v_dob, date '1990-01-01')::text),
+          now());
+  -- Accepting the current Terms is required before a birthday can be saved (legal_dob_guard).
+  INSERT INTO public.account_consents (user_id, legal_version, accepted_at)
+  VALUES (v_id, '2026-10-03', now());
+  IF v_dob IS NOT NULL THEN
+    INSERT INTO public.player_private (user_id, dob) VALUES (v_id, v_dob);
+  END IF;
+  INSERT INTO public.beta_access (user_id, source) VALUES (v_id, 'invite') ON CONFLICT DO NOTHING;
+  INSERT INTO tests.users (handle, id) VALUES (p_handle, v_id);
+  RETURN v_id;
+END $$;
+
+CREATE OR REPLACE FUNCTION tests.user_id(p_handle text) RETURNS uuid LANGUAGE sql STABLE AS $$
+  SELECT id FROM tests.users WHERE handle = p_handle
+$$;
+
+-- Act as a signed-in user: same role and JWT claims PostgREST sets for an authenticated request.
+CREATE OR REPLACE FUNCTION tests.authenticate_as(p_user uuid) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  PERFORM set_config('request.jwt.claims',
+                     json_build_object('sub', p_user, 'role', 'authenticated')::text, true);
+  PERFORM set_config('request.jwt.claim.sub', p_user::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+END $$;
+
+-- Act as a signed-out visitor.
+CREATE OR REPLACE FUNCTION tests.authenticate_as_anon() RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  PERFORM set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);
+  PERFORM set_config('request.jwt.claim.sub', '', true);
+  PERFORM set_config('role', 'anon', true);
+END $$;
+
+CREATE OR REPLACE FUNCTION tests.clear_authentication() RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  PERFORM set_config('role', 'none', true);
+  PERFORM set_config('request.jwt.claims', '', true);
+  PERFORM set_config('request.jwt.claim.sub', '', true);
+END $$;
+
+-- A trip fixture inserted directly (bypassing the create RPCs, which have their own tests).
+-- p_start_offset: days from today (home time) to the first trip day. Captain is added approved.
+CREATE OR REPLACE FUNCTION tests.create_trip(
+  p_captain uuid,
+  p_start_offset int DEFAULT 14,
+  p_days int DEFAULT 5,
+  p_season_rule text DEFAULT 'a2c',
+  p_home_tz text DEFAULT 'UTC',
+  p_trip_tz text DEFAULT NULL
+) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_id uuid; v_today date := (now() AT TIME ZONE p_home_tz)::date;
+BEGIN
+  INSERT INTO public.trips (name, destination, start_date, end_date, home_timezone, trip_timezone,
+                            join_code, season_rule, play_arrangement)
+  VALUES ('Test Trip', 'Lisbon', v_today + p_start_offset, v_today + p_start_offset + p_days - 1,
+          p_home_tz, p_trip_tz, public.new_trip_code(), p_season_rule, 'online')
+  RETURNING id INTO v_id;
+  INSERT INTO public.trip_members (trip_id, user_id, role, status, approved_at)
+  VALUES (v_id, p_captain, 'captain', 'approved', now());
+  RETURN v_id;
+END $$;
+
+-- Add an approved member directly (role: player | co_captain).
+CREATE OR REPLACE FUNCTION tests.add_member(p_trip uuid, p_user uuid, p_role text DEFAULT 'player',
+                                            p_status text DEFAULT 'approved')
+RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
+  INSERT INTO public.trip_members (trip_id, user_id, role, status, approved_at)
+  VALUES (p_trip, p_user, p_role, p_status, CASE WHEN p_status = 'approved' THEN now() END)
+$$;
+
+CREATE OR REPLACE FUNCTION tests.join_code(p_trip uuid) RETURNS text LANGUAGE sql STABLE
+SECURITY DEFINER SET search_path = public AS $$
+  SELECT join_code FROM public.trips WHERE id = p_trip
+$$;
+
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA tests TO PUBLIC;

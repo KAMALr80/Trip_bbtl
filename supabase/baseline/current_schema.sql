@@ -2,7 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict Crp01SA1cbMUvRCDTYkarVMi481EdRBxhZjoV8fL12g9rPg6icVbgQccXJXBqRF
 
 -- Dumped from database version 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
@@ -27770,5 +27769,4 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES 
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Crp01SA1cbMUvRCDTYkarVMi481EdRBxhZjoV8fL12g9rPg6icVbgQccXJXBqRF
 
