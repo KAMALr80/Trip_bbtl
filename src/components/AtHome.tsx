@@ -1,5 +1,4 @@
 import { tripDisplayName } from "@/lib/trip-display-name";
-import { JunkieRewards } from "./ExperiencePreviews";
 import { CountryFlag } from "@/components/CountryFlag";
 import { PlacePicker } from "@/components/PlacePicker";
 import { countryName, type Place } from "@/lib/places";
@@ -1165,7 +1164,6 @@ export function Rewards({ userId }: { userId: string }) {
   const live = codes.find((c) => !c.used_at && Date.parse(c.expires_at) > Date.now());
   return (
     <div className="mt-3 space-y-3">
-      <JunkieRewards />
       <div className="rounded-2xl bg-orange-soft p-4">
         {live ? (
           <>

@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { BookOpen, Check, ChevronDown, Crown, Medal, Stamp, X } from "lucide-react";
+import { BookOpen, Check, ChevronDown, Crown, Stamp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -221,7 +221,6 @@ export function PlayerCardView({
       ]
     : [];
   const visibleFacts = facts.filter(([, value]) => value);
-  const rank = card?.passport?.rank;
   const teen = !!card && !card.passport;
   const body = loading ? (
     <p role="status" className="py-16 text-center font-bold">
@@ -270,18 +269,8 @@ export function PlayerCardView({
               <strong>{card.passport.crowns}</strong>
               <small>Crowns</small>
             </span>
-            <span>
-              <Medal />
-              <strong>{rank?.tier ?? "Carry-On"}</strong>
-              <small>Junkie Rank</small>
-            </span>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
-            {rank?.passport_junkie && (
-              <span className="passport-stamp border-orange px-3 py-1 text-xs font-extrabold text-orange">
-                Passport Junkie
-              </span>
-            )}
             {card.passport.badges.founding_member && (
               <span className="passport-stamp border-gold px-3 py-1 text-xs font-extrabold text-gold">
                 Founding Member
@@ -349,7 +338,6 @@ export function PlayerCardView({
             <Avatar url={avatar} name={card.game_name} className="mx-auto h-28 w-28 rounded-3xl" />
             <p className="player-passport-kicker mt-5">READ-ONLY PASSPORT</p>
             <h2 className="font-display text-4xl font-extrabold">{card.game_name}</h2>
-            <p className="mt-2 font-bold">{rank?.tier ?? "Carry-On"}</p>
           </div>
           <div className="player-passport-stats mt-8">
             <span>
@@ -362,20 +350,10 @@ export function PlayerCardView({
               <strong>{card.passport.crowns}</strong>
               <small>Crowns</small>
             </span>
-            <span>
-              <Medal />
-              <strong>{rank?.points ?? 0}</strong>
-              <small>Rank points</small>
-            </span>
           </div>
           <div className="player-passport-section mt-7">
             <h3 className="font-display text-xl font-extrabold">Badges</h3>
             <div className="mt-4 flex flex-wrap gap-3">
-              {rank?.passport_junkie && (
-                <span className="passport-stamp border-orange px-3 py-2 text-xs font-extrabold text-orange">
-                  Passport Junkie
-                </span>
-              )}
               {card.passport.badges.founding_member && (
                 <span className="passport-stamp border-gold px-3 py-2 text-xs font-extrabold text-gold">
                   Founding Member
@@ -386,11 +364,9 @@ export function PlayerCardView({
                   {card.passport.badges.culture_creator}
                 </span>
               )}
-              {!rank?.passport_junkie &&
-                !card.passport.badges.founding_member &&
-                !card.passport.badges.culture_creator && (
-                  <p className="text-sm opacity-75">No badges collected yet.</p>
-                )}
+              {!card.passport.badges.founding_member && !card.passport.badges.culture_creator && (
+                <p className="text-sm opacity-75">No badges collected yet.</p>
+              )}
             </div>
           </div>
           <div className="player-passport-section mt-7">

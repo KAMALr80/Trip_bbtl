@@ -25,7 +25,7 @@ import iconPostcard from "@/assets/icon-postcard.webp";
 import seaside from "@/assets/passport-seaside.jpg";
 import { CULTURE_LAYERS } from "@/lib/culture-pool";
 
-import { JunkieRankBadge } from "./ExperiencePreviews";
+import { countCountries, levelFor } from "@/lib/levels";
 
 type Ink = {
   trip_id: string;
@@ -63,6 +63,7 @@ const date = (value: string) =>
     year: "numeric",
   });
 
+/** Passport level by countries stamped (R-703); replaces the retired Junkie Rank (L7). */
 export function TravelerLevel({
   userId,
   progress = false,
@@ -70,7 +71,40 @@ export function TravelerLevel({
   userId: string;
   progress?: boolean;
 }) {
-  return <JunkieRankBadge userId={userId} progress={progress} />;
+  const [countries, setCountries] = useState<number | null>(null);
+  useEffect(() => {
+    let live = true;
+    void supabase
+      .from("passport_stamps")
+      .select("country")
+      .eq("user_id", userId)
+      .then(({ data }) => {
+        if (live) setCountries(countCountries(data ?? []));
+      });
+    return () => {
+      live = false;
+    };
+  }, [userId]);
+  const level = countries === null ? null : levelFor(countries);
+  if (!level) return null;
+  return (
+    <span className={progress ? "block w-full" : "inline-flex"}>
+      <span
+        className="passport-stamp inline-flex border-blue text-blue px-3 py-1 text-xs font-extrabold uppercase"
+        aria-label={`Level: ${level.name}`}
+      >
+        ✈ {level.name}
+      </span>
+      {progress && (
+        <span className="block text-xs mt-1 text-muted-foreground">
+          {level.countries} {level.countries === 1 ? "country" : "countries"}
+          {level.next
+            ? ` · ${level.next.at - level.countries} more to ${level.next.name}`
+            : " · top level"}
+        </span>
+      )}
+    </span>
+  );
 }
 export function CultureCreatorBadge({ userId }: { userId: string }) {
   const [badge, setBadge] = useState<string | null>(null);
@@ -563,7 +597,7 @@ export function PassportBook({
             <p className="passport-kicker">TRIPJUNKIES™ · COLLECTION</p>
           )}
           <div className={cinematic ? "passport-rank-progress" : "mt-2"}>
-            <JunkieRankBadge userId={userId} progress />
+            <TravelerLevel userId={userId} progress />
           </div>
           <div className="passport-title-line">
             <h2>
