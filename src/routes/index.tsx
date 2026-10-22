@@ -38,7 +38,6 @@ import {
   ArrowRight,
   ArrowLeft,
   ChevronRight,
-  Crown,
   Home,
   LogOut,
   Plus,
@@ -132,7 +131,6 @@ import {
   BetaLock,
   LaunchSwitch,
   VIBES,
-  VibeBadge,
   WaitingGate,
   TeenJoinGate,
   WaitingTrips,
@@ -716,7 +714,7 @@ function Index() {
   return (
     <div
       data-vibe={active ? vibeOf(active) : undefined}
-      className={`page-scene page-scene-${tab.toLowerCase()} ${(tab === "Squad" ? "cinematic" : tab === "Me" ? "cinematic" : tab === "Trip" ? "cinematic" : tab === "Play" ? "cinematic" : "cinematic") === "cinematic" ? "cinematic-page-scene" : ""} min-h-dvh max-w-lg mx-auto relative`}
+      className={`page-scene page-scene-${tab.toLowerCase()} cinematic-page-scene min-h-dvh max-w-lg mx-auto relative`}
     >
       {(active as { is_sandbox?: boolean } | null)?.is_sandbox && <SandboxBanner />}
       <LabViewBanner refresh={(id) => refreshTrips(id)} />
@@ -733,95 +731,47 @@ function Index() {
           </Button>
         </div>
       )}
-      {(
-        tab === "Home"
-          ? true
-          : tab === "Play"
-            ? true
-            : tab === "Trip"
-              ? true
-              : tab === "Squad"
-                ? true
-                : true
-      ) ? (
-        <header className="cinematic-home-header">
-          <BrandLockup className="cinematic-home-brand" compact />
-          <div className="cinematic-home-controls">
-            {active && (
-              <span
-                className="cinematic-home-vibe"
-                role="img"
-                aria-label={`Vibe: ${VIBES[vibeOf(active)].label}`}
-                title={`Vibe: ${VIBES[vibeOf(active)].label}`}
-              >
-                {VIBES[vibeOf(active)].emoji}
-              </span>
-            )}
-            {active && !viewAsPlayer && ["captain", "co_captain"].includes(active.myRole) && (
-              <Button
-                variant="ghost"
-                className="cinematic-home-captain"
-                aria-label="Captain Tools"
-                title="Captain Tools"
-                onClick={() => {
-                  setTools(true);
-                  setSheet(null);
-                }}
-              >
-                <CaptainCrown />
-              </Button>
-            )}
-            {!viewAsPlayer && access.age_range === "21+" && (
-              <Button
-                variant="ghost"
-                className="cinematic-plan-trip"
-                aria-label="Plan a Trip"
-                title="Plan a Trip"
-                onClick={() => setSheet("Start a trip")}
-              >
-                <img src={iconSuitcase} alt="" width={72} height={72} />
-                <span aria-hidden="true">+</span>
-              </Button>
-            )}
-          </div>
-        </header>
-      ) : (
-        <header className="px-[18px] pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 flex justify-between items-center gap-1">
-          <div className="flex items-center gap-2 min-w-0">
-            <Brand />
-            {active && <VibeBadge vibe={vibeOf(active)} />}
-          </div>
-          <div className="flex gap-1 shrink-0">
-            {active && !viewAsPlayer && ["captain", "co_captain"].includes(active.myRole) && (
-              <Button
-                variant="ghost"
-                className="h-auto min-h-14 px-1.5 flex-col gap-0"
-                aria-label="Captain Tools · Run your trip"
-                onClick={() => {
-                  setTools(true);
-                  setSheet(null);
-                }}
-              >
-                <Crown className="!size-7" />
-                <span className="text-[9px] font-bold leading-none">Captain Tools</span>
-                <small className="text-[8px] leading-none">Run your trip</small>
-              </Button>
-            )}
-            {!viewAsPlayer && access.age_range === "21+" && (
-              <Button
-                variant="ghost"
-                className="h-auto min-h-14 px-1.5 flex-col gap-0"
-                aria-label="Plan a trip · Start a squad trip"
-                onClick={() => setSheet("Start a trip")}
-              >
-                <img src={iconSuitcase} className="size-9 object-contain" alt="" />
-                <span className="text-[9px] font-bold leading-none">Plan a trip</span>
-                <small className="text-[8px] leading-none">Start a squad trip</small>
-              </Button>
-            )}
-          </div>
-        </header>
-      )}
+      <header className="cinematic-home-header">
+        <BrandLockup className="cinematic-home-brand" compact />
+        <div className="cinematic-home-controls">
+          {active && (
+            <span
+              className="cinematic-home-vibe"
+              role="img"
+              aria-label={`Vibe: ${VIBES[vibeOf(active)].label}`}
+              title={`Vibe: ${VIBES[vibeOf(active)].label}`}
+            >
+              {VIBES[vibeOf(active)].emoji}
+            </span>
+          )}
+          {active && !viewAsPlayer && ["captain", "co_captain"].includes(active.myRole) && (
+            <Button
+              variant="ghost"
+              className="cinematic-home-captain"
+              aria-label="Captain Tools"
+              title="Captain Tools"
+              onClick={() => {
+                setTools(true);
+                setSheet(null);
+              }}
+            >
+              <CaptainCrown />
+            </Button>
+          )}
+          {!viewAsPlayer && access.age_range === "21+" && (
+            <Button
+              variant="ghost"
+              className="cinematic-plan-trip"
+              aria-label="Plan a Trip"
+              title="Plan a Trip"
+              onClick={() => setSheet("Start a trip")}
+            >
+              <img src={iconSuitcase} alt="" width={72} height={72} />
+              <span aria-hidden="true">+</span>
+            </Button>
+          )}
+        </div>
+      </header>
       {meView && tab === "Me" ? (
         <div className="px-[18px]">
           {meView === "lab" && isAdmin ? (

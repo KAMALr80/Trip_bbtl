@@ -310,11 +310,8 @@ export function ItineraryEditor({
           r.readAsDataURL(file);
         });
       }
-      {
-        const st = await creditStatus(trip.id);
-        if (st && st.itinerary_today >= 20 && !(await askCredits(trip.id, "itinerary_extra")))
-          return;
-      }
+      const st = await creditStatus(trip.id);
+      if (st && st.itinerary_today >= 20 && !(await askCredits(trip.id, "itinerary_extra"))) return;
       const extracted = await analyze({
         data: {
           tripId: trip.id,
