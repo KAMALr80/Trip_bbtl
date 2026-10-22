@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "./design/tokens.css";
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -38,88 +39,6 @@
   --color-wheel-hub: var(--wheel-hub);
   --background-image-neon-warm: linear-gradient(110deg, var(--primary), var(--orange));
   --background-image-neon-cool: linear-gradient(110deg, var(--blue), var(--green));
-}
-:root {
-  --radius: 1.375rem;
-  --nav-height: 70px;
-  --nav-offset: calc(0.75rem + env(safe-area-inset-bottom, 0px));
-  --nav-clearance: calc(var(--nav-height) + var(--nav-offset) + 16px);
-  --bg1: #211b40;
-  --bg2: #382b60;
-  --wheel-hub: #231b43;
-  --background: #211b40;
-  --foreground: #f9f7ff;
-  --card: rgba(47, 37, 83, 0.87);
-  --card-foreground: #f4f1ff;
-  --popover: #342951;
-  --popover-foreground: #f4f1ff;
-  --primary: #ff3d9a;
-  --primary-foreground: #111021;
-  --secondary: #49376e;
-  --secondary-foreground: #f4f1ff;
-  --muted: #463762;
-  --muted-foreground: #d2cbe6;
-  --accent: #574273;
-  --accent-foreground: #f4f1ff;
-  --destructive: #ff6677;
-  --destructive-foreground: #111021;
-  --border: rgba(255, 255, 255, 0.27);
-  --input: rgba(255, 255, 255, 0.56);
-  --ring: #22d3ee;
-  --green: #a3e635;
-  --green-soft: rgba(163, 230, 53, 0.12);
-  --orange: #ff8a1f;
-  --orange-soft: rgba(255, 138, 31, 0.12);
-  --blue: #22d3ee;
-  --blue-soft: rgba(34, 211, 238, 0.12);
-  --pink-soft: rgba(255, 61, 154, 0.12);
-  --ink-soft: #e0d9f1;
-  --nav: rgba(43, 34, 74, 0.94);
-  --gold: #ffd36b;
-  --paper: #f8f1e3;
-  --paper-ink: #46395d;
-  --cabin-wall: #eeeae3;
-  --cabin-panel: #f8f6f0;
-  --cabin-ink: #242735;
-  --cabin-muted: #4d5260;
-  --cabin-seam: #b7b2ac;
-  --cabin-trim: #777e8b;
-}
-.light {
-  --bg1: #e3deef;
-  --bg2: #f8e0db;
-  --background: #f5f0f9;
-  --foreground: #251d3e;
-  --card: rgba(255, 255, 255, 0.88);
-  --card-foreground: #251d3e;
-  --popover: #ffffff;
-  --popover-foreground: #18132b;
-  --primary: #b50b60;
-  --primary-foreground: #111021;
-  --secondary: #ebe2f4;
-  --secondary-foreground: #251d3e;
-  --muted: #ebe4f1;
-  --muted-foreground: #594c6d;
-  --accent: #eee6f2;
-  --accent-foreground: #18132b;
-  --destructive: #ad223e;
-  --destructive-foreground: #ffffff;
-  --border: #beb3c8;
-  --input: #a89ab6;
-  --ring: #007f92;
-  --green: #426600;
-  --green-soft: #e9f7d7;
-  --orange: #ad4f00;
-  --orange-soft: #fff0db;
-  --blue: #006d86;
-  --blue-soft: #daf4fa;
-  --pink-soft: #fce1ee;
-  --ink-soft: #36283f;
-  --nav: rgba(255, 255, 255, 0.95);
-  --gold: #8b5900;
-  --paper: #fffaf0;
-  --paper-ink: #443657;
-  --wheel-hub: #120d26;
 }
 @layer base {
   * {
@@ -253,7 +172,6 @@
 .bg-green.text-primary-foreground:disabled {
   opacity: 1;
 }
-.light .bg-neon-warm,
 .light .bg-neon-cool {
   color: #111021;
 }
@@ -265,76 +183,6 @@
 .light .bg-blue.text-primary-foreground .text-muted-foreground,
 .light .bg-green.text-primary-foreground .text-muted-foreground {
   color: #fff;
-}
-.neon-city {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(180deg, #2a0f3d, #14102b 72%, #0e0b1f);
-}
-.neon-city::before {
-  content: "";
-  position: absolute;
-  inset: 6% 0 0;
-  background: linear-gradient(
-    90deg,
-    #ff3d9a 0 12%,
-    transparent 12% 15%,
-    #5b2bd6 15% 28%,
-    transparent 28% 31%,
-    #22d3ee 31% 40%,
-    transparent 40% 44%,
-    #2a1a5e 44% 60%,
-    transparent 60% 63%,
-    #ff8a1f 63% 74%,
-    transparent 74% 77%,
-    #3b1f7a 77% 88%,
-    transparent 88% 91%,
-    #a3e635 91%
-  );
-  clip-path: polygon(
-    0 43%,
-    12% 43%,
-    12% 25%,
-    15% 25%,
-    15% 50%,
-    28% 50%,
-    28% 7%,
-    31% 7%,
-    31% 58%,
-    40% 58%,
-    40% 34%,
-    44% 34%,
-    44% 62%,
-    60% 62%,
-    60% 17%,
-    63% 17%,
-    63% 48%,
-    74% 48%,
-    74% 31%,
-    77% 31%,
-    77% 61%,
-    88% 61%,
-    88% 39%,
-    91% 39%,
-    91% 66%,
-    100% 66%,
-    100% 100%,
-    0 100%
-  );
-  mask-image: linear-gradient(#000 55%, transparent 100%);
-}
-.neon-city::after {
-  content: "·· · ·· · · ·· ·";
-  position: absolute;
-  left: 3%;
-  right: 3%;
-  top: 42%;
-  color: #ffd44d;
-  font-size: 20px;
-  letter-spacing: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  opacity: 0.8;
 }
 
 @utility app-card {
@@ -454,14 +302,9 @@
 @media (prefers-reduced-motion: reduce) {
   .confetti-bit,
   .stamp-thunk,
-  .vote-bar,
   .mystery-q {
     animation-duration: 1ms;
   }
-}
-.qotw-flip {
-  animation: qotw-flip 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  transform-origin: center;
 }
 @keyframes qotw-flip {
   from {
@@ -471,11 +314,6 @@
   to {
     transform: perspective(700px) rotateY(0);
     opacity: 1;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .qotw-flip {
-    animation: none;
   }
 }
 
@@ -492,28 +330,6 @@
 [data-vibe] .vibe-badge {
   box-shadow: 0 0 12px color-mix(in oklab, var(--vibe-glow) 55%, transparent);
   border-color: var(--vibe-glow);
-}
-[data-vibe] .vibe-deck > div:first-child {
-  box-shadow: 0 0 22px color-mix(in oklab, var(--vibe-glow) 35%, transparent);
-  background-image: repeating-linear-gradient(
-    135deg,
-    color-mix(in oklab, var(--vibe-glow) 10%, transparent) 0 8px,
-    transparent 8px 16px
-  );
-}
-[data-vibe="family"] .vibe-deck > div:first-child {
-  background-image: radial-gradient(
-    color-mix(in oklab, var(--vibe-glow) 14%, transparent) 2px,
-    transparent 2px
-  );
-  background-size: 14px 14px;
-}
-[data-vibe="party"] .vibe-deck > div:first-child {
-  background-image: repeating-conic-gradient(
-    color-mix(in oklab, var(--vibe-glow) 12%, transparent) 0 25%,
-    transparent 0 50%
-  );
-  background-size: 18px 18px;
 }
 
 /* Round 16: short, one-shot feedback. All effects use composited transforms. */
@@ -565,16 +381,6 @@
     transform: scale(1);
   }
 }
-@keyframes wrapped-in {
-  from {
-    opacity: 0.7;
-    transform: translateX(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
 @keyframes shimmer {
   from {
     background-position: 150% 0;
@@ -594,13 +400,6 @@
 .card-draw-reveal {
   animation: card-turn 550ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
 }
-.card-draw-back {
-  animation: card-back 180ms ease-in both;
-}
-.vote-card-turn {
-  backface-visibility: hidden;
-  animation: card-turn 420ms ease-out both;
-}
 .crown-drop {
   animation: crown-arrive 650ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
 }
@@ -609,9 +408,6 @@
 }
 .crown-anticipation {
   animation: spotlight-in 450ms ease-out both;
-}
-.wrapped-slide {
-  animation: wrapped-in 260ms ease-out both;
 }
 .skeleton-shimmer {
   background-image: linear-gradient(90deg, var(--muted), var(--accent), var(--muted));
@@ -622,72 +418,11 @@
   .section-enter,
   .tab-enter,
   .card-draw-reveal,
-  .card-draw-back,
-  .vote-card-turn,
   .crown-drop,
   .crown-spotlight,
   .crown-anticipation,
-  .wrapped-slide,
   .skeleton-shimmer {
     animation: none !important;
-  }
-  .card-draw-back {
-    opacity: 0.8;
-  }
-}
-.passport-book {
-  background-image: repeating-linear-gradient(
-    90deg,
-    color-mix(in oklab, var(--primary) 4%, transparent) 0 1px,
-    transparent 1px 14px
-  );
-  box-shadow: inset 6px 0 0 var(--accent);
-}
-.passport-ink {
-  border: 3px double currentColor;
-  border-radius: 50%;
-  background: color-mix(in oklab, currentColor 6%, var(--card));
-  transform: rotate(-5deg);
-}
-.road-stamp {
-  border-radius: 0.75rem;
-  transform: rotate(3deg);
-}
-@keyframes passport-turn {
-  from {
-    opacity: 0.5;
-    transform: perspective(500px) rotateY(16deg);
-  }
-  to {
-    opacity: 1;
-    transform: perspective(500px) rotateY(0);
-  }
-}
-@keyframes stamp-arrive {
-  from {
-    opacity: 0;
-    transform: scale(1.7) rotate(-18deg);
-  }
-  65% {
-    opacity: 1;
-    transform: scale(0.94) rotate(-5deg);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) rotate(-5deg);
-  }
-}
-.passport-turn {
-  animation: passport-turn 300ms ease-out both;
-  transform-origin: left;
-}
-.stamp-arrive {
-  animation: stamp-arrive 550ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
-}
-@media (prefers-reduced-motion: reduce) {
-  .passport-turn,
-  .stamp-arrive {
-    animation: none;
   }
 }
 
@@ -723,73 +458,15 @@
     inset 0 2px 8px color-mix(in oklab, var(--background) 70%, transparent),
     0 2px 0 color-mix(in oklab, var(--background) 70%, var(--primary));
 }
-.home-bubble-passport {
-  background:
-    radial-gradient(
-        circle at 50% 8%,
-        color-mix(in oklab, var(--primary) 28%, var(--card)),
-        var(--card) 72%
-      )
-      padding-box,
-    linear-gradient(125deg, var(--orange), var(--primary), var(--blue)) border-box;
-  box-shadow:
-    inset 0 2px 1px color-mix(in oklab, var(--foreground) 25%, transparent),
-    0 9px 0 color-mix(in oklab, var(--background) 60%, var(--primary)),
-    0 0 26px color-mix(in oklab, var(--primary) 42%, transparent);
-}
-.home-passport-emblem {
-  display: grid;
-  place-items: center;
-  width: 4.25rem;
-  height: 4.25rem;
-  border-radius: 50%;
-  color: var(--foreground);
-  font-size: 2rem;
-  background: radial-gradient(
-    circle at 30% 25%,
-    color-mix(in oklab, var(--foreground) 35%, var(--orange)),
-    var(--primary) 55%,
-    var(--secondary)
-  );
-  border: 2px solid var(--orange);
-  box-shadow:
-    inset 0 3px 5px color-mix(in oklab, var(--foreground) 35%, transparent),
-    0 7px 12px color-mix(in oklab, var(--background) 75%, transparent);
-}
 .home-avatar {
   border: 2px solid var(--blue);
   box-shadow: 0 2px 8px color-mix(in oklab, var(--blue) 45%, transparent);
 }
-.home-action {
-  min-height: 3.25rem;
-  border-radius: 999px;
-  background: var(--card);
-  border: 1px solid var(--blue);
-  box-shadow: 0 5px 0 color-mix(in oklab, var(--background) 75%, var(--blue));
-}
-.home-action:active {
-  transform: translateY(4px);
-  box-shadow: none;
-}
-.home-place {
-  border: 1px solid var(--border);
-  border-radius: 1.25rem;
-  background: var(--card);
-  box-shadow: 0 5px 0 color-mix(in oklab, var(--background) 75%, var(--blue));
-}
-.home-place:active {
-  transform: translateY(4px);
-  box-shadow: none;
-}
 @media (prefers-reduced-motion: reduce) {
-  .home-bubble,
-  .home-action,
-  .home-place {
+  .home-bubble {
     transition: none;
   }
-  .home-bubble:active,
-  .home-action:active,
-  .home-place:active {
+  .home-bubble:active {
     transform: none;
   }
 }
@@ -809,10 +486,6 @@
   transform: perspective(750px) rotateX(2deg) scale(0.995);
   box-shadow: 0 1px 3px color-mix(in oklab, var(--background) 60%, transparent);
 }
-.night-calendar-tonight {
-  border-color: var(--orange);
-  box-shadow: 0 3px 16px color-mix(in oklab, var(--orange) 18%, transparent);
-}
 .night-calendar-skipped > div:first-child {
   opacity: 0.55;
   text-decoration: line-through;
@@ -828,48 +501,12 @@
   background: var(--blue-soft);
   color: var(--blue);
 }
-.night-calendar-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--green);
-  animation: stamp-arrive 450ms ease-out both;
-}
 @media (prefers-reduced-motion: reduce) {
   .night-calendar-card {
     transition: none;
   }
   .night-calendar-card:active {
     transform: none;
-  }
-  .night-calendar-check {
-    animation: none;
-  }
-}
-
-@keyframes home-icon-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-3px);
-  }
-}
-.home-bubble .home-tile-icon {
-  animation: home-icon-float 3.8s ease-in-out infinite;
-}
-.home-bubble:active .home-tile-icon {
-  animation: none;
-  transform: translateY(2px) scale(0.92);
-  transition: transform 0.14s ease-out;
-}
-@media (prefers-reduced-motion: reduce) {
-  .home-bubble .home-tile-icon {
-    animation: none;
-    transition: none;
   }
 }
 
@@ -944,28 +581,6 @@
     transparent 28px 53px
   );
 }
-.passport-book {
-  background-color: var(--paper) !important;
-  color: var(--paper-ink);
-  background-image:
-    repeating-radial-gradient(
-      ellipse at 78% 22%,
-      transparent 0 17px,
-      color-mix(in oklab, var(--paper-ink) 9%, transparent) 18px 19px,
-      transparent 20px 36px
-    ),
-    linear-gradient(90deg, color-mix(in oklab, var(--gold) 18%, var(--paper)), var(--paper) 11%);
-  box-shadow:
-    inset 9px 0 color-mix(in oklab, var(--paper-ink) 22%, transparent),
-    0 16px 35px color-mix(in oklab, var(--background) 32%, transparent);
-}
-.passport-book .text-muted-foreground,
-.passport-book .eyebrow {
-  color: var(--paper-ink);
-}
-.passport-book .bg-card {
-  background: var(--paper);
-}
 .night-calendar-card {
   border-radius: 22px;
   background: var(--card);
@@ -988,9 +603,6 @@
 .home-bubble:active {
   transform: translateY(2px) scale(0.99);
   box-shadow: 0 3px 8px color-mix(in oklab, var(--background) 40%, transparent);
-}
-.home-bubble .home-tile-icon {
-  animation: none;
 }
 .night-nav {
   bottom: var(--nav-offset);
@@ -1459,86 +1071,12 @@
   color: var(--muted-foreground);
   margin-top: 2px;
 }
-.home-people-stage {
-  height: 115px;
-  overflow: hidden;
-  display: flex;
-  align-items: end;
-  justify-content: center;
-  border-bottom: 1px dashed var(--border);
-}
-.home-people-stage img {
-  display: block;
-  width: min(100%, 315px);
-  height: auto;
-}
-.home-departure-people {
-  position: relative;
-  height: auto;
-  min-height: 115px;
-  margin-top: 18px;
-  overflow: visible;
-  pointer-events: none;
-}
-.home-departure-people img {
-  width: min(78%, 250px);
-  max-height: 190px;
-  object-fit: contain;
-  object-position: bottom;
-}
 .home-signoff {
   font-size: clamp(34px, 10vw, 48px);
   line-height: 1.1;
   letter-spacing: -0.02em;
   margin-top: 2rem;
   margin-bottom: 2rem;
-}
-.game-warmup-wheel {
-  position: relative;
-  width: 154px;
-  height: 154px;
-  margin-inline: auto;
-}
-.game-warmup-disc {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  place-items: center;
-  border: 5px solid var(--blue);
-  border-radius: 50%;
-  background: conic-gradient(
-    var(--orange) 0deg 90deg,
-    var(--primary) 90deg 180deg,
-    var(--green) 180deg 270deg,
-    var(--blue) 270deg 360deg
-  );
-  box-shadow: 0 0 0 5px var(--wheel-hub);
-  font-size: 28px;
-}
-.game-warmup-disc-spun {
-  animation: warmup-spin 1.25s cubic-bezier(0.16, 0.8, 0.25, 1) both;
-}
-.game-warmup-pointer {
-  position: absolute;
-  left: 50%;
-  top: -13px;
-  transform: translateX(-50%);
-  color: var(--foreground);
-  font-size: 24px;
-}
-@keyframes warmup-spin {
-  from {
-    transform: rotate(0);
-  }
-  to {
-    transform: rotate(1080deg);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .game-warmup-disc-spun {
-    animation: none;
-  }
 }
 .quest-blur {
   filter: blur(16px);
@@ -1548,36 +1086,6 @@
   .quest-blur {
     transition: none;
   }
-}
-.inspiration-chip {
-  display: inline-grid;
-  grid-template-columns: 26px 18px auto;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  font-size: 13px;
-  font-weight: 800;
-  box-shadow: inset 0 1px color-mix(in oklab, var(--foreground) 20%, transparent);
-}
-.inspiration-chip img {
-  width: 26px;
-  height: 26px;
-  object-fit: contain;
-}
-.night-streak {
-  display: inline-flex;
-  align-items: center;
-  min-height: 31px;
-  padding: 4px 11px;
-  border: 1px solid var(--orange);
-  border-radius: 999px;
-  background: var(--orange-soft);
-  color: var(--orange);
-  font-size: 12px;
-  font-weight: 800;
 }
 .light .night-primary {
   background: var(--foreground) !important;
@@ -1873,12 +1381,6 @@
   }
 }
 /* One-time welcome flight; stationary and hidden when motion is reduced. */
-.welcome-trail {
-  width: 54px;
-  margin-right: 5px;
-  border-top: 2px dotted currentColor;
-  opacity: 0.65;
-}
 /* Shared brand signature and a ninth shortcut without squeezing the central departure ring. */
 .brand-lockup-name {
   white-space: nowrap;
@@ -1900,8 +1402,7 @@
   letter-spacing: 0;
 }
 @media (prefers-reduced-motion: reduce) {
-  .card-draw-reveal,
-  .game-warmup-disc-spun {
+  .card-draw-reveal {
     animation: none !important;
     transition: none !important;
   }
@@ -1952,9 +1453,7 @@
   }
 }
 /* Play flight surfaces inherit the room's existing foreground and vibe accent in both looks. */
-.flight-score,
 .flight-ticket,
-.flight-screen,
 .flight-proof {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -1965,47 +1464,12 @@
     inset 0 1px color-mix(in oklab, var(--foreground) 18%, transparent),
     0 7px 22px color-mix(in oklab, var(--background) 40%, transparent);
 }
-.flight-score {
-  border-color: color-mix(in oklab, var(--vibe-glow, var(--blue)) 50%, var(--border));
-}
-.flight-progress {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin: -8px 15px 0;
-  color: var(--vibe-glow, var(--blue));
-}
-.flight-progress span {
-  flex: 1;
-  height: 1px;
-  border-top: 2px dashed currentColor;
-  opacity: 0.65;
-}
-.flight-score-detail {
-  margin: 0 0 0;
-  padding: 12px 18px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-top: 0;
-  border-radius: 0 0 8px 8px;
-}
-.flight-score-detail p {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 5px 0;
-}
-.flight-score-detail b {
-  color: var(--blue);
-}
-.flight-ticket-art,
-.flight-screen-art {
+.flight-ticket-art {
   width: 100%;
   aspect-ratio: 2 / 1;
   overflow: hidden;
 }
-.flight-ticket-art img,
-.flight-screen-art img {
+.flight-ticket-art img {
   display: block;
   width: 100%;
   height: 100%;
@@ -2020,37 +1484,6 @@
   margin-inline: 4px;
   vertical-align: middle;
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--orange) 20%, transparent);
-}
-.flight-cabin-path {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 2px;
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--border);
-}
-.flight-cabin-path span {
-  display: grid;
-  place-items: center;
-  min-height: 52px;
-  padding: 5px 2px;
-  background: var(--card);
-  text-align: center;
-  font-size: clamp(9px, 2.4vw, 13px);
-  font-weight: 800;
-  line-height: 1.2;
-}
-.flight-cabin-path .flight-cabin-current {
-  color: var(--primary-foreground);
-  background: var(--primary);
-}
-@media (prefers-reduced-motion: reduce) {
-  .flight-cabin *,
-  .flight-cabin *::before,
-  .flight-cabin *::after {
-    animation-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
 }
 .flight-countdown {
   display: flex;
@@ -2076,8 +1509,7 @@
   font-size: 14px;
   font-weight: 700;
 }
-.flight-ticket-body,
-.flight-screen-body {
+.flight-ticket-body {
   padding: 17px;
 }
 .flight-ticket-body {
@@ -2146,9 +1578,7 @@
   background: var(--background);
 }
 /* The shared raw-point board replaces older per-phase 100-point boards on Play only. */
-.page-scene:has(.flight-footer) [id^="night-leaderboard-"],
-.page-scene:has(.flight-footer) .av-play > [aria-label="Leaderboard"],
-.page-scene:has(.flight-footer) .av-play > [aria-label="Practice"] {
+.page-scene:has(.flight-footer) [id^="night-leaderboard-"] {
   display: none;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2161,29 +1591,6 @@
   }
 }
 /* Boarding scan is visit-local, never blocks the departures board. */
-.boarding-scan {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  background: linear-gradient(transparent 46%, var(--gold) 50%, transparent 54%);
-  animation: boarding-sweep 1s ease-out both;
-}
-@keyframes boarding-sweep {
-  from {
-    transform: translateY(-100%);
-    opacity: 0.7;
-  }
-  to {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .boarding-scan {
-    display: none;
-  }
-}
 .home-orbit-core .brand-lockup {
   max-width: 100%;
 }
@@ -2345,11 +1752,6 @@
     0 0 18px color-mix(in oklab, var(--blue) 38%, transparent),
     inset 0 1px color-mix(in oklab, var(--accent) 55%, transparent);
 }
-.home-orbit-next {
-  max-width: 90%;
-  font-size: 9px;
-  line-height: 1.1;
-}
 .home-orbit-title {
   display: flex;
   align-items: center;
@@ -2368,30 +1770,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.passport-cover {
-  position: relative;
-  overflow: hidden;
-  padding: 1.25rem;
-  border: 2px solid var(--gold);
-  outline: 1px solid color-mix(in oklab, var(--gold) 50%, transparent);
-  outline-offset: -8px;
-  border-radius: 7px;
-  background:
-    repeating-radial-gradient(
-      ellipse at 85% 10%,
-      transparent 0 14px,
-      color-mix(in oklab, var(--gold) 12%, transparent) 15px 16px,
-      transparent 17px 30px
-    ),
-    var(--card);
-  box-shadow:
-    inset 0 0 30px color-mix(in oklab, var(--gold) 10%, transparent),
-    0 12px 24px color-mix(in oklab, var(--background) 30%, transparent);
-}
-.passport-cover h2 {
-  color: var(--gold);
-  text-shadow: 0 2px color-mix(in oklab, var(--background) 40%, transparent);
 }
 .mini-ink {
   border: 1px solid var(--primary) !important;
@@ -2435,102 +1813,6 @@
 }
 
 /* Digital passport: cream security paper surrounded by the Night Flight shell. */
-.passport-id-page {
-  min-height: 225px;
-  color: #22374a;
-  border-color: #c9ae75;
-  background:
-    linear-gradient(110deg, rgba(255, 250, 232, 0.92), rgba(255, 250, 232, 0.86)),
-    url("./assets/passport-spread.jpg") center/cover;
-  box-shadow:
-    0 15px 38px #091e3880,
-    inset 0 0 0 5px #ead5a5;
-}
-.passport-id-page h2 {
-  color: #173c58;
-  text-shadow: 0 1px #fff;
-  letter-spacing: 0.02em;
-  -webkit-text-stroke: 0.35px #ae8950;
-}
-.passport-id-page .eyebrow {
-  color: #674f30;
-}
-.passport-visa {
-  background:
-    linear-gradient(
-      90deg,
-      transparent 48.8%,
-      #ad90705e 49.4%,
-      #523e284d 50%,
-      #ad90705e 50.6%,
-      transparent 51.2%
-    ),
-    linear-gradient(#fff8e6ad, #fff8e6bd),
-    url("./assets/passport-spread.jpg") center/cover !important;
-}
-.passport-visa .passport-turn {
-  padding-inline: max(1.1rem, 4%);
-}
-.passport-corkboard {
-  background:
-    linear-gradient(#2013091a, #2013091a),
-    url("./assets/postcard-corkboard.jpg") center/cover !important;
-  color: #fff8e9;
-}
-.passport-corkboard .eyebrow,
-.passport-corkboard .text-muted-foreground {
-  color: #fff8e9 !important;
-}
-.passport-corkboard > div:first-child {
-  background: #f8ebc9ed;
-  color: #243746;
-}
-.passport-pinned {
-  position: relative;
-  background: #fff9e8 !important;
-  color: #193348;
-  box-shadow: 2px 6px 9px #29170991;
-  transform: rotate(-3deg);
-  border: 4px solid #fff8e9;
-}
-.passport-pinned:nth-child(even) {
-  transform: rotate(4deg);
-}
-.passport-pinned:before {
-  content: "";
-  position: absolute;
-  z-index: 2;
-  top: -10px;
-  left: 50%;
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 25%, #ff9f86, #bb1c25 58%, #720d19);
-  box-shadow: 1px 3px 4px #35170faa;
-}
-.passport-page-tabs button {
-  border-radius: 999px;
-  min-height: 44px;
-  padding-inline: 1rem;
-  background: linear-gradient(135deg, #f6e4bf, #c9af7e);
-  color: #203345;
-  box-shadow:
-    inset 0 2px 2px #ffffffaa,
-    0 4px 12px #0005;
-}
-.passport-page-tabs button:hover,
-.passport-page-tabs button:focus-visible {
-  box-shadow:
-    inset 0 2px 2px #ffffffaa,
-    0 0 15px var(--gold);
-}
-.passport-ink {
-  background:
-    radial-gradient(circle at center, transparent 53%, currentColor 54%, transparent 55%),
-    color-mix(in oklab, currentColor 9%, #fff9ec);
-  border-style: double;
-  text-shadow: 0 0 1px currentColor;
-}
 /* Gold-rimmed prize wheel, with pegs and an illuminated pointer. */
 .cinema-wheel {
   --wheel-size: min(72vw, 280px);
@@ -2650,33 +1932,6 @@
   white-space: normal;
   line-height: 1.05;
   text-wrap: balance;
-}
-
-/* Option A: two stacked leaves inside a navy passport cover. All colors are passport-role tokens. */
-:root {
-  --passport-leather-top: #1d2f6b;
-  --passport-leather-bottom: #14214f;
-  --passport-paper-top: #eef3fb;
-  --passport-paper-bottom: #f7f2e6;
-  --passport-ink-color: #20334d;
-  --passport-gold: #b58b42;
-  --passport-field: #ffffffd9;
-  --passport-board: #bd8c62;
-  --passport-board-ink: #492c20;
-}
-.light {
-  --passport-leather-top: #263e82;
-  --passport-leather-bottom: #192b61;
-  --passport-paper-top: #eef3fb;
-  --passport-paper-bottom: #f7f2e6;
-  --passport-ink-color: #20334d;
-  --passport-gold: #98672b;
-  --passport-field: #ffffffdd;
-}
-:root:not(.light) {
-  --passport-paper-top: #d9dfee;
-  --passport-paper-bottom: #e8e2d4;
-  --passport-field: #f9f7f2c9;
 }
 .passport-ag {
   color: var(--passport-ink-color);
@@ -2877,16 +2132,6 @@
   gap: 8px;
   margin-top: 14px;
   font-size: 11px;
-}
-.passport-badges .night-streak {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 4px 10px;
-  border: 1px solid var(--passport-gold);
-  border-radius: 999px;
-  color: var(--passport-ink-color);
-  background: var(--passport-field);
 }
 .passport-rule-title {
   display: flex;
@@ -3222,21 +2467,6 @@
     font-size: 11px;
   }
 }
-
-/* Round AH: switchable cinematic skin. Every selector is scoped to its opt-in branch. */
-:root {
-  --cinema-navy: #151a3d;
-  --cinema-deep: #0d1028;
-  --cinema-gold-start: #ffd36b;
-  --cinema-gold-end: #f2a93b;
-  --cinema-cyan-start: #7ff3ff;
-  --cinema-cyan-end: #2bc4e0;
-  --cinema-frost: rgba(255, 255, 255, 0.08);
-  --cinema-frost-border: rgba(255, 255, 255, 0.18);
-  --cinema-paper: #f8f0db;
-  --cinema-ink: #263048;
-  --cinema-red: #bb4848;
-}
 html:root .night-primary {
   background: linear-gradient(160deg, var(--cinema-gold-start), var(--cinema-gold-end)) !important;
   color: var(--cinema-deep) !important;
@@ -3493,46 +2723,6 @@ html:root button[class*="border-input"] {
   font-weight: 900;
   transform: rotate(-17deg);
 }
-.cinematic-night {
-  background: linear-gradient(145deg, var(--cinema-navy), var(--cinema-deep));
-  border: 1px solid var(--cinema-frost-border);
-}
-.cinematic-night-heading {
-  margin: 12px 0 20px;
-}
-.cinematic-travel-card {
-  position: relative;
-  isolation: isolate;
-  margin: 28px 8px;
-  min-height: 230px;
-  color: var(--cinema-ink);
-  background: var(--cinema-paper);
-  box-shadow: 0 10px 22px color-mix(in oklab, var(--cinema-deep) 50%, transparent);
-}
-.cinematic-travel-card::before,
-.cinematic-travel-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: 8px;
-  background: var(--cinema-paper);
-  box-shadow: 0 8px 20px color-mix(in oklab, var(--cinema-deep) 36%, transparent);
-  transform: rotate(-6deg);
-}
-.cinematic-travel-card::after {
-  transform: rotate(5deg);
-}
-.cinematic-travel-card .eyebrow {
-  color: var(--cinema-red);
-}
-.cinematic-travel-strip {
-  width: calc(100% + 40px);
-  height: 64px;
-  margin: -20px -20px 15px;
-  object-fit: cover;
-  border-radius: 8px 8px 0 0;
-}
 .cinematic-spin-page .cinema-wheel {
   filter: drop-shadow(0 0 18px var(--cinema-gold-end));
 }
@@ -3658,55 +2848,6 @@ html:root button[class*="border-input"] {
   border-radius: 12px;
   flex: none;
 }
-.cinematic-calendar .cinematic-next-night {
-  border-radius: 22px;
-  padding: 18px;
-  background: linear-gradient(125deg, #1d2b60dc, #101739dc);
-  border: 1px solid #83dcec66;
-  color: white;
-  box-shadow: 0 12px 30px #07122a55;
-}
-.cinematic-calendar [aria-label="Calendar period"] {
-  min-width: 0;
-  flex-wrap: wrap;
-  background: transparent;
-  gap: 4px;
-}
-.cinematic-calendar [aria-label="Calendar period"] button {
-  font-size: 11px;
-  padding-inline: 10px;
-}
-.cinematic-calendar .night-calendar-card {
-  position: relative;
-  transform: rotate(-0.6deg);
-  background: linear-gradient(135deg, #fff8e9, #dbe9ee);
-  color: #182c54;
-  border: 1px solid #b8a685;
-  box-shadow:
-    2px 5px 0 #a07c6b,
-    0 10px 22px #0006;
-}
-.cinematic-calendar .night-calendar-card:nth-child(even) {
-  transform: rotate(0.6deg);
-}
-.cinematic-calendar .night-calendar-card:before {
-  content: "";
-  position: absolute;
-  top: -7px;
-  left: 50%;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #ff948d, #9c252d);
-  box-shadow: 1px 3px 4px #0008;
-}
-.cinematic-calendar .night-calendar-card .text-muted-foreground {
-  color: #46526b;
-}
-.cinematic-calendar .night-calendar-date {
-  background: #1b5088;
-  color: #fff;
-}
 .cinematic-podium {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3816,25 +2957,6 @@ html:root button[class*="border-input"] {
 .cinematic-at-home-banner span {
   font-size: 12px;
 }
-.cinematic-at-home-picks {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 7px;
-  margin-top: 14px;
-}
-.cinematic-at-home-picks button {
-  height: 100px;
-  min-width: 0;
-  padding: 4px;
-}
-.cinematic-at-home-picks button span.relative {
-  font-size: 16px;
-}
-.cinematic-at-home-picks button .cinematic-caption {
-  font-size: 11px;
-  left: 5px;
-  right: auto;
-}
 .cinematic-at-home-ticket {
   padding: 12px 7px;
   margin-top: 15px;
@@ -3845,55 +2967,6 @@ html:root button[class*="border-input"] {
 .cinematic-culture .cinematic-frame img {
   max-height: 260px;
   object-fit: cover;
-}
-.cinematic-culture-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 24px;
-}
-.cinematic-culture-grid .cinematic-culture-tile {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  min-height: 105px;
-  padding: 8px 2px;
-  background: linear-gradient(140deg, #424a9a, #162b5a);
-  color: white;
-  border: 1px solid #ffffff55;
-  border-radius: 20px;
-  box-shadow: 0 9px 24px #0004;
-}
-.cinematic-culture-grid .cinematic-culture-tile:nth-child(3n + 1) {
-  background: linear-gradient(140deg, #c66d37, #694a73);
-}
-.cinematic-culture-grid .cinematic-culture-tile:nth-child(3n + 2) {
-  background: linear-gradient(140deg, #7853b2, #303674);
-}
-.cinematic-culture-grid .cinematic-culture-tile:nth-child(5) {
-  background: linear-gradient(140deg, #208a72, #19465d);
-}
-.cinematic-culture-tile img {
-  width: 42px;
-  height: 42px;
-  object-fit: cover;
-  border-radius: 12px;
-}
-.cinematic-culture-tile span:last-child {
-  font-size: 11px;
-}
-.cinematic-culture-search {
-  padding: 14px;
-  border-radius: 16px;
-  background: #162e4be8;
-  border: 1px solid #7ff3ff88;
-  color: #e9fcff;
-  margin-top: 22px;
-  font-weight: 700;
-  font-size: 13px;
 }
 .cinematic-culture-card {
   display: flex;
@@ -4011,19 +3084,9 @@ html:root button[class*="border-input"] {
   .cinematic-journey-heading {
     padding: 16px;
   }
-  .cinematic-culture-grid .cinematic-culture-tile {
-    min-height: 94px;
-  }
   .cinematic-podium-place {
     font-size: 12px;
   }
-}
-
-/* Round AK: the night-sky lounge belongs only to the cinematic Home branches. */
-:root {
-  --cinema-sky: #111633;
-  --cinema-starlight: #c6d9ff;
-  --cinema-globe: #83d5df;
 }
 .cinematic-home-top,
 .cinematic-home-bottom {
@@ -4221,12 +3284,6 @@ html:root button[class*="border-input"] {
   padding: 2px 4px 10px;
   scrollbar-width: thin;
 }
-.cinematic-rooms .cinematic-room-row {
-  border: 1px solid var(--cinema-frost-border);
-  background: linear-gradient(145deg, var(--cinema-navy), var(--cinema-deep));
-  color: var(--cinema-paper);
-  backdrop-filter: blur(14px);
-}
 .cinematic-journey .journey-terrain {
   opacity: 0;
 }
@@ -4244,17 +3301,6 @@ html:root button[class*="border-input"] {
   object-position: center;
   width: 100% !important;
   max-width: 100% !important;
-}
-
-.cinematic-at-home-picks .cinematic-daylight-place {
-  height: 100%;
-}
-.cinematic-at-home-picks button {
-  overflow: hidden;
-}
-.cinematic-selected-place {
-  border-color: var(--cinema-gold-start) !important;
-  box-shadow: 0 0 16px color-mix(in oklab, var(--cinema-gold-start) 48%, transparent);
 }
 .cinematic-error {
   background: radial-gradient(circle at 50% 20%, #28518e, #151a3d 55%, #0d1028);
@@ -4433,19 +3479,6 @@ html:root button[class*="border-input"] {
   color: var(--cinema-gold-start);
   border: 1px solid var(--cinema-gold-start);
   background: var(--cinema-deep);
-}
-.cinematic-calendar [aria-label="Calendar period"] button,
-.cinematic-calendar button[aria-pressed] {
-  border: 1px solid var(--cinema-frost-border);
-  border-radius: 999px;
-  background: var(--cinema-frost);
-  color: var(--cinema-paper);
-  backdrop-filter: blur(12px);
-}
-.cinematic-calendar [aria-label="Calendar period"] button:focus-visible,
-.cinematic-calendar button[aria-pressed="true"] {
-  border-color: var(--cinema-gold-start);
-  color: var(--cinema-gold-start);
 }
 .cinematic-trip-overview .cinematic-trip-section {
   padding: 7px 12px 14px;
@@ -4648,19 +3681,6 @@ html:root button[class*="border-input"] {
 .cinematic-game-scene-2 .cinematic-game-world {
   object-position: center top;
 }
-.cinematic-live-scene {
-  margin: 0;
-  min-height: 0;
-}
-.cinematic-live-scene .cinematic-game-content {
-  min-height: 0;
-}
-.cinematic-live-scene .cinematic-game-play {
-  display: block;
-}
-.cinematic-live-scene .cinematic-game-world {
-  filter: brightness(0.25);
-}
 @media (max-width: 390px) {
   .cinematic-game-scene {
     padding: 11px;
@@ -4671,25 +3691,6 @@ html:root button[class*="border-input"] {
   .cinematic-game-header strong {
     font-size: 22px;
   }
-}
-.cinematic-night .cinematic-game-scene {
-  margin: 0;
-  min-height: 0;
-}
-.cinematic-night .cinematic-game-content {
-  min-height: 0;
-}
-.cinematic-night .cinematic-game-play {
-  display: block;
-}
-.cinematic-night .cinematic-game-world {
-  filter: brightness(0.25);
-}
-.cinematic-night .cinematic-live-inner {
-  min-width: 0;
-}
-.cinematic-night .cinematic-game-play h1 {
-  display: initial;
 }
 /* Layer artwork above the frame fill, then grade it behind the controls. */
 .cinematic-game-world {
@@ -4707,9 +3708,6 @@ html:root button[class*="border-input"] {
 }
 .cinematic-game-scene .cinematic-game-controls > .w-full {
   min-height: 48px;
-}
-.cinematic-night .cinematic-night-heading {
-  display: none;
 }
 /* AJ2: one cinematic play language shared by rehearsal and live Game Day. */
 .cinematic-game-play .cinematic-hero-card {
@@ -4876,8 +3874,7 @@ html:root button[class*="border-input"] {
   color: var(--cinema-red);
   margin-bottom: 12px;
 }
-.cinematic-hero-7 .cinematic-game-controls > .grid,
-.cinematic-hero-7 .cinematic-live-inner > .grid {
+.cinematic-hero-7 .cinematic-game-controls > .grid {
   padding: 12px;
   border-radius: 24px;
   background: color-mix(in oklab, var(--cinema-navy) 84%, transparent);
@@ -4994,312 +3991,6 @@ html:root button[class*="border-input"] {
   background: var(--cinema-deep);
   color: var(--cinema-paper);
 }
-.cinematic-tour .tour-phone {
-  width: min(100%, 300px);
-  height: 100%;
-  margin: auto;
-  border: 5px solid var(--cinema-frost-border);
-  border-radius: 32px;
-  overflow: hidden;
-  background: var(--cinema-deep);
-  box-shadow: 0 18px 48px color-mix(in oklab, var(--cinema-deep) 70%, transparent);
-}
-.tour-mini-screen {
-  height: 100%;
-  position: relative;
-  overflow: hidden;
-  padding: 29px 12px 36px;
-  background: linear-gradient(var(--cinema-navy), var(--cinema-deep));
-  color: var(--cinema-paper);
-  font-family: var(--font-body);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.tour-mini-screen:before {
-  content: "";
-  position: absolute;
-  width: 70px;
-  height: 9px;
-  border-radius: 0 0 10px 10px;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--cinema-deep);
-}
-.tour-mini-screen header {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--cinema-cyan-start);
-  font: 800 10px var(--font-display);
-}
-.tour-mini-screen header span {
-  margin-left: auto;
-  color: var(--cinema-gold-start);
-}
-.tour-mini-screen h2 {
-  font: 800 23px/1.04 var(--font-display);
-  margin: 3px 0;
-  overflow-wrap: anywhere;
-}
-.tour-mini-screen b,
-.tour-mini-screen strong {
-  font-family: var(--font-display);
-}
-.tour-mini-screen p {
-  margin: 3px 0;
-  color: var(--muted-foreground);
-  font-size: 11px;
-}
-.tour-mini-card {
-  padding: 10px;
-  border: 1px solid var(--cinema-frost-border);
-  border-radius: 17px;
-  background: var(--cinema-frost);
-  backdrop-filter: blur(10px);
-}
-.tour-mini-card small,
-.tour-mini-pass small {
-  display: block;
-  color: var(--cinema-gold-start);
-  font-size: 11px;
-  font-weight: 800;
-}
-.tour-mini-card b {
-  display: block;
-  font-size: 14px;
-  line-height: 1.2;
-  margin-top: 4px;
-}
-.tour-mini-stars {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.28;
-  background-image: radial-gradient(var(--cinema-paper) 1px, transparent 1px);
-  background-size: 37px 51px;
-}
-.tour-mini-stamp {
-  position: absolute;
-  right: 8px;
-  top: 70px;
-  transform: rotate(16deg);
-  border: 2px dashed var(--cinema-frost-border);
-  border-radius: 50%;
-  padding: 10px 4px;
-  font: 800 7px var(--font-display);
-  opacity: 0.26;
-}
-.tour-orbit {
-  height: 115px;
-  position: relative;
-  overflow: hidden;
-  border-radius: 20px;
-}
-.tour-orbit img,
-.tour-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: brightness(0.7);
-}
-.tour-orbit strong {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 19px;
-  text-shadow: 0 2px 12px var(--cinema-deep);
-}
-.tour-mini-wheel {
-  text-align: center;
-  margin: auto;
-}
-.tour-mini-wheel img {
-  display: block;
-  width: 108px;
-  height: 108px;
-  object-fit: contain;
-}
-.tour-mini-wheel span {
-  font-size: 10px;
-  font-weight: 800;
-}
-.tour-crew {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin: 14px 0;
-}
-.tour-crew img {
-  width: 44px;
-  height: 44px;
-  object-fit: cover;
-  border-radius: 50%;
-  border: 2px solid var(--cinema-gold-start);
-}
-.tour-bingo {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 5px;
-  margin-top: 8px;
-}
-.tour-bingo span {
-  display: grid;
-  place-items: center;
-  border-radius: 9px;
-  background: var(--cinema-frost);
-  height: 31px;
-}
-.tour-photo {
-  height: 139px;
-  position: relative;
-  overflow: hidden;
-  border-radius: 16px;
-}
-.tour-photo b {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  font-size: 11px;
-}
-.tour-card-stack {
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-}
-.tour-card-stack img {
-  height: 95px;
-  object-fit: contain;
-}
-.tour-card-stack b {
-  text-align: center;
-}
-.tour-passport {
-  border: 4px solid var(--cinema-gold-end);
-  border-radius: 17px;
-  background: var(--cinema-paper);
-  color: var(--cinema-ink);
-  padding: 8px;
-}
-.tour-passport img {
-  width: 100%;
-  height: 90px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-.tour-passport b {
-  display: block;
-}
-.tour-passport p {
-  color: var(--cinema-ink);
-}
-.tour-icon-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  text-align: center;
-}
-.tour-icon-grid img {
-  height: 85px;
-  margin: auto;
-  object-fit: contain;
-}
-.tour-icon-grid small {
-  display: block;
-  font-weight: 800;
-}
-.tour-mini-pass {
-  display: grid;
-  gap: 6px;
-  padding: 12px;
-  border-radius: 17px;
-  border: 1px dashed var(--cinema-gold-start);
-  background: var(--cinema-frost);
-}
-.tour-mini-pass b {
-  font-size: 12px;
-}
-.tour-mini-pass span {
-  text-align: center;
-  border-radius: 999px;
-  background: var(--cinema-gold-start);
-  color: var(--cinema-deep);
-  font-weight: 800;
-  padding: 6px;
-}
-.tour-mini-nav {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  height: 30px;
-  background: var(--cinema-deep);
-  border-top: 1px solid var(--cinema-frost-border);
-}
-.tour-how-card {
-  position: relative;
-  border-radius: 17px;
-  overflow: hidden;
-  border: 1px solid var(--cinema-cyan-start);
-  box-shadow: 0 0 16px color-mix(in oklab, var(--cinema-cyan-start) 18%, transparent);
-  margin-top: auto;
-  min-height: 0;
-}
-.tour-how-card > img {
-  width: 100%;
-  height: 100px;
-  object-fit: cover;
-  object-position: center 35%;
-}
-.tour-how-footer {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 7px;
-  background: var(--cinema-deep);
-}
-.tour-how-footer strong,
-.tour-how-footer small {
-  display: block;
-}
-.tour-how-footer strong {
-  font-size: 13px;
-}
-.tour-how-footer small {
-  font-size: 10px;
-  color: var(--muted-foreground);
-}
-.tour-how-footer i {
-  display: block;
-  width: 30px;
-  height: 2px;
-  background: var(--cinema-gold-start);
-  margin-top: 4px;
-}
-.tour-how-icon {
-  display: grid;
-  place-items: center;
-  width: 31px;
-  height: 31px;
-  flex: none;
-  border: 1px solid var(--cinema-cyan-start);
-  border-radius: 9px;
-  color: var(--cinema-cyan-start);
-}
-.tour-how-1 {
-  border-color: var(--cinema-gold-start);
-}
-.tour-how-2 {
-  border-color: var(--cinema-cyan-end);
-}
-.tour-how-3 {
-  border-color: var(--cinema-gold-end);
-}
 .cinematic-tour .tour-next {
   border-radius: 999px;
   background: linear-gradient(135deg, var(--cinema-gold-start), var(--cinema-gold-end));
@@ -5308,112 +3999,7 @@ html:root button[class*="border-input"] {
     inset 0 1px var(--cinema-paper),
     0 6px 20px color-mix(in oklab, var(--cinema-gold-start) 26%, transparent);
 }
-.cinematic-tour .tour-phone .tour-how-card {
-  flex-shrink: 0;
-}
-.cinematic-tour .tour-phone .tour-mini-screen > * {
-  position: relative;
-}
-.cinematic-tour .tour-phone .tour-mini-screen > .tour-mini-stars,
-.cinematic-tour .tour-phone .tour-mini-screen > .tour-mini-stamp,
-.cinematic-tour .tour-phone .tour-mini-screen > .tour-mini-nav {
-  position: absolute;
-}
-@media (max-height: 720px) {
-  .cinematic-tour .tour-phone .tour-how-card > img {
-    height: 72px;
-  }
-  .cinematic-tour .tour-phone .tour-mini-screen {
-    gap: 5px;
-  }
-  .cinematic-tour .tour-phone .tour-mini-card {
-    padding: 7px;
-  }
-}
 /* Flight-path illustration treatment on the cinematic tour only. */
-.cinematic-tour .tour-how-card {
-  background: linear-gradient(165deg, #182655, #0c1332);
-  border-radius: 19px;
-  isolation: isolate;
-}
-.cinematic-tour .tour-how-art {
-  height: 100px;
-  position: relative;
-  overflow: hidden;
-  background: radial-gradient(circle at 65% 10%, #6379bb55, transparent 60%), #121b42;
-}
-.cinematic-tour .tour-how-art:before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background-image: radial-gradient(#fff9 1px, transparent 1px);
-  background-size: 27px 23px;
-  opacity: 0.5;
-}
-.cinematic-tour .tour-how-art:after {
-  content: "";
-  position: absolute;
-  z-index: 1;
-  left: -20px;
-  right: 44px;
-  top: 18px;
-  height: 45px;
-  border-top: 1.5px dashed #ffd36b;
-  border-radius: 50%;
-  transform: rotate(-9deg);
-  pointer-events: none;
-  filter: drop-shadow(0 0 5px #ffd36b);
-}
-.cinematic-tour .tour-how-art > img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 37%;
-}
-.cinematic-tour .tour-how-postmark {
-  position: absolute;
-  z-index: 2;
-  bottom: 6px;
-  left: 7px;
-  transform: rotate(-13deg);
-  border: 1px dashed #fff9;
-  border-radius: 50%;
-  padding: 5px 3px;
-  color: #fff9;
-  font:
-    800 7px "Bricolage Grotesque",
-    sans-serif;
-  letter-spacing: 0.07em;
-}
-.cinematic-tour .tour-how-flight {
-  position: absolute;
-  z-index: 2;
-  top: 4px;
-  right: 26px;
-  color: #ffe0a0;
-  text-shadow: 0 0 12px #ffe38f;
-  font-size: 16px;
-}
-@media (max-height: 720px) {
-  .cinematic-tour .tour-how-art {
-    height: 72px;
-  }
-}
-
-/* Round AN: isolated cinematic entrance; original sign-in remains unchanged. */
-:root {
-  --splash-night: #0d1028;
-  --splash-indigo: #1b1650;
-  --splash-pink: #ff6fae;
-  --splash-cyan: #7ff3ff;
-  --splash-coral: #f38777;
-  --splash-periwinkle: #9291ed;
-  --splash-ink: #14224b;
-  --splash-paper: #f9f8ff;
-  --splash-glass: color-mix(in oklab, var(--splash-paper) 11%, transparent);
-}
 .cinematic-splash,
 .cinematic-auth {
   font-family: var(--font-body);
@@ -5975,22 +4561,8 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   filter: none;
   opacity: 0.45;
 }
-.cinematic-live-scene .cinematic-game-world,
-.cinematic-night .cinematic-game-world {
-  filter: none;
-  opacity: 0.27;
-}
 .cinematic-game-scene-1 .cinematic-game-world {
   opacity: 0.3;
-}
-
-/* Round AR: the glass-medallion lounge, scoped to cinematic Home only. */
-:root {
-  --home-door-gold: oklch(0.83 0.16 82);
-  --home-door-pink: oklch(0.72 0.21 355);
-  --home-door-cyan: oklch(0.82 0.14 215);
-  --home-door-violet: oklch(0.64 0.23 295);
-  --home-door-coral: oklch(0.76 0.17 40);
 }
 .cinematic-home-header {
   position: relative;
@@ -6314,86 +4886,6 @@ html:root .cinematic-auth .cinematic-auth-email-button {
 }
 
 /* Round AT: cinematic art occupies its frame; Original styling is untouched. */
-.cinematic-culture-grid .cinematic-culture-tile {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  flex-direction: row;
-  align-items: flex-end;
-  justify-content: center;
-  aspect-ratio: 1/1;
-  min-height: 0;
-  overflow: hidden;
-  padding: 0 5px 10px;
-  border: 1px solid var(--culture-rim, var(--home-door-gold));
-  border-radius: 20px;
-  background: var(--cinema-navy);
-  color: var(--cinema-paper);
-  box-shadow: 0 6px 18px color-mix(in oklab, var(--cinema-deep) 38%, transparent);
-}
-.cinematic-culture-grid .cinematic-culture-tile:nth-child(6n + 2) {
-  --culture-rim: var(--home-door-pink);
-}
-.cinematic-culture-grid .cinematic-culture-tile:nth-child(6n + 3) {
-  --culture-rim: var(--home-door-cyan);
-}
-.cinematic-culture-grid .cinematic-culture-tile:nth-child(6n + 4) {
-  --culture-rim: var(--home-door-violet);
-}
-.cinematic-culture-grid .cinematic-culture-tile:nth-child(6n + 5) {
-  --culture-rim: var(--home-door-coral);
-}
-.cinematic-culture-grid .cinematic-culture-tile:nth-child(6n + 6) {
-  --culture-rim: var(--home-door-cyan);
-}
-.cinematic-culture-grid .cinematic-culture-tile::after {
-  content: "";
-  position: absolute;
-  inset: 40% 0 0;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(
-    transparent,
-    color-mix(in oklab, var(--cinema-deep) 89%, transparent)
-  );
-}
-.cinematic-culture-grid .cinematic-culture-tile .cinematic-culture-tile-art {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  object-fit: cover;
-  object-position: center;
-  filter: none;
-  transform: none;
-  border: 0;
-  border-radius: 0;
-  animation: none;
-}
-.cinematic-culture-grid .cinematic-culture-tile-label {
-  position: relative;
-  z-index: 2;
-  display: block;
-  max-width: 100%;
-  white-space: normal;
-  text-align: center;
-  font: 800 12px/1.1 var(--font-display);
-  color: var(--cinema-paper);
-  text-shadow: 0 1px 4px var(--cinema-deep);
-}
-.cinematic-culture-grid .cinematic-culture-tile:is(:hover, :focus-visible, :active) {
-  border-color: var(--culture-rim);
-  box-shadow:
-    0 0 0 2px var(--culture-rim),
-    0 0 18px color-mix(in oklab, var(--culture-rim) 52%, transparent);
-}
-@media (max-width: 380px) {
-  .cinematic-culture-grid .cinematic-culture-tile {
-    min-height: 0;
-  }
-}
 /* Keep the approved 52px art inside the 58px Home medallions (~90% frame, transparent margins in the asset). */
 .cinematic-boarding .boarding-game-tile {
   border: 0;
@@ -6544,44 +5036,12 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   box-shadow: 0 8px 30px var(--cinema-deep);
   touch-action: none;
 }
-
-:root {
-  --ink-draw: #203050;
-}
 .cinematic-page-scene.page-scene-play::before {
   background: linear-gradient(var(--cinema-sky), var(--cinema-deep));
   opacity: 0.55;
 }
 
 /* Round AV: cinematic Game Day phases (Original Play remains unchanged). */
-.av-phase-tab {
-  min-width: 0;
-  min-height: 48px;
-  padding: 4px 2px;
-  border: 1px solid var(--cinema-frost-border);
-  border-radius: 999px;
-  background: linear-gradient(
-    145deg,
-    color-mix(in oklab, var(--cinema-paper) 13%, transparent),
-    var(--cinema-frost)
-  );
-  color: var(--cinema-paper);
-  font: 800 11px/1.15 var(--font-display);
-  text-align: center;
-  box-shadow: inset 0 1px 1px color-mix(in oklab, var(--cinema-paper) 24%, transparent);
-  overflow-wrap: anywhere;
-}
-.av-phase-active {
-  background: linear-gradient(145deg, var(--cinema-cyan-start), var(--cinema-cyan-end));
-  color: var(--cinema-deep);
-  border-color: var(--cinema-cyan-start);
-  box-shadow:
-    0 3px 14px color-mix(in oklab, var(--cinema-cyan-start) 45%, transparent),
-    inset 0 1px 2px var(--cinema-paper);
-}
-.av-preview-note {
-  color: var(--cinema-gold-start);
-}
 .av-glass-card {
   border: 1px solid var(--cinema-frost-border);
   border-radius: 28px;
@@ -6596,144 +5056,8 @@ html:root .cinematic-auth .cinematic-auth-email-button {
     0 12px 26px color-mix(in oklab, var(--cinema-deep) 30%, transparent);
   backdrop-filter: blur(18px);
 }
-.av-lineup {
-  display: flex;
-  overflow-x: auto;
-  gap: 10px;
-  padding: 2px 2px 14px;
-  scroll-snap-type: x mandatory;
-}
-.av-lineup-item {
-  flex: 0 0 126px;
-  scroll-snap-align: start;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  text-align: center;
-  padding: 10px;
-  border-radius: 22px;
-  border: 1px solid var(--cinema-frost-border);
-  background: var(--cinema-frost);
-}
-.av-lineup-item img {
-  width: 72px;
-  height: 72px;
-  object-fit: contain;
-}
-.av-lineup-item b {
-  font: 800 13px/1.15 var(--font-display);
-}
-.av-lineup-item small {
-  opacity: 0.7;
-}
-.av-activities {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-.av-activity {
-  min-width: 0;
-  min-height: 132px;
-  border: 1px solid var(--cinema-frost-border);
-  border-radius: 24px;
-  background: linear-gradient(
-    135deg,
-    var(--cinema-frost),
-    color-mix(in oklab, var(--cinema-deep) 70%, transparent)
-  );
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  box-shadow: inset 0 1px 2px color-mix(in oklab, var(--cinema-paper) 22%, transparent);
-}
-.av-activity img {
-  width: 74px;
-  height: 74px;
-  object-fit: contain;
-}
-.av-activity span {
-  font: 800 13px var(--font-display);
-  text-align: center;
-}
-.av-activity:disabled {
-  opacity: 0.6;
-}
-.av-quick-vote {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  border: 1px solid color-mix(in oklab, var(--cinema-gold-start) 40%, transparent);
-  border-radius: 28px;
-  padding: 22px;
-  color: white;
-  background:
-    radial-gradient(
-      ellipse at 50% 110%,
-      color-mix(in oklab, var(--cinema-cyan-start) 35%, transparent),
-      transparent 60%
-    ),
-    linear-gradient(155deg, #12294e, #050b1c 72%);
-  box-shadow: 0 12px 30px #030b1c55;
-}
-.av-quick-vote:before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: 45% 0 0;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent 0 27%,
-    #e8c97380 28% 29%,
-    transparent 30% 51%
-  );
-  transform: perspective(100px) rotateX(58deg);
-  opacity: 0.45;
-}
-.av-vote-button {
-  height: auto !important;
-  min-height: 116px !important;
-  white-space: normal !important;
-  display: flex !important;
-  flex-direction: column;
-  gap: 7px;
-  border-radius: 24px !important;
-  font: 900 13px/1.2 var(--font-display) !important;
-  text-align: center;
-  padding: 12px 6px !important;
-  box-shadow:
-    inset 0 2px 3px #ffffff80,
-    0 8px 16px #02071499 !important;
-}
-.av-vote-green {
-  background: linear-gradient(140deg, #9be7ac, #268b63) !important;
-  color: #062718 !important;
-}
-.av-vote-red {
-  background: linear-gradient(140deg, #ffb1a7, #cb444c) !important;
-  color: #390b17 !important;
-}
-.av-vote-stamp {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 2px solid currentColor;
-  border-radius: 12px;
-  transform: rotate(-8deg);
-}
 @media (max-width: 375px) {
-  .av-phase-tabs {
-    gap: 3px;
-  }
-  .av-phase-tab {
-    font-size: 11px;
-    padding: 3px 1px;
-  }
-  .av-glass-card,
-  .av-quick-vote {
+  .av-glass-card {
     padding: 16px;
   }
 }
@@ -6889,46 +5213,6 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   color: var(--passport-ink-color);
   font-size: 11px;
   font-weight: 700;
-}
-.av-phase-tabs {
-  display: flex;
-  gap: 7px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-  padding: 2px 3px 8px;
-}
-.av-phase-tabs::-webkit-scrollbar {
-  display: none;
-}
-.av-phase-tabs .av-phase-tab {
-  flex: 1 0 max-content;
-  min-width: 78px;
-  padding: 8px 10px;
-  white-space: normal;
-  overflow-wrap: normal;
-}
-@media (max-width: 390px) {
-  .av-phase-tabs {
-    gap: 5px;
-  }
-  .av-phase-tabs .av-phase-tab {
-    flex: 0 0 auto;
-    min-width: 80px;
-    padding: 8px 10px;
-  }
-}
-.av-podium-only .cinematic-leaderboard ol,
-.av-podium-only .cinematic-leaderboard > button,
-.av-podium-only .cinematic-leaderboard > .flex:first-of-type {
-  display: none;
-}
-/* Round AW · Security Check / Secret Missions (cinematic Takeoff) */
-:root {
-  --sm-scan: #5ff6ff;
-  --sm-violet: #a76bff;
-  --sm-pending: #ffc857;
-  --sm-go: #3ee38b;
 }
 .sm-page {
   color: var(--foreground);
@@ -7112,9 +5396,6 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.cinematic-month-chip .cinematic-month-long {
-  display: none;
-}
 .cinematic-month-skipped {
   opacity: 0.5;
   text-decoration: line-through;
@@ -7128,12 +5409,6 @@ html:root .cinematic-auth .cinematic-auth-email-button {
     height: auto !important;
     min-height: 32px !important;
     border-radius: 6px !important;
-  }
-  .cinematic-month-chip .cinematic-month-short {
-    display: none;
-  }
-  .cinematic-month-chip .cinematic-month-long {
-    display: block;
   }
 }
 
@@ -7156,108 +5431,8 @@ html:root .cinematic-auth .cinematic-auth-email-button {
 .cinematic-home-top .home-orbit-link {
   font-size: 11px;
 }
-@media (hover: hover) {
-  .cinematic-culture-grid .cinematic-culture-tile:hover {
-    border-color: var(--culture-rim);
-  }
-}
 
 /* Early Check-In: check-in counter / boarding-stamp theme (cinematic Play). */
-.ec-tile {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  text-align: left;
-  border-radius: 24px;
-  padding: 14px 16px;
-  min-height: 64px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in oklab, var(--primary) 30%, var(--card)),
-    color-mix(in oklab, var(--card) 80%, transparent)
-  );
-  border: 1px solid color-mix(in oklab, var(--primary) 45%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--foreground) 25%, transparent),
-    0 10px 24px -14px var(--primary);
-}
-.ec-stamp {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  border: 2px dashed currentColor;
-  color: var(--primary);
-  transform: rotate(-10deg);
-  font-weight: 900;
-  font-size: 11px;
-}
-.ec-card {
-  border-radius: 24px;
-  padding: 18px;
-  background: color-mix(in oklab, var(--card) 82%, transparent);
-  border: 1px solid var(--border);
-  position: relative;
-  overflow: hidden;
-}
-.ec-card::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 4px;
-  background: repeating-linear-gradient(90deg, var(--primary) 0 14px, transparent 14px 22px);
-}
-.ec-card.ec-pending::before {
-  background: var(--orange);
-}
-.ec-card.ec-released::before {
-  background: var(--green);
-}
-.ec-card.ec-skipped,
-.ec-card.ec-declined {
-  opacity: 0.7;
-}
-.ec-chip {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 3px 10px;
-  font-size: 11px;
-  font-weight: 800;
-  border: 1px solid var(--border);
-  background: color-mix(in oklab, var(--muted) 60%, transparent);
-}
-.ec-chip-pending {
-  border-color: var(--orange);
-  color: var(--orange);
-}
-.ec-chip-released {
-  border-color: var(--green);
-  color: var(--green);
-}
-.ec-pill {
-  border-radius: 999px;
-  min-height: 44px;
-  font-weight: 800;
-}
-
-/* Cinematic Photo Wall: printed paper over a real corkboard photograph. */
-:root {
-  --scrap-cork: #8a5a2b;
-  --scrap-paper: #fbf8f1;
-  --scrap-ink: #172037;
-  --scrap-empty: #d7d3c9;
-  --scrap-tape: rgba(241, 223, 165, 0.85);
-  --scrap-pin: #ff4fa0;
-  --scrap-night: rgba(13, 16, 40, 0.9);
-  --scrap-route: #f1e8d1;
-  --scrap-shadow: rgba(25, 14, 10, 0.42);
-}
 .cinematic-photo-wall {
   min-width: 0;
 }
@@ -7589,26 +5764,10 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   padding: 2px !important;
   overflow: visible;
 }
-.av-play button[class*="h-8"],
-.av-play button[class*="size-sm"],
-.av-play button[role="tab"],
-.av-play .av-lineup-item button,
-.av-play .av-quick-vote button,
 .cinematic-month button[class*="h-8"] {
   min-height: 44px;
 }
-.av-play .av-phase-tabs {
-  overflow-x: auto;
-}
-.av-play .av-phase-tab {
-  min-height: 48px;
-}
-.av-play .av-glass-card .text-xs,
-.av-play .av-quick-vote .text-xs {
-  font-size: 11px;
-}
-.cinema-wheel-label,
-.tour-mini-stamp {
+.cinema-wheel-label {
   font-size: 11px;
 }
 @media (max-width: 390px) {
@@ -7757,19 +5916,6 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   background: #0e0b1f;
   box-shadow: 0 15px 40px rgba(14, 11, 31, 0.24);
 }
-.room-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-.room-tabs button {
-  min-height: 52px;
-  height: auto;
-  white-space: normal;
-  line-height: 1.18;
-  font-size: 12px;
-  padding: 8px;
-}
 .cinematic-culture.window-seat-room .window-seat-content .app-card,
 .cinematic-culture.window-seat-room .cinematic-culture-card,
 .cinematic-culture .window-seat-content .app-card {
@@ -7819,20 +5965,9 @@ html:root .cinematic-auth .cinematic-auth-email-button {
 }
 
 /* Window Seat is a bright cabin in either look; the source photo has no tint or overlay. */
-.window-seat-shortcut .window-seat-icon {
-  display: block;
-  position: relative;
-  flex: none;
-  overflow: hidden;
-  width: clamp(38px, 11vw, 57px);
-  height: clamp(38px, 11vw, 57px);
-  border-radius: 50%;
-  text-shadow: none;
-}
 .window-seat-shortcut .home-door-medallion {
   overflow: hidden;
 }
-.window-seat-shortcut .window-seat-icon img,
 .cinematic-home-top .window-seat-shortcut .home-door-medallion img {
   width: 100%;
   height: 100%;
@@ -7848,7 +5983,6 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   width: 52px;
   height: 52px;
 }
-.window-seat-shortcut .window-seat-icon img:active,
 .cinematic-home-top .window-seat-shortcut .home-door-medallion img:active {
   transform: scale(1.1);
 }
@@ -8033,17 +6167,6 @@ html:root .cinematic-auth .cinematic-auth-email-button {
     padding-inline: 10px;
   }
 }
-
-/* Room experience sheets share one structure in both visual looks. */
-:root {
-  --home-table: oklch(0.39 0.072 54);
-  --home-table-grain: oklch(0.47 0.06 56);
-  --home-lamp: oklch(0.78 0.12 78);
-  --home-paper: oklch(0.967 0.019 86);
-  --home-paper-ink: oklch(0.265 0.039 56);
-  --home-paper-rule: oklch(0.72 0.048 73);
-  --postcard-rule: oklch(0.67 0.018 75);
-}
 .culture-sample-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -8138,8 +6261,7 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   border-radius: 8px;
   animation: room-scene-arrive 0.45s ease-out both;
 }
-.room-experience-placeholder figcaption,
-.game-night-room-art figcaption {
+.room-experience-placeholder figcaption {
   padding-top: 7px;
   font-size: 11px;
   font-weight: 750;
@@ -8411,69 +6533,6 @@ html:root .cinematic-auth .cinematic-auth-email-button {
 .window-play-scene :is(.text-muted-foreground, .eyebrow) {
   color: var(--cabin-muted);
 }
-.game-night-room-art {
-  background: var(--card);
-}
-.game-night-room-art img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 3/2;
-  object-fit: cover;
-  animation: room-scene-arrive 0.45s ease-out both;
-}
-.home-game-night {
-  background:
-    radial-gradient(
-      ellipse at 86% 2%,
-      color-mix(in oklab, var(--home-lamp) 45%, transparent),
-      transparent 43%
-    ),
-    repeating-linear-gradient(
-      94deg,
-      transparent 0 43px,
-      color-mix(in oklab, var(--home-table-grain) 28%, transparent) 44px 46px,
-      transparent 47px 103px
-    ),
-    var(--home-table);
-  color: var(--home-paper);
-}
-.home-game-night header,
-.home-game-night :is(.app-card, .flight-ticket, .flight-screen, .flight-proof) {
-  background: var(--home-paper);
-  color: var(--home-paper-ink);
-  border-color: var(--home-paper-rule);
-}
-.home-game-night .flight-cabin-path {
-  background: var(--home-paper-rule);
-}
-.home-game-night .flight-cabin-path span {
-  background: var(--home-paper);
-  color: var(--home-paper-ink);
-}
-.window-game-night {
-  background:
-    repeating-linear-gradient(
-      180deg,
-      transparent 0 128px,
-      color-mix(in oklab, var(--cabin-seam) 24%, transparent) 129px 130px,
-      transparent 131px 260px
-    ),
-    var(--cabin-wall);
-  color: var(--cabin-ink);
-}
-.window-game-night header,
-.window-game-night :is(.app-card, .flight-ticket, .flight-screen, .flight-proof) {
-  background: var(--cabin-panel);
-  color: var(--cabin-ink);
-  border-color: var(--cabin-seam);
-}
-.window-game-night .flight-cabin-path {
-  background: var(--cabin-seam);
-}
-.window-game-night .flight-cabin-path span {
-  background: var(--cabin-panel);
-  color: var(--cabin-ink);
-}
 @keyframes room-scene-arrive {
   from {
     opacity: 0;
@@ -8485,17 +6544,9 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .room-experience-placeholder img,
-  .game-night-room-art img {
+  .room-experience-placeholder img {
     animation: none !important;
   }
-}
-
-/* Shared player Passport card: security-paper surface with inked, slightly angled collection marks. */
-:root {
-  --passport-card-paper: var(--paper);
-  --passport-card-ink: var(--paper-ink);
-  --passport-card-rule: var(--gold);
 }
 .player-avatar-button:focus-visible {
   outline: 2px solid var(--ring);
@@ -8835,442 +6886,8 @@ html:root .cinematic-auth .cinematic-auth-email-button {
 }
 
 /* Founder-only Home comparison: actual Home arrangement remains untouched. */
-.home-mock-gallery {
-  display: flex;
-  gap: 22px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  padding: 4px 2px 20px;
-  scrollbar-width: thin;
-}
-.home-mock-column {
-  flex: 0 0 390px;
-  max-width: calc(100vw - 36px);
-  scroll-snap-align: center;
-  min-width: 0;
-}
-.home-mock-phone {
-  height: 780px;
-  display: flex;
-  flex-direction: column;
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-  background:
-    radial-gradient(
-      ellipse at 10% 20%,
-      color-mix(in oklab, var(--blue) 18%, transparent),
-      transparent 50%
-    ),
-    radial-gradient(
-      ellipse at 92% 44%,
-      color-mix(in oklab, var(--primary) 13%, transparent),
-      transparent 50%
-    ),
-    linear-gradient(var(--cinema-sky), var(--cinema-deep));
-  color: var(--cinema-paper);
-  box-shadow: 0 12px 34px color-mix(in oklab, var(--background) 45%, transparent);
-}
-.home-mock-content {
-  position: relative;
-  isolation: isolate;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 18px;
-  scrollbar-width: thin;
-}
-.home-mock-content:before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.32;
-  background-image: radial-gradient(circle, var(--cinema-starlight) 1px, transparent 1.5px);
-  background-size: 73px 79px;
-}
-.home-mock-tabs {
-  flex: none;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  height: 68px;
-  border-top: 1px solid var(--border);
-  background: var(--cinema-deep);
-}
-.home-mock-tabs .home-mock-tab {
-  height: 68px;
-  min-width: 0;
-  min-height: 44px;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 6px 0;
-  color: var(--cinema-paper);
-}
-.home-mock-tabs small {
-  font-size: 11px;
-}
-.home-mock-phone .home-orbit {
-  width: 100%;
-  aspect-ratio: 1/1.14;
-}
-.home-mock-phone .home-orbit-link {
-  color: var(--cinema-paper);
-}
-.home-mock-phone .home-orbit-core {
-  background: radial-gradient(
-    circle at 32% 18%,
-    color-mix(in oklab, var(--blue) 27%, var(--cinema-deep)),
-    var(--cinema-deep) 70%
-  );
-}
-.home-mock-phone .home-orbit-link small {
-  font-size: 11px;
-  color: var(--cinema-paper);
-}
-.home-mock-hero {
-  position: relative;
-  overflow: hidden;
-  aspect-ratio: 2/1;
-  border-radius: 7px;
-  margin-top: 16px;
-  border: 1px solid var(--border);
-}
-.home-mock-hero-two {
-  aspect-ratio: 3.2/1;
-}
-.home-mock-hero-three {
-  aspect-ratio: 2.25/1;
-  border-bottom: 0;
-  border-radius: 7px 7px 0 0;
-  margin-bottom: 0;
-}
-.home-mock-hero-image {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 47%;
-}
-.home-mock-placeholder {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--cinema-paper);
-  text-shadow: 0 1px 5px var(--cinema-deep);
-  background: color-mix(in oklab, var(--cinema-deep) 68%, transparent);
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-.home-mock-hero-image {
-  object-position: center 53%;
-  filter: saturate(1.14) sepia(0.13);
-}
-.home-mock-stamp-space {
-  height: 86px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding-right: 35px;
-  pointer-events: none;
-}
-.home-mock-stamp {
-  display: grid;
-  place-items: center;
-  width: 66px;
-  height: 66px;
-  border: 2px dashed currentColor;
-  border-radius: 50%;
-  color: var(--cinema-gold-start);
-  opacity: 0.22;
-  transform: rotate(-13deg);
-  font: 800 10px/1.15 var(--font-display);
-  text-align: center;
-}
-.home-mock-signoff .cinematic-home-signoff {
-  width: calc(100% + 36px);
-  margin: 0 -18px;
-  min-height: 350px;
-}
-.home-mock-signoff .cinematic-home-signoff > img {
-  object-position: center center;
-}
-.home-mock-signoff .brand-lockup {
-  font-size: clamp(28px, 8vw, 40px);
-}
-.home-mock-hero-copy {
-  border: 1px solid var(--border);
-  border-top: 0;
-  border-radius: 0 0 7px 7px;
-  padding: 12px;
-  background: color-mix(in oklab, var(--cinema-deep) 88%, var(--blue));
-  color: var(--cinema-paper);
-}
-.home-mock-split {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
-  margin-top: 12px;
-}
-.home-mock-split button,
-.home-mock-hero-copy button {
-  white-space: normal;
-  min-height: 44px;
-  height: auto;
-  font-size: 12px;
-  padding: 8px 5px;
-}
-.home-mock-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: color-mix(in oklab, var(--cinema-deep) 83%, var(--blue));
-  color: var(--cinema-paper);
-  min-height: 84px;
-}
-.home-mock-info button {
-  flex: none;
-}
-.home-mock-more {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px;
-  margin-top: 12px;
-}
-.home-mock-more-two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-.home-mock-more-three {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  gap: 12px;
-  padding-bottom: 10px;
-}
-.home-mock-bubble {
-  min-width: 0;
-  width: 100%;
-  height: auto;
-  min-height: 94px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: start;
-  gap: 5px;
-  padding: 4px 1px;
-  white-space: normal;
-  text-align: center;
-  color: var(--cinema-paper);
-  font-size: 11px;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-.home-mock-more-three .home-mock-bubble {
-  flex: 0 0 82px;
-  scroll-snap-align: start;
-}
-.home-mock-bubble .home-door-medallion {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 55px;
-  height: 55px;
-  border-radius: 50%;
-  border: 1px solid var(--blue);
-  background: color-mix(in oklab, var(--cinema-paper) 9%, var(--cinema-deep));
-  box-shadow:
-    0 0 0 4px color-mix(in oklab, var(--blue) 12%, transparent),
-    0 0 18px color-mix(in oklab, var(--blue) 40%, transparent);
-}
-.home-mock-bubble:nth-child(even) .home-door-medallion {
-  border-color: var(--orange);
-  box-shadow:
-    0 0 0 4px color-mix(in oklab, var(--orange) 12%, transparent),
-    0 0 18px color-mix(in oklab, var(--orange) 36%, transparent);
-}
-.home-mock-bubble img {
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
-  border-radius: 50%;
-}
-.home-mock-links {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 2px;
-  margin-top: 6px;
-}
-.home-mock-links button {
-  font-size: 11px;
-  min-height: 44px;
-  padding: 0 6px;
-  color: var(--cinema-paper);
-}
-@media (max-width: 430px) {
-  .home-mock-gallery {
-    margin-inline: -18px;
-    padding-inline: 18px;
-  }
-  .home-mock-column {
-    flex-basis: calc(100vw - 36px);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .home-mock-phone .home-orbit-core,
-  .home-mock-bubble img {
-    animation: none;
-  }
-}
 
 /* Founder-only Departure Board: photographic backdrop and readable split-flap rows. */
-.home-mock-board-scene {
-  position: relative;
-  isolation: isolate;
-  margin-top: 16px;
-  padding: 65px 9px 25px;
-  border: 1px solid var(--cinema-frost-border);
-  border-radius: 7px;
-  overflow: hidden;
-  background: var(--cinema-deep);
-}
-.home-mock-board-photo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  z-index: -2;
-  filter: saturate(1.13) sepia(0.12);
-}
-.home-mock-board-scene:before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(
-    to bottom,
-    color-mix(in oklab, var(--cinema-deep) 22%, transparent),
-    color-mix(in oklab, var(--cinema-deep) 50%, transparent) 45%,
-    color-mix(in oklab, var(--cinema-deep) 17%, transparent)
-  );
-}
-.home-mock-board {
-  border: 1px solid color-mix(in oklab, var(--cinema-cyan-start) 63%, transparent);
-  border-radius: 5px;
-  padding: 10px 7px 7px;
-  background: color-mix(in oklab, var(--cinema-deep) 72%, transparent);
-  box-shadow:
-    0 0 0 2px color-mix(in oklab, var(--cinema-cyan-start) 12%, transparent),
-    0 0 20px color-mix(in oklab, var(--blue) 38%, transparent),
-    inset 0 1px 7px color-mix(in oklab, var(--cinema-cyan-start) 15%, transparent);
-  color: var(--cinema-paper);
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-}
-.home-mock-board-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 6px;
-  align-items: center;
-  padding: 1px 5px 9px;
-  border-bottom: 1px solid var(--cinema-frost-border);
-  font-size: 11px;
-  font-weight: 800;
-}
-.home-mock-board-top strong {
-  color: var(--cinema-gold-start);
-  font-size: 14px;
-}
-.home-mock-board-labels {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 33px 68px;
-  gap: 3px;
-  padding: 9px 3px 5px;
-  color: var(--cinema-cyan-start);
-  font-size: 11px;
-  font-weight: 800;
-}
-.home-mock-board-labels span:last-child {
-  text-align: right;
-}
-.home-mock-board-rows {
-  display: grid;
-  gap: 3px;
-}
-.home-mock-board-row.home-mock-board-row {
-  display: grid;
-  grid-template-columns: 27px minmax(0, 1fr) 33px 68px;
-  align-items: center;
-  gap: 3px;
-  min-height: 54px;
-  height: auto;
-  width: 100%;
-  padding: 4px 3px;
-  border-radius: 3px;
-  text-align: left;
-  white-space: normal;
-  color: var(--cinema-paper);
-  background: linear-gradient(
-    to bottom,
-    color-mix(in oklab, var(--cinema-navy) 69%, transparent) 48%,
-    color-mix(in oklab, var(--cinema-deep) 93%, transparent) 49%,
-    color-mix(in oklab, var(--cinema-deep) 80%, transparent) 52%
-  );
-  font:
-    700 11px/1.1 ui-monospace,
-    SFMono-Regular,
-    Consolas,
-    monospace;
-}
-.home-mock-board-row:hover {
-  box-shadow: inset 0 0 0 1px var(--cinema-frost-border);
-}
-.home-mock-board-row img {
-  width: 26px;
-  height: 26px;
-  object-fit: contain;
-  border-radius: 50%;
-  border: 1px solid var(--blue);
-  box-shadow: 0 0 7px var(--blue);
-}
-.home-mock-board-destination {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.home-mock-board-gate {
-  color: var(--cinema-cyan-start);
-  text-align: center;
-}
-.home-mock-board-status {
-  text-align: right;
-  color: var(--cinema-paper);
-  font-size: 11px;
-  overflow-wrap: anywhere;
-}
-.home-mock-board-status small {
-  display: block;
-  font-size: 11px;
-  color: inherit;
-  margin-top: 2px;
-}
-.home-mock-board-status.is-open {
-  color: var(--green);
-}
-.home-mock-board-status.is-final {
-  color: var(--cinema-gold-start);
-}
-.home-mock-board-status.is-boarding {
-  color: var(--cinema-cyan-start);
-}
 @keyframes home-board-settle {
   0% {
     transform: rotateX(-58deg);
@@ -9281,431 +6898,8 @@ html:root .cinematic-auth .cinematic-auth-email-button {
     opacity: 1;
   }
 }
-.home-mock-board-row .home-mock-board-destination {
-  transform-origin: center top;
-  animation: home-board-settle 0.26s ease-out both;
-}
-.home-mock-board-row:nth-child(2) .home-mock-board-destination {
-  animation-delay: 0.26s;
-}
-.home-mock-board-row:nth-child(3) .home-mock-board-destination {
-  animation-delay: 0.52s;
-}
-.home-mock-board-row:nth-child(4) .home-mock-board-destination {
-  animation-delay: 0.78s;
-}
-.home-mock-board-row:nth-child(5) .home-mock-board-destination {
-  animation-delay: 1.04s;
-}
-@media (prefers-reduced-motion: reduce) {
-  .home-mock-board-row .home-mock-board-destination {
-    animation: none;
-  }
-}
 
 /* Reference-inspired founder mockups only; the real Home remains unchanged. */
-.home-ref-header {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 42px;
-  color: var(--cinema-paper);
-}
-.home-ref-wordmark {
-  font-size: 20px;
-  min-width: 0;
-}
-.home-ref-header > svg {
-  color: var(--cinema-cyan-start);
-  flex: none;
-}
-.home-ref-header-actions {
-  display: flex;
-  gap: 2px;
-  margin-left: auto;
-  align-items: center;
-}
-.home-ref-icon-button.home-ref-icon-button {
-  position: relative;
-  width: 42px;
-  height: 44px;
-  min-width: 42px;
-  padding: 5px;
-  color: var(--cinema-paper);
-}
-.home-ref-icon-button img {
-  height: 32px;
-  width: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid var(--cinema-cyan-start);
-}
-.home-ref-notification {
-  position: absolute;
-  right: 5px;
-  top: 5px;
-  width: 7px;
-  height: 7px;
-  background: var(--cinema-hot-pink);
-  border-radius: 50%;
-}
-.home-ref-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 48px;
-  margin-top: 16px;
-  padding: 0 4px 0 13px;
-  border: 1px solid var(--cinema-frost-border);
-  border-radius: 24px;
-  background: color-mix(in oklab, var(--cinema-deep) 82%, var(--cinema-paper));
-  color: var(--cinema-paper);
-  font-size: 12px;
-}
-.home-ref-search > span {
-  flex: 1;
-  min-width: 0;
-}
-.home-ref-search button {
-  flex: none;
-  color: var(--cinema-paper);
-}
-.home-ref-hero {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  align-items: end;
-  overflow: hidden;
-  min-height: 360px;
-  margin-top: 15px;
-  border: 1px solid var(--cinema-frost-border);
-  border-radius: 24px;
-  background: var(--cinema-deep);
-}
-.home-ref-hero > img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  z-index: -2;
-  filter: saturate(1.15) sepia(0.13);
-}
-.home-ref-hero:before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(
-    to bottom,
-    transparent 13%,
-    color-mix(in oklab, var(--cinema-deep) 16%, transparent) 43%,
-    color-mix(in oklab, var(--cinema-deep) 91%, transparent) 100%
-  );
-}
-.home-ref-hero-copy {
-  padding: 55px 17px 18px;
-  color: var(--cinema-paper);
-  width: 100%;
-}
-.home-ref-hero-copy strong {
-  display: block;
-  font: 900 29px/1.03 var(--font-display);
-  max-width: 250px;
-  margin-top: 8px;
-}
-.home-ref-hero-copy > p:not(.eyebrow) {
-  font-size: 12px;
-  line-height: 1.4;
-  margin: 10px 0 0;
-  max-width: 270px;
-}
-.home-ref-hero-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 7px;
-  margin-top: 15px;
-}
-.home-ref-hero-buttons button {
-  min-width: 0;
-  min-height: 44px;
-  border-radius: 999px;
-  font-size: 12px;
-  padding: 4px;
-  white-space: normal;
-  gap: 4px;
-}
-.home-ref-night {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 13px;
-  min-height: 112px;
-  padding: 13px 11px;
-  border: 1px solid var(--cinema-cyan-start);
-  border-radius: 8px;
-  background: color-mix(in oklab, var(--cinema-deep) 75%, var(--blue));
-  box-shadow: 0 0 13px color-mix(in oklab, var(--blue) 26%, transparent);
-}
-.home-ref-night strong {
-  display: block;
-  margin: 5px 0 7px;
-}
-.home-ref-check.home-ref-check {
-  min-width: 94px;
-  min-height: 44px;
-  border-radius: 999px;
-  background: var(--green);
-  color: var(--cinema-deep);
-  font-weight: 800;
-  padding: 5px;
-}
-.home-ref-avatars {
-  display: flex;
-  align-items: center;
-  padding-left: 2px;
-}
-.home-ref-avatars img {
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--cinema-deep);
-  margin-left: -4px;
-}
-.home-ref-avatars span {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--cinema-navy);
-  font-size: 11px;
-  font-weight: 800;
-  border: 2px solid var(--cinema-deep);
-  margin-left: -4px;
-}
-.home-ref-section-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  margin: 19px 0 6px;
-}
-.home-ref-section-title button {
-  min-height: 44px;
-  padding: 0 2px;
-  color: var(--cinema-cyan-start);
-  font-size: 12px;
-}
-.home-ref-ways {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px;
-}
-.home-ref-way.home-ref-way {
-  min-width: 0;
-  min-height: 114px;
-  height: auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: start;
-  align-items: center;
-  gap: 4px;
-  white-space: normal;
-  text-align: center;
-  color: var(--cinema-paper);
-  padding: 4px 0;
-  line-height: 1.12;
-  overflow-wrap: anywhere;
-}
-.home-ref-way .home-door-medallion {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 56px;
-  height: 56px;
-  border: 1px solid var(--cinema-cyan-start);
-  border-radius: 50%;
-  background: var(--cinema-deep);
-  box-shadow:
-    0 0 0 4px color-mix(in oklab, var(--cinema-cyan-start) 14%, transparent),
-    0 0 12px var(--blue);
-}
-.home-ref-way:nth-child(2) .home-door-medallion {
-  border-color: var(--cinema-hot-pink);
-  box-shadow:
-    0 0 0 4px color-mix(in oklab, var(--cinema-hot-pink) 14%, transparent),
-    0 0 12px var(--cinema-hot-pink);
-}
-.home-ref-way:nth-child(3) .home-door-medallion {
-  border-color: var(--cinema-gold-start);
-  box-shadow:
-    0 0 0 4px color-mix(in oklab, var(--cinema-gold-start) 14%, transparent),
-    0 0 12px var(--cinema-gold-start);
-}
-.home-ref-way:nth-child(4) .home-door-medallion {
-  border-color: var(--green);
-  box-shadow:
-    0 0 0 4px color-mix(in oklab, var(--green) 14%, transparent),
-    0 0 12px var(--green);
-}
-.home-ref-way img {
-  width: 51px;
-  height: 51px;
-  object-fit: contain;
-  border-radius: 50%;
-}
-.home-ref-way strong {
-  font-size: 11px;
-}
-.home-ref-way small {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--cinema-paper);
-  opacity: 0.78;
-}
-.home-ref-board-scene {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  border: 1px solid var(--cinema-frost-border);
-  border-radius: 24px;
-  margin-top: 15px;
-  padding: 52px 9px 24px;
-  background: var(--cinema-deep);
-}
-.home-ref-board-photo {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: saturate(1.13) sepia(0.16);
-}
-.home-ref-board-scene:before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(
-    color-mix(in oklab, var(--cinema-deep) 25%, transparent),
-    color-mix(in oklab, var(--cinema-deep) 36%, transparent)
-  );
-}
-.home-ref-board {
-  border: 1px solid var(--cinema-gold-start);
-  border-radius: 3px;
-  background: color-mix(in oklab, var(--cinema-deep) 68%, transparent);
-  box-shadow: 0 0 16px color-mix(in oklab, var(--cinema-gold-start) 45%, transparent);
-  padding: 6px 4px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-}
-.home-ref-board-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 26px 64px;
-  gap: 2px;
-  padding: 7px 3px;
-  color: var(--cinema-gold-start);
-  font-size: 11px;
-  font-weight: 800;
-}
-.home-ref-board-head span:last-child {
-  text-align: right;
-}
-.home-ref-board-row.home-ref-board-row {
-  display: grid;
-  grid-template-columns: 23px minmax(0, 1fr) 26px 64px;
-  gap: 2px;
-  align-items: center;
-  min-height: 50px;
-  height: auto;
-  padding: 3px 2px;
-  text-align: left;
-  white-space: normal;
-  font:
-    700 11px/1.12 ui-monospace,
-    SFMono-Regular,
-    Consolas,
-    monospace;
-  color: var(--cinema-paper);
-  border-radius: 0;
-  border-top: 1px solid var(--cinema-frost-border);
-  background: color-mix(in oklab, var(--cinema-deep) 71%, transparent);
-}
-.home-ref-board-row img {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  object-fit: contain;
-}
-.home-ref-board-row span:nth-of-type(1) {
-  overflow-wrap: anywhere;
-}
-.home-ref-board-row span:nth-of-type(2) {
-  color: var(--cinema-cyan-start);
-}
-.home-ref-board-row b {
-  text-align: right;
-  overflow-wrap: anywhere;
-}
-.home-ref-board-row .is-final {
-  color: var(--cinema-gold-start);
-}
-.home-ref-board-row .is-open {
-  color: var(--green);
-}
-.home-ref-board-row .is-boarding {
-  color: var(--cinema-cyan-start);
-}
-.home-ref-strip.home-ref-strip {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  min-height: 48px;
-  margin-top: 9px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--cinema-gold-start);
-  color: var(--cinema-gold-start);
-  font:
-    800 11px/1.2 ui-monospace,
-    SFMono-Regular,
-    Consolas,
-    monospace;
-  white-space: normal;
-  text-align: left;
-  background: color-mix(in oklab, var(--cinema-deep) 85%, var(--cinema-gold-start));
-}
-@media (prefers-reduced-motion: reduce) {
-  .home-ref-hero,
-  .home-ref-board,
-  .home-ref-strip {
-    animation: none;
-    transition: none;
-  }
-}
-.home-ref-board-row.home-ref-board-row {
-  width: 100%;
-  grid-template-columns: 23px minmax(0, 1fr) 26px 65px;
-  column-gap: 4px;
-}
-.home-ref-board-row b {
-  font-size: 10px;
-  line-height: 1.1;
-  min-width: 0;
-}
-.home-ref-board-row span {
-  min-width: 0;
-}
-.home-ref-board-scene:before {
-  background: linear-gradient(
-    color-mix(in oklab, var(--cinema-deep) 12%, transparent),
-    color-mix(in oklab, var(--cinema-deep) 25%, transparent)
-  );
-}
 
 /* Approved Home: reference layout with a live photographic departures board. */
 .home-reference-page {

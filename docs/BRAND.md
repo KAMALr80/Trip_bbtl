@@ -1,6 +1,6 @@
 # TripJunkies™ — Brand & art style
 
-Locked by the founder on Oct 4, 2026. Reference art lives in `docs/brand/`. Every new illustration, icon, splash, banner or merch piece follows this look; app code reads colors from the design tokens in `src/styles.css`, this doc describes the *art*.
+Locked by the founder on Oct 4, 2026. Reference art lives in `docs/brand/`. Every new illustration, icon, splash, banner or merch piece follows this look; app code reads colors from the design tokens in `src/design/tokens.css`, this doc describes the *art*.
 
 ## The look in one line
 Neon tropical sunset, seen from the beach at golden hour: glossy script wordmark, deep-navy night sky, cyan→magenta→orange gradients, palms in silhouette, a white jet on a yellow dotted route.
@@ -28,6 +28,13 @@ Neon tropical sunset, seen from the beach at golden hour: glossy script wordmark
 - Cyan #38D6FF · Electric blue #3B6CFF · Magenta #FF3FA4 · Hot pink #FF4FA0 · Orange #FF8A3D · Sun yellow #FFC94B
 - Route dots and sun: yellow #FFD24A · Jet: pure white · Palms: near-black silhouettes #0B0820
 - Cream for paper/passport surfaces #F7EFDD
+
+## UI tokens (one look, M1-03)
+The app has one look, the deck's "Airline Look" (slide 21). `src/design/tokens.css` holds the deck
+palette as `--tj-navy`, `--tj-indigo`, `--tj-violet`, `--tj-cyan`, `--tj-blue`, `--tj-pink`,
+`--tj-magenta`, `--tj-orange`, `--tj-sun`, `--tj-cream` and the avatar ring `--tj-sunset-glow`, plus
+the semantic tokens today's screens use (`--background`, `--primary`, `--cinema-*`, `--passport-*`…).
+New components use the `--tj-*` primitives; existing screens move onto them as they are rebuilt.
 
 ## Scenes and motifs
 - Sunset lagoons, overwater bungalows, palms, hibiscus, tropical mountains, airplane windows, passports and boarding passes, luggage, cameras, destination sign-posts.
