@@ -41,14 +41,6 @@ export type PlayerCard = Pick<
   >;
 export type PlayerWithAvatar = PlayerCard & { avatarUrl: string };
 export const avatarStyles = ["street", "crew", "hero"] as const;
-const styleMap: Record<string, string> = {
-  street: "avataaars",
-  crew: "personas",
-  hero: "micah",
-  adventurer: "avataaars",
-  "big-smile": "personas",
-  "fun-emoji": "micah",
-};
 export function dicebearUrl(style: string, seed: string) {
   if (style === "traveler" && /^([1-9]|1\d|2[0-4])$/.test(seed))
     return premadeAvatars[Number(seed) - 1]!;

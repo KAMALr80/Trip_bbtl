@@ -5,13 +5,13 @@ import { countryName, COUNTRIES, type Place } from "@/lib/places";
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { VibePicker, type Vibe } from "@/components/BetaAccess";
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowLeft, ArrowRight, Clipboard, Crown, Share2, Sparkles, Ticket, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clipboard, Share2, Sparkles, Ticket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { suggestTripNames } from "@/lib/trip-names.functions";
 import { MottoField } from "./MottoField";
-import { Motto } from "./GameNightExtras";
+import { Motto } from "./RoleTips";
 import { InviteCode } from "./InviteCode";
 import { GamePlanPicker } from "./GamePlanPicker";
 import { inviteUrl, shareInvite, type TripWithRole } from "@/lib/trips";
@@ -114,27 +114,7 @@ export function TripSheets({ mode, initialCode = "", trip, onClose, onDone }: Pr
   const [copied, setCopied] = useState(false);
   const [phase, setPhase] = useState<"plan" | "invite">("plan");
   const today = tripToday(zone);
-  const startDefault = (() => {
-    const d = new Date(`${startDate || today}T12:00:00Z`);
-    d.setUTCDate(d.getUTCDate() - 10);
-    return d.toISOString().slice(0, 10) > today ? d.toISOString().slice(0, 10) : today;
-  })();
-  const [flightStart, setFlightStart] = useState("");
-  const [flightDay, setFlightDay] = useState(() => new Date().getDay());
-  const [flightTime, setFlightTime] = useState("18:00");
-  const [flightCount, setFlightCount] = useState(0);
   const [createdId, setCreatedId] = useState<string | null>(null);
-  useEffect(() => {
-    if (!createdId || !startDate) return;
-    const gap = Math.round(
-      (Date.parse(`${startDate}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 86400000,
-    );
-    const span = Math.round(
-      (Date.parse(`${startDate}T12:00:00Z`) - Date.parse(`${flightStart || today}T12:00:00Z`)) /
-        86400000,
-    );
-    setFlightCount(gap <= 0 ? 0 : gap === 1 ? 1 : span >= 8 ? 2 : 1);
-  }, [createdId, startDate, flightStart, today]);
   useEffect(() => {
     setCode(initialCode);
   }, [initialCode]);
@@ -278,7 +258,6 @@ export function TripSheets({ mode, initialCode = "", trip, onClose, onDone }: Pr
         )
           setError("This device could not save the player names. Add them again on Play.");
         setCreatedId(result.data);
-        setFlightStart(startDefault);
       }
     } else if (mode === "join") setError("That code wasn't found. Check it and try again.");
   };

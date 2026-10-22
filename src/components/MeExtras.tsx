@@ -1,6 +1,6 @@
 import { safeSetItem } from "@/lib/safe-storage";
 import { friendlyError } from "@/lib/friendly-error";
-import { CALL_HELP_NOTE, CALL_HELP_STEPS, ROLE_TIPS } from "./GameNightExtras";
+import { ROLE_TIPS } from "./RoleTips";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Bug, Camera, ChevronDown, Trash2, Sun, Moon } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
@@ -385,20 +385,16 @@ export function HelpPage({
                 <b>Captain</b> — runs the trip: settings, itinerary, prizes, members.
               </li>
               <li>
-                <b>Co-Captain</b> — same powers, except removing or replacing the Captain.
-              </li>
-              <li>
-                <b>Weekly host</b> — runs that week's game night and spins the wheel.
+                <b>Co-Captain</b> — named by the Captain and helps run the trip.
               </li>
               <li>
                 <b>Player</b> — plays, votes, posts and collects stamps.
               </li>
             </ul>
-            {(["captain", "co_captain", "host"] as const).map((r) => (
+            {(["captain", "co_captain"] as const).map((r) => (
               <div key={r} className="mt-4">
                 <p className="font-bold">
-                  {ROLE_TIPS[r].emoji}{" "}
-                  {r === "captain" ? "Captain" : r === "co_captain" ? "Co-Captain" : "Host"} tips
+                  {ROLE_TIPS[r].emoji} {r === "captain" ? "Captain" : "Co-Captain"} tips
                 </p>
                 <ul className="mt-1 list-disc pl-5 space-y-0.5">
                   {ROLE_TIPS[r].tips.map((t) => (
@@ -416,21 +412,9 @@ export function HelpPage({
           "🏆",
           "Seasons & prizes",
           <p>
-            <b>Pre-Flight</b> runs on weekly game nights before the trip. <b>Trip Season</b> runs on
-            daily games during it. Each has its own leaderboard, champion and mystery prize,
-            revealed at the crowning the Captain sets.
-          </p>,
-        )}
-      </RememberedSection>
-      <RememberedSection id="help-skips" title="Skip passes">
-        {block(
-          "bg-orange-soft",
-          "🎟️",
-          "Skip passes",
-          <p>
-            Pre-Flight gives 1 pass per 4 game nights (1 to 3); Trip Season gives 3. Use one to
-            redraw a card, swap a bingo square or quest, or get a new secret mission. The host can
-            spend one to re-spin the wheel. No penalty — the skipped item just earns no stamps.
+            <b>Pre-Flight</b> runs in the days before the trip. <b>Trip Season</b> runs on daily
+            games during it. Each has its own leaderboard, champion and mystery prize, revealed at
+            the crowning the Captain sets.
           </p>,
         )}
       </RememberedSection>

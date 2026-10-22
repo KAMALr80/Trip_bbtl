@@ -4,7 +4,7 @@ import { GameArcade } from "@/components/GameArcade";
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { confirmInApp } from "@/lib/confirm";
 import { readPendingCode } from "@/lib/pending-code";
-import { BrandLockup } from "@/components/BrandLockup";
+
 import { WelcomeLockup } from "@/components/WelcomeLockup";
 import { friendlyError } from "@/lib/friendly-error";
 import { localToday } from "@/lib/itinerary";

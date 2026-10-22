@@ -3,9 +3,7 @@ import { BookOpen, Check, ChevronDown, Crown, Stamp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  avatarStyles,
   dicebearUrl,
-  makeSeed,
   premadeAvatars,
   buddyAvatars,
   type PlayerWithAvatar,

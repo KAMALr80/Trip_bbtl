@@ -2,8 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { PreviewShareToggle } from "./ExperiencePreviews";
 import { RoomExperienceCard } from "@/components/RoomExperienceCard";
 import { useLook } from "@/lib/look";
-import cultureCollage from "@/assets/cinematic-culture-collage.jpg";
-import homeRoomArt from "@/assets/travel-from-home-room.webp";
+
 import { SAMPLE_EXPERIENCES } from "@/lib/inspiration-samples";
 import { ArrowLeft, ArrowRight, Flag, EyeOff, Heart, Sparkles, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -381,7 +381,7 @@ function PhaseRail({
 }
 
 export function PlayHub(props: Props) {
-  const { trip, members, cards, userId, viewOnly, onMember } = props;
+  const { trip, members, cards, userId, onMember } = props;
   const [phase, setPhase] = useState<Phase | null>(null),
     [detail, setDetail] = useState<Detail>(null),
     [breakdown, setBreakdown] = useState(false),
@@ -789,7 +789,6 @@ function PhasePage(
     cards,
     userId,
     phase,
-    current,
     preview,
     scores,
     tripScores,

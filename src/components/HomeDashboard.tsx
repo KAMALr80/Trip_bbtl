@@ -8,10 +8,10 @@ import iconCompass from "@/assets/icon-compass.webp";
 import iconSuitcase from "@/assets/icon-suitcase.webp";
 import gameOptionA from "@/assets/game-tile-option-a.webp";
 import gameOptionB from "@/assets/game-tile-option-b.webp";
-import { ShortList } from "@/components/ShortList";
+
 import { BrandLockup } from "@/components/BrandLockup";
 import { GameArcade } from "@/components/GameArcade";
-import iconPostcard from "@/assets/icon-postcard.webp";
+
 import windowSeatArt from "@/assets/window-seat-room.webp";
 import { ROOM_COPY } from "@/lib/room-copy";
 import { TripSectionIcon } from "@/components/TripSectionIcon";
@@ -25,7 +25,7 @@ import departuresBoardArt from "@/assets/home-departures-board.jpg";
 import { useLook } from "@/lib/look";
 import { phaseBanner } from "@/lib/play-arrangement";
 import { Inspiration } from "@/components/Inspiration";
-import { TripActions } from "@/components/TripActions";
+
 import { Button } from "@/components/ui/button";
 import { AvatarButton } from "@/components/PlayerCards";
 import { MyPassport } from "@/components/MeExtras";

@@ -1,4 +1,3 @@
-import { tripDisplayName } from "@/lib/trip-display-name";
 import { friendlyError } from "@/lib/friendly-error";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";

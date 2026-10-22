@@ -1,7 +1,6 @@
-import { tripDisplayName } from "@/lib/trip-display-name";
 import { useEffect, useState } from "react";
 import { Lock } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
 import { Confetti } from "@/components/Season";
 import { supabase } from "@/integrations/supabase/client";
 import type { TripWithRole } from "@/lib/trips";

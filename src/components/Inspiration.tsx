@@ -10,7 +10,7 @@ import { makeInspirationGuide } from "@/lib/inspiration.functions";
 import { CountryFlag } from "@/components/CountryFlag";
 import { CultureQuest } from "@/components/CultureQuest";
 import type { TripWithRole } from "@/lib/trips";
-import { PlaceBrowser } from "@/components/PlaceBrowser";
+
 import { PlacePicker } from "@/components/PlacePicker";
 import { SampleCard, SampleExperienceView } from "@/components/SampleExperience";
 import { ShortList } from "@/components/ShortList";
@@ -170,7 +170,6 @@ export function Inspiration({
     [cards, setCards] = useState<Card[]>([]),
     [previews, setPreviews] = useState<Preview[]>([]),
     [selected, setSelected] = useState<Preview | null>(null),
-    [photos, setPhotos] = useState<Record<string, string>>({}),
     [names, setNames] = useState<Record<string, string>>({}),
     [votes, setVotes] = useState<{ card_id: string; voter_id: string; choice: string }[]>([]);
   const [placeDone, setPlaceDone] = useState(false),
@@ -264,18 +263,6 @@ export function Inspiration({
       const qr = await db.rpc("public_inspiration_queue", {});
       setQueue(qr.data ?? []);
     }
-    const links: Record<string, string> = {};
-    await Promise.all(
-      next
-        .filter((c) => c.photo_path)
-        .map(async (c) => {
-          const r = await supabase.storage
-            .from("inspiration-photos")
-            .createSignedUrl(c.photo_path ?? "", 3600);
-          if (r.data?.signedUrl) links[c.id] = r.data.signedUrl;
-        }),
-    );
-    setPhotos(links);
   }
   useEffect(() => {
     void load();

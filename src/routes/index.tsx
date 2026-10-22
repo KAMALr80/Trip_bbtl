@@ -10,7 +10,7 @@ import { WelcomeLockup } from "@/components/WelcomeLockup";
 import gameOptionA from "@/assets/game-tile-option-a.webp";
 import tripCoast from "@/assets/journey-coast-top.jpg";
 import tripCoastSmall from "@/assets/journey-coast-top-768.jpg";
-import { SampleNight, GameArcade } from "@/components/GameArcade";
+import { GameArcade } from "@/components/GameArcade";
 import { ShortList } from "@/components/ShortList";
 import iconSuitcase from "@/assets/icon-suitcase.webp";
 import iconPassport from "@/assets/icon-passport.webp";
@@ -28,7 +28,7 @@ import founderLaunchIcon from "@/assets/founder-launch.webp";
 import { useLook } from "@/lib/look";
 import { viewerZone } from "@/lib/viewer-time";
 import { tripDisplayName } from "@/lib/trip-display-name";
-import { FeatureGate } from "@/lib/features";
+
 import { FounderFeatures } from "@/components/FounderFeatures";
 import { OutOfCreditsHost } from "@/components/AiCredits";
 import { CaptainNudge } from "@/components/CaptainChecklist";
@@ -39,26 +39,20 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
   ArrowLeft,
-  Check,
   ChevronRight,
-  Compass,
   Crown,
-  Gift,
   Home,
   LogOut,
   Mail,
-  Menu,
   Plus,
   Sparkles,
   Users,
   UserRound,
   X,
   CalendarDays,
-  Clapperboard,
   Ticket,
   Play,
   MapPin,
-  PartyPopper,
   Eye,
   EyeOff,
   BookOpen,
@@ -69,7 +63,7 @@ import { useAuth } from "@/lib/auth-context";
 import { TripSheets } from "@/components/TripSheets";
 import { SeatCap } from "@/components/SeatCap";
 import { InviteCode } from "@/components/InviteCode";
-import { friendlyRange } from "@/lib/trip-dates";
+
 import { JoinRoomCard } from "@/components/InvitePreview";
 import { setViewerZone, deviceZone } from "@/lib/viewer-time";
 import { nudgeTopUp } from "@/lib/content.functions";
@@ -79,13 +73,11 @@ import { FounderReports, BugUpdates, QuickCheckIn } from "@/components/BugInbox"
 import { FeedbackAdmin, TripFeedbackForm, useFeedbackDone } from "@/components/TripFeedback";
 import { PhaseNotice } from "@/components/PhaseNotice";
 import { PlayHub } from "@/components/PlayHub";
-import { RoleTips } from "@/components/GameNightExtras";
+import { RoleTips } from "@/components/RoleTips";
 import { CaptainBadge, LockedNote, isUnlocked } from "@/components/TripUnlock";
 import {
   ActiveSeasonBoard,
-  ChampionBadge,
   MysteryPrizes,
-  PhotoWall,
   SquadSeasons,
   tripHasEnded,
   useBadges,
@@ -100,7 +92,7 @@ import {
   type TripWithRole,
   type Member,
 } from "@/lib/trips";
-import { Clipboard, Share2, Star } from "lucide-react";
+import { Clipboard, Share2 } from "lucide-react";
 import {
   Avatar,
   AvatarButton,
@@ -117,7 +109,6 @@ import {
   BugReport,
   DeleteAccount,
   Skeleton,
-  MemoriesReminder,
   AppearanceToggle,
   HomeLayoutSetting,
   TimeZoneSetting,
@@ -125,13 +116,12 @@ import {
 } from "@/components/MeExtras";
 import { TripList } from "@/components/TripList";
 import { Bug, HelpCircle, PlayCircle, Trash2 } from "lucide-react";
-import founderAbout from "@/assets/founder-about.jpg.asset.json";
-import founderHeadshot from "@/assets/founder-headshot.jpg.asset.json";
+
 import signinFriends from "@/assets/signin-night-friends.jpg";
 import cinematicLoginCoast from "@/assets/cinematic-login-coast-tall-768.jpg";
 import cinematicLoginCoastLarge from "@/assets/cinematic-login-coast.jpg";
 import { ExploreTour } from "@/components/ExploreTour";
-import { PassportCollage } from "@/components/PassportCollage";
+
 import { TravelerLevel, CultureCreatorBadge, CulturePoints } from "@/components/PassportBook";
 import { HomeDashboard, type HomeScreen } from "@/components/HomeDashboard";
 import { FirstRunWelcome } from "@/components/FirstRunWelcome";
@@ -140,20 +130,12 @@ import { RememberedSection } from "@/components/RememberedSection";
 import { AboutContent } from "@/components/AboutStory";
 import { TestLab, SandboxBanner, LabViewBanner } from "@/components/TestLab";
 import { setFounder } from "@/lib/lab-mode";
-import {
-  AtHomeSetup,
-  AtHomeHome,
-  AtHomePlay,
-  AtHomeTrip,
-  Rewards,
-  isAtHome,
-} from "@/components/AtHome";
+import { AtHomeSetup, AtHomeHome, AtHomeTrip, Rewards, isAtHome } from "@/components/AtHome";
 import { readPendingCode, clearPendingCode } from "@/lib/pending-code";
 import {
   AgeGate,
   BetaLock,
   LaunchSwitch,
-  NoAlcoholToggle,
   VIBES,
   VibeBadge,
   WaitingGate,
@@ -167,7 +149,7 @@ import { readPendingBeta, clearPendingBeta } from "@/lib/pending-beta";
 import { dicebearUrl as betaAvatarUrl } from "@/lib/player-cards";
 import { FounderWelcomeEditor, WelcomeExtras } from "@/components/WelcomeCopy";
 import { DeletedTripNotes } from "@/components/DeletedTripNotes";
-import { TripActions } from "@/components/TripActions";
+
 import { AppearanceQuickToggle } from "@/components/MeExtras";
 import {
   LegalCheckbox,
@@ -251,7 +233,6 @@ function Index() {
   }, []);
   const [sampleDestination, setSampleDestination] = useState<string | null>(null);
   const [sheet, setSheet] = useState<string | null>(null);
-  const [enterApp, setEnterApp] = useState(false);
   const [exploreTour, setExploreTour] = useState(false);
   const [tourDismissed, setTourDismissed] = useState(false);
   const tripsRequest = useRef(0);
@@ -421,7 +402,6 @@ function Index() {
         await refreshTrips(id);
         clearPendingCode();
         setPendingCode(null);
-        setEnterApp(true);
         setHomeScreen("dashboard");
         setTab("Home");
       }}
@@ -536,11 +516,9 @@ function Index() {
     setViewAsPlayer(false);
     setTab("Home");
     setHomeScreen("trip");
-    setEnterApp(true);
   }
   async function finishTrip(id: string) {
     await refreshTrips(id);
-    setEnterApp(true);
     setTab("Home");
     setHomeScreen("trip");
     if (sheet === "Start a trip") setSheet(null);
@@ -3043,7 +3021,7 @@ function SquadView({
   open: (value: string) => void;
   viewOnly?: boolean;
 }) {
-  const { champs, junkie, data, season } = useBadges(trip, members);
+  const { data, season } = useBadges(trip, members);
   const mine = cards.find((c) => c.user_id === userId);
   const membership = members.find((m) => m.user_id === userId);
   return (

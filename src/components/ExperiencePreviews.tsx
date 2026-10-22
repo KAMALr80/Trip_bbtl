@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useState, type ReactElement } from "react";
-import { EyeOff, Flag, Heart, Plane, Home, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { EyeOff, Flag, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
-import { COUNTRIES, countryName, placeLabel } from "@/lib/places";
-import { PlaceBrowser, type PlaceItem } from "./PlaceBrowser";
+import { COUNTRIES, placeLabel } from "@/lib/places";
 import { ReportSheet } from "./ReportSheet";
 
 const db = supabase as unknown as {
@@ -38,7 +37,6 @@ const KIND: Record<Preview["kind"], string> = {
   culture_home: "Travel From Home · Culture",
   culture_travel: "Window Seat · On a Trip",
 };
-const PACK_OF: Record<string, string> = { TH: "thailand", MX: "mexico", JP: "japan" };
 
 /** Country names from the server become ISO codes so PlaceBrowser can group and flag them. */
 export function countryCodeOf(value: string | null) {
@@ -200,200 +198,5 @@ export function PreviewCard({
         </p>
       )}
     </article>
-  );
-}
-
-type Item = PlaceItem & { p: Preview };
-const previewGroups: [string, Preview["kind"][], typeof Plane][] = [
-  ["Trips", ["trip"], Plane],
-  ["At Home", ["at_home"], Home],
-  ["Culture stories", ["culture_home", "culture_travel"], Sparkles],
-];
-function DestinationPage({
-  list,
-  isFounder,
-  onStartTrip,
-  onTryAtHome,
-  onOpenCulture,
-  onChanged,
-}: {
-  list: Item[];
-  isFounder?: boolean | undefined;
-  onStartTrip?: (destination: string) => void;
-  onTryAtHome?: (pack: string) => void;
-  onOpenCulture?: () => void;
-  onChanged: () => void;
-}) {
-  const first = list[0]!;
-  const name =
-    first.city || first.region || (first.country ? countryName(first.country) : "this place");
-  const squads = list.filter((i) => i.p.kind === "trip" || i.p.kind === "at_home").length;
-  const dest = [first.city, first.country ? countryName(first.country) : null]
-    .filter(Boolean)
-    .join(", ");
-  const pack = first.country ? PACK_OF[first.country] : undefined;
-  return (
-    <div className="min-w-0">
-      <h3 className="font-display text-xl font-extrabold">
-        {squads} {squads === 1 ? "squad has" : "squads have"} been to {name}
-      </h3>
-      <div className="grid grid-cols-2 gap-2 mt-3">
-        {onStartTrip && (
-          <Button variant="playful" className="rounded-full" onClick={() => onStartTrip(dest)}>
-            Start a trip like this
-          </Button>
-        )}
-        {onTryAtHome && (
-          <Button
-            variant="outline"
-            className="rounded-full"
-            onClick={() => onTryAtHome(pack ?? "")}
-          >
-            Try this At Home
-          </Button>
-        )}
-      </div>
-      {previewGroups.map(([label, kinds, Icon]) => {
-        const g = list.filter((i) => kinds.includes(i.p.kind));
-        return g.length ? (
-          <section key={label} className="mt-5">
-            <h4 className="font-bold flex items-center gap-2">
-              <Icon size={16} /> {label}
-            </h4>
-            {g.map((i) => (
-              <PreviewCard
-                key={i.id}
-                p={i.p}
-                isFounder={isFounder}
-                onChanged={onChanged}
-                {...(onOpenCulture ? { onOpenCulture } : {})}
-              />
-            ))}
-          </section>
-        ) : null;
-      })}
-    </div>
-  );
-}
-/** Leaderboards › Destinations — read-only, all ages, built only from shared previews of ended experiences. */
-export function Destinations({
-  isFounder,
-  onStartTrip,
-  onTryAtHome,
-  onOpenCulture,
-}: {
-  isFounder?: boolean | undefined;
-  onStartTrip?: (destination: string) => void;
-  onTryAtHome?: (pack: string) => void;
-  onOpenCulture?: () => void;
-}) {
-  const [rows, setRows] = useState<Preview[]>([]),
-    [hidden, setHidden] = useState<Set<string>>(new Set());
-  const load = useCallback(() => {
-    void Promise.all([
-      db
-        .from("experience_previews")
-        .select(
-          "id,kind,country,region,city,month_year,length_days,vibe,squad_size,games_played,checkin_done,takeoff_done,task_titles,game_nights,stamps_earned,culture_public,unlisted_at,created_at",
-        )
-        .order("created_at", { ascending: false })
-        .limit(500),
-      db.from("preview_hidden").select("preview_id"),
-    ]).then(([a, b]: { data: any }[]) => {
-      setRows((a?.data ?? []) as Preview[]);
-      setHidden(new Set(((b?.data ?? []) as { preview_id: string }[]).map((r) => r.preview_id)));
-    });
-  }, []);
-  useEffect(load, [load]);
-  const items: Item[] = rows
-    .filter((p) => !hidden.has(p.id) && (isFounder || !p.unlisted_at))
-    .map((p) => ({
-      id: p.id,
-      title: KIND[p.kind],
-      country: countryCodeOf(p.country),
-      region: p.region,
-      city: p.city,
-      p,
-    }));
-  return (
-    <section className="min-w-0">
-      <p className="mt-4 text-sm text-muted-foreground">
-        Text-only previews from finished trips and experiences whose Captain or creator chose to
-        share. No photos, names or dates.
-      </p>
-      {items.length === 0 && (
-        <p className="mt-3 text-sm">
-          No destinations yet — they appear once a squad shares a preview.
-        </p>
-      )}
-      <PlaceBrowser
-        items={items}
-        noun="preview"
-        headline="Destinations"
-        renderItem={(i) => (
-          <PreviewCard
-            key={i.id}
-            p={i.p}
-            isFounder={isFounder}
-            onChanged={load}
-            {...(onOpenCulture ? { onOpenCulture } : {})}
-          />
-        )}
-        renderEmpty={() => <p className="text-sm text-muted-foreground">No previews here yet.</p>}
-      />
-      {items.length > 0 && (
-        <DestinationIndex
-          items={items}
-          Page={({ list }) => (
-            <DestinationPage
-              list={list}
-              isFounder={isFounder}
-              onChanged={load}
-              {...(onStartTrip ? { onStartTrip } : {})}
-              {...(onTryAtHome ? { onTryAtHome } : {})}
-              {...(onOpenCulture ? { onOpenCulture } : {})}
-            />
-          )}
-        />
-      )}
-    </section>
-  );
-}
-
-function DestinationIndex({
-  items,
-  Page,
-}: {
-  items: Item[];
-  Page: (props: { list: Item[] }) => ReactElement;
-}) {
-  const keys = Array.from(new Set(items.map((i) => `${i.country ?? ""}|${i.city ?? ""}`)));
-  const [open, setOpen] = useState<string | null>(null);
-  const list = open ? items.filter((i) => `${i.country ?? ""}|${i.city ?? ""}` === open) : [];
-  return (
-    <section className="mt-8">
-      <h2 className="font-display text-xl font-extrabold">Destination pages</h2>
-      <div className="flex flex-wrap gap-2 mt-3">
-        {keys.map((k) => {
-          const [c, city] = k.split("|");
-          return (
-            <Button
-              key={k}
-              size="sm"
-              variant={open === k ? "playful" : "outline"}
-              className="rounded-full"
-              onClick={() => setOpen(open === k ? null : k)}
-            >
-              {[city, c ? countryName(c) : "Somewhere"].filter(Boolean).join(", ")}
-            </Button>
-          );
-        })}
-      </div>
-      {open && list.length > 0 && (
-        <div className="mt-4">
-          <Page list={list} />
-        </div>
-      )}
-    </section>
   );
 }

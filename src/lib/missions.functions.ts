@@ -8,12 +8,6 @@ export const moreMissions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v) => z.object({ tripId: z.string().uuid() }).parse(v))
   .handler(async ({ data, context }) => {
-    const db = context.supabase as unknown as {
-      rpc: (
-        f: string,
-        a: object,
-      ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-    };
     const { data: trip } = await context.supabase
       .from("trips")
       .select("destination,kind,vibe")

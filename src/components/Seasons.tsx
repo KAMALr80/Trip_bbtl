@@ -5,17 +5,13 @@ import { friendlyError } from "@/lib/friendly-error";
 import { fmtWhen } from "@/lib/viewer-time";
 import { useLook } from "@/lib/look";
 import { TieWheel } from "@/components/TieWheel";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Crown,
   Download,
   Flag,
-  Shuffle,
   Trash2,
-  Users,
   X,
-  ChevronLeft,
-  ChevronRight,
   Plane,
   Palmtree,
   BriefcaseBusiness,

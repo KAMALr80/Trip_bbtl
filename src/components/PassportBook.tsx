@@ -147,49 +147,6 @@ export function CulturePoints({ userId }: { userId: string }) {
     </span>
   );
 }
-export function NightStreak({ tripId, userId }: { tripId: string | undefined; userId: string }) {
-  const [streak, setStreak] = useState(0);
-  useEffect(() => {
-    if (!tripId) {
-      setStreak(0);
-      return;
-    }
-    let live = true;
-    void Promise.all([
-      supabase
-        .from("game_nights")
-        .select("week_number,starts_at,skipped")
-        .eq("trip_id", tripId)
-        .order("week_number", { ascending: false }),
-      supabase
-        .from("game_scores")
-        .select("week_number,here")
-        .eq("trip_id", tripId)
-        .eq("user_id", userId),
-    ]).then(([n, s]) => {
-      if (!live || n.error || s.error) return;
-      const completed = (n.data ?? []).filter(
-        (row) => !row.skipped && new Date(row.starts_at).getTime() <= Date.now(),
-      );
-      let count = 0;
-      for (const night of completed) {
-        if (!(s.data ?? []).some((score) => score.week_number === night.week_number && score.here))
-          break;
-        count++;
-      }
-      setStreak(count);
-    });
-    return () => {
-      live = false;
-    };
-  }, [tripId, userId]);
-  return (
-    <span className="night-streak" aria-label={`${streak} game nights in a row`}>
-      🔥 {streak} night{streak === 1 ? "" : "s"} in a row
-    </span>
-  );
-}
-
 function MorePanel({
   title,
   count,
@@ -688,10 +645,6 @@ export function PassportBook({
           )}
           <div className="passport-badges">
             <FoundingBadge userId={userId} straight />
-            <NightStreak
-              tripId={trips.find((t) => !t.is_sandbox && t.season_scoring !== false)?.id}
-              userId={userId}
-            />
             <TravelerLevel userId={userId} />
           </div>
           <h3 className="passport-rule-title">MY JOURNEY</h3>
