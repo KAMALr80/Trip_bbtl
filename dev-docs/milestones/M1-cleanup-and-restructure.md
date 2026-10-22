@@ -35,14 +35,14 @@ After M1 the codebase has one path per feature and is ready for the new engine.
 |---|---|---|
 | M1-01 | ✅ | `trips.rules_version` (2 = current, 1 = archived), one `<table>_archive_guard` trigger on every trip table, admin-only `archive_legacy_trips` / `set_trip_archived` (logged), read-only `ArchivedTrip` view, 23 pgTAP assertions. Nothing is archived yet. **Left (founder):** tell Siam Vibes (`VRFQQM`), then run the cutover with `founder_trips()` to pick the trips to keep. |
 | M1-02 | 🟡 | L1–L5, L7, L9, L11–L14, L16, L18, L21 (readouts), L22 removed from the UI; Play hub placeholders for Daily Card, Game Night Live, Crew Check, Surprise Drops, Postcard Picks. `tsconfig` now has `noUnusedLocals`. **Deferred** (see below): L6 and old At Home pieces, L8, L15, L21 scoring engine, `GamePlanPicker`. |
-| M1-03 | ⬜ | Next. |
+| M1-03 | 🟡 | One look: `look.tsx`, `useLook`, the Original branches (codemod), the founder Look screen and `app_settings.look` are gone (11_one_look.test.sql). `src/design/tokens.css` holds the deck palette (`--tj-*`) and all app variables; `docs/BRAND.md` updated. 432 dead selectors removed: `styles.css` 260 → 194 KB (built 360 → 299 KB); signed-out screens pixel-identical. **Left:** CSS < 80 KB comes with the M2/M3 screen rebuilds (what remains is the live look of Home, Play, Journey and Passport); `PhaseBanner`, `AvatarRing`, `FaceCard`, `ScoreStrip` get built with their first screen in M2 instead of shipping unused; the founder's signed-in screenshot check needs the local stack or staging. |
 | M1-04 | ⬜ | |
 | M1-05 | ⬜ | Types are hand-edited until then (`rules_version`, `founder_trips`, removed preview RPCs). |
 | M1-06 | 🟡 | Prettier pass done (own commit, in `.git-blame-ignore-revs`). Feature folders left. |
 | M1-07 | ⬜ | |
 | M1-08 | 🟡 | 75 public wrappers of retired features revoked from `anon`/`authenticated`, listed in `trip_private.retired_wrappers` (10_retired_wrappers.test.sql). No cron job served only a retired feature. `scripts/db/export-legacy.sh` exports the 52 retired tables to CSV. **Left:** run the export on production (needs M0-02 access) and deliver it; move the tables to `legacy_archive` one release later, after `delete_trip`, `trip_photos` and account deletion stop naming them. |
 | M1-09 | ⬜ | **Needs** a production dump (M0-02) to rehearse on staging. |
-| M1-10 | ✅ | `trips.level`, the trip feature map, preview settings RPCs and the preview row policies are gone; `feature_on` / `require_feature` / `in_slice` are constants for older callers only. `FeatureGate` deleted; `src/lib/flags.ts` holds environment flags (`VITE_FEATURE_MAP`). Test Lab had no preview-level mode (its role views stay). The founder screen keeps only the look until M1-03. |
+| M1-10 | ✅ | `trips.level`, the trip feature map, preview settings RPCs and the preview row policies are gone; `feature_on` / `require_feature` / `in_slice` are constants for older callers only. `FeatureGate` deleted; `src/lib/flags.ts` holds environment flags (`VITE_FEATURE_MAP`). Test Lab had no preview-level mode (its role views stay). |
 | M1-11 | ✅ | `supabase/seed/content_candidates.csv` (2,938 rows). **Left (founder):** review and tag. |
 | M1-12 | ⬜ | |
 
