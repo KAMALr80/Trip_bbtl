@@ -24,12 +24,9 @@ import {
 const input =
   "mt-2 w-full min-h-12 rounded-2xl border-2 border-border bg-background px-4 py-3 text-foreground outline-none focus:border-primary";
 const personas = ["planner", "hype person", "photographer", "food finder", "other"];
-const answers = [
-  ["hometown", "Where are you from?", 160],
-  ["occupation", "What do you do?", 160],
-  ["fun_fact", "A fun fact nobody would guess", 300],
-  ["next_year_goal", "One goal for next year", 300],
-] as const;
+// The deck keeps "From", the trip role and "most excited for" (R-212, R-702); occupation, fun fact
+// and next-year goal are retired (L22). Their saved values are left untouched.
+const answers = [["hometown", "Where are you from?", 160]] as const;
 export function Avatar({
   url,
   name,
@@ -213,11 +210,8 @@ export function PlayerCardView({
   const facts = card?.facts
     ? [
         ["FROM", card.facts.hometown],
-        ["WHAT I DO", card.facts.occupation],
-        ["SECRET FUN FACT", card.facts.fun_fact],
         ["CAN'T WAIT FOR", card.facts.most_excited],
         ["MY TRIP ROLE", card.facts.trip_persona],
-        ["NEXT YEAR'S GOAL", card.facts.next_year_goal],
       ]
     : [];
   const visibleFacts = facts.filter(([, value]) => value);
