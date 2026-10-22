@@ -37,3 +37,6 @@ dist-ssr
 # Playwright
 test-results/
 playwright-report/
+
+# M1-08 legacy CSV exports hold user data; never commit them
+legacy-export-*/

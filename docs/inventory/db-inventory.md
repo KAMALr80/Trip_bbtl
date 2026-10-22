@@ -12,7 +12,7 @@
 
 | | public | trip_private |
 |---|---|---|
-| Tables | 127 | 13 |
+| Tables | 127 | 14 |
 | Views | 0 | 0 |
 | Functions | 301 | 391 |
 | Triggers | 5 | 43 |
@@ -59,150 +59,67 @@ M6-07 against the rule that game tables take no direct client writes (09 §2).
 
 None.
 
-### Public functions executable by `anon` (signed-out): 24
+### Public functions executable by `anon` (signed-out): 16
 
 Each should be deliberately public (legal pages, invite preview, version). Anything else should
 revoke `anon` (09 §2).
 
 - `a2c_quest_insights(p_trip uuid)`
-- `cast_live_vote(p_vote uuid, p_option integer)`
 - `create_trip(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text)`
 - `current_look()`
 - `edit_trip(p_trip uuid, p_name text, p_destination text, p_start_date date, p_end_date date)`
-- `game_card_view(p_trip uuid, p_category text)`
 - `is_trip_member(p_trip uuid, p_user uuid)`
 - `leave_trip(p_trip uuid)`
 - `manage_trip_member(p_trip uuid, p_user uuid, p_action text)`
 - `new_trip_code()`
 - `normalize_game_name(p text)`
-- `post_live_vote(p_trip uuid, p_kind text, p_prompt text, p_options jsonb, p_week integer)`
-- `present_checkin(p_trip uuid, p_week integer, p_claim uuid)`
 - `price_list()`
 - `public_launch()`
 - `reset_trip_code(p_trip uuid)`
-- `resolve_age_guesses(p_trip uuid, p_week integer, p_answer numeric)`
-- `reveal_live_vote(p_vote uuid)`
-- `save_game_scores(p_trip uuid, p_week integer, p_rows jsonb)`
 - `set_stamp_values(p_trip uuid, p_here integer, p_win integer, p_host integer)`
 - `set_welcome_copy(p_intro text, p_faq jsonb)`
 - `trip_roster(p_trip uuid)`
-- `vote_weekly_answer(p_trip uuid, p_week integer, p_idx integer)`
 - `welcome_copy()`
 
 ## Client usage
 
-### Public functions callable by clients but not referenced in `src/`: 106
+### Public functions callable by clients but not referenced in `src/`: 31
 
 Candidates to revoke (M1-08). Some may be called from SQL, cron or the Test Lab only: check
 before removing. Reference matching is by quoted name, so dynamic names built from strings
 are still found.
 
-- `adult_badge(p_trip uuid, p_user uuid)`
-- `advance_play_phase(p_trip uuid, p_current integer)`
-- `answer_trivia(p_trip uuid, p_date date, p_question integer, p_choice integer)`
-- `answer_weekly_question(p_trip uuid, p_week integer, p_answer text, p_emoji text)`
-- `apply_reschedule(p_trip uuid, p_every integer, p_count integer)`
-- `approve_adult_player(p_trip uuid, p_user uuid, p_approve boolean)`
 - `archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text)`
-- `captain_pass_limit(p_trip uuid)`
-- `cast_day_vote(p_trip uuid, p_date date, p_kind text, p_choice uuid)`
-- `cast_live_vote(p_vote uuid, p_option integer)`
 - `claim_airport(p_trip uuid, p_date date, p_mission integer, p_photo text, p_guess text)`
-- `close_live_vote(p_vote uuid)`
-- `confirm_game_nights(p_trip uuid, p_option integer)`
 - `create_at_home(p_pack text, p_length text, p_start date, p_vibe text, p_tz text)`
 - `create_culture_a2e(p_kind text, p_mode text, p_title text, p_country text, p_region text, p_city text, p_start date, p_days integer, p_layer text, p_vibe text, p_types text[], p_prep integer, p_finale text, p_place text, p_repeat boolean)`
 - `create_trip(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text)`
 - `create_trip_a2c(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text)`
 - `create_trip_play_mode(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text, p_mode text)`
 - `create_trip_play_mode_v2(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text, p_mode text, p_country text)`
-- `crown_now(p_trip uuid)`
 - `culture_quest_card(p_session uuid)`
 - `current_look()`
-- `day_vote_results(p_trip uuid, p_date date)`
-- `decide_room_request(p_request uuid, p_action text, p_note text)`
-- `draw_game_card(p_trip uuid, p_category text)`
-- `edit_trip_day(p_trip uuid, p_date date, p_bingo jsonb, p_quests jsonb, p_theme text)`
-- `game_card_view(p_trip uuid, p_category text)`
-- `game_day_status(p_trip uuid, p_date date)`
-- `game_rooms()`
 - `hide_inspiration(p_card uuid)`
 - `is_trip_member(p_trip uuid, p_user uuid)`
-- `junkie_rank(p_user uuid)`
 - `member_age_ranges(p_trip uuid)`
 - `mix_ai_quota(p_trip uuid)`
 - `my_passport()`
 - `new_trip_code()`
-- `next_game_turn(p_trip uuid)`
-- `next_room_turn(p_trip uuid, p_room text)`
-- `night_checkin_tasks(p_trip uuid, p_week integer)`
-- `night_flow_action(p_trip uuid, p_week integer, p_action text)`
-- `night_format_action(p_trip uuid, p_week integer, p_action text, p_value text)`
 - `normalize_game_name(p text)`
-- `pick_team(p_trip uuid, p_team uuid)`
-- `post_game_night_poll(p_trip uuid, p_options jsonb)`
-- `post_live_vote(p_trip uuid, p_kind text, p_prompt text, p_options jsonb, p_week integer)`
 - `post_photo(p_trip uuid, p_date date, p_photo text)`
-- `post_quest(p_trip uuid, p_date date, p_quest integer, p_photo text)`
-- `present_checkin(p_trip uuid, p_week integer, p_claim uuid)`
 - `preview_culture_link(p_preview uuid)`
 - `preview_ten_day_drops(p_trip uuid)`
-- `qotw_action(p_trip uuid, p_week integer, p_action text)`
-- `qotw_answers(p_trip uuid, p_week integer)`
-- `quest_review(p_post uuid, p_action text)`
-- `quick_vote_action(p_trip uuid, p_action text, p_vote uuid)`
-- `quick_vote_totals(p_vote uuid)`
-- `release_trip_day(p_trip uuid, p_date date)`
-- `request_room(p_trip uuid, p_interest text)`
-- `reschedule_preview(p_trip uuid, p_every integer, p_count integer)`
-- `resolve_age_guesses(p_trip uuid, p_week integer, p_answer numeric)`
-- `respin_game(p_trip uuid)`
 - `reveal_inspiration_votes(p_card uuid)`
-- `reveal_live_vote(p_vote uuid)`
-- `reveal_mission(p_trip uuid, p_date date)`
-- `reveal_weekly_question(p_trip uuid, p_week integer)`
-- `room_requests_for(p_trip uuid)`
-- `save_game_scores(p_trip uuid, p_week integer, p_rows jsonb)`
-- `save_teams(p_trip uuid, p_teams jsonb)`
-- `season_game_reveal(p_trip uuid, p_date date)`
-- `season_game_submit(p_trip uuid, p_date date, p_slot integer, p_path text)`
-- `season_quest_action(p_trip uuid, p_quest uuid, p_action text)`
-- `season_quest_approve_all(p_trip uuid)`
-- `season_quest_current(p_trip uuid)`
-- `season_quest_review(p_trip uuid)`
 - `season_timing(p_trip uuid)`
-- `set_adult_cards(p_trip uuid, p_enabled boolean)`
-- `set_bingo_needs_photo(p_trip uuid, p_required boolean)`
 - `set_boarding_tile(p_tile text)`
 - `set_carry_on_meetup(p_trip uuid, p_at timestamp with time zone, p_place text)`
-- `set_first_game(p_trip uuid, p_game integer)`
-- `set_game_days(p_trip uuid, p_every integer, p_rest date[], p_surprise boolean)`
-- `set_game_night_host(p_trip uuid, p_week integer, p_host uuid)`
 - `set_home_ready_start(p_trip uuid, p_start date)`
 - `set_price_rule(p_key text, p_cents integer)`
-- `set_room_listing(p_trip uuid, p_listed boolean, p_nickname text, p_country text, p_region text, p_city text)`
-- `set_team_mode(p_trip uuid, p_mode text, p_caps jsonb)`
-- `set_team_room(p_trip uuid, p_team uuid, p_call text, p_host uuid)`
 - `set_trip_archived(p_trip uuid, p_archived boolean, p_note text)`
-- `set_weekly_question(p_trip uuid, p_week integer, p_prompt text)`
 - `set_wheels_up(p_trip uuid, p_date date, p_time text)`
-- `shuffle_teams(p_trip uuid)`
-- `skip_card(p_trip uuid, p_category text)`
-- `skip_limit(p_trip uuid)`
-- `spin_next_game(p_trip uuid)`
-- `start_game_turns(p_trip uuid, p_week integer, p_cards integer, p_random boolean)`
-- `team_capacities(p_trip uuid)`
-- `thumb_quest(p_post uuid)`
-- `traveler_level(p_user uuid)`
-- `trip_season(p_trip uuid)`
 - `trip_squad_messages(p_trip uuid)`
 - `unlock_big_group(p_trip uuid)`
 - `unlock_trip(p_trip uuid, p_headcount integer)`
-- `use_item_alternative(p_trip uuid, p_date date, p_kind text, p_index integer, p_alternative text, p_group boolean)`
-- `use_skip(p_trip uuid, p_kind text, p_ref text, p_new text)`
-- `vote_mission(p_trip uuid, p_date date, p_owner uuid, p_caught boolean)`
-- `vote_weekly_answer(p_trip uuid, p_week integer, p_idx integer)`
-- `week_game_action(p_trip uuid, p_week integer, p_action text)`
 
 ### Public tables/views not referenced by name in `src/`: 70
 
@@ -349,6 +266,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | trip_private | `lab_views` | table | ❌ | 0 | — | — |
 | trip_private | `preview_log` | table | ❌ | 0 | — | — |
 | trip_private | `preview_settings` | table | ❌ | 0 | — | — |
+| trip_private | `retired_wrappers` | table | ❌ | 0 | — | — |
 | trip_private | `teen_accounts` | table | ❌ | 0 | — | — |
 | trip_private | `trip_archive_log` | table | ❌ | 0 | — | — |
 | trip_private | `trip_join_grants` | table | ✅ | 1 | ALL | — |

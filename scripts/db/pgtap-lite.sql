@@ -132,4 +132,15 @@ BEGIN
   RETURN;
 END $$;
 
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO PUBLIC;
+-- Only the test functions above: a blanket grant on public would undo the app's own REVOKEs.
+DO $$
+DECLARE f regprocedure;
+BEGIN
+  FOR f IN SELECT p.oid::regprocedure FROM pg_proc p
+           WHERE p.pronamespace = 'public'::regnamespace
+             AND p.proname IN ('_tap_state', 'diag', 'fail', 'finish', 'is', 'isnt', 'lives_ok', 'no_plan',
+                               'ok', 'pass', 'plan', 'throws_like', 'throws_ok')
+  LOOP
+    EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO PUBLIC', f);
+  END LOOP;
+END $$;

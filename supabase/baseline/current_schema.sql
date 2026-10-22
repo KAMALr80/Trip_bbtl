@@ -14361,6 +14361,17 @@ CREATE TABLE trip_private.preview_settings (
 
 
 --
+-- Name: retired_wrappers; Type: TABLE; Schema: trip_private; Owner: -
+--
+
+CREATE TABLE trip_private.retired_wrappers (
+    name text NOT NULL,
+    feature text NOT NULL,
+    revoked_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: teen_accounts; Type: TABLE; Schema: trip_private; Owner: -
 --
 
@@ -15752,6 +15763,14 @@ ALTER TABLE ONLY trip_private.preview_log
 
 ALTER TABLE ONLY trip_private.preview_settings
     ADD CONSTRAINT preview_settings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: retired_wrappers retired_wrappers_pkey; Type: CONSTRAINT; Schema: trip_private; Owner: -
+--
+
+ALTER TABLE ONLY trip_private.retired_wrappers
+    ADD CONSTRAINT retired_wrappers_pkey PRIMARY KEY (name);
 
 
 --
@@ -20431,7 +20450,6 @@ GRANT ALL ON FUNCTION public.add_trip_missions(p_trip uuid, p_texts text[]) TO s
 --
 
 REVOKE ALL ON FUNCTION public.adult_badge(p_trip uuid, p_user uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.adult_badge(p_trip uuid, p_user uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.adult_badge(p_trip uuid, p_user uuid) TO service_role;
 
 
@@ -20440,7 +20458,6 @@ GRANT ALL ON FUNCTION public.adult_badge(p_trip uuid, p_user uuid) TO service_ro
 --
 
 REVOKE ALL ON FUNCTION public.advance_play_phase(p_trip uuid, p_current integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.advance_play_phase(p_trip uuid, p_current integer) TO authenticated;
 GRANT ALL ON FUNCTION public.advance_play_phase(p_trip uuid, p_current integer) TO service_role;
 
 
@@ -20502,7 +20519,6 @@ GRANT ALL ON FUNCTION public.ai_guard_report() TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.answer_trivia(p_trip uuid, p_date date, p_question integer, p_choice integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.answer_trivia(p_trip uuid, p_date date, p_question integer, p_choice integer) TO authenticated;
 GRANT ALL ON FUNCTION public.answer_trivia(p_trip uuid, p_date date, p_question integer, p_choice integer) TO service_role;
 
 
@@ -20511,7 +20527,6 @@ GRANT ALL ON FUNCTION public.answer_trivia(p_trip uuid, p_date date, p_question 
 --
 
 REVOKE ALL ON FUNCTION public.answer_weekly_question(p_trip uuid, p_week integer, p_answer text, p_emoji text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.answer_weekly_question(p_trip uuid, p_week integer, p_answer text, p_emoji text) TO authenticated;
 GRANT ALL ON FUNCTION public.answer_weekly_question(p_trip uuid, p_week integer, p_answer text, p_emoji text) TO service_role;
 
 
@@ -20529,7 +20544,6 @@ GRANT ALL ON FUNCTION public.apply_game_plan(p_trip uuid, p_plan text, p_weekday
 --
 
 REVOKE ALL ON FUNCTION public.apply_reschedule(p_trip uuid, p_every integer, p_count integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.apply_reschedule(p_trip uuid, p_every integer, p_count integer) TO authenticated;
 GRANT ALL ON FUNCTION public.apply_reschedule(p_trip uuid, p_every integer, p_count integer) TO service_role;
 
 
@@ -20538,7 +20552,6 @@ GRANT ALL ON FUNCTION public.apply_reschedule(p_trip uuid, p_every integer, p_co
 --
 
 REVOKE ALL ON FUNCTION public.approve_adult_player(p_trip uuid, p_user uuid, p_approve boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.approve_adult_player(p_trip uuid, p_user uuid, p_approve boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.approve_adult_player(p_trip uuid, p_user uuid, p_approve boolean) TO service_role;
 
 
@@ -20664,7 +20677,6 @@ GRANT ALL ON FUNCTION public.cancel_trip_invite(p_invite uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.captain_pass_limit(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.captain_pass_limit(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.captain_pass_limit(p_trip uuid) TO service_role;
 
 
@@ -20682,7 +20694,6 @@ GRANT ALL ON FUNCTION public.captain_status(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.cast_day_vote(p_trip uuid, p_date date, p_kind text, p_choice uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.cast_day_vote(p_trip uuid, p_date date, p_kind text, p_choice uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.cast_day_vote(p_trip uuid, p_date date, p_kind text, p_choice uuid) TO service_role;
 
 
@@ -20691,8 +20702,6 @@ GRANT ALL ON FUNCTION public.cast_day_vote(p_trip uuid, p_date date, p_kind text
 --
 
 REVOKE ALL ON FUNCTION public.cast_live_vote(p_vote uuid, p_option integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.cast_live_vote(p_vote uuid, p_option integer) TO anon;
-GRANT ALL ON FUNCTION public.cast_live_vote(p_vote uuid, p_option integer) TO authenticated;
 GRANT ALL ON FUNCTION public.cast_live_vote(p_vote uuid, p_option integer) TO service_role;
 
 
@@ -20736,7 +20745,6 @@ GRANT ALL ON FUNCTION public.clear_song_discs(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.close_live_vote(p_vote uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.close_live_vote(p_vote uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.close_live_vote(p_vote uuid) TO service_role;
 
 
@@ -20763,7 +20771,6 @@ GRANT ALL ON FUNCTION public.confirm_departure(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.confirm_game_nights(p_trip uuid, p_option integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.confirm_game_nights(p_trip uuid, p_option integer) TO authenticated;
 GRANT ALL ON FUNCTION public.confirm_game_nights(p_trip uuid, p_option integer) TO service_role;
 
 
@@ -20899,7 +20906,6 @@ GRANT ALL ON FUNCTION public.create_window_play_mode(p_mode text, p_title text, 
 --
 
 REVOKE ALL ON FUNCTION public.crown_now(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.crown_now(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.crown_now(p_trip uuid) TO service_role;
 
 
@@ -21035,7 +21041,6 @@ GRANT ALL ON FUNCTION public.current_look() TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.day_vote_results(p_trip uuid, p_date date) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.day_vote_results(p_trip uuid, p_date date) TO authenticated;
 GRANT ALL ON FUNCTION public.day_vote_results(p_trip uuid, p_date date) TO service_role;
 
 
@@ -21044,7 +21049,6 @@ GRANT ALL ON FUNCTION public.day_vote_results(p_trip uuid, p_date date) TO servi
 --
 
 REVOKE ALL ON FUNCTION public.decide_room_request(p_request uuid, p_action text, p_note text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.decide_room_request(p_request uuid, p_action text, p_note text) TO authenticated;
 GRANT ALL ON FUNCTION public.decide_room_request(p_request uuid, p_action text, p_note text) TO service_role;
 
 
@@ -21089,7 +21093,6 @@ GRANT ALL ON FUNCTION public.dismiss_cost_note(p_note uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.draw_game_card(p_trip uuid, p_category text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.draw_game_card(p_trip uuid, p_category text) TO authenticated;
 GRANT ALL ON FUNCTION public.draw_game_card(p_trip uuid, p_category text) TO service_role;
 
 
@@ -21108,7 +21111,6 @@ GRANT ALL ON FUNCTION public.edit_trip(p_trip uuid, p_name text, p_destination t
 --
 
 REVOKE ALL ON FUNCTION public.edit_trip_day(p_trip uuid, p_date date, p_bingo jsonb, p_quests jsonb, p_theme text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.edit_trip_day(p_trip uuid, p_date date, p_bingo jsonb, p_quests jsonb, p_theme text) TO authenticated;
 GRANT ALL ON FUNCTION public.edit_trip_day(p_trip uuid, p_date date, p_bingo jsonb, p_quests jsonb, p_theme text) TO service_role;
 
 
@@ -21234,8 +21236,6 @@ GRANT ALL ON FUNCTION public.game_board(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.game_card_view(p_trip uuid, p_category text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.game_card_view(p_trip uuid, p_category text) TO anon;
-GRANT ALL ON FUNCTION public.game_card_view(p_trip uuid, p_category text) TO authenticated;
 GRANT ALL ON FUNCTION public.game_card_view(p_trip uuid, p_category text) TO service_role;
 
 
@@ -21244,7 +21244,6 @@ GRANT ALL ON FUNCTION public.game_card_view(p_trip uuid, p_category text) TO ser
 --
 
 REVOKE ALL ON FUNCTION public.game_day_status(p_trip uuid, p_date date) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.game_day_status(p_trip uuid, p_date date) TO authenticated;
 GRANT ALL ON FUNCTION public.game_day_status(p_trip uuid, p_date date) TO service_role;
 
 
@@ -21271,7 +21270,6 @@ GRANT ALL ON FUNCTION public.game_name_available(p_name text) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.game_rooms() FROM PUBLIC;
-GRANT ALL ON FUNCTION public.game_rooms() TO authenticated;
 GRANT ALL ON FUNCTION public.game_rooms() TO service_role;
 
 
@@ -21415,7 +21413,6 @@ GRANT ALL ON FUNCTION public.join_waitlist(p_email text) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.junkie_rank(p_user uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.junkie_rank(p_user uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.junkie_rank(p_user uuid) TO service_role;
 
 
@@ -21742,7 +21739,6 @@ GRANT ALL ON FUNCTION public.new_trip_code() TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.next_game_turn(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.next_game_turn(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.next_game_turn(p_trip uuid) TO service_role;
 
 
@@ -21751,7 +21747,6 @@ GRANT ALL ON FUNCTION public.next_game_turn(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.next_room_turn(p_trip uuid, p_room text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.next_room_turn(p_trip uuid, p_room text) TO authenticated;
 GRANT ALL ON FUNCTION public.next_room_turn(p_trip uuid, p_room text) TO service_role;
 
 
@@ -21760,7 +21755,6 @@ GRANT ALL ON FUNCTION public.next_room_turn(p_trip uuid, p_room text) TO service
 --
 
 REVOKE ALL ON FUNCTION public.night_checkin_tasks(p_trip uuid, p_week integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.night_checkin_tasks(p_trip uuid, p_week integer) TO authenticated;
 GRANT ALL ON FUNCTION public.night_checkin_tasks(p_trip uuid, p_week integer) TO service_role;
 
 
@@ -21769,7 +21763,6 @@ GRANT ALL ON FUNCTION public.night_checkin_tasks(p_trip uuid, p_week integer) TO
 --
 
 REVOKE ALL ON FUNCTION public.night_flow_action(p_trip uuid, p_week integer, p_action text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.night_flow_action(p_trip uuid, p_week integer, p_action text) TO authenticated;
 GRANT ALL ON FUNCTION public.night_flow_action(p_trip uuid, p_week integer, p_action text) TO service_role;
 
 
@@ -21778,7 +21771,6 @@ GRANT ALL ON FUNCTION public.night_flow_action(p_trip uuid, p_week integer, p_ac
 --
 
 REVOKE ALL ON FUNCTION public.night_format_action(p_trip uuid, p_week integer, p_action text, p_value text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.night_format_action(p_trip uuid, p_week integer, p_action text, p_value text) TO authenticated;
 GRANT ALL ON FUNCTION public.night_format_action(p_trip uuid, p_week integer, p_action text, p_value text) TO service_role;
 
 
@@ -21850,7 +21842,6 @@ GRANT ALL ON FUNCTION public.pick_night_game(p_trip uuid, p_week integer, p_game
 --
 
 REVOKE ALL ON FUNCTION public.pick_team(p_trip uuid, p_team uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.pick_team(p_trip uuid, p_team uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.pick_team(p_trip uuid, p_team uuid) TO service_role;
 
 
@@ -21877,7 +21868,6 @@ GRANT ALL ON FUNCTION public.player_card_read(p_trip uuid, p_user uuid) TO servi
 --
 
 REVOKE ALL ON FUNCTION public.post_game_night_poll(p_trip uuid, p_options jsonb) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.post_game_night_poll(p_trip uuid, p_options jsonb) TO authenticated;
 GRANT ALL ON FUNCTION public.post_game_night_poll(p_trip uuid, p_options jsonb) TO service_role;
 
 
@@ -21886,8 +21876,6 @@ GRANT ALL ON FUNCTION public.post_game_night_poll(p_trip uuid, p_options jsonb) 
 --
 
 REVOKE ALL ON FUNCTION public.post_live_vote(p_trip uuid, p_kind text, p_prompt text, p_options jsonb, p_week integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.post_live_vote(p_trip uuid, p_kind text, p_prompt text, p_options jsonb, p_week integer) TO anon;
-GRANT ALL ON FUNCTION public.post_live_vote(p_trip uuid, p_kind text, p_prompt text, p_options jsonb, p_week integer) TO authenticated;
 GRANT ALL ON FUNCTION public.post_live_vote(p_trip uuid, p_kind text, p_prompt text, p_options jsonb, p_week integer) TO service_role;
 
 
@@ -21905,7 +21893,6 @@ GRANT ALL ON FUNCTION public.post_photo(p_trip uuid, p_date date, p_photo text) 
 --
 
 REVOKE ALL ON FUNCTION public.post_quest(p_trip uuid, p_date date, p_quest integer, p_photo text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.post_quest(p_trip uuid, p_date date, p_quest integer, p_photo text) TO authenticated;
 GRANT ALL ON FUNCTION public.post_quest(p_trip uuid, p_date date, p_quest integer, p_photo text) TO service_role;
 
 
@@ -21913,8 +21900,7 @@ GRANT ALL ON FUNCTION public.post_quest(p_trip uuid, p_date date, p_quest intege
 -- Name: FUNCTION present_checkin(p_trip uuid, p_week integer, p_claim uuid); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.present_checkin(p_trip uuid, p_week integer, p_claim uuid) TO anon;
-GRANT ALL ON FUNCTION public.present_checkin(p_trip uuid, p_week integer, p_claim uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.present_checkin(p_trip uuid, p_week integer, p_claim uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.present_checkin(p_trip uuid, p_week integer, p_claim uuid) TO service_role;
 
 
@@ -21978,7 +21964,6 @@ GRANT ALL ON FUNCTION public.public_launch() TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.qotw_action(p_trip uuid, p_week integer, p_action text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.qotw_action(p_trip uuid, p_week integer, p_action text) TO authenticated;
 GRANT ALL ON FUNCTION public.qotw_action(p_trip uuid, p_week integer, p_action text) TO service_role;
 
 
@@ -21987,7 +21972,6 @@ GRANT ALL ON FUNCTION public.qotw_action(p_trip uuid, p_week integer, p_action t
 --
 
 REVOKE ALL ON FUNCTION public.qotw_answers(p_trip uuid, p_week integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.qotw_answers(p_trip uuid, p_week integer) TO authenticated;
 GRANT ALL ON FUNCTION public.qotw_answers(p_trip uuid, p_week integer) TO service_role;
 
 
@@ -22005,7 +21989,6 @@ GRANT ALL ON FUNCTION public.quest_challenge_update_time() TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.quest_review(p_post uuid, p_action text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.quest_review(p_post uuid, p_action text) TO authenticated;
 GRANT ALL ON FUNCTION public.quest_review(p_post uuid, p_action text) TO service_role;
 
 
@@ -22014,7 +21997,6 @@ GRANT ALL ON FUNCTION public.quest_review(p_post uuid, p_action text) TO service
 --
 
 REVOKE ALL ON FUNCTION public.quick_vote_action(p_trip uuid, p_action text, p_vote uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.quick_vote_action(p_trip uuid, p_action text, p_vote uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.quick_vote_action(p_trip uuid, p_action text, p_vote uuid) TO service_role;
 
 
@@ -22023,7 +22005,6 @@ GRANT ALL ON FUNCTION public.quick_vote_action(p_trip uuid, p_action text, p_vot
 --
 
 REVOKE ALL ON FUNCTION public.quick_vote_totals(p_vote uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.quick_vote_totals(p_vote uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.quick_vote_totals(p_vote uuid) TO service_role;
 
 
@@ -22075,7 +22056,6 @@ GRANT ALL ON FUNCTION public.refund_failed_ai(p_usage uuid, p_user uuid) TO serv
 --
 
 REVOKE ALL ON FUNCTION public.release_trip_day(p_trip uuid, p_date date) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.release_trip_day(p_trip uuid, p_date date) TO authenticated;
 GRANT ALL ON FUNCTION public.release_trip_day(p_trip uuid, p_date date) TO service_role;
 
 
@@ -22111,7 +22091,6 @@ GRANT ALL ON FUNCTION public.request_host_swap(p_trip uuid, p_week integer, p_to
 --
 
 REVOKE ALL ON FUNCTION public.request_room(p_trip uuid, p_interest text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.request_room(p_trip uuid, p_interest text) TO authenticated;
 GRANT ALL ON FUNCTION public.request_room(p_trip uuid, p_interest text) TO service_role;
 
 
@@ -22120,7 +22099,6 @@ GRANT ALL ON FUNCTION public.request_room(p_trip uuid, p_interest text) TO servi
 --
 
 REVOKE ALL ON FUNCTION public.reschedule_preview(p_trip uuid, p_every integer, p_count integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.reschedule_preview(p_trip uuid, p_every integer, p_count integer) TO authenticated;
 GRANT ALL ON FUNCTION public.reschedule_preview(p_trip uuid, p_every integer, p_count integer) TO service_role;
 
 
@@ -22139,8 +22117,6 @@ GRANT ALL ON FUNCTION public.reset_trip_code(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.resolve_age_guesses(p_trip uuid, p_week integer, p_answer numeric) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.resolve_age_guesses(p_trip uuid, p_week integer, p_answer numeric) TO anon;
-GRANT ALL ON FUNCTION public.resolve_age_guesses(p_trip uuid, p_week integer, p_answer numeric) TO authenticated;
 GRANT ALL ON FUNCTION public.resolve_age_guesses(p_trip uuid, p_week integer, p_answer numeric) TO service_role;
 
 
@@ -22149,7 +22125,6 @@ GRANT ALL ON FUNCTION public.resolve_age_guesses(p_trip uuid, p_week integer, p_
 --
 
 REVOKE ALL ON FUNCTION public.respin_game(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.respin_game(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.respin_game(p_trip uuid) TO service_role;
 
 
@@ -22176,8 +22151,6 @@ GRANT ALL ON FUNCTION public.reveal_inspiration_votes(p_card uuid) TO service_ro
 --
 
 REVOKE ALL ON FUNCTION public.reveal_live_vote(p_vote uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.reveal_live_vote(p_vote uuid) TO anon;
-GRANT ALL ON FUNCTION public.reveal_live_vote(p_vote uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.reveal_live_vote(p_vote uuid) TO service_role;
 
 
@@ -22186,7 +22159,6 @@ GRANT ALL ON FUNCTION public.reveal_live_vote(p_vote uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.reveal_mission(p_trip uuid, p_date date) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.reveal_mission(p_trip uuid, p_date date) TO authenticated;
 GRANT ALL ON FUNCTION public.reveal_mission(p_trip uuid, p_date date) TO service_role;
 
 
@@ -22195,7 +22167,6 @@ GRANT ALL ON FUNCTION public.reveal_mission(p_trip uuid, p_date date) TO service
 --
 
 REVOKE ALL ON FUNCTION public.reveal_weekly_question(p_trip uuid, p_week integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.reveal_weekly_question(p_trip uuid, p_week integer) TO authenticated;
 GRANT ALL ON FUNCTION public.reveal_weekly_question(p_trip uuid, p_week integer) TO service_role;
 
 
@@ -22213,7 +22184,6 @@ GRANT ALL ON FUNCTION public.revoke_beta_code(p_code text) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.room_requests_for(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.room_requests_for(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.room_requests_for(p_trip uuid) TO service_role;
 
 
@@ -22231,8 +22201,6 @@ GRANT ALL ON FUNCTION public.save_cost_item(p_trip uuid, p_item uuid, p_title te
 --
 
 REVOKE ALL ON FUNCTION public.save_game_scores(p_trip uuid, p_week integer, p_rows jsonb) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.save_game_scores(p_trip uuid, p_week integer, p_rows jsonb) TO anon;
-GRANT ALL ON FUNCTION public.save_game_scores(p_trip uuid, p_week integer, p_rows jsonb) TO authenticated;
 GRANT ALL ON FUNCTION public.save_game_scores(p_trip uuid, p_week integer, p_rows jsonb) TO service_role;
 
 
@@ -22241,7 +22209,6 @@ GRANT ALL ON FUNCTION public.save_game_scores(p_trip uuid, p_week integer, p_row
 --
 
 REVOKE ALL ON FUNCTION public.save_teams(p_trip uuid, p_teams jsonb) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.save_teams(p_trip uuid, p_teams jsonb) TO authenticated;
 GRANT ALL ON FUNCTION public.save_teams(p_trip uuid, p_teams jsonb) TO service_role;
 
 
@@ -22286,7 +22253,6 @@ GRANT ALL ON FUNCTION public.season_game_decline(p_find uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.season_game_reveal(p_trip uuid, p_date date) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.season_game_reveal(p_trip uuid, p_date date) TO authenticated;
 GRANT ALL ON FUNCTION public.season_game_reveal(p_trip uuid, p_date date) TO service_role;
 
 
@@ -22295,7 +22261,6 @@ GRANT ALL ON FUNCTION public.season_game_reveal(p_trip uuid, p_date date) TO ser
 --
 
 REVOKE ALL ON FUNCTION public.season_game_submit(p_trip uuid, p_date date, p_slot integer, p_path text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.season_game_submit(p_trip uuid, p_date date, p_slot integer, p_path text) TO authenticated;
 GRANT ALL ON FUNCTION public.season_game_submit(p_trip uuid, p_date date, p_slot integer, p_path text) TO service_role;
 
 
@@ -22322,7 +22287,6 @@ GRANT ALL ON FUNCTION public.season_points(p_trip uuid, p_season text) TO servic
 --
 
 REVOKE ALL ON FUNCTION public.season_quest_action(p_trip uuid, p_quest uuid, p_action text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.season_quest_action(p_trip uuid, p_quest uuid, p_action text) TO authenticated;
 GRANT ALL ON FUNCTION public.season_quest_action(p_trip uuid, p_quest uuid, p_action text) TO service_role;
 
 
@@ -22331,7 +22295,6 @@ GRANT ALL ON FUNCTION public.season_quest_action(p_trip uuid, p_quest uuid, p_ac
 --
 
 REVOKE ALL ON FUNCTION public.season_quest_approve_all(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.season_quest_approve_all(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.season_quest_approve_all(p_trip uuid) TO service_role;
 
 
@@ -22340,7 +22303,6 @@ GRANT ALL ON FUNCTION public.season_quest_approve_all(p_trip uuid) TO service_ro
 --
 
 REVOKE ALL ON FUNCTION public.season_quest_current(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.season_quest_current(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.season_quest_current(p_trip uuid) TO service_role;
 
 
@@ -22349,7 +22311,6 @@ GRANT ALL ON FUNCTION public.season_quest_current(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.season_quest_review(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.season_quest_review(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.season_quest_review(p_trip uuid) TO service_role;
 
 
@@ -22385,7 +22346,6 @@ GRANT ALL ON FUNCTION public.set_activity_timer(p_trip uuid, p_secs integer, p_l
 --
 
 REVOKE ALL ON FUNCTION public.set_adult_cards(p_trip uuid, p_enabled boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.set_adult_cards(p_trip uuid, p_enabled boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.set_adult_cards(p_trip uuid, p_enabled boolean) TO service_role;
 
 
@@ -22403,7 +22363,6 @@ GRANT ALL ON FUNCTION public.set_ai_guard(p_enabled boolean, p_global_cap intege
 --
 
 REVOKE ALL ON FUNCTION public.set_bingo_needs_photo(p_trip uuid, p_required boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.set_bingo_needs_photo(p_trip uuid, p_required boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.set_bingo_needs_photo(p_trip uuid, p_required boolean) TO service_role;
 
 
@@ -22448,7 +22407,6 @@ GRANT ALL ON FUNCTION public.set_culture_mode(p_exp uuid, p_mode text, p_types t
 --
 
 REVOKE ALL ON FUNCTION public.set_first_game(p_trip uuid, p_game integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.set_first_game(p_trip uuid, p_game integer) TO authenticated;
 GRANT ALL ON FUNCTION public.set_first_game(p_trip uuid, p_game integer) TO service_role;
 
 
@@ -22466,7 +22424,6 @@ GRANT ALL ON FUNCTION public.set_founding_open(p_open boolean) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.set_game_days(p_trip uuid, p_every integer, p_rest date[], p_surprise boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.set_game_days(p_trip uuid, p_every integer, p_rest date[], p_surprise boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.set_game_days(p_trip uuid, p_every integer, p_rest date[], p_surprise boolean) TO service_role;
 
 
@@ -22475,7 +22432,6 @@ GRANT ALL ON FUNCTION public.set_game_days(p_trip uuid, p_every integer, p_rest 
 --
 
 REVOKE ALL ON FUNCTION public.set_game_night_host(p_trip uuid, p_week integer, p_host uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.set_game_night_host(p_trip uuid, p_week integer, p_host uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.set_game_night_host(p_trip uuid, p_week integer, p_host uuid) TO service_role;
 
 
@@ -22619,7 +22575,6 @@ GRANT ALL ON FUNCTION public.set_public_leaderboard(p_public boolean) TO service
 --
 
 REVOKE ALL ON FUNCTION public.set_room_listing(p_trip uuid, p_listed boolean, p_nickname text, p_country text, p_region text, p_city text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.set_room_listing(p_trip uuid, p_listed boolean, p_nickname text, p_country text, p_region text, p_city text) TO authenticated;
 GRANT ALL ON FUNCTION public.set_room_listing(p_trip uuid, p_listed boolean, p_nickname text, p_country text, p_region text, p_city text) TO service_role;
 
 
@@ -22656,7 +22611,6 @@ GRANT ALL ON FUNCTION public.set_stamp_values(p_trip uuid, p_here integer, p_win
 --
 
 REVOKE ALL ON FUNCTION public.set_team_mode(p_trip uuid, p_mode text, p_caps jsonb) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.set_team_mode(p_trip uuid, p_mode text, p_caps jsonb) TO authenticated;
 GRANT ALL ON FUNCTION public.set_team_mode(p_trip uuid, p_mode text, p_caps jsonb) TO service_role;
 
 
@@ -22665,7 +22619,6 @@ GRANT ALL ON FUNCTION public.set_team_mode(p_trip uuid, p_mode text, p_caps json
 --
 
 REVOKE ALL ON FUNCTION public.set_team_room(p_trip uuid, p_team uuid, p_call text, p_host uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.set_team_room(p_trip uuid, p_team uuid, p_call text, p_host uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.set_team_room(p_trip uuid, p_team uuid, p_call text, p_host uuid) TO service_role;
 
 
@@ -22746,7 +22699,6 @@ GRANT ALL ON FUNCTION public.set_trip_vibe(p_trip uuid, p_vibe text) TO service_
 --
 
 REVOKE ALL ON FUNCTION public.set_weekly_question(p_trip uuid, p_week integer, p_prompt text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.set_weekly_question(p_trip uuid, p_week integer, p_prompt text) TO authenticated;
 GRANT ALL ON FUNCTION public.set_weekly_question(p_trip uuid, p_week integer, p_prompt text) TO service_role;
 
 
@@ -22792,7 +22744,6 @@ GRANT ALL ON FUNCTION public.share_preview(p_trip uuid, p_exp uuid, p_on boolean
 --
 
 REVOKE ALL ON FUNCTION public.shuffle_teams(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.shuffle_teams(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.shuffle_teams(p_trip uuid) TO service_role;
 
 
@@ -22801,7 +22752,6 @@ GRANT ALL ON FUNCTION public.shuffle_teams(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.skip_card(p_trip uuid, p_category text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.skip_card(p_trip uuid, p_category text) TO authenticated;
 GRANT ALL ON FUNCTION public.skip_card(p_trip uuid, p_category text) TO service_role;
 
 
@@ -22810,7 +22760,6 @@ GRANT ALL ON FUNCTION public.skip_card(p_trip uuid, p_category text) TO service_
 --
 
 REVOKE ALL ON FUNCTION public.skip_limit(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.skip_limit(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.skip_limit(p_trip uuid) TO service_role;
 
 
@@ -22837,7 +22786,6 @@ GRANT ALL ON FUNCTION public.spend_ai_credits(p_trip uuid, p_action text) TO ser
 --
 
 REVOKE ALL ON FUNCTION public.spin_next_game(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.spin_next_game(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.spin_next_game(p_trip uuid) TO service_role;
 
 
@@ -22846,7 +22794,6 @@ GRANT ALL ON FUNCTION public.spin_next_game(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.start_game_turns(p_trip uuid, p_week integer, p_cards integer, p_random boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.start_game_turns(p_trip uuid, p_week integer, p_cards integer, p_random boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.start_game_turns(p_trip uuid, p_week integer, p_cards integer, p_random boolean) TO service_role;
 
 
@@ -22900,7 +22847,6 @@ GRANT ALL ON FUNCTION public.take_over_captain(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.team_capacities(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.team_capacities(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.team_capacities(p_trip uuid) TO service_role;
 
 
@@ -22909,7 +22855,6 @@ GRANT ALL ON FUNCTION public.team_capacities(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.thumb_quest(p_post uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.thumb_quest(p_post uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.thumb_quest(p_post uuid) TO service_role;
 
 
@@ -22927,7 +22872,6 @@ GRANT ALL ON FUNCTION public.touch_last_seen() TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.traveler_level(p_user uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.traveler_level(p_user uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.traveler_level(p_user uuid) TO service_role;
 
 
@@ -22991,7 +22935,6 @@ GRANT ALL ON FUNCTION public.trip_roster(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.trip_season(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.trip_season(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.trip_season(p_trip uuid) TO service_role;
 
 
@@ -23090,7 +23033,6 @@ GRANT ALL ON FUNCTION public.use_host_pass(p_trip uuid, p_week integer) TO servi
 --
 
 REVOKE ALL ON FUNCTION public.use_item_alternative(p_trip uuid, p_date date, p_kind text, p_index integer, p_alternative text, p_group boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.use_item_alternative(p_trip uuid, p_date date, p_kind text, p_index integer, p_alternative text, p_group boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.use_item_alternative(p_trip uuid, p_date date, p_kind text, p_index integer, p_alternative text, p_group boolean) TO service_role;
 
 
@@ -23108,7 +23050,6 @@ GRANT ALL ON FUNCTION public.use_night_pass(p_trip uuid, p_week integer) TO serv
 --
 
 REVOKE ALL ON FUNCTION public.use_skip(p_trip uuid, p_kind text, p_ref text, p_new text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.use_skip(p_trip uuid, p_kind text, p_ref text, p_new text) TO authenticated;
 GRANT ALL ON FUNCTION public.use_skip(p_trip uuid, p_kind text, p_ref text, p_new text) TO service_role;
 
 
@@ -23117,7 +23058,6 @@ GRANT ALL ON FUNCTION public.use_skip(p_trip uuid, p_kind text, p_ref text, p_ne
 --
 
 REVOKE ALL ON FUNCTION public.vote_mission(p_trip uuid, p_date date, p_owner uuid, p_caught boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.vote_mission(p_trip uuid, p_date date, p_owner uuid, p_caught boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.vote_mission(p_trip uuid, p_date date, p_owner uuid, p_caught boolean) TO service_role;
 
 
@@ -23125,8 +23065,7 @@ GRANT ALL ON FUNCTION public.vote_mission(p_trip uuid, p_date date, p_owner uuid
 -- Name: FUNCTION vote_weekly_answer(p_trip uuid, p_week integer, p_idx integer); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.vote_weekly_answer(p_trip uuid, p_week integer, p_idx integer) TO anon;
-GRANT ALL ON FUNCTION public.vote_weekly_answer(p_trip uuid, p_week integer, p_idx integer) TO authenticated;
+REVOKE ALL ON FUNCTION public.vote_weekly_answer(p_trip uuid, p_week integer, p_idx integer) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.vote_weekly_answer(p_trip uuid, p_week integer, p_idx integer) TO service_role;
 
 
@@ -23135,7 +23074,6 @@ GRANT ALL ON FUNCTION public.vote_weekly_answer(p_trip uuid, p_week integer, p_i
 --
 
 REVOKE ALL ON FUNCTION public.week_game_action(p_trip uuid, p_week integer, p_action text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.week_game_action(p_trip uuid, p_week integer, p_action text) TO authenticated;
 GRANT ALL ON FUNCTION public.week_game_action(p_trip uuid, p_week integer, p_action text) TO service_role;
 
 
