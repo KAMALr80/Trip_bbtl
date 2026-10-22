@@ -94,6 +94,11 @@
       "count": 2
     }
   },
+  "src/features/app-shell/AppShell.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 4
+    }
+  },
   "src/lib/checkout.functions.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -112,11 +117,6 @@
   "src/lib/lab.functions.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
-    }
-  },
-  "src/routes/index.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
     }
   }
 }
