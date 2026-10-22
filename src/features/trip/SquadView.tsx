@@ -35,9 +35,9 @@ export function SquadView({
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-[28px] font-extrabold">
+        <h2 className="font-display text-[28px] font-extrabold">
           The <span className="text-blue">Squad</span>
-        </h1>
+        </h2>
         {!viewOnly && (
           <Button
             variant="outline"

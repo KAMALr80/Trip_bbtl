@@ -22,7 +22,7 @@ import { setLabView, useLabView, VIEW_LABELS } from "@/lib/lab-mode";
 const db = supabase as unknown as {
   rpc: (n: string, a?: object) => Promise<{ data: unknown; error: { message: string } | null }>;
 };
-type Tab = "Home" | "Play" | "Trip" | "Squad" | "Me";
+type Tab = "Home" | "Play" | "Trip" | "Me";
 type Props = {
   trips: TripWithRole[];
   activeId?: string | undefined;
@@ -1032,7 +1032,7 @@ function ScreenChecklist({
   const groups: [string, Item[]][] = [
     [
       "Tabs",
-      (["Home", "Play", "Trip", "Squad", "Me"] as Tab[]).map((t) => ({
+      (["Home", "Play", "Trip", "Me"] as Tab[]).map((t) => ({
         id: `tab-${t}`,
         label: `${t} tab`,
         go: () => open(t),
@@ -1056,7 +1056,7 @@ function ScreenChecklist({
         },
         { id: "unlock", label: "Unlock screen + badges", go: openTools },
         { id: "costs", label: "Trip costs (Captain + player view)", go: () => open("Trip") },
-        { id: "squad", label: "Player cards + teams", go: () => open("Squad") },
+        { id: "squad", label: "Player cards + teams", go: () => open("Trip") },
       ],
     ],
     [
@@ -1086,7 +1086,7 @@ function ScreenChecklist({
           id: "score100",
           label:
             "Score /100 · compare a 10-day-window sandbox (≈1–3 nights) with an 84-day one (12 nights): same attendance = same score",
-          go: () => open("Squad"),
+          go: () => open("Trip"),
         },
         {
           id: "captainpass",
@@ -1108,7 +1108,7 @@ function ScreenChecklist({
           id: "pending",
           label:
             "Pending member · ⏳ waiting bot is left out of turns, stamps, costs and price until approved",
-          go: () => open("Squad"),
+          go: () => open("Trip"),
         },
       ],
     ],

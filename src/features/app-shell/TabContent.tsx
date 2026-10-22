@@ -40,7 +40,7 @@ import { PlayHub } from "@/components/PlayHub";
 import { CaptainBadge, LockedNote, isUnlocked } from "@/components/TripUnlock";
 import { ReadOnlyBanner } from "@/components/Seasons";
 import { type TripWithRole, type Member } from "@/lib/trips";
-import { Share2 } from "lucide-react";
+
 import { Avatar } from "@/components/PlayerCards";
 import { type PlayerWithAvatar } from "@/lib/player-cards";
 import {
@@ -325,16 +325,18 @@ export function TabContent({
           viewOnly={viewOnly}
         />
 
-        <Button
-          variant="playful"
-          className="mt-6 w-full"
-          onClick={() => {
-            import("@/lib/haptics").then(({ hapticTap }) => hapticTap());
-            open("Invite");
-          }}
-        >
-          <Share2 /> Share invite
-        </Button>
+        <section className="mt-8" aria-label="Squad">
+          <SquadView
+            key={`sv-${active.id}`}
+            trip={active}
+            members={members}
+            cards={cards}
+            userId={userId}
+            onMember={onMember}
+            open={open}
+            viewOnly={viewOnly}
+          />
+        </section>
       </>
     );
   if (tab === "Trip" && active)
@@ -352,16 +354,18 @@ export function TabContent({
           onWindowSeat={onWindowSeat}
           viewOnly={viewOnly}
         />
-        <Button
-          variant="playful"
-          className="mt-6 w-full"
-          onClick={() => {
-            import("@/lib/haptics").then(({ hapticTap }) => hapticTap());
-            open("Invite");
-          }}
-        >
-          <Share2 /> Share invite
-        </Button>
+        <section className="mt-8" aria-label="Squad">
+          <SquadView
+            key={`sv-${active.id}`}
+            trip={active}
+            members={members}
+            cards={cards}
+            userId={userId}
+            onMember={onMember}
+            open={open}
+            viewOnly={viewOnly}
+          />
+        </section>
       </>
     );
   if (tab === "Trip")
@@ -383,37 +387,6 @@ export function TabContent({
         <div className="mt-7 flex items-center gap-3 text-sm text-muted-foreground">
           <CalendarDays className="text-orange" /> Built around your trip dates, always.
         </div>
-      </>
-    );
-  if (tab === "Squad" && active)
-    return (
-      <SquadView
-        key={`sv-${active.id}`}
-        trip={active}
-        members={members}
-        cards={cards}
-        userId={userId}
-        onMember={onMember}
-        open={open}
-        viewOnly={viewOnly}
-      />
-    );
-  if (tab === "Squad")
-    return (
-      <>
-        <PageHeading
-          eyebrow="BETTER TOGETHER"
-          title="Your people."
-          emoji="🫶"
-          copy="The best part of any trip is who you go with."
-        />
-        <EmptyPrompt
-          emoji="👯"
-          title="Your squad is on its way"
-          copy="Once you're in a trip, your people will show up here."
-          action="Join a trip"
-          onClick={() => open("Join a trip")}
-        />
       </>
     );
   if (!meSection)

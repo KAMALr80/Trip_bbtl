@@ -1,10 +1,10 @@
-import { Home, Users, UserRound, CalendarDays, Play } from "lucide-react";
+// Bottom tab bar (Q6): Home · Play · Trip · Me. The crew list lives in Trip.
+import { Home, UserRound, CalendarDays, Play } from "lucide-react";
 
 export const tabs = [
   { name: "Home", icon: Home },
   { name: "Play", icon: Play },
   { name: "Trip", icon: CalendarDays },
-  { name: "Squad", icon: Users },
   { name: "Me", icon: UserRound },
 ] as const;
 

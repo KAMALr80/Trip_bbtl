@@ -1,5 +1,7 @@
+import { tabPath, useShellNav } from "@/features/app-shell/nav";
+import { Link } from "@tanstack/react-router";
 import { TabContent } from "@/features/app-shell/TabContent";
-import { tabs, type Tab } from "@/features/app-shell/tabs";
+import { tabs } from "@/features/app-shell/tabs";
 import { AppSheet } from "@/features/app-shell/AppSheet";
 import { AuthScreen } from "@/features/auth/AuthScreen";
 import { ExplorePrompt } from "@/features/app-shell/chrome";
@@ -53,7 +55,7 @@ import { HelpPage, BugReport, DeleteAccount } from "@/components/MeExtras";
 
 import { ExploreTour } from "@/components/ExploreTour";
 
-import { HomeDashboard, type HomeScreen } from "@/components/HomeDashboard";
+import { HomeDashboard } from "@/components/HomeDashboard";
 import { FirstRunWelcome } from "@/components/FirstRunWelcome";
 import { JourneyMap, type JourneyStop } from "@/components/JourneyMap";
 
@@ -90,8 +92,21 @@ export function AppShell() {
     };
   }, []);
   const legal = useLegalStatus(user?.id);
-  const [tab, setTab] = useState<Tab>("Home");
-  const [homeScreen, setHomeScreen] = useState<HomeScreen>("dashboard");
+  const {
+    tab,
+    setTab,
+    homeScreen,
+    setHomeScreen,
+    meView,
+    setMeView,
+    meSection,
+    setMeSection,
+    about,
+    setAbout,
+    tools,
+    setTools,
+    clearParam,
+  } = useShellNav();
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [welcomeStoryReturn, setWelcomeStoryReturn] = useState(false);
   const closeWelcome = () => setWelcomeOpen(false);
@@ -119,7 +134,6 @@ export function AppShell() {
   const [cardsLoading, setCardsLoading] = useState(true);
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [editCard, setEditCard] = useState(false);
-  const [tools, setTools] = useState(false);
   const [viewAsPlayer, setViewAsPlayer] = useState(false);
   // Capture outside React too: dialogs may be portaled outside the app root.
   useEffect(() => {
@@ -144,12 +158,7 @@ export function AppShell() {
     };
   }, [viewAsPlayer]);
   const [itineraryVersion, setItineraryVersion] = useState(0);
-  const [about, setAbout] = useState(false);
-  const [meView, setMeView] = useState<
-    "help" | "bug" | "delete" | "feedback" | "lab" | "reports" | null
-  >(null);
   const [publicView, setPublicView] = useState<"overview" | "story" | "games" | null>(null);
-  const [meSection, setMeSection] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
     void supabase.rpc("is_app_admin").then((r) => {
@@ -707,9 +716,7 @@ export function AppShell() {
             code={showcaseCode}
             onBack={() => {
               setShowcaseCode(null);
-              const url = new URL(window.location.href);
-              url.searchParams.delete("showcase");
-              window.history.replaceState({}, "", url);
+              clearParam("showcase");
               setTab("Home");
               setHomeScreen("dashboard");
             }}
@@ -844,9 +851,7 @@ export function AppShell() {
                 questCode={questCode}
                 onQuestOpened={() => {
                   setQuestCode(null);
-                  const url = new URL(window.location.href);
-                  url.searchParams.delete("quest");
-                  window.history.replaceState({}, "", url);
+                  clearParam("quest");
                 }}
                 onWelcome={() => setWelcomeOpen(true)}
                 onMember={setSelectedMember}
@@ -988,26 +993,26 @@ export function AppShell() {
       >
         {tabs.map(({ name, icon: Icon }) => (
           <Button
+            asChild
             data-view-navigation="true"
             key={name}
             variant="ghost"
-            onClick={() => {
-              if (welcomeOpen) closeWelcome();
-              setWelcomeStoryReturn(false);
-              setTools(false);
-              setAbout(false);
-              setMeView(null);
-              setTab(name);
-              window.scrollTo({ top: 0, behavior: "instant" });
-              if (name === "Home") setHomeScreen("dashboard");
-            }}
-            aria-label={name}
-            aria-current={tab === name ? "page" : undefined}
-            onPointerDown={(e) => e.currentTarget.blur()}
             className={`h-14 min-w-0 flex-1 flex-col gap-0.5 rounded-full px-1 text-[10px] ${tab === name ? "text-blue" : "text-muted-foreground"}`}
           >
-            <Icon size={20} strokeWidth={tab === name ? 2.7 : 2} className="!size-5" />
-            {name}
+            <Link
+              to={tabPath[name]}
+              onClick={() => {
+                if (welcomeOpen) closeWelcome();
+                setWelcomeStoryReturn(false);
+                window.scrollTo({ top: 0, behavior: "instant" });
+              }}
+              aria-label={name}
+              aria-current={tab === name ? "page" : undefined}
+              onPointerDown={(e) => e.currentTarget.blur()}
+            >
+              <Icon size={20} strokeWidth={tab === name ? 2.7 : 2} className="!size-5" />
+              {name}
+            </Link>
           </Button>
         ))}
       </nav>
