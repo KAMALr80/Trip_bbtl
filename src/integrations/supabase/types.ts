@@ -5025,7 +5025,6 @@ export type Database = {
           join_locked: boolean;
           kind: string;
           leaderboard_public: boolean;
-          level: string;
           max_squad: number;
           motto: string | null;
           name: string;
@@ -5086,7 +5085,6 @@ export type Database = {
           join_locked?: boolean;
           kind?: string;
           leaderboard_public?: boolean;
-          level?: string;
           max_squad?: number;
           motto?: string | null;
           name: string;
@@ -5147,7 +5145,6 @@ export type Database = {
           join_locked?: boolean;
           kind?: string;
           leaderboard_public?: boolean;
-          level?: string;
           max_squad?: number;
           motto?: string | null;
           name?: string;
@@ -6057,21 +6054,19 @@ export type Database = {
           title: string;
         }[];
       };
-      founder_preview: { Args: never; Returns: Json };
       founder_set_look: { Args: { p_look: Json }; Returns: undefined };
-      founder_set_preview: {
-        Args: {
-          p_credits: number;
-          p_daily: number;
-          p_features: Json;
-          p_max: number;
-          p_slice: number;
-        };
-        Returns: undefined;
-      };
-      founder_set_trip_level: {
-        Args: { p_level: string; p_trip: string };
-        Returns: undefined;
+      founder_trips: {
+        Args: never;
+        Returns: {
+          captain: string;
+          created_at: string;
+          id: string;
+          is_sandbox: boolean;
+          kind: string;
+          name: string;
+          rules_version: number;
+          start_date: string;
+        }[];
       };
       founder_update_report: {
         Args: { p_note: string; p_report: string; p_status: string };
@@ -7097,7 +7092,6 @@ export type Database = {
           real_trips: number;
         }[];
       };
-      trip_features: { Args: { p_trip: string }; Returns: Json };
       trip_invite_preview: {
         Args: { p_code: string };
         Returns: {
@@ -7167,7 +7161,6 @@ export type Database = {
         }[];
       };
       trip_season_started: { Args: { p_trip: string }; Returns: boolean };
-      trip_slice_pct: { Args: { p_trip: string }; Returns: number };
       trip_squad_messages: {
         Args: { p_trip: string };
         Returns: {

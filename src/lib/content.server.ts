@@ -35,20 +35,8 @@ export async function seenSets(admin: Admin, tripId: string, kind: string) {
     captain = new Set<string>();
   for (const r of (data ?? []) as { trip_id: string; item_key: string }[])
     (r.trip_id === tripId ? trip : captain).add(r.item_key);
-  const { data: pct } = await admin.rpc("trip_slice_pct", { p_trip: tripId });
-  return { trip, captain, slice: typeof pct === "number" ? pct : 100 };
+  return { trip, captain };
 }
-
-/** Preview trips draw from a weekly-rotating slice of each library (FULL = 100%). */
-function isoWeek(d = new Date()) {
-  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-  const day = t.getUTCDay() || 7;
-  t.setUTCDate(t.getUTCDate() + 4 - day);
-  const y = t.getUTCFullYear();
-  return `${y}-${Math.ceil(((+t - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7)}`;
-}
-export const inSlice = (text: string, pct: number) =>
-  pct >= 100 || hashSeed(`${keyOf(text)}:${isoWeek()}`) % 100 < pct;
 
 export async function poolWithVariants(
   admin: Admin,
@@ -67,13 +55,11 @@ export async function poolWithVariants(
 /** Random among unseen for this trip; then items the Captain's other trips haven't used; repeats only when the pool is exhausted. */
 export function pickUnseen(
   items: string[],
-  seen: { trip: Set<string>; captain: Set<string>; slice?: number },
+  seen: { trip: Set<string>; captain: Set<string> },
   n: number,
 ) {
   const rank = (t: string) =>
-    (inSlice(t, seen.slice ?? 100) ? 0 : 4) +
-    (seen.trip.has(keyOf(t)) ? 2 : 0) +
-    (seen.captain.has(keyOf(t)) ? 1 : 0);
+    (seen.trip.has(keyOf(t)) ? 2 : 0) + (seen.captain.has(keyOf(t)) ? 1 : 0);
   return items
     .map((t) => ({ t, r: rank(t) + Math.random() * 0.5 }))
     .sort((a, b) => a.r - b.r)

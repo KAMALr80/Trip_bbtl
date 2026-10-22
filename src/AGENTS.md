@@ -13,7 +13,7 @@
 - Share cinematic play framing through GameScene without changing game actions or the original branch.
 - Explore previews and Arcade/sample-night practice use local pretend prompts, not live trip decks, trip writes or AI calls; Mix It Up retains its existing quota path.
 - Use the shared next-night helper across Home, Play and Calendar; cinematic month views read member-scoped schedules and write changes only through identity-checked functions, leaving Original unchanged.
-- Preview gating UI is src/lib/features.tsx (FeatureGate → Coming soon) over the server trip_features map.
+- No per-trip feature switches (M1-10). Hide an unfinished feature with an environment flag in src/lib/flags.ts (VITE_FEATURE_<NAME>), the same for every trip.
 - Place entry and browsing use shared PlacePicker (Country → Region → City); PlaceBrowser wraps it for filtered results.
 - Keep cinematic sign-in artwork responsive with its lower fade; retain the Original sign-in branch for reversible Looks.
 - Keep cinematic-only Home controls and Captain crown badges look-scoped; preserve Original markup and server-authoritative roles.

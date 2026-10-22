@@ -10,7 +10,6 @@ import { friendlyDate, friendlyRange } from "@/lib/trip-dates";
 import { tripToday, tripTz } from "@/lib/itinerary";
 import { TripTimeline } from "./Itinerary";
 import { PhotoWall } from "./Seasons";
-import { FeatureGate } from "@/lib/features";
 import { ItineraryEditor } from "./Itinerary";
 import { GamePlanPicker } from "./GamePlanPicker";
 import { TripVibeTools, VibeBadge } from "./BetaAccess";
@@ -225,9 +224,7 @@ export function TripOverview({
         open={open.includes("photos")}
         onToggle={() => toggle("photos")}
       >
-        <FeatureGate tripId={trip.id} feature="photo_wall" compact>
-          <PhotoWall trip={trip} members={members} cards={cards} userId={userId} />
-        </FeatureGate>
+        <PhotoWall trip={trip} members={members} cards={cards} userId={userId} />
       </Accordion>
       {edit === "itinerary" && (
         <div

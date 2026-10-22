@@ -1,17 +1,14 @@
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, MapPin, Plane, RefreshCw, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, MapPin, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/PlayerCards";
-import { ComingSoon, useTripFeatures, type FeatureKey } from "@/lib/features";
 import { loadItinerary, tripDates, tripToday, tripTz } from "@/lib/itinerary";
 import { friendlyDate } from "@/lib/trip-dates";
-import { fmtWhen } from "@/lib/viewer-time";
 import { supabase } from "@/integrations/supabase/client";
 import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
 import iconSuitcase from "@/assets/icon-suitcase.webp";
-import iconPostcard from "@/assets/icon-postcard.webp";
 import journeyArt from "@/assets/cinematic-journey-map.jpg";
 import journeyCoastTop from "@/assets/journey-coast-top.jpg";
 import journeyCoastTopSmall from "@/assets/journey-coast-top-768.jpg";
@@ -24,14 +21,12 @@ import { TripList } from "./TripList";
 
 type Stop = {
   id: string;
-  type: "night" | "day" | "activity" | "crown" | "wrapped";
+  type: "day" | "activity" | "crown";
   title: string;
   subtitle: string;
   date: string;
-  status: "done" | "next" | "future" | "skipped";
+  status: "done" | "next" | "future";
   winner?: string | null | undefined;
-  week?: number;
-  feature?: FeatureKey | undefined;
 };
 type Activity = {
   id: string;
@@ -53,8 +48,6 @@ const atHomeNames: Record<string, string> = {
   question: "Question vote",
   passport: "Passport Night",
 };
-const atHomeFeature = (kind: string): FeatureKey | undefined =>
-  kind === "question" ? "qotw" : undefined;
 
 export function JourneyMap({
   trip,
@@ -80,53 +73,26 @@ export function JourneyMap({
   onJoinTrip?: (() => void) | undefined;
 }) {
   const cinematic = useLook("journey") === "cinematic";
-  const { level, on } = useTripFeatures(trip.id);
   const [data, setData] = useState<JourneyData | null>(null);
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const atHome = trip.kind === "at_home";
-  const calendarOn = on("calendar"),
-    photoOn = on("photo_wall"),
-    wrappedOn = on("wrapped"),
-    qotwOn = on("qotw"),
-    atHomeOn = on("at_home");
   useEffect(() => {
-    if (level === null || (atHome && !atHomeOn)) return;
     let live = true;
     setData(null);
     setError("");
     const load = async () => {
       const today = tripToday(tripTz(trip));
-      const now = Date.now();
-      const [nightRes, gameRes, scoreRes, planRes, photoRes] = await Promise.all([
-        !atHome && calendarOn
-          ? supabase
-              .from("game_nights")
-              .select("week_number,starts_at,skipped,game_number,game_revealed")
-              .eq("trip_id", trip.id)
-              .order("starts_at")
-          : Promise.resolve({ data: [], error: null }),
-        !atHome && calendarOn
-          ? supabase.from("game_catalog").select("number,name")
-          : Promise.resolve({ data: [], error: null }),
-        !atHome && calendarOn
-          ? supabase
-              .from("game_scores")
-              .select("week_number,user_id,won")
-              .eq("trip_id", trip.id)
-              .eq("won", true)
-          : Promise.resolve({ data: [], error: null }),
+      const [planRes, photoRes] = await Promise.all([
         atHome
           ? supabase.rpc("at_home_plan", { p_trip: trip.id })
           : loadItinerary(trip.id)
               .then((r) => ({ data: r.days, error: null }))
               .catch((error) => ({ data: [], error })),
-        photoOn
-          ? supabase.rpc("trip_photos", { p_trip: trip.id })
-          : Promise.resolve({ data: [], error: null }),
+        supabase.rpc("trip_photos", { p_trip: trip.id }),
       ]);
-      const failed = [nightRes, gameRes, scoreRes, planRes, photoRes].find((r) => r.error);
+      const failed = [planRes, photoRes].find((r) => r.error);
       if (failed?.error) throw failed.error;
       const photoDays = new Set((photoRes.data ?? []).map((p) => p.day_date));
       const itinerary = !atHome
@@ -152,54 +118,24 @@ export function JourneyMap({
       if (atHome) {
         const homeToday =
           (planRes.data as (Activity & { today: string })[] | null)?.[0]?.today ?? today;
-        stops = ((planRes.data as Activity[]) ?? [])
-          .filter((a) => a.kind !== "question" || qotwOn)
-          .map((a) => ({
-            id: a.id,
-            type: "activity",
-            title: atHomeNames[a.kind] ?? "At Home stop",
-            subtitle: a.released
-              ? a.title || atHomeNames[a.kind] || "At Home"
-              : "Opens on this day",
-            date: a.day_date,
-            status: a.day_date < homeToday ? "done" : "future",
-            winner: a.released && a.revealed ? a.winner_id : null,
-            feature: atHomeFeature(a.kind),
-          }));
-      } else {
-        const nights = nightRes.data ?? [];
-        const games = gameRes.data ?? [];
-        const scores = scoreRes.data ?? [];
-        stops = nights.map((n, i) => ({
-          id: `night-${n.week_number}`,
-          type: "night" as const,
-          title: i === nights.length - 1 ? "Final Call Night" : `Week ${n.week_number}`,
-          subtitle: n.game_revealed
-            ? (games.find((g) => g.number === n.game_number)?.name ?? "Game night")
-            : "Mystery game",
-          date: n.starts_at,
-          week: n.week_number,
-          status: n.skipped
-            ? ("skipped" as const)
-            : new Date(n.starts_at).getTime() + 3 * 3600000 < now
-              ? ("done" as const)
-              : ("future" as const),
-          winner:
-            new Date(n.starts_at).getTime() + 3 * 3600000 < now
-              ? scores.find((s) => s.week_number === n.week_number && s.won)?.user_id
-              : null,
-          feature: "calendar" as const,
+        stops = ((planRes.data as Activity[]) ?? []).map((a) => ({
+          id: a.id,
+          type: "activity",
+          title: atHomeNames[a.kind] ?? "At Home stop",
+          subtitle: a.released ? a.title || atHomeNames[a.kind] || "At Home" : "Opens on this day",
+          date: a.day_date,
+          status: a.day_date < homeToday ? "done" : "future",
+          winner: a.released && a.revealed ? a.winner_id : null,
         }));
-        stops.push(
-          ...tripDates(trip).map((date, i) => ({
-            id: `day-${date}`,
-            type: "day" as const,
-            title: `Trip day ${i + 1}`,
-            subtitle: itinerary.find((d) => d.date === date)?.city || trip.destination,
-            date,
-            status: date < today ? ("done" as const) : ("future" as const),
-          })),
-        );
+      } else {
+        stops = tripDates(trip).map((date, i) => ({
+          id: `day-${date}`,
+          type: "day" as const,
+          title: `Trip day ${i + 1}`,
+          subtitle: itinerary.find((d) => d.date === date)?.city || trip.destination,
+          date,
+          status: date < today ? ("done" as const) : ("future" as const),
+        }));
         if (trip.season_scoring !== false)
           stops.push({
             id: "crown",
@@ -210,36 +146,6 @@ export function JourneyMap({
             status: trip.ended_at ? "done" : "future",
           });
       }
-      if (wrappedOn)
-        stops.push({
-          id: "wrapped",
-          type: "wrapped",
-          title: atHome ? "Destination postcard" : "Trip Wrapped",
-          subtitle: atHome ? trip.destination : "The moments we made",
-          date: trip.end_date,
-          status: trip.ended_at ? "done" : "future",
-          feature: "wrapped",
-        });
-      if (!atHome && !calendarOn)
-        stops.unshift({
-          id: "calendar-soon",
-          type: "night",
-          title: "Game nights",
-          subtitle: "Coming soon",
-          date: trip.start_date,
-          status: "future",
-          feature: "calendar",
-        });
-      if (!wrappedOn)
-        stops.push({
-          id: "wrapped-soon",
-          type: "wrapped",
-          title: atHome ? "Destination postcard" : "Trip Wrapped",
-          subtitle: "Coming soon",
-          date: trip.end_date,
-          status: "future",
-          feature: "wrapped",
-        });
       const first = stops.findIndex((s) => s.status === "future");
       if (first >= 0) {
         const next = stops[first];
@@ -253,27 +159,11 @@ export function JourneyMap({
     return () => {
       live = false;
     };
-  }, [
-    trip.id,
-    trip.start_date,
-    trip.end_date,
-    trip.ended_at,
-    level,
-    calendarOn,
-    photoOn,
-    wrappedOn,
-    qotwOn,
-    atHomeOn,
-    refreshKey,
-    atHome,
-  ]);
+  }, [trip.id, trip.start_date, trip.end_date, trip.ended_at, refreshKey, atHome]);
   const stops = data?.stops ?? [];
   const current = stops.findIndex((s) => s.status === "next");
-  const takeoff = stops.findIndex((s) => s.title === "Final Call Night" || s.title === "Takeoff");
-  const remaining =
-    takeoff >= 0
-      ? stops.slice(Math.max(0, current), takeoff + 1).filter((s) => s.status !== "skipped").length
-      : 0;
+  const takeoff = stops.findIndex((s) => s.title === "Takeoff");
+  const remaining = takeoff >= 0 ? stops.slice(Math.max(0, current), takeoff + 1).length : 0;
   const chosen = stops.find((s) => s.id === selected);
   const winnerCard = (id: string | null | undefined) => cards.find((c) => c.user_id === id);
   return (
@@ -321,9 +211,7 @@ export function JourneyMap({
           </p>
         </>
       )}
-      {level !== null && atHome && !atHomeOn ? (
-        <ComingSoon title="At Home" />
-      ) : level === null || (!data && !error) ? (
+      {!data && !error ? (
         <div className="mt-8 h-72 rounded-3xl bg-muted animate-pulse" aria-busy="true" />
       ) : error ? (
         <p role="alert" className="text-destructive mt-8">
@@ -381,21 +269,15 @@ export function JourneyMap({
                   <div className={`journey-leg ${i % 2 ? "journey-leg-right" : ""}`} key={stop.id}>
                     <Button
                       variant="ghost"
-                      className={`journey-stop ${stop.status === "skipped" ? "journey-skipped" : ""} ${isCurrent ? "journey-current" : ""}`}
+                      className={`journey-stop ${isCurrent ? "journey-current" : ""}`}
                       onClick={() => setSelected(stop.id)}
                       aria-label={`${stop.title}, ${stop.subtitle}, ${stop.status}`}
                     >
                       <span className="journey-marker" aria-hidden="true">
                         {cinematic ? (
                           String(i + 1).padStart(2, "0")
-                        ) : stop.status === "skipped" ? (
-                          <X size={21} />
                         ) : stop.status === "done" ? (
                           <Check size={21} />
-                        ) : stop.title === "Final Call Night" ? (
-                          <Plane size={21} />
-                        ) : stop.type === "wrapped" ? (
-                          <img src={iconPostcard} alt="" />
                         ) : stop.type === "crown" ? (
                           "👑"
                         ) : stop.type === "day" ? (
@@ -417,15 +299,7 @@ export function JourneyMap({
                       <span className="journey-stop-copy">
                         <strong>{stop.title}</strong>
                         <small>{stop.subtitle}</small>
-                        <em>
-                          {stop.status === "skipped"
-                            ? "Skipped"
-                            : stop.feature && !on(stop.feature)
-                              ? "Coming soon"
-                              : stop.type === "night"
-                                ? fmtWhen(stop.date, trip.home_timezone || trip.trip_timezone)
-                                : friendlyDate(stop.date.slice(0, 10))}
-                        </em>
+                        <em>{friendlyDate(stop.date.slice(0, 10))}</em>
                       </span>
                       {stop.status === "done" && (
                         <span className="journey-stamp">
@@ -481,11 +355,7 @@ export function JourneyMap({
               <div className="flex justify-between items-start gap-3">
                 <div>
                   <p className="eyebrow text-orange">
-                    {chosen.status === "skipped"
-                      ? "SKIPPED STOP"
-                      : chosen.status === "done"
-                        ? "STAMPED STOP"
-                        : "UP AHEAD"}
+                    {chosen.status === "done" ? "STAMPED STOP" : "UP AHEAD"}
                   </p>
                   <h2 className="font-display text-xl font-extrabold mt-1">{chosen.title}</h2>
                 </div>
@@ -500,9 +370,7 @@ export function JourneyMap({
               </div>
               <p className="text-sm mt-2">{chosen.subtitle}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {chosen.type === "night"
-                  ? fmtWhen(chosen.date, trip.home_timezone || trip.trip_timezone)
-                  : friendlyDate(chosen.date.slice(0, 10))}
+                {friendlyDate(chosen.date.slice(0, 10))}
               </p>
               {chosen.winner && (
                 <p className="text-sm font-semibold text-green mt-3 flex items-center gap-2">
@@ -511,32 +379,24 @@ export function JourneyMap({
                     name={winnerCard(chosen.winner)?.game_name || "Winner"}
                     className="size-7"
                   />{" "}
-                  Night winner · {winnerCard(chosen.winner)?.game_name || "Player"}
+                  Winner · {winnerCard(chosen.winner)?.game_name || "Player"}
                 </p>
               )}
-              {data?.photoDays.has(chosen.date.slice(0, 10)) && photoOn && (
+              {data?.photoDays.has(chosen.date.slice(0, 10)) && (
                 <p className="text-sm text-blue mt-3">📸 Photos from this stop</p>
               )}
-              {chosen.feature && !on(chosen.feature) ? (
-                <ComingSoon title={chosen.title} compact />
-              ) : (
-                <Button
-                  variant="outline"
-                  className="mt-4 w-full justify-between"
-                  onClick={() => onOpenStop(chosen)}
-                >
-                  {chosen.type === "night"
-                    ? "Open game night calendar"
-                    : chosen.type === "day"
-                      ? "Open day & photos"
-                      : chosen.type === "activity"
-                        ? "Open At Home Play"
-                        : chosen.type === "crown"
-                          ? "Open season results"
-                          : "Open Trip Wrapped"}
-                  <ArrowRight size={17} />
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                className="mt-4 w-full justify-between"
+                onClick={() => onOpenStop(chosen)}
+              >
+                {chosen.type === "day"
+                  ? "Open day & photos"
+                  : chosen.type === "activity"
+                    ? "Open At Home Play"
+                    : "Open season results"}
+                <ArrowRight size={17} />
+              </Button>
             </div>
           )}
         </>

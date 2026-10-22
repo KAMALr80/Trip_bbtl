@@ -1757,9 +1757,6 @@
   border-color: var(--gold);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--gold) 24%, transparent);
 }
-.journey-skipped {
-  opacity: 0.66;
-}
 .journey-marker {
   width: 38px;
   height: 38px;
@@ -1779,10 +1776,6 @@
 .journey-current .journey-marker {
   background: var(--orange-soft);
   color: var(--gold);
-}
-.journey-skipped .journey-marker {
-  color: var(--destructive);
-  background: var(--pink-soft);
 }
 .journey-stop-copy {
   min-width: 0;

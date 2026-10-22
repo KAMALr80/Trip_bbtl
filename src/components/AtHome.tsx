@@ -3,7 +3,6 @@ import { CountryFlag } from "@/components/CountryFlag";
 import { PlacePicker } from "@/components/PlacePicker";
 import { countryName, type Place } from "@/lib/places";
 import { TripSectionIcon } from "@/components/TripSectionIcon";
-import { FeatureGate } from "@/lib/features";
 import { TripCostsPlayer } from "./TripCosts";
 import { RememberedSection } from "./RememberedSection";
 import { friendlyError } from "@/lib/friendly-error";
@@ -653,31 +652,27 @@ export function AtHomePlay({
         Light weekdays, bigger weekends. New drops unlock each morning in your time zone.
       </p>
       <>
-        <FeatureGate tripId={trip.id} feature="host_timer">
-          <ActivityTimer tripId={trip.id} canRun={leader} />
-        </FeatureGate>
+        <ActivityTimer tripId={trip.id} canRun={leader} />
         {!solo && (
-          <FeatureGate tripId={trip.id} feature="sing_off">
-            <SingOff
-              tripId={trip.id}
-              userId={userId}
-              names={Object.fromEntries(cards.map((c) => [c.user_id, c.game_name ?? "Player"]))}
-              canRun={!!songActivity && (leader || (!viewOnly && nightHost))}
-              winnerId={songActivity ? songWinners[songActivity.id] : undefined}
-              onPick={
-                songActivity
-                  ? async (id) => {
-                      const r = await db.rpc("pick_at_home_song", {
-                        p_activity: songActivity.id,
-                        p_user: id,
-                      });
-                      if (r.error) throw new Error(r.error.message);
-                      setSongWinners((current) => ({ ...current, [songActivity.id]: id }));
-                    }
-                  : undefined
-              }
-            />
-          </FeatureGate>
+          <SingOff
+            tripId={trip.id}
+            userId={userId}
+            names={Object.fromEntries(cards.map((c) => [c.user_id, c.game_name ?? "Player"]))}
+            canRun={!!songActivity && (leader || (!viewOnly && nightHost))}
+            winnerId={songActivity ? songWinners[songActivity.id] : undefined}
+            onPick={
+              songActivity
+                ? async (id) => {
+                    const r = await db.rpc("pick_at_home_song", {
+                      p_activity: songActivity.id,
+                      p_user: id,
+                    });
+                    if (r.error) throw new Error(r.error.message);
+                    setSongWinners((current) => ({ ...current, [songActivity.id]: id }));
+                  }
+                : undefined
+            }
+          />
         )}
       </>
       {Object.entries(songWinners).map(([activityId, winner]) => (
@@ -1118,9 +1113,7 @@ export function AtHomeTrip({
         </section>
       )}
       <RememberedSection id={`${trip.id}-home-costs`} title="Trip pot 💸">
-        <FeatureGate tripId={trip.id} feature="trip_pot" compact>
-          <TripCostsPlayer trip={trip} userId={userId} />
-        </FeatureGate>
+        <TripCostsPlayer trip={trip} userId={userId} />
       </RememberedSection>
     </div>
   );

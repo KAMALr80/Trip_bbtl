@@ -26,7 +26,6 @@ import founderFeaturesIcon from "@/assets/founder-features.webp";
 import founderMembersIcon from "@/assets/founder-members.webp";
 import founderLaunchIcon from "@/assets/founder-launch.webp";
 import { useLook } from "@/lib/look";
-import { viewerZone } from "@/lib/viewer-time";
 import { tripDisplayName } from "@/lib/trip-display-name";
 
 import { FounderFeatures } from "@/components/FounderFeatures";
@@ -949,34 +948,7 @@ function Index() {
               onJoinTrip={() => setSheet("Join a trip")}
               onBack={() => setHomeScreen("dashboard")}
               onOpenStop={(stop: JourneyStop) => {
-                if (stop.type === "night") {
-                  if (stop.week) {
-                    window.sessionStorage.setItem(
-                      `journey-night-${displayedTrip.id}`,
-                      String(stop.week),
-                    );
-                    window.sessionStorage.setItem(
-                      `journey-night-selected-${displayedTrip.id}`,
-                      String(stop.week),
-                    );
-                  }
-                  setHomeScreen("trip");
-                  setTab("Trip");
-                  const key = `tripjunkie-trip-sections-${displayedTrip.id}`;
-                  try {
-                    const saved = JSON.parse(window.localStorage.getItem(key) || "[]") as string[];
-                    safeSetItem(key, JSON.stringify(Array.from(new Set([...saved, "hosts"]))));
-                  } catch {
-                    safeSetItem(key, JSON.stringify(["hosts"]));
-                  }
-                  window.setTimeout(
-                    () =>
-                      document
-                        .getElementById(`trip-calendar-${displayedTrip.id}`)
-                        ?.scrollIntoView({ behavior: "smooth" }),
-                    100,
-                  );
-                } else if (stop.type === "activity") {
+                if (stop.type === "activity") {
                   setTab("Play");
                   setHomeScreen("dashboard");
                 } else if (stop.type === "day") {
@@ -2427,7 +2399,7 @@ function TabContent({
                 ["Feedback", "feedback"],
                 ["Test Lab", "lab"],
                 ["Welcome wording", "welcome"],
-                ["Features", "features"],
+                ["Look", "features"],
                 ["Icon options", "icon-options"],
                 ["AI", "ai-guard"],
               ].map(([label, key]) => (
@@ -2671,36 +2643,23 @@ function FounderDashboard({
   const [counts, setCounts] = useState<{ trips: number; testers: number; reports: number } | null>(
     null,
   );
-  const [departures, setDepartures] = useState<{ name: string; starts_at: string } | null>(null);
+  const [allTrips, setAllTrips] = useState<{ name: string; start_date: string }[] | null>(null);
   const [launchOpen, setLaunchOpen] = useState(false);
   useEffect(() => {
     let live = true;
     void Promise.all([
-      supabase.rpc("founder_preview"),
+      supabase.rpc("founder_trips"),
       supabase.rpc("founder_age_tiers"),
       supabase.rpc("founder_bug_reports"),
-      supabase
-        .from("game_nights")
-        .select("starts_at,trip_id,skipped")
-        .eq("skipped", false)
-        .gte("starts_at", new Date().toISOString())
-        .order("starts_at")
-        .limit(50),
-    ]).then(([preview, ages, reports, nights]) => {
+    ]).then(([list, ages, reports]) => {
       if (!live) return;
-      const rows = (preview.data as { trips?: { id: string; name: string }[] } | null)?.trips ?? [];
-      const all = rows.length ? rows : trips;
+      const real = (list.data ?? []).filter((t) => !t.is_sandbox);
+      setAllTrips(list.data ? real : null);
       setCounts({
-        trips: all.length,
+        trips: list.data ? real.length : trips.length,
         testers: (ages.data ?? []).reduce((sum, x) => sum + Number(x.people ?? 0), 0),
         reports: (reports.data ?? []).length,
       });
-      const next = (nights.data ?? []).find((n) => all.some((t) => t.id === n.trip_id));
-      if (next)
-        setDepartures({
-          name: all.find((t) => t.id === next.trip_id)?.name ?? "Next trip",
-          starts_at: next.starts_at,
-        });
     });
     return () => {
       live = false;
@@ -2710,18 +2669,16 @@ function FounderDashboard({
     ["Test Lab", founderLabIcon, "lab"],
     ["Feedback", founderFeedbackIcon, "feedback"],
     ["Reports", founderReportsIcon, "reports"],
-    ["Features", founderFeaturesIcon, "features"],
+    ["Look", founderFeaturesIcon, "features"],
     ["Founding Members", founderMembersIcon, "founding-members"],
     ["Public launch", founderLaunchIcon, "me-explore"],
     ["Beta codes", founderLaunchIcon, "beta-codes"],
     ["AI", founderFeaturesIcon, "ai-guard"],
   ];
-  const next =
-    departures ??
-    [...trips]
-      .filter((t) => new Date(t.start_date + "T23:59:59").getTime() >= Date.now())
-      .sort((a, b) => a.start_date.localeCompare(b.start_date))
-      .map((t) => ({ name: t.name, starts_at: t.start_date + "T12:00:00" }))[0];
+  const next = [...(allTrips ?? trips)]
+    .filter((t) => new Date(t.start_date + "T23:59:59").getTime() >= Date.now())
+    .sort((a, b) => a.start_date.localeCompare(b.start_date))
+    .map((t) => ({ name: t.name, starts_at: t.start_date + "T12:00:00Z" }))[0];
   return (
     <section className="cinematic-founder mt-8">
       <p className="eyebrow text-gold">CONTROL TOWER</p>
@@ -2743,9 +2700,7 @@ function FounderDashboard({
           ? new Intl.DateTimeFormat(undefined, {
               month: "short",
               day: "numeric",
-              hour: departures ? "numeric" : undefined,
-              minute: departures ? "2-digit" : undefined,
-              timeZone: viewerZone(),
+              timeZone: "UTC",
             })
               .format(new Date(next.starts_at))
               .toUpperCase()

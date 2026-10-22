@@ -5,7 +5,6 @@ import { ArrowLeft, ArrowRight, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { compressImage } from "@/lib/compress-image";
-import { useTripFeatures, ComingSoon } from "@/lib/features";
 import { makeInspirationGuide } from "@/lib/inspiration.functions";
 import { CountryFlag } from "@/components/CountryFlag";
 import { CultureQuest } from "@/components/CultureQuest";
@@ -226,7 +225,6 @@ export function Inspiration({
         .update({ seen_tips: [...seen, "window_seat_intro"] })
         .eq("id", userId);
   }
-  const { on } = useTripFeatures(tripId);
   const available = trips;
   async function load() {
     const ids = trips.map((t) => t.id);
@@ -1009,54 +1007,48 @@ export function Inspiration({
                   ))}
                 </select>
               </label>
-              {tripId && !on("inspiration") ? (
-                <ComingSoon title={roomName} />
-              ) : (
-                <>
-                  <div className="flex gap-2">
-                    {(["solo", "team"] as const).map((m) => (
-                      <Button
-                        key={m}
-                        variant={mode === m ? "playful" : "outline"}
-                        className="capitalize"
-                        onClick={() => setMode(m)}
+              <>
+                <div className="flex gap-2">
+                  {(["solo", "team"] as const).map((m) => (
+                    <Button
+                      key={m}
+                      variant={mode === m ? "playful" : "outline"}
+                      className="capitalize"
+                      onClick={() => setMode(m)}
+                    >
+                      {m === "team" ? "Team up" : "Solo"}
+                    </Button>
+                  ))}
+                </div>
+                {mode !== "solo" && (
+                  <>
+                    <p className="text-sm text-muted-foreground">Build one experience together.</p>
+                    <label className="block font-bold">
+                      Squadmate
+                      <select
+                        className={field}
+                        value={partner}
+                        onChange={(e) => setPartner(e.target.value)}
                       >
-                        {m === "team" ? "Team up" : "Solo"}
-                      </Button>
-                    ))}
-                  </div>
-                  {mode !== "solo" && (
-                    <>
-                      <p className="text-sm text-muted-foreground">
-                        Build one experience together.
-                      </p>
-                      <label className="block font-bold">
-                        Squadmate
-                        <select
-                          className={field}
-                          value={partner}
-                          onChange={(e) => setPartner(e.target.value)}
-                        >
-                          <option value="">Choose a squadmate</option>
-                          {people.map((p) => (
-                            <option key={p.user_id} value={p.user_id}>
-                              {p.display_name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    </>
-                  )}
-                  <Button
-                    variant="playful"
-                    className="w-full"
-                    disabled={!tripId || (mode !== "solo" && !partner)}
-                    onClick={() => setStep(2)}
-                  >
-                    Next <ArrowRight />
-                  </Button>
-                </>
-              )}
+                        <option value="">Choose a squadmate</option>
+                        {people.map((p) => (
+                          <option key={p.user_id} value={p.user_id}>
+                            {p.display_name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
+                <Button
+                  variant="playful"
+                  className="w-full"
+                  disabled={!tripId || (mode !== "solo" && !partner)}
+                  onClick={() => setStep(2)}
+                >
+                  Next <ArrowRight />
+                </Button>
+              </>
             </div>
           ) : step === 2 ? (
             <div className="mt-5 min-w-0">

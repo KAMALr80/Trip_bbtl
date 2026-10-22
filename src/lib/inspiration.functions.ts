@@ -25,10 +25,6 @@ export const makeInspirationGuide = createServerFn({ method: "POST" })
       .eq("status", "approved")
       .maybeSingle();
     if (!member) throw new Error("Join this squad first.");
-    const { data: switches } = await context.supabase.rpc("trip_features", { p_trip: data.tripId });
-    const features = switches as { level?: string; features?: Record<string, boolean> } | null;
-    if (features?.level === "preview" && !features.features?.["inspiration"])
-      throw new Error("Coming soon for this trip.");
     const { getAiModel } = await import("@/integrations/ai/index.server");
     const ai = getAiModel();
     if (!ai) throw new Error("AI help is unavailable right now.");
