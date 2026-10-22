@@ -6,12 +6,11 @@ import iconBoarding from "@/assets/icon-boarding-pass.webp";
 import iconHome from "@/assets/icon-at-home.webp";
 import iconCompass from "@/assets/icon-compass.webp";
 import iconSuitcase from "@/assets/icon-suitcase.webp";
-import iconTrophy from "@/assets/icon-trophy.webp";
 import gameOptionA from "@/assets/game-tile-option-a.webp";
 import gameOptionB from "@/assets/game-tile-option-b.webp";
 import { ShortList } from "@/components/ShortList";
 import { BrandLockup } from "@/components/BrandLockup";
-import { GameArcade, SampleNight } from "@/components/GameArcade";
+import { GameArcade } from "@/components/GameArcade";
 import iconPostcard from "@/assets/icon-postcard.webp";
 import windowSeatArt from "@/assets/window-seat-room.webp";
 import { ROOM_COPY } from "@/lib/room-copy";
@@ -25,7 +24,6 @@ import airportSignoffSmall from "@/assets/home-airport-signoff-diverse-768.webp"
 import departuresBoardArt from "@/assets/home-departures-board.jpg";
 import { useLook } from "@/lib/look";
 import { phaseBanner } from "@/lib/play-arrangement";
-import { GameRoomsPage, RoomRequests, useRoomRequests } from "@/components/GameRooms";
 import { Inspiration } from "@/components/Inspiration";
 import { TripActions } from "@/components/TripActions";
 import { Button } from "@/components/ui/button";
@@ -41,16 +39,7 @@ import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
 
 export type HomeScreen =
-  | "dashboard"
-  | "trip"
-  | "trips"
-  | "passport"
-  | "inspiration"
-  | "window"
-  | "leaderboards"
-  | "journey"
-  | "arcade"
-  | "sample-night";
+  "dashboard" | "trip" | "trips" | "passport" | "inspiration" | "window" | "journey" | "arcade";
 type Props = {
   screen: HomeScreen;
   setScreen: (s: HomeScreen) => void;
@@ -194,9 +183,6 @@ export function HomeDashboard({
   }, []);
   const trip = active ?? trips[0] ?? null;
   const { nights, now } = useNights(trip?.id);
-  const isLeader = !!trip && (trip.myRole === "captain" || trip.myRole === "co_captain");
-  const roomReqs = useRoomRequests(trip?.id, isLeader);
-  const [showReqs, setShowReqs] = useState(false);
   const next = nextGameNight(nights, now);
   const remaining = next ? Math.max(0, new Date(next.starts_at).getTime() - now) : 0;
   const gameNightLive =
@@ -214,7 +200,6 @@ export function HomeDashboard({
   const back = () => setScreen("dashboard");
   if (screen === "arcade")
     return <GameArcade onBack={back} trips={trips} activeTripId={active?.id ?? null} />;
-  if (screen === "sample-night") return <SampleNight onBack={() => setScreen("leaderboards")} />;
   if (screen === "passport")
     return (
       <section className="passport-scene pb-8">
@@ -255,40 +240,6 @@ export function HomeDashboard({
         {...(screen === "window" && active ? { initialTripId: active.id } : {})}
         {...(questCode ? { initialCode: questCode } : {})}
         {...(onQuestOpened ? { onQuestOpened } : {})}
-      />
-    );
-  if (screen === "leaderboards")
-    return (
-      <GameRoomsPage
-        onBack={back}
-        onSampleNight={() => setScreen("sample-night")}
-        onEnterCode={() => open("Join a trip")}
-        onOpenTrip={(id) => {
-          selectTrip(id);
-          setScreen("trip");
-        }}
-        {...(isFounder !== undefined ? { isFounder } : {})}
-        {...(canStart
-          ? {
-              onStartTrip: (d: string) => {
-                try {
-                  sessionStorage.setItem("tj-prefill-destination", d);
-                } catch {
-                  /* storage optional */
-                }
-                open("Start a trip");
-              },
-            }
-          : {})}
-        onTryAtHome={(pack) => {
-          try {
-            if (pack) sessionStorage.setItem("tj-prefill-pack", pack);
-          } catch {
-            /* storage optional */
-          }
-          open("At Home");
-        }}
-        onOpenCulture={() => setScreen("inspiration")}
       />
     );
   if (screen === "journey" && !trip && topLook === "cinematic")
@@ -391,12 +342,6 @@ export function HomeDashboard({
       subtitle: "Free to play, no account",
       img: tile === "b" ? gameOptionB : gameOptionA,
       action: () => setScreen("arcade"),
-    },
-    {
-      label: "Leaderboards",
-      subtitle: "Find a squad",
-      img: iconTrophy,
-      action: () => setScreen("leaderboards"),
     },
     {
       label: "Window Seat",
@@ -864,38 +809,6 @@ export function HomeDashboard({
               );
             })}
           </div>
-        </section>
-      )}
-      {isLeader && roomReqs.items.length > 0 && trip && (
-        <section className="app-card mt-6 border-2 border-orange">
-          <Button
-            variant="ghost"
-            className="w-full justify-between h-auto min-h-12 text-left whitespace-normal"
-            aria-expanded={showReqs}
-            onClick={() => setShowReqs((v) => !v)}
-          >
-            <span>
-              <strong className="block">
-                {roomReqs.items.length}{" "}
-                {roomReqs.items.length === 1 ? "person wants" : "people want"} to join
-              </strong>
-              <small className="text-muted-foreground">
-                Game Rooms · {tripDisplayName(trip.name)}
-              </small>
-            </span>
-            <ArrowRight size={18} />
-          </Button>
-          {showReqs && (
-            <div className="mt-3">
-              <RoomRequests
-                tripId={trip.id}
-                onChanged={() => {
-                  roomReqs.reload();
-                  void refreshTrips();
-                }}
-              />
-            </div>
-          )}
         </section>
       )}
       <div
