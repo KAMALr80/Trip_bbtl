@@ -87,8 +87,6 @@ import {
   MysteryPrizes,
   PhotoWall,
   SquadSeasons,
-  TripWrapped,
-  WrappedCard,
   tripHasEnded,
   useBadges,
   useSeasonsData,
@@ -2041,8 +2039,6 @@ function TabContent({
             cards={cards}
             userId={userId}
             onMember={onMember}
-            {...(canStart ? { onPlanTrip: () => open("Start a trip") } : {})}
-            onAtHome={() => open("At Home")}
           />
         </div>
       </>
@@ -3153,32 +3149,24 @@ function HomeSeasons({
   cards,
   userId,
   onMember,
-  onPlanTrip,
-  onAtHome,
 }: {
   trip: TripWithRole;
   members: Member[];
   cards: PlayerWithAvatar[];
   userId: string;
   onMember: (id: string) => void;
-  onPlanTrip?: () => void;
-  onAtHome: () => void;
 }) {
   const data = useSeasonsData(trip.id);
-  const [wrapped, setWrapped] = useState(false);
   const [asking, setAsking] = useState(false);
   const [feedbackDone, setFeedbackDone] = useFeedbackDone(trip.id);
   const ended = tripHasEnded(trip) || !!trip.ended_at;
   return (
     <>
       <JourneyPhases trip={trip} members={members} cards={cards} userId={userId} />
-      {ended && (
-        <FeatureGate tripId={trip.id} feature="wrapped">
-          <WrappedCard
-            trip={trip}
-            onOpen={() => (feedbackDone === false ? setAsking(true) : setWrapped(true))}
-          />
-        </FeatureGate>
+      {ended && feedbackDone === false && !asking && (
+        <Button variant="outline" className="mt-4 w-full min-h-11" onClick={() => setAsking(true)}>
+          How was the trip? Tell the founder
+        </Button>
       )}
       {asking && (
         <TripFeedbackForm
@@ -3186,7 +3174,6 @@ function HomeSeasons({
           onDone={() => {
             setAsking(false);
             setFeedbackDone(true);
-            setWrapped(true);
           }}
         />
       )}
@@ -3199,26 +3186,6 @@ function HomeSeasons({
         onMember={onMember}
       />
       <ActiveSeasonBoard trip={trip} members={members} cards={cards} userId={userId} />
-      {wrapped && (
-        <TripWrapped
-          trip={trip}
-          members={members}
-          cards={cards}
-          onClose={() => setWrapped(false)}
-          {...(onPlanTrip
-            ? {
-                onPlanTrip: () => {
-                  setWrapped(false);
-                  onPlanTrip();
-                },
-              }
-            : {})}
-          onAtHome={() => {
-            setWrapped(false);
-            onAtHome();
-          }}
-        />
-      )}
     </>
   );
 }

@@ -1,12 +1,10 @@
 import { tripDisplayName } from "@/lib/trip-display-name";
-import { PreviewShareToggle } from "./ExperiencePreviews";
 import { confirmInApp } from "@/lib/confirm";
 import { safeSetItem } from "@/lib/safe-storage";
 import { friendlyError } from "@/lib/friendly-error";
 import { fmtWhen } from "@/lib/viewer-time";
 import { useLook } from "@/lib/look";
-import { groupTier } from "@/lib/season-plan";
-import { TieWheel, useWeeklyQuestions } from "@/components/WeeklyQuestion";
+import { TieWheel } from "@/components/TieWheel";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Crown,
@@ -23,12 +21,11 @@ import {
   BriefcaseBusiness,
   MapPin,
 } from "lucide-react";
-import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarButton } from "@/components/PlayerCards";
 import { Confetti, Leaderboard, scoringOn, standings, useSeason } from "@/components/Season";
-import { TripSeasonBoard, tripHasStarted } from "@/components/TripDayGames";
+import { TripSeasonBoard, tripHasStarted } from "@/components/TripSeasonBoard";
 import { tripToday, tripTz, loadItinerary, type ItineraryDay } from "@/lib/itinerary";
 import { friendlyDate, friendlyRange } from "@/lib/trip-dates";
 import type { Member, TripWithRole } from "@/lib/trips";
@@ -62,14 +59,6 @@ type SeasonRow = {
   score: number;
   carry_on: number;
 };
-type Team = {
-  id: string;
-  name: string;
-  color: string;
-  call_link?: string | null;
-  host_id?: string | null;
-};
-type TeamMember = { user_id: string; team_id: string };
 type Photo = {
   photo_path: string;
   user_id: string;
@@ -84,18 +73,6 @@ const field =
   "text-base w-full mt-2 h-12 rounded-2xl border-2 border-border bg-card px-4 outline-none focus:border-primary";
 const seasonName: Record<SeasonKey, string> = { game: "Pre-Flight", trip: "Trip Season" };
 const seasonEmoji: Record<SeasonKey, string> = { game: "🏆", trip: "🧳" };
-export const teamColors = {
-  orange: "bg-primary",
-  blue: "bg-blue",
-  green: "bg-green",
-  yellow: "bg-gold",
-} as const;
-const teamSoft = {
-  orange: "bg-orange-soft",
-  blue: "bg-blue-soft",
-  green: "bg-green-soft",
-  yellow: "bg-orange-soft",
-} as const;
 const EMOJIS = ["❤️", "😂", "🔥", "😍", "👏"] as const;
 const isLeader = (t: TripWithRole) => t.myRole === "captain" || t.myRole === "co_captain";
 const nameOf = (cards: PlayerWithAvatar[], members: Member[], id: string) =>
@@ -122,56 +99,6 @@ export function ReadOnlyBanner({ trip }: { trip: TripWithRole }) {
         </p>
       </div>
     </div>
-  );
-}
-export function useSkipCounts(tripId: string) {
-  const [rows, setRows] = useState<{ user_id: string; season: string }[]>([]);
-  useEffect(() => {
-    void db
-      .from("skip_passes")
-      .select("user_id,season")
-      .eq("trip_id", tripId)
-      .then(({ data }: { data: { user_id: string; season: string }[] | null }) =>
-        setRows(data ?? []),
-      );
-  }, [tripId]);
-  const [gameLimit, setGameLimit] = useState(3);
-  useEffect(() => {
-    void db.rpc("skip_limit", { p_trip: tripId }).then(({ data }: { data: number | null }) => {
-      if (typeof data === "number") setGameLimit(data);
-    });
-  }, [tripId]);
-  const limit = (season: SeasonKey) => (season === "game" ? gameLimit : 3);
-  return Object.assign(
-    (userId: string, season: SeasonKey) =>
-      Math.max(
-        0,
-        limit(season) - rows.filter((r) => r.user_id === userId && r.season === season).length,
-      ),
-    { limit },
-  );
-}
-export function SkipTickets({
-  left,
-  label,
-  total = 3,
-}: {
-  left: number;
-  label: string;
-  total?: number;
-}) {
-  return (
-    <span
-      className="inline-flex items-center gap-0.5 text-[11px] font-extrabold text-ink-soft"
-      aria-label={`${left} of ${total} ${label} skip passes left`}
-      title={`${label} skip passes`}
-    >
-      {Array.from({ length: total }, (_, i) => i).map((i) => (
-        <span key={i} className={i < left ? "" : "opacity-25 grayscale"}>
-          🎟️
-        </span>
-      ))}
-    </span>
   );
 }
 export function EndTripTool({
@@ -232,29 +159,19 @@ const db = supabase as unknown as {
 export function useSeasonsData(tripId: string) {
   const [info, setInfo] = useState<Info[]>([]),
     [champs, setChamps] = useState<Champ[]>([]),
-    [tripRows, setTripRows] = useState<SeasonRow[]>([]),
-    [teams, setTeams] = useState<Team[]>([]),
-    [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+    [tripRows, setTripRows] = useState<SeasonRow[]>([]);
   const refresh = async () => {
-    const [i, c, t, tm, ts] = await Promise.all([
+    const [i, c, ts] = await Promise.all([
       db.rpc("season_info", { p_trip: tripId }),
       db
         .from("season_champions")
         .select("season,user_id,score,stamps,tie_ids,created_at")
         .eq("trip_id", tripId)
         .in("season", ["game", "trip"]),
-      db
-        .from("trip_teams")
-        .select("id,name,color,call_link,host_id")
-        .eq("trip_id", tripId)
-        .order("created_at"),
-      db.from("trip_team_members").select("user_id,team_id").eq("trip_id", tripId),
       supabase.rpc("trip_season_score", { p_trip: tripId }),
     ]);
     setInfo(i.data ?? []);
     setChamps(c.data ?? []);
-    setTeams(t.data ?? []);
-    setTeamMembers(tm.data ?? []);
     setTripRows(ts.data ?? []);
   };
   useEffect(() => {
@@ -262,7 +179,7 @@ export function useSeasonsData(tripId: string) {
     const timer = window.setInterval(() => void refresh(), 20000);
     return () => window.clearInterval(timer);
   }, [tripId]);
-  return { info, champs, tripRows, teams, teamMembers, refresh };
+  return { info, champs, tripRows, refresh };
 }
 export type SeasonsData = ReturnType<typeof useSeasonsData>;
 
@@ -650,7 +567,6 @@ export function SquadSeasons(
   const stampTotal = (mineGame?.stamps ?? 0) + (mineTrip?.stamps ?? 0);
   const score = tripHasStarted(props.trip) && mineTrip ? mineTrip.score : (mineGame?.score ?? 0);
   const crowns = data.champs.filter((c) => c.user_id === props.userId).length;
-  const skips = useSkipCounts(props.trip.id);
   if (!scoringOn(props.trip)) return null;
   return (
     <>
@@ -676,17 +592,6 @@ export function SquadSeasons(
         members={members}
         onMember={props.onMember}
       />
-      {data.teams.length > 0 && (
-        <TeamBoard
-          teams={data.teams}
-          teamMembers={data.teamMembers}
-          cards={cards}
-          members={members}
-          gameStamps={Object.fromEntries(game.map((g) => [g.user_id, g.stamps]))}
-          tripStamps={Object.fromEntries(data.tripRows.map((r) => [r.user_id, r.stamps]))}
-          onMember={props.onMember}
-        />
-      )}
       <Leaderboard
         trip={props.trip}
         members={members}
@@ -757,81 +662,6 @@ function ChampionsRow({
     </section>
   );
 }
-function TeamBoard({
-  teams,
-  teamMembers,
-  cards,
-  members,
-  gameStamps,
-  tripStamps,
-  onMember,
-}: {
-  teams: Team[];
-  teamMembers: TeamMember[];
-  cards: PlayerWithAvatar[];
-  members: Member[];
-  gameStamps: Record<string, number>;
-  tripStamps: Record<string, number>;
-  onMember?: ((id: string) => void) | undefined;
-}) {
-  const rows = teams
-    .map((t) => {
-      const ids = teamMembers.filter((m) => m.team_id === t.id).map((m) => m.user_id);
-      return {
-        ...t,
-        ids,
-        game: ids.reduce((s, id) => s + (gameStamps[id] ?? 0), 0),
-        trip: ids.reduce((s, id) => s + (tripStamps[id] ?? 0), 0),
-      };
-    })
-    .sort((a, b) => b.game + b.trip - (a.game + a.trip));
-  return (
-    <section className="mt-8">
-      <h2 className="font-display text-2xl font-extrabold">Team scoreboard 🚩</h2>
-      <div className="mt-3 space-y-2">
-        {rows.map((t, i) => (
-          <div
-            key={t.id}
-            className={`rounded-2xl p-4 ${teamSoft[t.color as keyof typeof teamSoft] ?? "bg-card"}`}
-          >
-            <div className="flex items-center gap-3">
-              <span
-                className={`h-4 w-4 rounded-full ${teamColors[t.color as keyof typeof teamColors] ?? "bg-primary"}`}
-              />
-              <p className="font-display font-extrabold text-lg flex-1 truncate">
-                {i === 0 && t.game + t.trip > 0 ? "👑 " : ""}
-                {t.name}
-              </p>
-              <span className="passport-stamp bg-card px-2 py-1 font-display font-extrabold">
-                {t.game + t.trip} 🛂
-              </span>
-            </div>
-            <p className="text-xs text-ink-soft mt-1">
-              Game {t.game} · Trip {t.trip}
-            </p>
-            <div className="flex -space-x-2 mt-2">
-              {t.ids.map((id) => {
-                const c = cards.find((x) => x.user_id === id);
-                return (
-                  <AvatarButton
-                    key={id}
-                    userId={id}
-                    onOpen={onMember}
-                    url={c?.avatarUrl}
-                    name={nameOf(cards, members, id)}
-                    className="h-8 w-8 ring-2 ring-card"
-                  />
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ---------- Captain Tools: prizes + teams ---------- */
 export function SeasonPrizeTools({ trip, members, cards }: Omit<Base, "userId">) {
   const data = useSeasonsData(trip.id);
   return (
@@ -851,69 +681,6 @@ export function SeasonPrizeTools({ trip, members, cards }: Omit<Base, "userId">)
         />
       ))}
     </>
-  );
-}
-/** Team editor (opened from the Trip tab's Teams pencil). */
-export function TeamsEditor({ trip, members, cards }: Omit<Base, "userId">) {
-  const [v, setV] = useState(0);
-  return (
-    <>
-      {trip.myRole === "captain" && (
-        <ShuffleTeams tripId={trip.id} onDone={() => setV((n) => n + 1)} />
-      )}
-      <TeamsEditorInner key={v} trip={trip} members={members} cards={cards} />
-    </>
-  );
-}
-function TeamsEditorInner({ trip, members, cards }: Omit<Base, "userId">) {
-  const data = useSeasonsData(trip.id);
-  return <TeamTools trip={trip} members={members} cards={cards} data={data} />;
-}
-// Captain-only, before the first game night (server-checked in shuffle_teams).
-function ShuffleTeams({ tripId, onDone }: { tripId: string; onDone: () => void }) {
-  const [confirm, setConfirm] = useState(false),
-    [busy, setBusy] = useState(false),
-    [msg, setMsg] = useState("");
-  async function go() {
-    setBusy(true);
-    setMsg("");
-    const { data, error } = await db.rpc("shuffle_teams", { p_trip: tripId });
-    setBusy(false);
-    setConfirm(false);
-    if (error) setMsg(friendlyError(error));
-    else {
-      setMsg(`Shuffled ${data} players ✓`);
-      onDone();
-    }
-  }
-  return (
-    <div className="mb-3">
-      {confirm ? (
-        <div className="rounded-2xl bg-muted p-3">
-          <p className="text-sm font-bold">Shuffle everyone into random, balanced teams?</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            This replaces current picks. Only before the first game night.
-          </p>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            <Button variant="outline" onClick={() => setConfirm(false)}>
-              Cancel
-            </Button>
-            <Button variant="playful" disabled={busy} onClick={() => void go()}>
-              Shuffle
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button variant="outline" className="w-full" onClick={() => setConfirm(true)}>
-          🔀 Shuffle teams
-        </Button>
-      )}
-      {msg && (
-        <p role="status" className="text-sm mt-2">
-          {msg}
-        </p>
-      )}
-    </div>
   );
 }
 function toLocalInput(iso: string | null) {
@@ -1098,265 +865,6 @@ function PrizeForm({
   );
 }
 
-const COLOR_KEYS = ["orange", "blue", "green", "yellow"] as const;
-const TEAM_NAMES = ["Jet Setters", "Wild Cards", "Night Owls", "Sun Chasers"];
-function TeamTools({ trip, members, cards, data }: Omit<Base, "userId"> & { data: SeasonsData }) {
-  type Draft = { name: string; color: string; members: string[] };
-  const fromData = (): Draft[] =>
-    data.teams.map((t) => ({
-      name: t.name,
-      color: t.color,
-      members: data.teamMembers.filter((m) => m.team_id === t.id).map((m) => m.user_id),
-    }));
-  const [drafts, setDrafts] = useState<Draft[]>([]),
-    [msg, setMsg] = useState("");
-  useEffect(() => setDrafts(fromData()), [data.teams, data.teamMembers]);
-  function shuffle(n: number) {
-    const ids = [...members.map((m) => m.user_id)].sort(() => Math.random() - 0.5);
-    setDrafts(
-      Array.from({ length: n }, (_, i) => ({
-        name: drafts[i]?.name || (TEAM_NAMES[i] as string),
-        color: COLOR_KEYS[i] as string,
-        members: ids.filter((_, j) => j % n === i),
-      })),
-    );
-  }
-  function assign(id: string, idx: number) {
-    setDrafts(
-      drafts.map((d, i) => ({
-        ...d,
-        members:
-          i === idx
-            ? [...d.members.filter((m) => m !== id), id]
-            : d.members.filter((m) => m !== id),
-      })),
-    );
-  }
-  async function save(list: Draft[]) {
-    setMsg("");
-    const { error } = await db.rpc("save_teams", { p_trip: trip.id, p_teams: list });
-    if (error) setMsg(friendlyError(error));
-    else {
-      setMsg(list.length ? "Teams saved 🚩" : "Teams cleared");
-      await data.refresh();
-    }
-  }
-  const size = members.length,
-    tier = groupTier(size, !!(trip as { big_group?: boolean }).big_group);
-  const suggested = Math.min(4, Math.max(2, Math.ceil(size / 6)));
-  async function unlock() {
-    const { error } = await db.rpc("unlock_big_group", { p_trip: trip.id });
-    setMsg(
-      error
-        ? friendlyError(error)
-        : "Big Group unlocked 🎉 Free for Founding Members — up to 30 players.",
-    );
-  }
-  return (
-    <>
-      <h2 className="font-display font-extrabold text-xl mt-9">
-        Teams {tier.teams === "optional" ? "· Create teams (optional)" : "(required)"} 🚩
-      </h2>
-      <p className="text-sm text-ink-soft mt-1">
-        {size} players · {tier.tier}.{" "}
-        {tier.teams === "optional"
-          ? "Create 2–4 auto-balanced teams you can adjust, or play with no teams. A team scoreboard shows in Squad."
-          : "13+ players play in team rooms, each with its own call and host. Stamps still roll up to one trip leaderboard plus a team board, and the finale can be one combined call."}
-      </p>
-      <div className="mt-3 rounded-2xl bg-card border border-border p-3 flex items-center justify-between gap-2">
-        <div>
-          <p className="text-sm font-bold">
-            {(trip as { big_group?: boolean }).big_group
-              ? "✅ Big Group add-on"
-              : "🔒 Big Group add-on"}
-          </p>
-          <p className="text-xs text-ink-soft">
-            Needed for 21–30 players. Free for Founding Members.
-          </p>
-        </div>
-        {!(trip as { big_group?: boolean }).big_group && trip.myRole === "captain" && (
-          <Button size="sm" variant="outline" onClick={() => void unlock()}>
-            Unlock free
-          </Button>
-        )}
-      </div>
-      {tier.teams === "required" && (
-        <Button variant="playful" className="w-full mt-3" onClick={() => shuffle(suggested)}>
-          <Shuffle /> Suggest {suggested} balanced teams
-        </Button>
-      )}
-      <div className="grid grid-cols-3 gap-2 mt-3">
-        {[2, 3, 4].map((n) => (
-          <Button key={n} variant="outline" className="bg-card" onClick={() => shuffle(n)}>
-            <Shuffle /> {n} teams
-          </Button>
-        ))}
-      </div>
-      {drafts.length > 0 && (
-        <div className="mt-4 space-y-3">
-          {drafts.map((d, i) => (
-            <div
-              key={i}
-              className={`rounded-2xl p-3 ${teamSoft[d.color as keyof typeof teamSoft]}`}
-            >
-              <div className="flex gap-2">
-                <input
-                  aria-label="Team name"
-                  className="flex-1 h-11 rounded-xl border-2 border-border bg-card px-3"
-                  maxLength={40}
-                  value={d.name}
-                  onChange={(e) =>
-                    setDrafts(drafts.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))
-                  }
-                />
-                <div className="flex gap-1">
-                  {COLOR_KEYS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      aria-label={`Color ${c}`}
-                      onClick={() =>
-                        setDrafts(drafts.map((x, j) => (j === i ? { ...x, color: c } : x)))
-                      }
-                      className={`h-11 w-8 rounded-lg ${teamColors[c]} ${d.color === c ? "ring-2 ring-foreground" : ""}`}
-                    />
-                  ))}
-                </div>
-              </div>
-              <p className="text-xs text-ink-soft mt-2">
-                {d.members.map((id) => nameOf(cards, members, id)).join(", ") || "Nobody yet"}
-              </p>
-            </div>
-          ))}
-          <p className="text-sm font-bold">Move people</p>
-          {members.map((m) => (
-            <div key={m.user_id} className="flex items-center gap-2">
-              <span className="flex-1 truncate text-sm font-bold">
-                {nameOf(cards, members, m.user_id)}
-              </span>
-              <select
-                aria-label={`Team for ${nameOf(cards, members, m.user_id)}`}
-                className="h-10 rounded-xl border-2 border-border bg-card px-2 text-base"
-                value={drafts.findIndex((d) => d.members.includes(m.user_id))}
-                onChange={(e) => assign(m.user_id, Number(e.target.value))}
-              >
-                <option value={-1}>No team</option>
-                {drafts.map((d, i) => (
-                  <option key={i} value={i}>
-                    {d.name || `Team ${i + 1}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="playful" onClick={() => void save(drafts)}>
-              <Users /> Save teams
-            </Button>
-            <Button
-              variant="ghost"
-              className="text-destructive"
-              onClick={async () => {
-                if (await confirmInApp("Remove all teams?")) {
-                  setDrafts([]);
-                  void save([]);
-                }
-              }}
-            >
-              Clear teams
-            </Button>
-          </div>
-        </div>
-      )}
-      {data.teams.length > 0 && size > 12 && (
-        <div className="mt-5 space-y-3">
-          <p className="text-sm font-bold">Team rooms 🎧</p>
-          {data.teams.map((t) => (
-            <TeamRoom
-              key={t.id}
-              trip={trip}
-              team={t}
-              ids={data.teamMembers.filter((m) => m.team_id === t.id).map((m) => m.user_id)}
-              label={(id) => nameOf(cards, members, id)}
-              onSaved={data.refresh}
-            />
-          ))}
-        </div>
-      )}
-      {msg && (
-        <p role="status" className="text-sm mt-2">
-          {msg}
-        </p>
-      )}
-    </>
-  );
-}
-function TeamRoom({
-  trip,
-  team,
-  ids,
-  label,
-  onSaved,
-}: {
-  trip: TripWithRole;
-  team: Team;
-  ids: string[];
-  label: (id: string) => string;
-  onSaved: () => Promise<void>;
-}) {
-  const [call, setCall] = useState(team.call_link ?? ""),
-    [host, setHost] = useState(team.host_id ?? ""),
-    [msg, setMsg] = useState("");
-  async function save() {
-    const { error } = await db.rpc("set_team_room", {
-      p_trip: trip.id,
-      p_team: team.id,
-      p_call: call || null,
-      p_host: host || null,
-    });
-    setMsg(error ? friendlyError(error) : "Saved ✓");
-    if (!error) await onSaved();
-  }
-  return (
-    <div
-      className={`rounded-2xl p-3 ${teamSoft[team.color as keyof typeof teamSoft] ?? "bg-card"}`}
-    >
-      <p className="font-bold text-base">{team.name}</p>
-      <input
-        aria-label={`${team.name} call link`}
-        placeholder="https:// call link"
-        className="mt-2 w-full h-11 rounded-xl border-2 border-border bg-card px-3 text-base"
-        value={call}
-        onChange={(e) => setCall(e.target.value)}
-      />
-      <div className="flex gap-2 mt-2">
-        <select
-          aria-label={`${team.name} host`}
-          className="flex-1 h-11 rounded-xl border-2 border-border bg-card px-2 text-base"
-          value={host}
-          onChange={(e) => setHost(e.target.value)}
-        >
-          <option value="">Pick a host</option>
-          {ids.map((id) => (
-            <option key={id} value={id}>
-              {label(id)}
-            </option>
-          ))}
-        </select>
-        <Button size="sm" variant="outline" className="h-11" onClick={() => void save()}>
-          Save
-        </Button>
-      </div>
-      {msg && (
-        <p role="status" className="text-xs mt-1">
-          {msg}
-        </p>
-      )}
-    </div>
-  );
-}
-
-/* ---------- Photo wall ---------- */
 function usePhotos(tripId: string) {
   const [photos, setPhotos] = useState<Photo[]>([]),
     [reactions, setReactions] = useState<Reaction[]>([]),
@@ -1972,512 +1480,5 @@ export function PhotoWall({ trip, members, cards, userId }: Base) {
         </div>
       )}
     </section>
-  );
-}
-
-/* ---------- Trip Wrapped ---------- */
-export function WrappedCard({ trip, onOpen }: { trip: TripWithRole; onOpen: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="mt-6 w-full rounded-[1.75rem] bg-primary text-primary-foreground p-6 text-left shadow-soft relative overflow-hidden"
-    >
-      <span className="absolute -right-2 -top-4 text-8xl opacity-25">🎬</span>
-      <p className="text-xs font-extrabold">IT'S A WRAP</p>
-      <p className="font-display text-3xl font-extrabold mt-1">
-        {tripDisplayName(trip.name)} Wrapped
-      </p>
-      <p className="text-sm mt-1 font-bold">Tap to relive the trip → story-size, made to share</p>
-    </button>
-  );
-}
-type Slide = {
-  key: string;
-  bg: string;
-  eyebrow: string;
-  title: string;
-  big?: string | undefined;
-  sub?: string | undefined;
-  people?: { id: string; line: string }[];
-  photo?: string | undefined;
-};
-export function TripWrapped({
-  trip,
-  members,
-  cards,
-  onClose,
-  onPlanTrip,
-  onAtHome,
-}: Omit<Base, "userId"> & { onClose: () => void; onPlanTrip?: () => void; onAtHome?: () => void }) {
-  const data = useSeasonsData(trip.id);
-  const season = useSeason(trip.id);
-  const { photos, reactions, urls } = usePhotos(trip.id);
-  const [extra, setExtra] = useState<{
-    quests: Record<string, number>;
-    missions: Record<string, number>;
-  }>({ quests: {}, missions: {} });
-  const qotw = useWeeklyQuestions(trip.id);
-  const [squadMsgs, setSquadMsgs] = useState<{ user_id: string; message: string }[]>([]);
-  useEffect(() => {
-    void supabase
-      .rpc("trip_squad_messages", { p_trip: trip.id })
-      .then((r) => setSquadMsgs(r.data ?? []));
-  }, [trip.id]);
-  const [i, setI] = useState(0),
-    [saving, setSaving] = useState(false);
-  const [earned, setEarned] = useState<string | null>(null);
-  const closeWrapped = async () => {
-    if (!trip.is_sandbox && (trip.ended_at || tripClosed(trip))) {
-      const { data } = await supabase.rpc("passport_collection");
-      const stamp = data?.find((s) => s.trip_id === trip.id);
-      if (stamp) {
-        setEarned(
-          stamp.kind === "road_trip"
-            ? `${stamp.city ?? ""} · ${stamp.state ?? "Road trip"}`
-            : stamp.country,
-        );
-        return;
-      }
-      if (trip.kind === "at_home") {
-        setEarned(trip.destination);
-        return;
-      }
-    }
-    onClose();
-  };
-  const [nightPasses, setNightPasses] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    void supabase
-      .from("skip_passes")
-      .select("user_id,kind,ref")
-      .eq("trip_id", trip.id)
-      .in("kind", ["night", "host"])
-      .then(({ data }) =>
-        setNightPasses(new Set((data ?? []).map((r) => `${r.user_id}|${r.ref}`))),
-      );
-  }, [trip.id]);
-  const slideRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    void (async () => {
-      const [qp, qt, sm, mv] = await Promise.all([
-        supabase.from("quest_posts").select("id,user_id").eq("trip_id", trip.id),
-        supabase.from("quest_thumbs").select("post_id").eq("trip_id", trip.id),
-        supabase
-          .from("secret_missions")
-          .select("user_id,day_date,revealed_at")
-          .eq("trip_id", trip.id)
-          .not("revealed_at", "is", null),
-        supabase
-          .from("mission_votes")
-          .select("owner_id,day_date,caught")
-          .eq("trip_id", trip.id)
-          .eq("caught", true),
-      ]);
-      const thumbs: Record<string, number> = {};
-      for (const t of qt.data ?? []) thumbs[t.post_id] = (thumbs[t.post_id] ?? 0) + 1;
-      const quests: Record<string, number> = {};
-      for (const p of qp.data ?? [])
-        if ((thumbs[p.id] ?? 0) >= 2) quests[p.user_id] = (quests[p.user_id] ?? 0) + 1;
-      const caught = new Set((mv.data ?? []).map((v) => `${v.owner_id}|${v.day_date}`));
-      const missions: Record<string, number> = {};
-      for (const m of sm.data ?? [])
-        if (!caught.has(`${m.user_id}|${m.day_date}`))
-          missions[m.user_id] = (missions[m.user_id] ?? 0) + 1;
-      setExtra({ quests, missions });
-    })();
-  }, [trip.id]);
-  const slides = useMemo<Slide[]>(() => {
-    const top = (rec: Record<string, number>) => {
-      const max = Math.max(0, ...Object.values(rec));
-      return max > 0 ? { ids: Object.keys(rec).filter((k) => rec[k] === max), max } : null;
-    };
-    const game = standings(members, season.nights, season.scores, season.settings, season.qotw);
-    const done = season.nights.filter(
-      (n) => !n.skipped && new Date(n.starts_at).getTime() <= Date.now(),
-    );
-    const skippedNights = season.nights.filter((n) => n.skipped).map((n) => n.week_number);
-    const wins: Record<string, number> = {};
-    for (const s of season.scores) if (s.won) wins[s.user_id] = (wins[s.user_id] ?? 0) + 1;
-    const perfect = done.length
-      ? members
-          .filter((m) =>
-            done.every(
-              (n) =>
-                season.scores.some(
-                  (s) => s.week_number === n.week_number && s.user_id === m.user_id && s.here,
-                ) || nightPasses.has(`${m.user_id}|${n.week_number}`),
-            ),
-          )
-          .map((m) => m.user_id)
-      : [];
-    const gameTotal = game.reduce((s, g) => s + g.stamps, 0),
-      tripTotal = data.tripRows.reduce((s, r) => s + r.stamps, 0);
-    const champ = (k: SeasonKey) => {
-      const list = data.champs.filter((c) => c.season === k);
-      if (list.length)
-        return list.map((c) => ({ id: c.user_id, line: `${c.score}/100 · 🛂 ${c.stamps}` }));
-      const board =
-        k === "game"
-          ? game.map((g) => ({ id: g.user_id, s: g.score, st: g.stamps }))
-          : data.tripRows
-              .map((r) => ({ id: r.user_id, s: r.score, st: r.stamps }))
-              .sort((a, b) => b.s - a.s || b.st - a.st);
-      return board[0] && board[0].st > 0
-        ? [{ id: board[0].id, line: `${board[0].s}/100 · 🛂 ${board[0].st}` }]
-        : [];
-    };
-    const ranked = [...new Set(photos.map((p) => p.photo_path))]
-      .map((path) => ({
-        path,
-        n: reactions.filter((r) => r.photo_path === path).length,
-        who: photos.find((p) => p.photo_path === path)?.user_id ?? "",
-      }))
-      .sort((a, b) => b.n - a.n)
-      .slice(0, 3);
-    const list: Slide[] = [
-      {
-        key: "intro",
-        bg: "bg-blue",
-        eyebrow: "TRIPJUNKIES WRAPPED",
-        title: tripDisplayName(trip.name),
-        big: "🎬",
-        sub: `${trip.destination} · ${new Date(`${trip.start_date}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })} – ${new Date(`${trip.end_date}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`,
-      },
-    ];
-    if (scoringOn(trip))
-      for (const k of ["game", "trip"] as SeasonKey[]) {
-        const c = champ(k);
-        list.push({
-          key: `champ-${k}`,
-          bg: k === "game" ? "bg-green" : "bg-primary",
-          eyebrow: `${seasonName[k].toUpperCase()} CHAMPION`,
-          title: c.length ? "All hail 👑" : "Still up for grabs",
-          people: c,
-          sub: data.info.find((x) => x.season === k)?.prize
-            ? `Prize: ${data.info.find((x) => x.season === k)?.prize}`
-            : undefined,
-        });
-      }
-    const award = (
-      key: string,
-      bg: string,
-      eyebrow: string,
-      title: string,
-      rec: Record<string, number>,
-      unit: string,
-    ) => {
-      const t = top(rec);
-      if (t)
-        list.push({
-          key,
-          bg,
-          eyebrow,
-          title,
-          people: t.ids.map((id) => ({ id, line: `${t.max} ${unit}${t.max === 1 ? "" : "s"}` })),
-        });
-    };
-    award("wins", "bg-orange", "MOST GAME NIGHT WINS", "Undefeated energy 🏆", wins, "win");
-    if (perfect.length)
-      list.push({
-        key: "perfect",
-        bg: "bg-blue",
-        eyebrow: "PERFECT ATTENDANCE",
-        title: "Never missed a night 📅",
-        people: perfect.map((id) => ({ id, line: `${done.length}/${done.length} game nights` })),
-      });
-    award("quests", "bg-green", "MOST QUESTS DONE", "Side-quest legend 🧭", extra.quests, "quest");
-    award(
-      "missions",
-      "bg-primary",
-      "SECRET AGENT",
-      "Pulled it off undetected 🕵️",
-      extra.missions,
-      "secret mission",
-    );
-    ranked.forEach((r, idx) => {
-      if (urls[r.path])
-        list.push({
-          key: `photo-${idx}`,
-          bg: ["bg-orange", "bg-blue", "bg-green"][idx] as string,
-          eyebrow: `TOP PHOTO #${idx + 1}`,
-          title: `${r.n} reaction${r.n === 1 ? "" : "s"}`,
-          photo: urls[r.path],
-          sub: `📸 ${nameOf(cards, members, r.who)}`,
-        });
-    });
-    if (skippedNights.length)
-      list.push({
-        key: "skipped",
-        bg: "bg-blue",
-        eyebrow: "SKIPPED NIGHTS",
-        title: "Life happened ⏭️",
-        big: `${skippedNights.length}`,
-        sub: `Week${skippedNights.length === 1 ? "" : "s"} ${skippedNights.join(", ")} skipped · no points lost`,
-      });
-    const best = qotw.list
-      .filter((q) => q.revealed_at && q.winner_id)
-      .flatMap((q) =>
-        qotw.answers.filter((x) => x.week_number === q.week_number && x.user_id === q.winner_id),
-      )
-      .slice(-3);
-    if (best.length)
-      list.push({
-        key: "qotw",
-        bg: "bg-orange",
-        eyebrow: "QUESTION OF THE WEEK",
-        title: "Your squad's best answers ❓",
-        people: best.map((x) => ({ id: x.user_id, line: `${x.emoji ?? ""} “${x.answer}”`.trim() })),
-      });
-    if (squadMsgs.length)
-      list.push({
-        key: "squad-msgs",
-        bg: "bg-blue",
-        eyebrow: "NOTES TO THE SQUAD",
-        title: "Messages from the crew 💬",
-        people: squadMsgs.slice(0, 6).map((x) => ({ id: x.user_id, line: `“${x.message}”` })),
-      });
-    list.push({
-      key: "stats",
-      bg: "bg-foreground",
-      eyebrow: "BY THE NUMBERS",
-      title: "What a trip.",
-      big: `${gameTotal + tripTotal}`,
-      sub: `stamps collected · ${done.length} game nights · ${photos.length} photos · ${members.length} travelers`,
-    });
-    list.push({
-      key: "outro",
-      bg: "bg-primary",
-      eyebrow: "SEE YOU NEXT TRIP",
-      title: "Collect the moments. Let's go.",
-      big: "✳",
-    });
-    return list;
-  }, [
-    data.champs,
-    data.tripRows,
-    data.info,
-    season.nights,
-    season.scores,
-    season.settings,
-    season.qotw,
-    qotw.list,
-    qotw.answers,
-    squadMsgs,
-    photos,
-    reactions,
-    urls,
-    extra,
-    members,
-    cards,
-    trip,
-    nightPasses,
-  ]);
-  const slide = slides[Math.min(i, slides.length - 1)] as Slide;
-  const [saveError, setSaveError] = useState("");
-  async function save() {
-    if (!slideRef.current) return;
-    setSaving(true);
-    setSaveError("");
-    try {
-      const url = await toPng(slideRef.current, {
-        pixelRatio: 1080 / slideRef.current.offsetWidth,
-        cacheBust: true,
-      });
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `tripjunkies-wrapped-${slide.key}.png`;
-      a.click();
-    } catch {
-      setSaveError("Couldn't save that image — try a screenshot instead.");
-      setSaving(false);
-      return;
-    }
-    setSaving(false);
-  }
-  const touch = useRef(0);
-  if (earned)
-    return (
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Passport collectible earned"
-        className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-background/95 p-5"
-      >
-        <p className="eyebrow">ONE FOR THE PASSPORT</p>
-        <div className="passport-ink stamp-arrive mt-7 flex aspect-square w-52 flex-col items-center justify-center border-primary text-primary text-center p-4">
-          <span className="text-4xl">{trip.kind === "at_home" ? "📮" : "✈️"}</span>
-          <span className="font-display text-xl font-extrabold uppercase break-words">
-            {earned}
-          </span>
-          <span className="text-xs font-bold mt-2">{trip.end_date}</span>
-        </div>
-        <p className="mt-8 text-sm text-muted-foreground">Find it in Me › My Passport</p>
-        <Button variant="playful" className="mt-6" onClick={onClose}>
-          Done
-        </Button>
-      </div>
-    );
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Trip Wrapped"
-      className="fixed inset-x-0 top-0 bottom-[var(--nav-clearance)] z-10 flex flex-col items-center justify-start overflow-y-auto bg-background text-foreground px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-8"
-    >
-      <div className="flex w-full max-w-[380px] gap-1 mb-3">
-        {slides.map((s, j) => (
-          <span
-            key={s.key}
-            className={`h-1 flex-1 rounded-full ${j <= i ? "bg-foreground" : "bg-muted"}`}
-          />
-        ))}
-      </div>
-      <div
-        className="relative w-full max-w-[380px]"
-        onTouchStart={(e) => {
-          touch.current = e.touches[0]?.clientX ?? 0;
-        }}
-        onTouchEnd={(e) => {
-          const dx = (e.changedTouches[0]?.clientX ?? 0) - touch.current;
-          if (dx < -40) setI(Math.min(slides.length - 1, i + 1));
-          if (dx > 40) setI(Math.max(0, i - 1));
-        }}
-      >
-        <div
-          ref={slideRef}
-          key={slide.key}
-          className={`wrapped-slide aspect-[9/16] w-full overflow-hidden rounded-[1.75rem] ${slide.bg} text-background flex flex-col p-7`}
-        >
-          <p className="text-xs font-extrabold tracking-widest opacity-90">{slide.eyebrow}</p>
-          <h2 className="font-display text-4xl font-extrabold leading-[1.05] mt-3">
-            {slide.title}
-          </h2>
-          <div className="flex-1 grid place-items-center min-h-0">
-            {slide.photo ? (
-              <img
-                src={slide.photo}
-                crossOrigin="anonymous"
-                alt="Top photo"
-                className="max-h-full w-full object-cover rounded-2xl"
-              />
-            ) : slide.people?.length ? (
-              <div className="space-y-5 w-full">
-                {slide.people.map((p) => {
-                  const c = cards.find((x) => x.user_id === p.id);
-                  return (
-                    <div key={p.id} className="flex flex-col items-center text-center">
-                      <Avatar
-                        url={c?.avatarUrl}
-                        name={nameOf(cards, members, p.id)}
-                        className="h-28 w-28 ring-4 ring-background"
-                      />
-                      <p className="font-display text-2xl font-extrabold mt-3">
-                        {nameOf(cards, members, p.id)}
-                      </p>
-                      <p className="font-bold opacity-90">{p.line}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : slide.big ? (
-              <p className="font-display text-[7rem] font-extrabold leading-none">{slide.big}</p>
-            ) : (
-              <p className="text-6xl">✳</p>
-            )}
-          </div>
-          {slide.sub && <p className="font-bold text-lg leading-snug">{slide.sub}</p>}
-          <p className="mt-4 font-display font-extrabold text-lg">
-            Trip<span className="opacity-80">Junkies</span> ✳
-          </p>
-        </div>
-        <button
-          type="button"
-          aria-label="Previous slide"
-          className="absolute left-0 top-0 h-full w-1/3"
-          onClick={() => setI(Math.max(0, i - 1))}
-        />
-        <button
-          type="button"
-          aria-label="Next slide"
-          className="absolute right-0 top-0 h-full w-1/3"
-          onClick={() => setI(Math.min(slides.length - 1, i + 1))}
-        />
-      </div>
-      {trip.myRole === "captain" &&
-        !trip.is_sandbox &&
-        (trip.kind === "trip" || trip.kind === "at_home") &&
-        (Boolean(trip.ended_at) || tripToday(tripTz(trip)) > trip.end_date) && (
-          <div className="w-full max-w-[380px]">
-            <PreviewShareToggle tripId={trip.id} />
-          </div>
-        )}
-      {saveError && (
-        <p role="alert" className="text-foreground text-xs mt-2">
-          {saveError}
-        </p>
-      )}
-      <div className="flex w-full max-w-[380px] items-center gap-2 mt-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-foreground"
-          aria-label="Previous"
-          disabled={i === 0}
-          onClick={() => setI(i - 1)}
-        >
-          <ChevronLeft />
-        </Button>
-        <Button variant="playful" className="flex-1" disabled={saving} onClick={() => void save()}>
-          <Download /> {saving ? "Saving…" : "Save image"}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-foreground"
-          aria-label="Next"
-          disabled={i >= slides.length - 1}
-          onClick={() => setI(i + 1)}
-        >
-          <ChevronRight />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-foreground"
-          aria-label="Close"
-          onClick={() => void closeWrapped()}
-        >
-          <X />
-        </Button>
-      </div>
-      <div className="w-full max-w-[380px] mt-4 grid gap-2">
-        <Button
-          variant="outline"
-          className="min-h-11 w-full rounded-full"
-          disabled={!onPlanTrip}
-          title={!onPlanTrip ? "Trip Captains must be 21 or older" : undefined}
-          onClick={onPlanTrip}
-        >
-          <Plane size={18} /> Start your next trip
-        </Button>
-        <Button
-          variant="outline"
-          className="min-h-11 w-full rounded-full whitespace-normal h-auto py-3"
-          disabled={!onAtHome}
-          onClick={onAtHome}
-        >
-          Try an At Home night while you plan
-        </Button>
-        <Button
-          variant="playful"
-          className="min-h-11 w-full rounded-full"
-          disabled={saving}
-          onClick={() => void save()}
-        >
-          <Download size={18} /> Share your Wrapped
-        </Button>
-      </div>
-    </div>
   );
 }
