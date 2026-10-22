@@ -66,6 +66,18 @@ jobs:
             exit 1
           fi
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - name: Generated database types are up to date
+        run: |
+          scripts/db/gen-types.sh
+          if ! git diff --exit-code -- src/integrations/supabase/types.ts; then
+            echo "::error::A migration changed the database types. Run scripts/db/gen-types.sh and commit the result."
+            exit 1
+          fi
+
   supabase:
     name: Supabase local stack (real pgTAP)
     runs-on: ubuntu-24.04

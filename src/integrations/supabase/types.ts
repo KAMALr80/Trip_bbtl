@@ -6,6 +6,7 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.18";
   };
+
   public: {
     Tables: {
       account_consents: {
@@ -17,6 +18,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           accepted_at?: string | null;
           created_at?: string;
@@ -44,6 +46,7 @@ export type Database = {
           user_id: string;
           week_number: number;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           guess: number;
@@ -79,6 +82,7 @@ export type Database = {
           provider_ref: string;
           trip_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           credits: number;
@@ -118,6 +122,7 @@ export type Database = {
           trip_id: string | null;
           user_id: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           credits?: number;
@@ -162,6 +167,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           day_date: string;
@@ -195,6 +201,7 @@ export type Database = {
           created_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           user_id: string;
@@ -219,8 +226,9 @@ export type Database = {
           id: boolean;
           public_launch: boolean;
           updated_at: string;
-          welcome_faq: Json;
+          welcome_faq: NonNullable<Json>;
         };
+        ComputedFields: never;
         Insert: {
           ai_daily_global_cap?: number;
           ai_daily_user_cap?: number;
@@ -234,7 +242,7 @@ export type Database = {
           id?: boolean;
           public_launch?: boolean;
           updated_at?: string;
-          welcome_faq?: Json;
+          welcome_faq?: NonNullable<Json>;
         };
         Update: {
           ai_daily_global_cap?: number;
@@ -249,7 +257,7 @@ export type Database = {
           id?: boolean;
           public_launch?: boolean;
           updated_at?: string;
-          welcome_faq?: Json;
+          welcome_faq?: NonNullable<Json>;
         };
         Relationships: [];
       };
@@ -268,6 +276,7 @@ export type Database = {
           updated_at: string;
           winner_id: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           day_date: string;
@@ -334,6 +343,7 @@ export type Database = {
           created_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           activity_id: string;
           answer: string;
@@ -370,6 +380,7 @@ export type Database = {
           title: string;
           want: string | null;
         };
+        ComputedFields: never;
         Insert: {
           adult?: boolean;
           alt?: string | null;
@@ -414,6 +425,7 @@ export type Database = {
           name: string;
           overview: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           emoji: string;
@@ -438,6 +450,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           activity_id: string;
           created_at?: string;
@@ -469,6 +482,7 @@ export type Database = {
           target_id: string;
           voter_id: string;
         };
+        ComputedFields: never;
         Insert: {
           activity_id: string;
           created_at?: string;
@@ -497,6 +511,7 @@ export type Database = {
           source: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           source?: string;
@@ -521,6 +536,7 @@ export type Database = {
           used_at: string | null;
           used_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           code: string;
           created_at?: string;
@@ -554,6 +570,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           day_date: string;
@@ -589,6 +606,7 @@ export type Database = {
           title: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           founder_note?: string | null;
@@ -625,6 +643,7 @@ export type Database = {
           user_agent: string | null;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           app_version?: string | null;
           created_at?: string;
@@ -678,7 +697,7 @@ export type Database = {
       };
       checkin_responses: {
         Row: {
-          answers: Json;
+          answers: NonNullable<Json>;
           context: string;
           context_key: string;
           created_at: string;
@@ -686,8 +705,9 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
-          answers?: Json;
+          answers?: NonNullable<Json>;
           context: string;
           context_key: string;
           created_at?: string;
@@ -696,7 +716,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
-          answers?: Json;
+          answers?: NonNullable<Json>;
           context?: string;
           context_key?: string;
           created_at?: string;
@@ -723,6 +743,7 @@ export type Database = {
           kind: string;
           vote: number;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           id?: string;
@@ -748,6 +769,7 @@ export type Database = {
           kind: string;
           trip_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           item_key: string;
@@ -776,6 +798,7 @@ export type Database = {
           last_at: string;
           trip_id: string;
         };
+        ComputedFields: never;
         Insert: {
           kind: string;
           last_at?: string;
@@ -804,6 +827,7 @@ export type Database = {
           text: string;
           trip_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           id?: string;
@@ -843,6 +867,7 @@ export type Database = {
           trip_id: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           category: string;
           created_at?: string;
@@ -893,6 +918,7 @@ export type Database = {
           target_user: string | null;
           trip_id: string;
         };
+        ComputedFields: never;
         Insert: {
           action: string;
           actor: string;
@@ -934,6 +960,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           dismissed_at?: string | null;
@@ -973,6 +1000,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           item_id: string;
@@ -1043,6 +1071,7 @@ export type Database = {
           updated_at: string;
           votes_revealed_at: string | null;
         };
+        ComputedFields: never;
         Insert: {
           backstory?: string;
           captain_approved_at?: string | null;
@@ -1132,6 +1161,7 @@ export type Database = {
           what_to_do: string;
           with_users: string[];
         };
+        ComputedFields: never;
         Insert: {
           backstory?: string;
           confirmed_at?: string | null;
@@ -1192,6 +1222,7 @@ export type Database = {
           experience_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           experience_id: string;
@@ -1218,6 +1249,7 @@ export type Database = {
           experience_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           experience_id: string;
@@ -1272,6 +1304,7 @@ export type Database = {
           vibe: string | null;
           visibility: string;
         };
+        ComputedFields: never;
         Insert: {
           a2e_kind?: string | null;
           city?: string | null;
@@ -1357,6 +1390,7 @@ export type Database = {
           experience_id: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           country: string;
           creator_id: string;
@@ -1394,6 +1428,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           awarded?: number;
           choice: number;
@@ -1438,20 +1473,21 @@ export type Database = {
           challenge: string | null;
           created_at: string;
           id: string;
-          options: Json;
+          options: NonNullable<Json>;
           photo_path: string | null;
           position: number;
           prompt: string;
           round_number: number;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           answer?: number;
           card_id: string;
           challenge?: string | null;
           created_at?: string;
           id?: string;
-          options?: Json;
+          options?: NonNullable<Json>;
           photo_path?: string | null;
           position: number;
           prompt: string;
@@ -1464,7 +1500,7 @@ export type Database = {
           challenge?: string | null;
           created_at?: string;
           id?: string;
-          options?: Json;
+          options?: NonNullable<Json>;
           photo_path?: string | null;
           position?: number;
           prompt?: string;
@@ -1491,6 +1527,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           completed_at?: string | null;
           created_at?: string;
@@ -1533,6 +1570,7 @@ export type Database = {
           team_count: number;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           card_id: string;
           code?: string | null;
@@ -1578,6 +1616,7 @@ export type Database = {
           viewer_id: string;
           vote: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           experience_id: string;
@@ -1619,6 +1658,7 @@ export type Database = {
           points: number;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           creator_id: string;
@@ -1650,6 +1690,7 @@ export type Database = {
           updated_at: string;
           viewer_id: string;
         };
+        ComputedFields: never;
         Insert: {
           experience_id: string;
           joined_at?: string;
@@ -1682,6 +1723,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           card_id: string;
           champion?: boolean;
@@ -1719,6 +1761,7 @@ export type Database = {
           trip_id: string;
           voter_id: string;
         };
+        ComputedFields: never;
         Insert: {
           choice_id: string;
           created_at?: string;
@@ -1769,6 +1812,7 @@ export type Database = {
           updated_at: string;
           vibe: string | null;
         };
+        ComputedFields: never;
         Insert: {
           checkin_done?: number;
           city?: string | null;
@@ -1843,6 +1887,7 @@ export type Database = {
           trip_id: string | null;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           answer?: string | null;
           category: string;
@@ -1891,6 +1936,7 @@ export type Database = {
           twist: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           how_to_play: string;
@@ -1924,6 +1970,7 @@ export type Database = {
           title: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           depth?: string;
@@ -1955,6 +2002,7 @@ export type Database = {
           user_id: string;
           week_number: number;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           trip_id: string;
@@ -1993,6 +2041,7 @@ export type Database = {
           updated_at: string;
           week_number: number;
         };
+        ComputedFields: never;
         Insert: {
           category?: string | null;
           created_at?: string;
@@ -2037,6 +2086,7 @@ export type Database = {
           updated_at: string;
           week_number: number;
         };
+        ComputedFields: never;
         Insert: {
           actor_id?: string | null;
           created_at?: string;
@@ -2087,21 +2137,22 @@ export type Database = {
         Row: {
           confirmed_option: number | null;
           created_at: string;
-          options: Json;
+          options: NonNullable<Json>;
           trip_id: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           confirmed_option?: number | null;
           created_at?: string;
-          options: Json;
+          options: NonNullable<Json>;
           trip_id: string;
           updated_at?: string;
         };
         Update: {
           confirmed_option?: number | null;
           created_at?: string;
-          options?: Json;
+          options?: NonNullable<Json>;
           trip_id?: string;
           updated_at?: string;
         };
@@ -2125,6 +2176,7 @@ export type Database = {
           user_id: string;
           week_number: number;
         };
+        ComputedFields: never;
         Insert: {
           card_id: number;
           created_at?: string;
@@ -2173,6 +2225,7 @@ export type Database = {
           updated_at: string;
           week_number: number;
         };
+        ComputedFields: never;
         Insert: {
           active?: boolean;
           card_number?: number;
@@ -2215,6 +2268,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           option_index: number;
@@ -2261,6 +2315,7 @@ export type Database = {
           updated_at: string;
           week_number: number;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           game_locked?: boolean;
@@ -2317,6 +2372,7 @@ export type Database = {
           updated_at: string;
           week_number: number;
         };
+        ComputedFields: never;
         Insert: {
           actor: string;
           created_at?: string;
@@ -2365,6 +2421,7 @@ export type Database = {
           week_number: number;
           won: boolean;
         };
+        ComputedFields: never;
         Insert: {
           correct_guesses?: number | null;
           created_at?: string;
@@ -2406,6 +2463,7 @@ export type Database = {
           user_id: string;
           voted_at: string | null;
         };
+        ComputedFields: never;
         Insert: {
           choice?: number | null;
           completed_at?: string | null;
@@ -2450,6 +2508,7 @@ export type Database = {
           trip_id: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           card_id: number;
           created_at?: string;
@@ -2501,6 +2560,7 @@ export type Database = {
           user_id: string;
           week_number: number;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           stamps?: number;
@@ -2537,6 +2597,7 @@ export type Database = {
           updated_at: string;
           week_number: number;
         };
+        ComputedFields: never;
         Insert: {
           accepted_by?: string | null;
           created_at?: string;
@@ -2576,6 +2637,7 @@ export type Database = {
           created_at: string;
           voter_id: string;
         };
+        ComputedFields: never;
         Insert: {
           card_id: string;
           choice: string;
@@ -2604,6 +2666,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           best_points?: number;
           updated_at?: string;
@@ -2624,6 +2687,7 @@ export type Database = {
           user_id: string;
           vote_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           option_index: number;
@@ -2655,7 +2719,7 @@ export type Database = {
           created_by: string;
           id: string;
           kind: string;
-          options: Json;
+          options: NonNullable<Json>;
           prompt: string;
           results: Json | null;
           revealed_at: string | null;
@@ -2664,13 +2728,14 @@ export type Database = {
           updated_at: string;
           week_number: number | null;
         };
+        ComputedFields: never;
         Insert: {
           ballot_count?: number;
           created_at?: string;
           created_by: string;
           id?: string;
           kind: string;
-          options: Json;
+          options: NonNullable<Json>;
           prompt: string;
           results?: Json | null;
           revealed_at?: string | null;
@@ -2685,7 +2750,7 @@ export type Database = {
           created_by?: string;
           id?: string;
           kind?: string;
-          options?: Json;
+          options?: NonNullable<Json>;
           prompt?: string;
           results?: Json | null;
           revealed_at?: string | null;
@@ -2726,6 +2791,7 @@ export type Database = {
           user_id: string;
           verified_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           backstory?: string | null;
           category: string;
@@ -2794,6 +2860,7 @@ export type Database = {
           trip_id: string;
           voter_id: string;
         };
+        ComputedFields: never;
         Insert: {
           caught: boolean;
           created_at?: string;
@@ -2837,6 +2904,7 @@ export type Database = {
           tier: string;
           trip_id: string | null;
         };
+        ComputedFields: never;
         Insert: {
           amount_due_cents: number;
           captain_id: string;
@@ -2891,6 +2959,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           city?: string | null;
           country: string;
@@ -2931,6 +3000,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           day_date: string;
@@ -2963,6 +3033,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           emoji: string;
@@ -2994,6 +3065,7 @@ export type Database = {
           removed_by: string;
           trip_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           photo_path: string;
@@ -3025,6 +3097,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           id?: string;
@@ -3058,6 +3131,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           birthday: string;
           created_at?: string;
@@ -3081,6 +3155,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           agreed_at?: string;
           created_at?: string;
@@ -3118,6 +3193,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           avatar_path?: string | null;
           avatar_seed?: string;
@@ -3163,6 +3239,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           pack: string;
@@ -3198,6 +3275,7 @@ export type Database = {
           preview_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           preview_id: string;
@@ -3226,6 +3304,7 @@ export type Database = {
           sort: number;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           cents: number;
           key: string;
@@ -3257,6 +3336,7 @@ export type Database = {
           time_zone_manual: boolean;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           appearance?: string | null;
           avatar_url?: string | null;
@@ -3297,6 +3377,7 @@ export type Database = {
           trip_id: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           challenged_by: string;
           created_at?: string;
@@ -3342,6 +3423,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           day_date: string;
@@ -3377,6 +3459,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           post_id: string;
@@ -3418,6 +3501,7 @@ export type Database = {
           used_order: string | null;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           cents?: number;
           code: string;
@@ -3464,6 +3548,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           blocked_by: string;
           created_at?: string;
@@ -3499,6 +3584,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           decided_at?: string | null;
@@ -3540,6 +3626,7 @@ export type Database = {
           trip_id: string | null;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           name: string;
@@ -3570,6 +3657,7 @@ export type Database = {
           trip_id: string;
           window_days: number;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           days: number;
@@ -3621,6 +3709,7 @@ export type Database = {
           user_id: string;
           value: number;
         };
+        ComputedFields: never;
         Insert: {
           approved_at?: string | null;
           approved_by?: string | null;
@@ -3693,6 +3782,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           score?: number;
@@ -3741,6 +3831,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           approved_at?: string | null;
           approved_by?: string | null;
@@ -3804,6 +3895,7 @@ export type Database = {
           updated_at: string;
           winners: number;
         };
+        ComputedFields: never;
         Insert: {
           carry_on_meetup_at?: string | null;
           carry_on_meetup_place?: string | null;
@@ -3852,6 +3944,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           day_date: string;
@@ -3896,6 +3989,7 @@ export type Database = {
           traveler_tags: string[];
           trip_id: string | null;
         };
+        ComputedFields: never;
         Insert: {
           backstory?: string | null;
           budget_note?: string | null;
@@ -3946,6 +4040,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           id?: string;
@@ -3996,6 +4091,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           backstory?: string | null;
           budget_note?: string | null;
@@ -4056,6 +4152,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           artist: string;
           created_at?: string;
@@ -4089,6 +4186,7 @@ export type Database = {
           updated_at: string;
           win_stamps: number;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           here_stamps?: number;
@@ -4127,6 +4225,7 @@ export type Database = {
           trip_id: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           alternative: string;
           created_at?: string;
@@ -4167,6 +4266,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           approved_by: string;
           created_at?: string;
@@ -4198,6 +4298,7 @@ export type Database = {
           trip_id: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           enabled?: boolean;
@@ -4222,50 +4323,51 @@ export type Database = {
       };
       trip_day_games: {
         Row: {
-          airport: Json;
-          bingo: Json;
+          airport: NonNullable<Json>;
+          bingo: NonNullable<Json>;
           bingo_mode: string;
           city: string;
           created_at: string;
           day_date: string;
           photo_theme: string;
-          quests: Json;
+          quests: NonNullable<Json>;
           released_at: string | null;
           tag: string;
           trip_id: string;
-          trivia: Json;
+          trivia: NonNullable<Json>;
           updated_at: string;
           wheels_up: string | null;
         };
+        ComputedFields: never;
         Insert: {
-          airport?: Json;
-          bingo?: Json;
+          airport?: NonNullable<Json>;
+          bingo?: NonNullable<Json>;
           bingo_mode?: string;
           city?: string;
           created_at?: string;
           day_date: string;
           photo_theme?: string;
-          quests?: Json;
+          quests?: NonNullable<Json>;
           released_at?: string | null;
           tag: string;
           trip_id: string;
-          trivia?: Json;
+          trivia?: NonNullable<Json>;
           updated_at?: string;
           wheels_up?: string | null;
         };
         Update: {
-          airport?: Json;
-          bingo?: Json;
+          airport?: NonNullable<Json>;
+          bingo?: NonNullable<Json>;
           bingo_mode?: string;
           city?: string;
           created_at?: string;
           day_date?: string;
           photo_theme?: string;
-          quests?: Json;
+          quests?: NonNullable<Json>;
           released_at?: string | null;
           tag?: string;
           trip_id?: string;
-          trivia?: Json;
+          trivia?: NonNullable<Json>;
           updated_at?: string;
           wheels_up?: string | null;
         };
@@ -4287,6 +4389,7 @@ export type Database = {
           trip_id: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           day_date: string;
@@ -4313,19 +4416,20 @@ export type Database = {
       };
       trip_day_trivia_keys: {
         Row: {
-          answers: Json;
+          answers: NonNullable<Json>;
           created_at: string;
           day_date: string;
           trip_id: string;
         };
+        ComputedFields: never;
         Insert: {
-          answers?: Json;
+          answers?: NonNullable<Json>;
           created_at?: string;
           day_date: string;
           trip_id: string;
         };
         Update: {
-          answers?: Json;
+          answers?: NonNullable<Json>;
           created_at?: string;
           day_date?: string;
           trip_id?: string;
@@ -4350,6 +4454,7 @@ export type Database = {
           trip_name: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           captain_id: string;
           created_at?: string;
@@ -4379,6 +4484,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           captain_id: string;
           created_at?: string;
@@ -4409,6 +4515,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           change_text?: string | null;
           created_at?: string;
@@ -4455,6 +4562,7 @@ export type Database = {
           used_at: string | null;
           used_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           cancelled_at?: string | null;
           created_at?: string;
@@ -4502,6 +4610,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           alternative: string;
           created_at?: string;
@@ -4535,19 +4644,20 @@ export type Database = {
       trip_itineraries: {
         Row: {
           created_at: string;
-          days: Json;
+          days: NonNullable<Json>;
           trip_id: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
-          days?: Json;
+          days?: NonNullable<Json>;
           trip_id: string;
           updated_at?: string;
         };
         Update: {
           created_at?: string;
-          days?: Json;
+          days?: NonNullable<Json>;
           trip_id?: string;
           updated_at?: string;
         };
@@ -4575,6 +4685,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           approved_at?: string | null;
           joined_at?: string;
@@ -4628,6 +4739,7 @@ export type Database = {
           updated_at: string;
           used_games: number[];
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           draw_at?: string | null;
@@ -4704,6 +4816,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           avatar_path?: string | null;
           avatar_seed?: string;
@@ -4763,6 +4876,7 @@ export type Database = {
           to_user: string | null;
           trip_id: string;
         };
+        ComputedFields: never;
         Insert: {
           actor?: string | null;
           created_at?: string;
@@ -4805,6 +4919,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           day_date: string;
           declined_at?: string | null;
@@ -4852,9 +4967,10 @@ export type Database = {
           game: string;
           id: string;
           speed_minutes: number | null;
-          tasks: Json;
+          tasks: NonNullable<Json>;
           trip_id: string;
         };
+        ComputedFields: never;
         Insert: {
           city?: string;
           created_at?: string;
@@ -4862,7 +4978,7 @@ export type Database = {
           game: string;
           id?: string;
           speed_minutes?: number | null;
-          tasks?: Json;
+          tasks?: NonNullable<Json>;
           trip_id: string;
         };
         Update: {
@@ -4872,7 +4988,7 @@ export type Database = {
           game?: string;
           id?: string;
           speed_minutes?: number | null;
-          tasks?: Json;
+          tasks?: NonNullable<Json>;
           trip_id?: string;
         };
         Relationships: [
@@ -4892,6 +5008,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           day_date: string;
           revealed_at?: string;
@@ -4921,6 +5038,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           team_id: string;
@@ -4961,6 +5079,7 @@ export type Database = {
           name: string;
           trip_id: string;
         };
+        ComputedFields: never;
         Insert: {
           call_link?: string | null;
           capacity?: number | null;
@@ -5038,8 +5157,8 @@ export type Database = {
           room_listed: boolean;
           room_nickname: string | null;
           room_region: string | null;
-          schedule_every: number;
           rules_version: number;
+          schedule_every: number;
           season_rule: string;
           season_scoring: boolean;
           solo_experience_id: string | null;
@@ -5052,6 +5171,7 @@ export type Database = {
           updated_at: string;
           vibe: string;
         };
+        ComputedFields: never;
         Insert: {
           a2e_room?: boolean;
           at_home_length?: string | null;
@@ -5098,8 +5218,8 @@ export type Database = {
           room_listed?: boolean;
           room_nickname?: string | null;
           room_region?: string | null;
-          schedule_every?: number;
           rules_version?: number;
+          schedule_every?: number;
           season_rule?: string;
           season_scoring?: boolean;
           solo_experience_id?: string | null;
@@ -5158,8 +5278,8 @@ export type Database = {
           room_listed?: boolean;
           room_nickname?: string | null;
           room_region?: string | null;
-          schedule_every?: number;
           rules_version?: number;
+          schedule_every?: number;
           season_rule?: string;
           season_scoring?: boolean;
           solo_experience_id?: string | null;
@@ -5192,6 +5312,7 @@ export type Database = {
           trip_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           choice: number;
           correct: boolean;
@@ -5226,6 +5347,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           balance?: number;
           updated_at?: string;
@@ -5245,6 +5367,7 @@ export type Database = {
           id: string;
           user_id: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           email: string;
@@ -5267,6 +5390,7 @@ export type Database = {
           voter_id: string;
           week_number: number;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           target_id: string;
@@ -5301,6 +5425,7 @@ export type Database = {
           user_id: string;
           week_number: number;
         };
+        ComputedFields: never;
         Insert: {
           answer: string;
           created_at?: string;
@@ -5336,6 +5461,7 @@ export type Database = {
           prompt: string;
           spicy: boolean;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           id?: number;
@@ -5367,6 +5493,7 @@ export type Database = {
           week_number: number;
           winner_id: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           drops_at: string;
@@ -5422,6 +5549,7 @@ export type Database = {
           trip_id: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
           author_id: string;
           body: string;
@@ -5470,7 +5598,7 @@ export type Database = {
       };
       accept_legal: { Args: { p_version: string }; Returns: undefined };
       account_status: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           accepted_at: string;
           founding_member: boolean;
@@ -5478,25 +5606,13 @@ export type Database = {
           legal_version: string;
         }[];
       };
-      add_checkin_tasks: {
-        Args: { p_tasks: Json; p_trip: string };
-        Returns: number;
-      };
-      add_trip_missions: {
-        Args: { p_texts: string[]; p_trip: string };
-        Returns: number;
-      };
-      adult_badge: {
-        Args: { p_trip: string; p_user: string };
-        Returns: boolean;
-      };
-      advance_play_phase: {
-        Args: { p_current: number; p_trip: string };
-        Returns: number;
-      };
-      ai_cost_per_trip: { Args: never; Returns: number };
+      add_checkin_tasks: { Args: { p_tasks: Json; p_trip: string }; Returns: number };
+      add_trip_missions: { Args: { p_texts: string[]; p_trip: string }; Returns: number };
+      adult_badge: { Args: { p_trip: string; p_user: string }; Returns: boolean };
+      advance_play_phase: { Args: { p_current: number; p_trip: string }; Returns: number };
+      ai_cost_per_trip: { Args: Record<PropertyKey, never>; Returns: number };
       ai_cost_summary: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           action: string;
           avg_cost_usd: number;
@@ -5518,34 +5634,21 @@ export type Database = {
         }[];
       };
       ai_daily_counts: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           calls: number;
           day: string;
           user_id: string;
         }[];
       };
-      ai_gate_server: {
-        Args: { p_kind: string; p_trip: string; p_user: string };
-        Returns: string;
-      };
-      ai_guard_report: { Args: never; Returns: Json };
+      ai_gate_server: { Args: { p_kind: string; p_trip: string; p_user: string }; Returns: string };
+      ai_guard_report: { Args: Record<PropertyKey, never>; Returns: Json };
       answer_trivia: {
-        Args: {
-          p_choice: number;
-          p_date: string;
-          p_question: number;
-          p_trip: string;
-        };
+        Args: { p_choice: number; p_date: string; p_question: number; p_trip: string };
         Returns: boolean;
       };
       answer_weekly_question: {
-        Args: {
-          p_answer: string;
-          p_emoji: string;
-          p_trip: string;
-          p_week: number;
-        };
+        Args: { p_answer: string; p_emoji: string; p_trip: string; p_week: number };
         Returns: undefined;
       };
       apply_game_plan: {
@@ -5568,26 +5671,18 @@ export type Database = {
         Args: { p_approve: boolean; p_trip: string; p_user: string };
         Returns: undefined;
       };
-      approve_inspiration: {
-        Args: { p_approve: boolean; p_card: string };
-        Returns: undefined;
-      };
+      approve_inspiration: { Args: { p_approve: boolean; p_card: string }; Returns: undefined };
       approve_member: {
         Args: { p_approve: boolean; p_trip: string; p_user: string };
         Returns: undefined;
       };
-      at_home_answer: {
-        Args: { p_activity: string; p_answer: string };
-        Returns: undefined;
+      archive_legacy_trips: {
+        Args: { p_created_before: string; p_keep: string[]; p_note: string };
+        Returns: number;
       };
-      at_home_mark_winner: {
-        Args: { p_activity: string; p_user: string };
-        Returns: undefined;
-      };
-      at_home_move_call: {
-        Args: { p_activity: string; p_at: string };
-        Returns: undefined;
-      };
+      at_home_answer: { Args: { p_activity: string; p_answer: string }; Returns: undefined };
+      at_home_mark_winner: { Args: { p_activity: string; p_user: string }; Returns: undefined };
+      at_home_move_call: { Args: { p_activity: string; p_at: string }; Returns: undefined };
       at_home_mvp: {
         Args: { p_trip: string };
         Returns: {
@@ -5632,11 +5727,8 @@ export type Database = {
         }[];
       };
       at_home_reveal: { Args: { p_activity: string }; Returns: undefined };
-      at_home_vote: {
-        Args: { p_activity: string; p_idx: number };
-        Returns: undefined;
-      };
-      boarding_tile: { Args: never; Returns: string };
+      at_home_vote: { Args: { p_activity: string; p_idx: number }; Returns: undefined };
+      boarding_tile: { Args: Record<PropertyKey, never>; Returns: string };
       cancel_trip_invite: { Args: { p_invite: string }; Returns: undefined };
       captain_pass_limit: { Args: { p_trip: string }; Returns: number };
       captain_status: {
@@ -5650,22 +5742,11 @@ export type Database = {
         }[];
       };
       cast_day_vote: {
-        Args: {
-          p_choice: string;
-          p_date: string;
-          p_kind: string;
-          p_trip: string;
-        };
+        Args: { p_choice: string; p_date: string; p_kind: string; p_trip: string };
         Returns: undefined;
       };
-      cast_live_vote: {
-        Args: { p_option: number; p_vote: string };
-        Returns: undefined;
-      };
-      check_cron_key: {
-        Args: { p_key: string; p_name: string };
-        Returns: boolean;
-      };
+      cast_live_vote: { Args: { p_option: number; p_vote: string }; Returns: undefined };
+      check_cron_key: { Args: { p_key: string; p_name: string }; Returns: boolean };
       checkout_beta: { Args: { p_trip: string }; Returns: string };
       claim_airport: {
         Args: {
@@ -5684,12 +5765,9 @@ export type Database = {
         Returns: undefined;
       };
       confirm_departure: { Args: { p_trip: string }; Returns: undefined };
-      confirm_game_nights: {
-        Args: { p_option: number; p_trip: string };
-        Returns: undefined;
-      };
+      confirm_game_nights: { Args: { p_option: number; p_trip: string }; Returns: undefined };
       content_feedback_summary: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           downs: number;
           item_text: string;
@@ -5698,13 +5776,7 @@ export type Database = {
         }[];
       };
       create_at_home: {
-        Args: {
-          p_length: string;
-          p_pack: string;
-          p_start: string;
-          p_tz: string;
-          p_vibe: string;
-        };
+        Args: { p_length: string; p_pack: string; p_start: string; p_tz: string; p_vibe: string };
         Returns: string;
       };
       create_at_home_a2c: {
@@ -5719,10 +5791,7 @@ export type Database = {
         };
         Returns: string;
       };
-      create_beta_codes: {
-        Args: { p_count: number; p_note: string };
-        Returns: string[];
-      };
+      create_beta_codes: { Args: { p_count: number; p_note: string }; Returns: string[] };
       create_culture_a2e: {
         Args: {
           p_city: string;
@@ -5762,10 +5831,7 @@ export type Database = {
         };
         Returns: string;
       };
-      create_teen_invite: {
-        Args: { p_guardian: boolean; p_trip: string };
-        Returns: string;
-      };
+      create_teen_invite: { Args: { p_guardian: boolean; p_trip: string }; Returns: string };
       create_trip: {
         Args: {
           p_destination: string;
@@ -5843,12 +5909,9 @@ export type Database = {
         Args: { p_action: string; p_cards?: Json; p_exp: string };
         Returns: Json;
       };
-      culture_action: {
-        Args: { p?: Json; p_action: string; p_exp?: string };
-        Returns: Json;
-      };
+      culture_action: { Args: { p?: Json; p_action: string; p_exp?: string }; Returns: Json };
       culture_badges: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           earned_at: string;
           track: string;
@@ -5900,7 +5963,7 @@ export type Database = {
       };
       culture_quest_card: { Args: { p_session: string }; Returns: string };
       culture_quest_previews: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           category: string;
           city: string;
@@ -5959,16 +6022,10 @@ export type Database = {
         Returns: undefined;
       };
       delete_cost_item: { Args: { p_item: string }; Returns: undefined };
-      delete_trip: {
-        Args: { p_name: string; p_trip: string };
-        Returns: undefined;
-      };
+      delete_trip: { Args: { p_name: string; p_trip: string }; Returns: undefined };
       dismiss_bug_update: { Args: { p_report: string }; Returns: undefined };
       dismiss_cost_note: { Args: { p_note: string }; Returns: undefined };
-      draw_game_card: {
-        Args: { p_category: string; p_trip: string };
-        Returns: number;
-      };
+      draw_game_card: { Args: { p_category: string; p_trip: string }; Returns: number };
       edit_trip: {
         Args: {
           p_destination: string;
@@ -5980,30 +6037,21 @@ export type Database = {
         Returns: undefined;
       };
       edit_trip_day: {
-        Args: {
-          p_bingo: Json;
-          p_date: string;
-          p_quests: Json;
-          p_theme: string;
-          p_trip: string;
-        };
+        Args: { p_bingo: Json; p_date: string; p_quests: Json; p_theme: string; p_trip: string };
         Returns: undefined;
       };
       end_trip: { Args: { p_trip: string }; Returns: undefined };
       extend_draw_timer: { Args: { p_trip: string }; Returns: number };
-      finalize_season: {
-        Args: { p_season: string; p_trip: string };
-        Returns: undefined;
-      };
+      finalize_season: { Args: { p_season: string; p_trip: string }; Returns: undefined };
       founder_age_tiers: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           people: number;
           tier: string;
         }[];
       };
       founder_bug_reports: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           app_version: string;
           created_at: string;
@@ -6023,7 +6071,7 @@ export type Database = {
         }[];
       };
       founder_checkins: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           answers: Json;
           context: string;
@@ -6039,7 +6087,7 @@ export type Database = {
         Returns: string;
       };
       founder_open_summary: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           issue_id: string;
           last_at: string;
@@ -6051,7 +6099,7 @@ export type Database = {
         }[];
       };
       founder_trips: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           captain: string;
           created_at: string;
@@ -6092,13 +6140,10 @@ export type Database = {
           updated_at: string;
         }[];
       };
-      game_day_status: {
-        Args: { p_date: string; p_trip: string };
-        Returns: string;
-      };
+      game_day_status: { Args: { p_date: string; p_trip: string }; Returns: string };
       game_name_available: { Args: { p_name: string }; Returns: string };
       game_rooms: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           city: string;
           country: string;
@@ -6115,22 +6160,11 @@ export type Database = {
       };
       games_live: { Args: { p_trip: string }; Returns: boolean };
       guide_propose: {
-        Args: {
-          p_body: string;
-          p_kind: string;
-          p_photo?: string;
-          p_trip: string;
-        };
+        Args: { p_body: string; p_kind: string; p_photo?: string; p_trip: string };
         Returns: string;
       };
-      guide_publish: {
-        Args: { p_on: boolean; p_trip: string };
-        Returns: undefined;
-      };
-      guide_review: {
-        Args: { p_action: string; p_item: string };
-        Returns: undefined;
-      };
+      guide_publish: { Args: { p_on: boolean; p_trip: string }; Returns: undefined };
+      guide_review: { Args: { p_action: string; p_item: string }; Returns: undefined };
       hide_inspiration: { Args: { p_card: string }; Returns: undefined };
       home_day_action: {
         Args: { p_action: string; p_choice?: number; p_session: string };
@@ -6148,15 +6182,9 @@ export type Database = {
         }[];
       };
       home_day_view: { Args: { p_trip: string }; Returns: Json };
-      host_check_in: {
-        Args: { p_trip: string; p_week: number };
-        Returns: undefined;
-      };
-      is_app_admin: { Args: never; Returns: boolean };
-      is_trip_member: {
-        Args: { p_trip: string; p_user: string };
-        Returns: boolean;
-      };
+      host_check_in: { Args: { p_trip: string; p_week: number }; Returns: undefined };
+      is_app_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      is_trip_member: { Args: { p_trip: string; p_user: string }; Returns: boolean };
       join_trip: { Args: { p_code: string }; Returns: string };
       join_waitlist: { Args: { p_email: string }; Returns: undefined };
       junkie_rank: {
@@ -6171,30 +6199,18 @@ export type Database = {
         }[];
       };
       lab_as: { Args: { p_action: string; p_trip: string }; Returns: string };
-      lab_at_home: {
-        Args: { p_length: string; p_pack: string };
-        Returns: string;
-      };
+      lab_at_home: { Args: { p_length: string; p_pack: string }; Returns: string };
       lab_at_home_bots: { Args: { p_trip: string }; Returns: string };
-      lab_create: {
-        Args: { p_days: number; p_size: number; p_window: number };
-        Returns: string;
-      };
+      lab_create: { Args: { p_days: number; p_size: number; p_window: number }; Returns: string };
       lab_delete: { Args: { p_trip: string }; Returns: string[] };
-      lab_extra: {
-        Args: { p_action: string; p_arg: string; p_trip: string };
-        Returns: string;
-      };
+      lab_extra: { Args: { p_action: string; p_arg: string; p_trip: string }; Returns: string };
       lab_r17: { Args: { p_action: string; p_trip: string }; Returns: string };
       lab_role: { Args: { p_role: string; p_trip: string }; Returns: undefined };
-      lab_shift: {
-        Args: { p_day: number; p_target: string; p_trip: string };
-        Returns: undefined;
-      };
+      lab_shift: { Args: { p_day: number; p_target: string; p_trip: string }; Returns: undefined };
       lab_view: { Args: { p_trip: string; p_view: string }; Returns: string };
       leave_trip: { Args: { p_trip: string }; Returns: undefined };
       list_beta_codes: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           code: string;
           created_at: string;
@@ -6207,20 +6223,14 @@ export type Database = {
         }[];
       };
       list_waitlist: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           created_at: string;
           email: string;
         }[];
       };
       log_ai_call: {
-        Args: {
-          p_cost: number;
-          p_in: number;
-          p_model: string;
-          p_out: number;
-          p_usage: string;
-        };
+        Args: { p_cost: number; p_in: number; p_model: string; p_out: number; p_usage: string };
         Returns: undefined;
       };
       manage_trip_member: {
@@ -6228,12 +6238,7 @@ export type Database = {
         Returns: undefined;
       };
       mark_bingo: {
-        Args: {
-          p_date: string;
-          p_photo: string;
-          p_square: number;
-          p_trip: string;
-        };
+        Args: { p_date: string; p_photo: string; p_square: number; p_trip: string };
         Returns: undefined;
       };
       member_age_ranges: {
@@ -6283,12 +6288,9 @@ export type Database = {
         }[];
       };
       mix_ai_quota: { Args: { p_trip: string }; Returns: string };
-      moderate_inspiration: {
-        Args: { p_action: string; p_card: string };
-        Returns: undefined;
-      };
+      moderate_inspiration: { Args: { p_action: string; p_card: string }; Returns: undefined };
       my_access: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           age_range: string;
           beta: boolean;
@@ -6298,7 +6300,7 @@ export type Database = {
         }[];
       };
       my_bug_updates: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           founder_note: string;
           id: string;
@@ -6316,15 +6318,15 @@ export type Database = {
         }[];
       };
       my_lab_view: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           trip_id: string;
           view: string;
         }[];
       };
-      my_mix_used: { Args: never; Returns: number };
+      my_mix_used: { Args: Record<PropertyKey, never>; Returns: number };
       my_passport: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           crowns: number;
           junkie: boolean;
@@ -6333,7 +6335,7 @@ export type Database = {
         }[];
       };
       my_past_trips: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           end_date: string;
           name: string;
@@ -6341,26 +6343,20 @@ export type Database = {
           trip_id: string;
         }[];
       };
-      my_preview_shared: {
-        Args: { p_exp?: string; p_trip?: string };
-        Returns: boolean;
-      };
+      my_preview_shared: { Args: { p_exp?: string; p_trip?: string }; Returns: boolean };
       my_trip_feedback_done: { Args: { p_trip: string }; Returns: boolean };
-      my_unlocked_trips: { Args: never; Returns: number };
+      my_unlocked_trips: { Args: Record<PropertyKey, never>; Returns: number };
       my_waiting_trips: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           destination: string;
           name: string;
           trip_id: string;
         }[];
       };
-      new_trip_code: { Args: never; Returns: string };
+      new_trip_code: { Args: Record<PropertyKey, never>; Returns: string };
       next_game_turn: { Args: { p_trip: string }; Returns: undefined };
-      next_room_turn: {
-        Args: { p_room: string; p_trip: string };
-        Returns: undefined;
-      };
+      next_room_turn: { Args: { p_room: string; p_trip: string }; Returns: undefined };
       night_checkin_tasks: {
         Args: { p_trip: string; p_week: number };
         Returns: {
@@ -6376,12 +6372,7 @@ export type Database = {
         Returns: undefined;
       };
       night_format_action: {
-        Args: {
-          p_action: string;
-          p_trip: string;
-          p_value?: string;
-          p_week: number;
-        };
+        Args: { p_action: string; p_trip: string; p_value?: string; p_week: number };
         Returns: Json;
       };
       normalize_game_name: { Args: { p: string }; Returns: string };
@@ -6402,7 +6393,7 @@ export type Database = {
         }[];
       };
       passport_collection: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           city: string;
           country: string;
@@ -6428,18 +6419,12 @@ export type Database = {
           user_id: string;
         }[];
       };
-      pick_at_home_song: {
-        Args: { p_activity: string; p_user: string };
-        Returns: undefined;
-      };
+      pick_at_home_song: { Args: { p_activity: string; p_user: string }; Returns: undefined };
       pick_night_game: {
         Args: { p_game: number; p_trip: string; p_week: number };
         Returns: undefined;
       };
-      pick_team: {
-        Args: { p_team: string; p_trip: string };
-        Returns: undefined;
-      };
+      pick_team: { Args: { p_team: string; p_trip: string }; Returns: undefined };
       plan_game_nights: {
         Args: {
           p_count?: number;
@@ -6456,35 +6441,15 @@ export type Database = {
           week_number: number;
         }[];
       };
-      player_card_read: {
-        Args: { p_trip: string; p_user: string };
-        Returns: Json;
-      };
-      post_game_night_poll: {
-        Args: { p_options: Json; p_trip: string };
-        Returns: undefined;
-      };
+      player_card_read: { Args: { p_trip: string; p_user: string }; Returns: Json };
+      post_game_night_poll: { Args: { p_options: Json; p_trip: string }; Returns: undefined };
       post_live_vote: {
-        Args: {
-          p_kind: string;
-          p_options: Json;
-          p_prompt: string;
-          p_trip: string;
-          p_week: number;
-        };
+        Args: { p_kind: string; p_options: Json; p_prompt: string; p_trip: string; p_week: number };
         Returns: string;
       };
-      post_photo: {
-        Args: { p_date: string; p_photo: string; p_trip: string };
-        Returns: undefined;
-      };
+      post_photo: { Args: { p_date: string; p_photo: string; p_trip: string }; Returns: undefined };
       post_quest: {
-        Args: {
-          p_date: string;
-          p_photo: string;
-          p_quest: number;
-          p_trip: string;
-        };
+        Args: { p_date: string; p_photo: string; p_quest: number; p_trip: string };
         Returns: undefined;
       };
       present_checkin: {
@@ -6505,7 +6470,7 @@ export type Database = {
         }[];
       };
       price_list: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           beta_free: boolean;
           cents: number;
@@ -6514,7 +6479,7 @@ export type Database = {
         }[];
       };
       public_inspiration_queue: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: {
           approved: boolean;
           category: string;
@@ -6526,7 +6491,7 @@ export type Database = {
           title: string;
         }[];
       };
-      public_launch: { Args: never; Returns: boolean };
+      public_launch: { Args: Record<PropertyKey, never>; Returns: boolean };
       qotw_action: {
         Args: { p_action: string; p_trip: string; p_week: number };
         Returns: undefined;
@@ -6542,10 +6507,7 @@ export type Database = {
           votes: number;
         }[];
       };
-      quest_review: {
-        Args: { p_action: string; p_post: string };
-        Returns: undefined;
-      };
+      quest_review: { Args: { p_action: string; p_post: string }; Returns: undefined };
       quick_vote_action: {
         Args: { p_action: string; p_trip: string; p_vote?: string };
         Returns: string;
@@ -6558,13 +6520,7 @@ export type Database = {
         }[];
       };
       rate_content: {
-        Args: {
-          p_key: string;
-          p_kind: string;
-          p_text: string;
-          p_trip: string;
-          p_vote: number;
-        };
+        Args: { p_key: string; p_kind: string; p_text: string; p_trip: string; p_vote: number };
         Returns: undefined;
       };
       reclaim_captain: { Args: { p_trip: string }; Returns: undefined };
@@ -6572,14 +6528,8 @@ export type Database = {
       refund_failed_ai:
         | { Args: { p_usage: string }; Returns: boolean }
         | { Args: { p_usage: string; p_user: string }; Returns: boolean };
-      release_trip_day: {
-        Args: { p_date: string; p_trip: string };
-        Returns: undefined;
-      };
-      remove_photo: {
-        Args: { p_path: string; p_trip: string };
-        Returns: undefined;
-      };
+      release_trip_day: { Args: { p_date: string; p_trip: string }; Returns: undefined };
+      remove_photo: { Args: { p_path: string; p_trip: string }; Returns: undefined };
       report_cost_payment: {
         Args: { p_amount_cents: number; p_item: string; p_note: string };
         Returns: undefined;
@@ -6588,10 +6538,7 @@ export type Database = {
         Args: { p_to: string; p_trip: string; p_week: number };
         Returns: string;
       };
-      request_room: {
-        Args: { p_interest: string; p_trip: string };
-        Returns: undefined;
-      };
+      request_room: { Args: { p_interest: string; p_trip: string }; Returns: undefined };
       reschedule_preview: {
         Args: { p_count: number; p_every: number; p_trip: string };
         Returns: {
@@ -6613,20 +6560,11 @@ export type Database = {
           week_number: number;
         }[];
       };
-      respond_host_swap: {
-        Args: { p_action: string; p_swap: string };
-        Returns: undefined;
-      };
+      respond_host_swap: { Args: { p_action: string; p_swap: string }; Returns: undefined };
       reveal_inspiration_votes: { Args: { p_card: string }; Returns: undefined };
       reveal_live_vote: { Args: { p_vote: string }; Returns: undefined };
-      reveal_mission: {
-        Args: { p_date: string; p_trip: string };
-        Returns: undefined;
-      };
-      reveal_weekly_question: {
-        Args: { p_trip: string; p_week: number };
-        Returns: undefined;
-      };
+      reveal_mission: { Args: { p_date: string; p_trip: string }; Returns: undefined };
+      reveal_weekly_question: { Args: { p_trip: string; p_week: number }; Returns: undefined };
       revoke_beta_code: { Args: { p_code: string }; Returns: undefined };
       room_requests_for: {
         Args: { p_trip: string };
@@ -6661,10 +6599,7 @@ export type Database = {
         Args: { p_rows: Json; p_trip: string; p_week: number };
         Returns: undefined;
       };
-      save_teams: {
-        Args: { p_teams: Json; p_trip: string };
-        Returns: undefined;
-      };
+      save_teams: { Args: { p_teams: Json; p_trip: string }; Returns: undefined };
       sealed_proof_feed: {
         Args: { p_trip: string };
         Returns: {
@@ -6716,10 +6651,7 @@ export type Database = {
         }[];
       };
       season_game_decline: { Args: { p_find: string }; Returns: undefined };
-      season_game_reveal: {
-        Args: { p_date: string; p_trip: string };
-        Returns: string;
-      };
+      season_game_reveal: { Args: { p_date: string; p_trip: string }; Returns: string };
       season_game_submit: {
         Args: { p_date: string; p_path: string; p_slot: number; p_trip: string };
         Returns: undefined;
@@ -6809,48 +6741,26 @@ export type Database = {
         Args: { p_label: string; p_secs: number; p_trip: string };
         Returns: undefined;
       };
-      set_adult_cards: {
-        Args: { p_enabled: boolean; p_trip: string };
-        Returns: undefined;
-      };
+      set_adult_cards: { Args: { p_enabled: boolean; p_trip: string }; Returns: undefined };
       set_ai_guard: {
         Args: { p_enabled: boolean; p_global_cap: number; p_user_cap: number };
         Returns: undefined;
       };
-      set_bingo_needs_photo: {
-        Args: { p_required: boolean; p_trip: string };
-        Returns: undefined;
-      };
+      set_bingo_needs_photo: { Args: { p_required: boolean; p_trip: string }; Returns: undefined };
       set_boarding_tile: { Args: { p_tile: string }; Returns: undefined };
       set_carry_on_meetup: {
         Args: { p_at: string; p_place: string; p_trip: string };
         Returns: undefined;
       };
-      set_culture_finale: {
-        Args: { p_exp: string; p_format: string };
-        Returns: undefined;
-      };
+      set_culture_finale: { Args: { p_exp: string; p_format: string }; Returns: undefined };
       set_culture_mode: {
-        Args: {
-          p_exp: string;
-          p_mode: string;
-          p_types: string[];
-          p_vibe: string;
-        };
+        Args: { p_exp: string; p_mode: string; p_types: string[]; p_vibe: string };
         Returns: undefined;
       };
-      set_first_game: {
-        Args: { p_game: number; p_trip: string };
-        Returns: undefined;
-      };
+      set_first_game: { Args: { p_game: number; p_trip: string }; Returns: undefined };
       set_founding_open: { Args: { p_open: boolean }; Returns: undefined };
       set_game_days: {
-        Args: {
-          p_every: number;
-          p_rest: string[];
-          p_surprise: boolean;
-          p_trip: string;
-        };
+        Args: { p_every: number; p_rest: string[]; p_surprise: boolean; p_trip: string };
         Returns: undefined;
       };
       set_game_night_host: {
@@ -6865,10 +6775,7 @@ export type Database = {
         Args: { p_day: string; p_place: string; p_trip: string };
         Returns: undefined;
       };
-      set_home_ready_start: {
-        Args: { p_start: string; p_trip: string };
-        Returns: undefined;
-      };
+      set_home_ready_start: { Args: { p_start: string; p_trip: string }; Returns: undefined };
       set_join_controls: {
         Args: { p_locked: boolean; p_max: number; p_trip: string };
         Returns: undefined;
@@ -6880,25 +6787,12 @@ export type Database = {
       };
       set_no_alcohol: { Args: { p_on: boolean }; Returns: undefined };
       set_passport_destination: {
-        Args: {
-          p_city: string;
-          p_country: string;
-          p_state: string;
-          p_trip: string;
-        };
+        Args: { p_city: string; p_country: string; p_state: string; p_trip: string };
         Returns: undefined;
       };
-      set_pay_note: {
-        Args: { p_note: string; p_trip: string };
-        Returns: undefined;
-      };
+      set_pay_note: { Args: { p_note: string; p_trip: string }; Returns: undefined };
       set_preflight_a2c: {
-        Args: {
-          p_start: string;
-          p_time: string;
-          p_trip: string;
-          p_weekday: number;
-        };
+        Args: { p_start: string; p_time: string; p_trip: string; p_weekday: number };
         Returns: number;
       };
       set_preflight_start: {
@@ -6913,10 +6807,7 @@ export type Database = {
         };
         Returns: number;
       };
-      set_price_rule: {
-        Args: { p_cents: number; p_key: string };
-        Returns: undefined;
-      };
+      set_price_rule: { Args: { p_cents: number; p_key: string }; Returns: undefined };
       set_public_launch: { Args: { p_on: boolean }; Returns: undefined };
       set_public_leaderboard: { Args: { p_public: boolean }; Returns: boolean };
       set_room_listing: {
@@ -6951,10 +6842,7 @@ export type Database = {
         Args: { p_here: number; p_host: number; p_trip: string; p_win: number };
         Returns: undefined;
       };
-      set_team_mode: {
-        Args: { p_caps: Json; p_mode: string; p_trip: string };
-        Returns: undefined;
-      };
+      set_team_mode: { Args: { p_caps: Json; p_mode: string; p_trip: string }; Returns: undefined };
       set_team_room: {
         Args: { p_call: string; p_host: string; p_team: string; p_trip: string };
         Returns: undefined;
@@ -6964,68 +6852,39 @@ export type Database = {
         Returns: string;
       };
       set_trip_access: {
-        Args: {
-          p_code_enabled: boolean;
-          p_require_approval: boolean;
-          p_trip: string;
-        };
+        Args: { p_code_enabled: boolean; p_require_approval: boolean; p_trip: string };
+        Returns: undefined;
+      };
+      set_trip_archived: {
+        Args: { p_archived: boolean; p_note: string; p_trip: string };
         Returns: undefined;
       };
       set_trip_extras: {
-        Args: {
-          p_backup: string;
-          p_call: string;
-          p_motto: string;
-          p_trip: string;
-        };
+        Args: { p_backup: string; p_call: string; p_motto: string; p_trip: string };
         Returns: undefined;
       };
-      set_trip_minors: {
-        Args: { p_has: boolean; p_trip: string };
-        Returns: undefined;
-      };
-      set_trip_timezone: {
-        Args: { p_trip: string; p_tz: string };
-        Returns: undefined;
-      };
-      set_trip_vibe: {
-        Args: { p_trip: string; p_vibe: string };
-        Returns: undefined;
-      };
+      set_trip_minors: { Args: { p_has: boolean; p_trip: string }; Returns: undefined };
+      set_trip_timezone: { Args: { p_trip: string; p_tz: string }; Returns: undefined };
+      set_trip_vibe: { Args: { p_trip: string; p_vibe: string }; Returns: undefined };
       set_weekly_question: {
         Args: { p_prompt: string; p_trip: string; p_week: number };
         Returns: undefined;
       };
-      set_welcome_copy: {
-        Args: { p_faq: Json; p_intro: string };
-        Returns: undefined;
-      };
+      set_welcome_copy: { Args: { p_faq: Json; p_intro: string }; Returns: undefined };
       set_wheels_up: {
         Args: { p_date: string; p_time: string; p_trip: string };
         Returns: undefined;
       };
-      set_window_prep: {
-        Args: { p_days: number; p_exp: string };
-        Returns: undefined;
-      };
+      set_window_prep: { Args: { p_days: number; p_exp: string }; Returns: undefined };
       share_preview: {
         Args: { p_exp?: string; p_on?: boolean; p_trip?: string };
         Returns: boolean;
       };
       shuffle_teams: { Args: { p_trip: string }; Returns: number };
-      skip_card: {
-        Args: { p_category: string; p_trip: string };
-        Returns: number;
-      };
+      skip_card: { Args: { p_category: string; p_trip: string }; Returns: number };
       skip_limit: { Args: { p_trip: string }; Returns: number };
-      solo_action: {
-        Args: { p?: Json; p_action: string; p_exp: string };
-        Returns: Json;
-      };
-      spend_ai_credits: {
-        Args: { p_action: string; p_trip: string };
-        Returns: string;
-      };
+      solo_action: { Args: { p?: Json; p_action: string; p_exp: string }; Returns: Json };
+      spend_ai_credits: { Args: { p_action: string; p_trip: string }; Returns: string };
       spin_next_game: {
         Args: { p_trip: string };
         Returns: {
@@ -7035,22 +6894,12 @@ export type Database = {
         }[];
       };
       start_game_turns: {
-        Args: {
-          p_cards: number;
-          p_random: boolean;
-          p_trip: string;
-          p_week: number;
-        };
+        Args: { p_cards: number; p_random: boolean; p_trip: string; p_week: number };
         Returns: undefined;
       };
       step_down: { Args: { p_to: string; p_trip: string }; Returns: undefined };
       submit_checkin: {
-        Args: {
-          p_answers: Json;
-          p_context: string;
-          p_key: string;
-          p_trip: string;
-        };
+        Args: { p_answers: Json; p_context: string; p_key: string; p_trip: string };
         Returns: undefined;
       };
       submit_trip_feedback: {
@@ -7064,10 +6913,7 @@ export type Database = {
         };
         Returns: undefined;
       };
-      surprise_night_game: {
-        Args: { p_trip: string; p_week: number };
-        Returns: number;
-      };
+      surprise_night_game: { Args: { p_trip: string; p_week: number }; Returns: number };
       take_over_captain: { Args: { p_trip: string }; Returns: undefined };
       team_capacities: {
         Args: { p_trip: string };
@@ -7078,7 +6924,7 @@ export type Database = {
         }[];
       };
       thumb_quest: { Args: { p_post: string }; Returns: undefined };
-      touch_last_seen: { Args: never; Returns: undefined };
+      touch_last_seen: { Args: Record<PropertyKey, never>; Returns: undefined };
       traveler_level: {
         Args: { p_user: string };
         Returns: {
@@ -7164,32 +7010,15 @@ export type Database = {
         }[];
       };
       undo_cost_payment: {
-        Args: {
-          p_amount_cents: number;
-          p_item: string;
-          p_reason: string;
-          p_user: string;
-        };
+        Args: { p_amount_cents: number; p_item: string; p_reason: string; p_user: string };
         Returns: undefined;
       };
       unlock_big_group: { Args: { p_trip: string }; Returns: undefined };
       unlock_extra_seats: { Args: { p_trip: string }; Returns: undefined };
-      unlock_trip: {
-        Args: { p_headcount: number; p_trip: string };
-        Returns: undefined;
-      };
-      use_ai_quota: {
-        Args: { p_kind: string; p_trip: string };
-        Returns: string;
-      };
-      use_captain_pass: {
-        Args: { p_trip: string; p_week: number };
-        Returns: undefined;
-      };
-      use_host_pass: {
-        Args: { p_trip: string; p_week: number };
-        Returns: undefined;
-      };
+      unlock_trip: { Args: { p_headcount: number; p_trip: string }; Returns: undefined };
+      use_ai_quota: { Args: { p_kind: string; p_trip: string }; Returns: string };
+      use_captain_pass: { Args: { p_trip: string; p_week: number }; Returns: undefined };
+      use_host_pass: { Args: { p_trip: string; p_week: number }; Returns: undefined };
       use_item_alternative: {
         Args: {
           p_alternative: string;
@@ -7201,21 +7030,13 @@ export type Database = {
         };
         Returns: undefined;
       };
-      use_night_pass: {
-        Args: { p_trip: string; p_week: number };
-        Returns: undefined;
-      };
+      use_night_pass: { Args: { p_trip: string; p_week: number }; Returns: undefined };
       use_skip: {
         Args: { p_kind: string; p_new: string; p_ref: string; p_trip: string };
         Returns: string;
       };
       vote_mission: {
-        Args: {
-          p_caught: boolean;
-          p_date: string;
-          p_owner: string;
-          p_trip: string;
-        };
+        Args: { p_caught: boolean; p_date: string; p_owner: string; p_trip: string };
         Returns: undefined;
       };
       vote_weekly_answer: {
@@ -7246,7 +7067,7 @@ export type Database = {
           winner_id: string;
         }[];
       };
-      welcome_copy: { Args: never; Returns: Json };
+      welcome_copy: { Args: Record<PropertyKey, never>; Returns: Json };
     };
     Enums: {
       [_ in never]: never;
@@ -7271,9 +7092,7 @@ export type Tables<
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R;
@@ -7296,9 +7115,7 @@ export type TablesInsert<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I;
     }
@@ -7320,9 +7137,7 @@ export type TablesUpdate<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U;
     }
@@ -7344,9 +7159,7 @@ export type Enums<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never) = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
@@ -7360,9 +7173,7 @@ export type CompositeTypes<
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never) = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
