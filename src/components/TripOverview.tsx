@@ -1,39 +1,27 @@
 import { TripActions } from "@/components/TripActions";
-import { nextGameNight } from "@/lib/next-game-night";
-import { displayGameTitle } from "@/lib/display-game-title";
 import { tripDisplayName } from "@/lib/trip-display-name";
-import { confirmInApp } from "@/lib/confirm";
 import { safeSetItem } from "@/lib/safe-storage";
-import { friendlyError } from "@/lib/friendly-error";
-import { fmtWhen } from "@/lib/viewer-time";
 import { useEffect, useState, type ReactNode } from "react";
 import { ArrowLeft, ChevronDown, ChevronRight, MapPinned } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
 import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
-import { friendlyRange } from "@/lib/trip-dates";
+import { friendlyDate, friendlyRange } from "@/lib/trip-dates";
 import { tripToday, tripTz } from "@/lib/itinerary";
 import { TripTimeline } from "./Itinerary";
 import { PhotoWall } from "./Seasons";
 import { FeatureGate } from "@/lib/features";
-import { CostReminder, TripCostsPlayer } from "./TripCosts";
 import { ItineraryEditor } from "./Itinerary";
 import { GamePlanPicker } from "./GamePlanPicker";
 import { TripVibeTools, VibeBadge } from "./BetaAccess";
 import { TripTimezoneField } from "./TripTimezoneField";
-import { TeamsEditor } from "./Seasons";
-import { CaptainTakeover, EditPencil, Sheet, TeamPicker } from "./CaptainExtras";
-import { GameNightCalendar } from "./GameNightCalendar";
+import { CaptainTakeover, EditPencil, Sheet } from "./CaptainExtras";
 import { TripSectionIcon } from "./TripSectionIcon";
 import { CaptainCrown } from "./CaptainCrown";
 import { useLook } from "@/lib/look";
 
-type Night = Tables<"game_nights">;
-type Game = Tables<"game_catalog">;
-type Section = "plan" | "games" | "hosts" | "photos" | "costs" | "teams";
-type Edit = "itinerary" | "plan" | "vibe" | "tz" | "teams" | null;
+type Section = "plan" | "games" | "photos";
+type Edit = "itinerary" | "plan" | "vibe" | "tz" | null;
 
 function Accordion({
   title,
@@ -113,37 +101,13 @@ export function TripOverview({
   const tz =
     (trip as TripWithRole & { trip_timezone?: string }).trip_timezone || trip.home_timezone;
   const [open, setOpen] = useState<Section[]>([]);
-  const [nights, setNights] = useState<Night[]>([]);
-  const [games, setGames] = useState<Game[]>([]);
-  const [error, setError] = useState("");
-  const [nightBusy, setNightBusy] = useState(false);
-  async function toggleNight(week: number, skipped: boolean) {
-    if (!skipped && !(await confirmInApp(`Mark Week ${week} as skipped? Nobody loses points.`)))
-      return;
-    setNightBusy(true);
-    const result = await supabase.rpc("set_night_skipped", {
-      p_trip: trip.id,
-      p_week: week,
-      p_skipped: !skipped,
-    });
-    setNightBusy(false);
-    if (result.error) setError(friendlyError(result.error));
-    else {
-      setNights((rows) =>
-        rows.map((n) => (n.week_number === week ? { ...n, skipped: !skipped } : n)),
-      );
-      setError("");
-    }
-  }
   useEffect(() => {
     try {
       const stored = window.localStorage.getItem(`tripjunkie-trip-sections-${trip.id}`);
       const parsed: unknown = stored ? JSON.parse(stored) : null;
       setOpen(
         Array.isArray(parsed)
-          ? parsed.filter((x): x is Section =>
-              ["plan", "games", "hosts", "photos", "costs", "teams"].includes(x),
-            )
+          ? parsed.filter((x): x is Section => ["plan", "games", "photos"].includes(x))
           : [trip.start_date <= tripToday(tripTz(trip)) ? "plan" : "games"],
       );
     } catch {
@@ -151,33 +115,6 @@ export function TripOverview({
     }
     setFull(false);
   }, [trip.id, trip.start_date, trip.home_timezone]);
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      const [n, g] = await Promise.all([
-        supabase.from("game_nights").select("*").eq("trip_id", trip.id).order("week_number"),
-        supabase.from("game_catalog").select("*").order("number"),
-      ]);
-      if (!alive) return;
-      if (n.error || g.error) setError("Could not load game nights. Try again later.");
-      else {
-        setNights(n.data ?? []);
-        setGames(g.data ?? []);
-        setError("");
-      }
-    };
-    void load();
-    const changed = () => void load();
-    window.addEventListener("tripjunkie-night-game-changed", changed);
-    const timer = window.setInterval(() => {
-      if (!document.hidden) void load();
-    }, 30000);
-    return () => {
-      alive = false;
-      window.clearInterval(timer);
-      window.removeEventListener("tripjunkie-night-game-changed", changed);
-    };
-  }, [trip.id]);
   function toggle(section: Section) {
     setOpen((current) => {
       const next = current.includes(section)
@@ -187,8 +124,6 @@ export function TripOverview({
       return next;
     });
   }
-  const next = nextGameNight(nights, Date.now());
-  const format = (date: string) => fmtWhen(date, trip.home_timezone);
   if (full)
     return (
       <div className="pb-8">
@@ -253,7 +188,6 @@ export function TripOverview({
         </Button>
       )}
       <CaptainTakeover trip={trip} onChanged={saved} />
-      <CostReminder trip={trip} userId={userId} />
       <Accordion
         cinematic={cinematic}
         title="What's next · itinerary"
@@ -273,105 +207,17 @@ export function TripOverview({
       </Accordion>
       <Accordion
         cinematic={cinematic}
-        title="Games to come"
-        action={pencil("plan", cinematic ? "Pre-Flight start date" : "Game Day start date")}
+        title="Pre-Flight"
+        action={pencil("plan", "Pre-Flight start date")}
         open={open.includes("games")}
         onToggle={() => toggle("games")}
       >
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-        {next ? (
-          <div className="app-card mt-3">
-            <p className="eyebrow text-green">NEXT GAME NIGHT</p>
-            <p className="font-display font-extrabold mt-2">{format(next.starts_at)}</p>
-            <p className="text-sm mt-2">
-              {next.game_revealed
-                ? displayGameTitle(
-                    games.find((g) => g.number === next.game_number)?.name ?? "Mystery game",
-                  )
-                : "Mystery game"}
-            </p>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground mt-2">
-            {nights.length
-              ? "No more game nights scheduled."
-              : "Your next game night will show here once scheduled."}
-          </p>
-        )}
-      </Accordion>
-      <div id={`trip-calendar-${trip.id}`}>
-        <Accordion
-          cinematic={cinematic}
-          title={cinematic ? "Game Night Calendar" : "Game night calendar"}
-          open={open.includes("hosts")}
-          onToggle={() => toggle("hosts")}
-        >
-          {nights.length || cinematic ? (
-            <FeatureGate tripId={trip.id} feature="calendar" compact>
-              <GameNightCalendar
-                trip={trip}
-                nights={nights}
-                games={games}
-                members={members}
-                cards={cards}
-                userId={userId}
-                viewOnly={viewOnly}
-                renderLeaderActions={(n) =>
-                  captain ? (
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setEdit("plan")}>
-                        Game Day start date
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={nightBusy}
-                        onClick={() => void toggleNight(n.week_number, n.skipped)}
-                      >
-                        {n.skipped ? "Un-skip night" : "Mark skipped"}
-                      </Button>
-                    </div>
-                  ) : null
-                }
-              />
-            </FeatureGate>
-          ) : (
-            <p className="text-sm text-muted-foreground mt-2">
-              Game nights will appear once scheduled.
-            </p>
-          )}
-        </Accordion>
-      </div>
-      <Accordion
-        cinematic={cinematic}
-        title="Teams 🚩"
-        action={pencil("teams", "teams")}
-        open={open.includes("teams")}
-        onToggle={() => toggle("teams")}
-      >
-        <FeatureGate tripId={trip.id} feature="teams" compact>
-          <TeamPicker
-            trip={trip}
-            userId={userId}
-            members={members}
-            cards={cards}
-            onEdit={captain ? () => setEdit("teams") : undefined}
-          />
-        </FeatureGate>
-      </Accordion>
-      <Accordion
-        cinematic={cinematic}
-        title="Trip pot 💸"
-        open={open.includes("costs")}
-        onToggle={() => toggle("costs")}
-      >
-        <FeatureGate tripId={trip.id} feature="trip_pot" compact>
-          <TripCostsPlayer trip={trip} userId={userId} />
-        </FeatureGate>
+        <p className="text-sm text-muted-foreground mt-2">
+          {trip.game_start
+            ? `Pre-Flight starts ${friendlyDate(trip.game_start)}.`
+            : "Set when Pre-Flight starts with the pencil."}{" "}
+          Call nights and daily cards arrive with the new setup.
+        </p>
       </Accordion>
       <Accordion
         cinematic={cinematic}
@@ -418,11 +264,6 @@ export function TripOverview({
       {edit === "tz" && (
         <Sheet title="Trip time zone 🌏" onClose={() => setEdit(null)}>
           <TripTimezoneField trip={trip} />
-        </Sheet>
-      )}
-      {edit === "teams" && (
-        <Sheet title="Teams 🚩" onClose={() => setEdit(null)}>
-          <TeamsEditor trip={trip} members={members} cards={cards} />
         </Sheet>
       )}
     </div>

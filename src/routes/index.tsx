@@ -77,12 +77,9 @@ import { CaptainTools } from "@/components/CaptainTools";
 import { TripOverview } from "@/components/TripOverview";
 import { FounderReports, BugUpdates, QuickCheckIn } from "@/components/BugInbox";
 import { FeedbackAdmin, TripFeedbackForm, useFeedbackDone } from "@/components/TripFeedback";
-import { PlayNights } from "@/components/GameNights";
 import { PhaseNotice } from "@/components/PhaseNotice";
 import { PlayHub } from "@/components/PlayHub";
-import { GameNightCall, RoleTips, VoteNow } from "@/components/GameNightExtras";
-import { QotwCard } from "@/components/WeeklyQuestion";
-import { HostSwapInbox } from "@/components/HostSwaps";
+import { RoleTips } from "@/components/GameNightExtras";
 import { CaptainBadge, LockedNote, isUnlocked } from "@/components/TripUnlock";
 import {
   ActiveSeasonBoard,
@@ -96,15 +93,7 @@ import {
   useBadges,
   useSeasonsData,
   ReadOnlyBanner,
-  SkipTickets,
-  useSkipCounts,
 } from "@/components/Seasons";
-import {
-  TripDayGames,
-  TripSeasonPreview,
-  tripHasStarted,
-  tripIsLive,
-} from "@/components/TripDayGames";
 import {
   loadTrips,
   loadMembers,
@@ -870,20 +859,6 @@ function Index() {
             )}
           </div>
         </header>
-      )}
-      {active && !welcomeOpen && !tools && !viewAsPlayer && (
-        <VoteNow
-          key={`vn-${active.id}`}
-          trip={active}
-          userId={user.id}
-          cards={cards}
-          isPlay={tab === "Play"}
-          onGoPlay={() => {
-            setSheet(null);
-            setTab("Play");
-            window.scrollTo({ top: 0, behavior: "instant" });
-          }}
-        />
       )}
       {meView && tab === "Me" ? (
         <div className="px-[18px]">
@@ -2057,21 +2032,8 @@ function TabContent({
             <Sparkles /> More
           </Button>
         </div>
-        <GameNightCall trip={active} userId={userId} viewOnly={viewOnly} />
         {!isUnlocked(active) && <LockedNote trip={active} what="the full trip" />}
-        <HostSwapInbox
-          key={`hsw-${active.id}`}
-          trip={active}
-          userId={userId}
-          viewOnly={viewOnly}
-          people={members.map((m) => ({
-            user_id: m.user_id,
-            name:
-              cards.find((c) => c.user_id === m.user_id)?.game_name || m.display_name || "Player",
-          }))}
-        />
         <div className={cinematicHomeTrip ? "cinematic-trip-extras" : ""}>
-          <QotwCard key={`qc-${active.id}`} trip={active} userId={userId} viewOnly={viewOnly} />
           <HomeSeasons
             key={`hs-${active.id}`}
             trip={active}
@@ -3086,7 +3048,6 @@ function SquadView({
   viewOnly?: boolean;
 }) {
   const { champs, junkie, data, season } = useBadges(trip, members);
-  const skipsLeft = useSkipCounts(trip.id);
   const mine = cards.find((c) => c.user_id === userId);
   const membership = members.find((m) => m.user_id === userId);
   return (
@@ -3132,14 +3093,6 @@ function SquadView({
                 ? "★ Co-Captain"
                 : "Player"}
           </p>
-          <div className="mt-2 flex gap-3">
-            <SkipTickets
-              left={skipsLeft(userId, "game")}
-              total={skipsLeft.limit("game")}
-              label="Pre-Flight"
-            />
-            <SkipTickets left={skipsLeft(userId, "trip")} label="Trip Season" />
-          </div>
         </div>
       </div>
       <SquadSeasons
