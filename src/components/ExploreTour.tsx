@@ -1,4 +1,3 @@
-import { useLook } from "@/lib/look";
 import { BrandLockup } from "@/components/BrandLockup";
 import { useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Crown } from "lucide-react";
@@ -71,16 +70,13 @@ export function ExploreTour({
   onPlanTrip?: (() => void) | undefined;
 }) {
   const [index, setIndex] = useState(0);
-  const cinematic = useLook("explore") === "cinematic";
   const startX = useRef<number | null>(null);
   const slide = slides[index] ?? slides[0];
   const last = index === slides.length - 1;
   const next = () => setIndex((i) => Math.min(slides.length - 1, i + 1));
   const previous = () => setIndex((i) => Math.max(0, i - 1));
   return (
-    <main
-      className={`page-scene page-scene-home min-h-dvh max-w-lg mx-auto flex flex-col px-[18px] pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] ${cinematic ? "cinematic-tour" : ""}`}
-    >
+    <main className="page-scene page-scene-home min-h-dvh max-w-lg mx-auto flex flex-col px-[18px] pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] cinematic-tour">
       <div className="flex items-center justify-between">
         <BrandLockup className="text-xl" compact />
         <Button variant="ghost" size="sm" className="min-h-11" onClick={() => void onFinish()}>
@@ -198,7 +194,7 @@ export function ExploreTour({
         <Button
           variant="playful"
           size="lg"
-          className={`w-full shrink-0 min-h-11 ${cinematic ? "tour-next" : ""}`}
+          className="w-full shrink-0 min-h-11 tour-next"
           onClick={next}
         >
           Next

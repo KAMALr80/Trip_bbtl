@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("a signed-out visitor can choose Google or email sign-in", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible();
-  await page.getByRole("button", { name: "Continue with email" }).click();
+  await page.getByRole("button", { name: "Sign in with email" }).click();
   await expect(page.getByRole("textbox", { name: /email/i }).first()).toBeVisible();
 });
 

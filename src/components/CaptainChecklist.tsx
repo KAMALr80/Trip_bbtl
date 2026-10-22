@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Check, ChevronRight, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useLook } from "@/lib/look";
+
 import type { Member, TripWithRole } from "@/lib/trips";
 import { usePendingCount } from "@/components/BetaCodes";
 
@@ -129,7 +129,6 @@ export function CaptainNudge({
   members: Member[];
   onOpenTools: () => void;
 }) {
-  const cinematic = useLook("home-top") === "cinematic";
   const status = useCaptainStatus(trip, members);
   const waiting = usePendingCount(trip.id, true);
   const key = `tripjunkie-nudge-${trip.id}`;
@@ -154,10 +153,7 @@ export function CaptainNudge({
   );
   if (waiting > 0 && (!status || hidden))
     return (
-      <div
-        className={`mb-4 rounded-2xl bg-orange-soft p-4 ${cinematic ? "cinematic-captain-nudge" : ""}`}
-        role="status"
-      >
+      <div className="mb-4 rounded-2xl bg-orange-soft p-4 cinematic-captain-nudge" role="status">
         <p className="font-bold text-sm mb-2">Quick Captain to-do</p>
         {waitingRow}
       </div>
@@ -171,7 +167,7 @@ export function CaptainNudge({
   if (!missing.length && !waiting) return null;
   return (
     <div
-      className={`mb-4 rounded-2xl bg-orange-soft p-4 flex gap-3 items-start ${cinematic ? "cinematic-captain-nudge" : ""}`}
+      className="mb-4 rounded-2xl bg-orange-soft p-4 flex gap-3 items-start cinematic-captain-nudge"
       role="status"
     >
       <Crown className="text-orange shrink-0 mt-0.5" size={20} />

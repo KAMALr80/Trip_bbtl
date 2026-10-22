@@ -17,17 +17,13 @@ import { Avatar } from "@/components/PlayerCards";
 import { fmtWhen, viewerZone } from "@/lib/viewer-time";
 import type { TripWithRole } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
-import lounge from "@/assets/athome-lounge.jpg";
+
 import thailand from "@/assets/athome-thailand.jpg";
 import mexico from "@/assets/athome-mexico.jpg";
 import japan from "@/assets/athome-japan.jpg";
 import travelFriends from "@/assets/travel-friends-cutout.webp";
 import atHomeArt from "@/assets/cinematic-at-home.jpg";
-import daylightJapan from "@/assets/cinematic-day-japan.jpg";
-import daylightMexico from "@/assets/cinematic-day-mexico.jpg";
-import daylightThailand from "@/assets/cinematic-day-thailand.jpg";
-const daylightPanels = { japan: daylightJapan, mexico: daylightMexico, thailand: daylightThailand };
-import { useLook } from "@/lib/look";
+
 import { CinematicMonthCalendar } from "./CinematicMonthCalendar";
 import { RoomPriceNote } from "@/lib/prices";
 
@@ -74,7 +70,6 @@ export function AtHomeSetup({
   onDone: (id: string) => void;
   loadTrip: (id: string) => Promise<TripWithRole | null>;
 }) {
-  const cinematic = useLook("at-home") === "cinematic";
   const [place, setPlace] = useState<Place>({ country: null, region: null, city: null });
   const [step, setStep] = useState(0),
     [pack, setPack] = useState(""),
@@ -143,7 +138,7 @@ export function AtHomeSetup({
         role="dialog"
         aria-modal="true"
         aria-label="Travel From Home"
-        className={`relative w-full max-w-lg max-h-[92dvh] overflow-y-auto bg-card rounded-t-[2rem] p-6 pb-[max(2rem,env(safe-area-inset-bottom))] shadow-soft ${cinematic ? "cinematic-at-home" : ""}`}
+        className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto bg-card rounded-t-[2rem] p-6 pb-[max(2rem,env(safe-area-inset-bottom))] shadow-soft cinematic-at-home"
       >
         <div className="w-12 h-1.5 bg-border rounded-full mx-auto mb-4" />
         <Button
@@ -164,31 +159,24 @@ export function AtHomeSetup({
           <>
             <div className="cinematic-frame rounded-2xl aspect-[4/3] cinematic-at-home-hero">
               <img
-                src={cinematic ? atHomeArt : lounge}
+                src={atHomeArt}
                 alt="A traveler relaxing on a couch with a passport"
                 width={1400}
                 height={1000}
                 className="w-full h-full object-cover"
               />
-              {cinematic && (
-                <div className="cinematic-at-home-copy">
-                  <p className="eyebrow">AT HOME · STEP 1 OF 4</p>
-                  <h2 className="font-display text-3xl font-extrabold mt-2">Travel From Home</h2>
-                  <p>Your couch, any country.</p>
-                </div>
-              )}
+              <div className="cinematic-at-home-copy">
+                <p className="eyebrow">AT HOME · STEP 1 OF 4</p>
+                <h2 className="font-display text-3xl font-extrabold mt-2">Travel From Home</h2>
+                <p>Your couch, any country.</p>
+              </div>
             </div>
-            {!cinematic && (
-              <>
-                <p className="eyebrow text-primary mt-4">AT HOME EXPERIENCE · STEP 1 OF 4</p>
-                <h2 className="font-display text-3xl font-extrabold mt-1">Travel from home</h2>
-              </>
-            )}
+
             <p className="font-bold mt-3">Where are we going?</p>
             <p className="text-sm text-muted-foreground mt-1">
               Travel together without leaving home. Solo works too.
             </p>
-            {cinematic && pack && (
+            {pack && (
               <div className="cinematic-at-home-banner">
                 <img
                   src={(PACKS.find((p) => p.key === pack) ?? PACKS[0]).img}
@@ -221,51 +209,18 @@ export function AtHomeSetup({
                 Thailand, Mexico or Japan.
               </p>
             )}
-            {!cinematic && (
-              <div className="grid gap-3 mt-4">
-                {PACKS.map((p) => (
-                  <Button
-                    key={p.key}
-                    variant="ghost"
-                    onClick={() => {
-                      setPack(p.key);
-                      setPlace({ country: p.code, region: null, city: null });
-                      if (!cinematic) setStep(1);
-                    }}
-                    className={`cinematic-frame relative h-24 rounded-2 border-2 text-left active:scale-[.98] transition ${cinematic && pack === p.key ? "cinematic-selected-place" : "border-border"}`}
-                  >
-                    <img
-                      src={cinematic ? daylightPanels[p.key as keyof typeof daylightPanels] : p.img}
-                      alt=""
-                      width={cinematic ? 512 : 1024}
-                      height={cinematic ? 512 : 640}
-                      loading="lazy"
-                      className={`absolute inset-0 h-full w-full object-cover ${cinematic ? "cinematic-daylight-place" : ""}`}
-                    />
-                    <span className="absolute inset-0 bg-gradient-to-r from-background/90 to-transparent" />
-                    <span className="relative px-4 font-display text-2xl font-extrabold">
-                      {p.name}
-                    </span>
-                    <span className="cinematic-caption absolute bottom-2 right-3 z-10">
-                      {p.name.toUpperCase()} · AT HOME
-                    </span>
-                  </Button>
-                ))}
-              </div>
-            )}
-            {cinematic && (
-              <div className="cinematic-at-home-ticket">
-                <Button
-                  variant="playful"
-                  disabled={!pack}
-                  className="w-full"
-                  onClick={() => setStep(1)}
-                >
-                  ✈ Now boarding for {PACKS.find((p) => p.key === pack)?.name ?? "your destination"}{" "}
-                  <ArrowRight />
-                </Button>
-              </div>
-            )}
+
+            <div className="cinematic-at-home-ticket">
+              <Button
+                variant="playful"
+                disabled={!pack}
+                className="w-full"
+                onClick={() => setStep(1)}
+              >
+                ✈ Now boarding for {PACKS.find((p) => p.key === pack)?.name ?? "your destination"}{" "}
+                <ArrowRight />
+              </Button>
+            </div>
             <PriceNote />
           </>
         )}
@@ -1065,7 +1020,6 @@ export function AtHomeTrip({
   userId?: string;
   viewOnly?: boolean;
 }) {
-  const cinematic = useLook("journey") === "cinematic";
   const p = packOf(trip);
   const [overview, setOverview] = useState("");
   useEffect(() => {
@@ -1099,19 +1053,17 @@ export function AtHomeTrip({
           packing.
         </p>
       </div>
-      {cinematic && (
-        <section className="cinematic-trip-section mt-5 p-3">
-          <h2 className="font-display text-xl font-extrabold">Game Day Calendar</h2>
-          <CinematicMonthCalendar
-            trip={trip}
-            nights={[]}
-            members={members}
-            cards={cards}
-            userId={userId}
-            viewOnly={viewOnly}
-          />
-        </section>
-      )}
+      <section className="cinematic-trip-section mt-5 p-3">
+        <h2 className="font-display text-xl font-extrabold">Game Day Calendar</h2>
+        <CinematicMonthCalendar
+          trip={trip}
+          nights={[]}
+          members={members}
+          cards={cards}
+          userId={userId}
+          viewOnly={viewOnly}
+        />
+      </section>
       <RememberedSection id={`${trip.id}-home-costs`} title="Trip pot 💸">
         <TripCostsPlayer trip={trip} userId={userId} />
       </RememberedSection>

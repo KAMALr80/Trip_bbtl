@@ -27,7 +27,7 @@ import { permanentlyDeleteTrip } from "@/lib/delete-trip.functions";
 import { ShortList } from "./ShortList";
 import { AvatarButton } from "./PlayerCards";
 import { CaptainCrown } from "./CaptainCrown";
-import { useLook } from "@/lib/look";
+
 import { SealedQuests } from "./SealedQuests";
 import { PendingMissions } from "./AirportMissions";
 
@@ -52,7 +52,6 @@ export function CaptainTools({
   onMember,
   userId,
 }: Props & { userId: string }) {
-  const cinematic = useLook("journey") === "cinematic";
   const [name, setName] = useState(trip.name),
     [destination, setDestination] = useState(trip.destination),
     [start, setStart] = useState(trip.start_date),
@@ -123,14 +122,12 @@ export function CaptainTools({
       setError("Your return date should be after your start date.");
       return;
     }
-    {
-      const days =
-        Math.round((Date.parse(`${end}T12:00:00Z`) - Date.parse(`${start}T12:00:00Z`)) / 86400000) +
-        1;
-      if (days < 2 || days > 30) {
-        setError("Trips can be 2 to 30 days long.");
-        return;
-      }
+    const days =
+      Math.round((Date.parse(`${end}T12:00:00Z`) - Date.parse(`${start}T12:00:00Z`)) / 86400000) +
+      1;
+    if (days < 2 || days > 30) {
+      setError("Trips can be 2 to 30 days long.");
+      return;
     }
     void run(async () => {
       const r = await supabase.rpc("edit_trip", {
@@ -168,7 +165,7 @@ export function CaptainTools({
   }
   if (deleteStep)
     return (
-      <main className={`px-6 pb-28 ${cinematic ? "cinematic-captain-tools" : ""}`}>
+      <main className="px-6 pb-28 cinematic-captain-tools">
         <Button
           variant="ghost"
           onClick={() => {
@@ -260,12 +257,12 @@ export function CaptainTools({
     );
   if (!section)
     return (
-      <main className={`px-6 pb-28 ${cinematic ? "cinematic-captain-tools" : ""}`}>
+      <main className="px-6 pb-28 cinematic-captain-tools">
         <Button variant="ghost" onClick={onBack} className="-ml-3">
           <ArrowLeft /> Back
         </Button>
         <h1 className="font-display text-3xl font-extrabold mt-5 flex items-center gap-2">
-          Captain Tools{cinematic && captain && <CaptainCrown />}
+          Captain Tools{captain && <CaptainCrown />}
         </h1>
         <div className="grid grid-cols-2 gap-3 mt-5">
           {[
@@ -328,13 +325,13 @@ export function CaptainTools({
     );
   const show = (group: string) => section === group;
   return (
-    <main className={`px-6 pb-28 ${cinematic ? "cinematic-captain-tools" : ""}`}>
+    <main className="px-6 pb-28 cinematic-captain-tools">
       <Button variant="ghost" onClick={() => setSection(null)} className="-ml-3">
         <ArrowLeft /> Captain Tools
       </Button>
       <div className="flex items-center gap-3 mt-5">
         <div className="bg-orange-soft text-orange rounded-2xl p-3">
-          {cinematic && captain ? <CaptainCrown /> : <Crown size={30} />}
+          {captain ? <CaptainCrown /> : <Crown size={30} />}
         </div>
         <div>
           <p className="text-primary text-xs font-extrabold">THE CROWN ROOM</p>
@@ -350,8 +347,8 @@ export function CaptainTools({
             </Button>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Itinerary, vibe, {cinematic ? "Pre-Flight start date" : "Game Day start date"} and time
-            zone are edited with the ✏️ pencils on the Trip tab.
+            Itinerary, vibe, Pre-Flight start date and time zone are edited with the ✏️ pencils on
+            the Trip tab.
             {!captain && " As Co-Captain you review quests; setup stays with the Captain."}
           </p>
           {captain && (
@@ -588,15 +585,15 @@ export function CaptainTools({
                   return (
                     <div key={m.user_id} className="py-4">
                       <div className="flex items-center gap-3">
-                        <span className={cinematic ? "captain-avatar-wrap" : ""}>
+                        <span className="captain-avatar-wrap">
                           <AvatarButton
                             userId={m.user_id}
                             onOpen={onMember}
                             name={playerName}
                             url={card?.avatarUrl || dicebearUrl("street", m.user_id)}
-                            className={`h-11 w-11 ${cinematic ? "rounded-2xl" : ""}`}
+                            className="h-11 w-11 rounded-2xl"
                           />
-                          {cinematic && m.role === "captain" && <CaptainCrown badge />}
+                          {m.role === "captain" && <CaptainCrown badge />}
                         </span>
                         <div className="min-w-0 flex-1">
                           <p className="font-bold truncate">{playerName}</p>

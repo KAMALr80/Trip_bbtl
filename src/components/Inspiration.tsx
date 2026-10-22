@@ -25,7 +25,7 @@ import ideaArt from "@/assets/inspiration-idea.jpg";
 import homeRoomArt from "@/assets/travel-from-home-room.webp";
 import { WindowSeatView } from "@/components/WindowSeatView";
 import { ROOM_COPY } from "@/lib/room-copy";
-import { useLook } from "@/lib/look";
+
 import { CultureExperiences } from "@/components/CultureExperiences";
 const categoryArt: Record<string, string> = {
   Food: foodArt,
@@ -155,7 +155,6 @@ export function Inspiration({
   room?: "home" | "window";
   initialTripId?: string;
 }) {
-  const cinematic = useLook("culture") === "cinematic";
   const [category, setCategory] = useState<Category | null>(null),
     [step, setStep] = useState(0),
     [storyQuestion, setStoryQuestion] = useState(0);
@@ -510,18 +509,13 @@ export function Inspiration({
       (v) => v.card_id === c.id && v.voter_id === userId && v.choice === "love",
     );
     return (
-      <article
-        key={c.id}
-        className={`app-card mt-4 min-w-0 ${cinematic ? "cinematic-culture-card" : ""}`}
-      >
-        {cinematic && (
-          <img
-            src={categoryArt[c.category] || inspirationFamily}
-            alt=""
-            loading="lazy"
-            className="cinematic-culture-thumb"
-          />
-        )}
+      <article key={c.id} className="app-card mt-4 min-w-0 cinematic-culture-card">
+        <img
+          src={categoryArt[c.category] || inspirationFamily}
+          alt=""
+          loading="lazy"
+          className="cinematic-culture-thumb"
+        />
         <div>
           <p className="eyebrow text-orange">
             {c.category} · CULTURE QUEST{c.is_public ? " · FEATURED" : ""}
@@ -682,7 +676,7 @@ export function Inspiration({
   if (sample)
     return (
       <div
-        className={`${cinematic ? "cinematic-culture" : ""} ${room === "window" ? "window-seat-room" : "home-culture-room"}`}
+        className={`cinematic-culture ${room === "window" ? "window-seat-room" : "home-culture-room"}`}
       >
         <SampleExperienceView
           sample={sample.item}
@@ -711,7 +705,7 @@ export function Inspiration({
     );
   return (
     <section
-      className={`pb-8 max-w-full overflow-x-hidden ${cinematic ? "cinematic-culture" : ""} ${room === "window" ? "window-seat-room" : "home-culture-room"}`}
+      className={`pb-8 max-w-full overflow-x-hidden cinematic-culture ${room === "window" ? "window-seat-room" : "home-culture-room"}`}
     >
       {!(room === "home" && homeCreate && !category) && (
         <Button

@@ -1,6 +1,6 @@
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, MapPin, RefreshCw, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, MapPin, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/PlayerCards";
 import { loadItinerary, tripDates, tripToday, tripTz } from "@/lib/itinerary";
@@ -14,7 +14,7 @@ import journeyCoastTop from "@/assets/journey-coast-top.jpg";
 import journeyCoastTopSmall from "@/assets/journey-coast-top-768.jpg";
 import journeyCoastBottom from "@/assets/journey-coast-bottom.jpg";
 import journeyCoastBottomSmall from "@/assets/journey-coast-bottom-768.jpg";
-import { useLook } from "@/lib/look";
+
 import { ROOM_COPY } from "@/lib/room-copy";
 import { friendlyRange } from "@/lib/trip-dates";
 import { TripList } from "./TripList";
@@ -72,7 +72,6 @@ export function JourneyMap({
   onPlanTrip?: (() => void) | undefined;
   onJoinTrip?: (() => void) | undefined;
 }) {
-  const cinematic = useLook("journey") === "cinematic";
   const [data, setData] = useState<JourneyData | null>(null);
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -168,7 +167,7 @@ export function JourneyMap({
   const winnerCard = (id: string | null | undefined) => cards.find((c) => c.user_id === id);
   return (
     <section
-      className={`journey-page pb-8 ${cinematic ? "cinematic-journey" : ""}`}
+      className="journey-page pb-8 cinematic-journey"
       aria-label={`${tripDisplayName(trip.name)} journey map`}
     >
       <div className="flex items-center justify-between">
@@ -184,33 +183,18 @@ export function JourneyMap({
           <RefreshCw size={18} />
         </Button>
       </div>
-      {cinematic ? (
-        <header className="cinematic-journey-heading">
-          <p className="eyebrow text-gold">THE JOURNEY CONTINUES</p>
-          <h1 className="font-display text-4xl font-extrabold mt-2 break-words">Journey</h1>
-          <p className="text-sm mt-2">{ROOM_COPY.journey}</p>
-          <p className="text-sm mt-2">
-            {tripDisplayName(trip.name)} · {trip.destination} ·{" "}
-            {friendlyRange(trip.start_date, trip.end_date)}
-          </p>
-          <Button variant="outline" className="mt-4 border-gold text-gold" onClick={onBack}>
-            ✈ View trip details <ArrowRight size={16} />
-          </Button>
-        </header>
-      ) : (
-        <>
-          <p className="eyebrow text-blue mt-5">
-            THE ROUTE · {atHome ? "AT HOME" : trip.destination.toUpperCase()}
-          </p>
-          <h1 className="font-display text-3xl font-extrabold mt-1">
-            Journey <span aria-hidden="true">🗺️</span>
-          </h1>
-          <p className="text-sm text-muted-foreground mt-2">{ROOM_COPY.journey}</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            {tripDisplayName(trip.name)} · {trip.destination}
-          </p>
-        </>
-      )}
+      <header className="cinematic-journey-heading">
+        <p className="eyebrow text-gold">THE JOURNEY CONTINUES</p>
+        <h1 className="font-display text-4xl font-extrabold mt-2 break-words">Journey</h1>
+        <p className="text-sm mt-2">{ROOM_COPY.journey}</p>
+        <p className="text-sm mt-2">
+          {tripDisplayName(trip.name)} · {trip.destination} ·{" "}
+          {friendlyRange(trip.start_date, trip.end_date)}
+        </p>
+        <Button variant="outline" className="mt-4 border-gold text-gold" onClick={onBack}>
+          ✈ View trip details <ArrowRight size={16} />
+        </Button>
+      </header>
       {!data && !error ? (
         <div className="mt-8 h-72 rounded-3xl bg-muted animate-pulse" aria-busy="true" />
       ) : error ? (
@@ -225,30 +209,28 @@ export function JourneyMap({
             </p>
           )}
           <div className="journey-map mt-5">
-            {cinematic && (
-              <div className="cinematic-journey-art" aria-hidden="true">
-                {Array.from(
-                  { length: Math.max(2, Math.ceil((stops.length * 145 + 200) / 450)) },
-                  (_, i) => {
-                    const full = i % 2 ? journeyCoastBottom : journeyCoastTop;
-                    const small = i % 2 ? journeyCoastBottomSmall : journeyCoastTopSmall;
-                    return (
-                      <picture key={i}>
-                        <img
-                          src={full}
-                          srcSet={`${small} 768w, ${full} 1536w`}
-                          sizes="(max-width: 520px) calc(100vw - 40px), 480px"
-                          alt=""
-                          loading="lazy"
-                          width={1536}
-                          height={1920}
-                        />
-                      </picture>
-                    );
-                  },
-                )}
-              </div>
-            )}
+            <div className="cinematic-journey-art" aria-hidden="true">
+              {Array.from(
+                { length: Math.max(2, Math.ceil((stops.length * 145 + 200) / 450)) },
+                (_, i) => {
+                  const full = i % 2 ? journeyCoastBottom : journeyCoastTop;
+                  const small = i % 2 ? journeyCoastBottomSmall : journeyCoastTopSmall;
+                  return (
+                    <picture key={i}>
+                      <img
+                        src={full}
+                        srcSet={`${small} 768w, ${full} 1536w`}
+                        sizes="(max-width: 520px) calc(100vw - 40px), 480px"
+                        alt=""
+                        loading="lazy"
+                        width={1536}
+                        height={1920}
+                      />
+                    </picture>
+                  );
+                },
+              )}
+            </div>
             <div className="journey-terrain" aria-hidden="true">
               <span>✦</span>
               <span>✧</span>
@@ -274,28 +256,16 @@ export function JourneyMap({
                       aria-label={`${stop.title}, ${stop.subtitle}, ${stop.status}`}
                     >
                       <span className="journey-marker" aria-hidden="true">
-                        {cinematic ? (
-                          String(i + 1).padStart(2, "0")
-                        ) : stop.status === "done" ? (
-                          <Check size={21} />
-                        ) : stop.type === "crown" ? (
-                          "👑"
-                        ) : stop.type === "day" ? (
-                          "📍"
-                        ) : (
-                          "✦"
-                        )}
+                        {String(i + 1).padStart(2, "0")}
                       </span>
-                      {cinematic && (
-                        <img
-                          src={journeyArt}
-                          alt=""
-                          className="cinematic-stop-photo"
-                          loading="lazy"
-                          width={1024}
-                          height={640}
-                        />
-                      )}
+                      <img
+                        src={journeyArt}
+                        alt=""
+                        className="cinematic-stop-photo"
+                        loading="lazy"
+                        width={1024}
+                        height={640}
+                      />
                       <span className="journey-stop-copy">
                         <strong>{stop.title}</strong>
                         <small>{stop.subtitle}</small>
@@ -401,31 +371,29 @@ export function JourneyMap({
           )}
         </>
       )}
-      {cinematic && (
-        <section className="mt-8 border-t border-border pt-6" aria-label="My Trips">
-          <h2 className="font-display text-2xl font-extrabold">My Trips</h2>
-          <div className="mt-4">
-            <TripList
-              trips={trips}
-              id="journey-trips"
-              onSelect={(id) => onSelectTrip?.(id)}
-              {...(onTripsChanged ? { onChanged: onTripsChanged } : {})}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            {onPlanTrip && (
-              <Button variant="playful" onClick={onPlanTrip}>
-                Plan a Trip
-              </Button>
-            )}
-            {onJoinTrip && (
-              <Button variant="outline" onClick={onJoinTrip}>
-                Join with Code
-              </Button>
-            )}
-          </div>
-        </section>
-      )}
+      <section className="mt-8 border-t border-border pt-6" aria-label="My Trips">
+        <h2 className="font-display text-2xl font-extrabold">My Trips</h2>
+        <div className="mt-4">
+          <TripList
+            trips={trips}
+            id="journey-trips"
+            onSelect={(id) => onSelectTrip?.(id)}
+            {...(onTripsChanged ? { onChanged: onTripsChanged } : {})}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          {onPlanTrip && (
+            <Button variant="playful" onClick={onPlanTrip}>
+              Plan a Trip
+            </Button>
+          )}
+          {onJoinTrip && (
+            <Button variant="outline" onClick={onJoinTrip}>
+              Join with Code
+            </Button>
+          )}
+        </div>
+      </section>
     </section>
   );
 }

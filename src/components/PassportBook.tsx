@@ -15,7 +15,7 @@ import { CultureBadgeRow } from "@/components/CultureBadgeRow";
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { tripStatus } from "@/components/TripList";
 import { friendlyError } from "@/lib/friendly-error";
-import { useLook } from "@/lib/look";
+
 import { ROOM_COPY } from "@/lib/room-copy";
 import { BrandLockup } from "@/components/BrandLockup";
 import iconBoarding from "@/assets/icon-boarding-pass.webp";
@@ -189,7 +189,6 @@ export function PassportBook({
   userId: string;
   onNavigate?: (screen: PassportDestination) => void;
 }) {
-  const cinematic = useLook("passport") === "cinematic";
   const [ink, setInk] = useState<Ink[]>([]),
     [postcards, setPostcards] = useState<Postcard[]>([]),
     [home, setHome] = useState(""),
@@ -401,11 +400,6 @@ export function PassportBook({
   const cards = [...postcards].sort((a, b) => b.created_at.localeCompare(a.created_at));
   const countries = new Set(ink.map((s) => s.country));
   const shownTrips = [...trips].sort((a, b) => {
-    if (!cinematic)
-      return (
-        Number(Boolean(a.is_sandbox)) - Number(Boolean(b.is_sandbox)) ||
-        a.start_date.localeCompare(b.start_date)
-      );
     const rank = (t: TripWithRole) =>
       t.is_sandbox
         ? 4
@@ -536,24 +530,17 @@ export function PassportBook({
     );
   }
   return (
-    <section
-      className={`passport-ag mt-4 ${cinematic ? "cinematic-passport" : ""}`}
-      aria-label="Passport Junkie"
-    >
+    <section className="passport-ag mt-4 cinematic-passport" aria-label="Passport Junkie">
       <div className="passport-leather">
         <span className="passport-corner passport-corner-top" />
         <span className="passport-corner passport-corner-bottom" />
         <div className="passport-paper passport-first-page">
           <p className="passport-folio">01 / IDENTITY</p>
-          {cinematic ? (
-            <div className="passport-cinematic-brand">
-              <BrandLockup compact />
-              <p className="passport-kicker">COLLECTION</p>
-            </div>
-          ) : (
-            <p className="passport-kicker">TRIPJUNKIES™ · COLLECTION</p>
-          )}
-          <div className={cinematic ? "passport-rank-progress" : "mt-2"}>
+          <div className="passport-cinematic-brand">
+            <BrandLockup compact />
+            <p className="passport-kicker">COLLECTION</p>
+          </div>
+          <div className="passport-rank-progress">
             <TravelerLevel userId={userId} progress />
           </div>
           <div className="passport-title-line">
@@ -565,7 +552,7 @@ export function PassportBook({
             <span aria-hidden="true">✈</span>
           </div>
           <p className="text-sm mt-2">{ROOM_COPY.passport}</p>
-          {cinematic && <p className="passport-cinematic-subtitle">Collect your stamps</p>}
+          <p className="passport-cinematic-subtitle">Collect your stamps</p>
           <div className="passport-identity">
             <div className="passport-photo">
               <Avatar
@@ -608,7 +595,7 @@ export function PassportBook({
               <div>
                 <small>✈ TRAVEL STYLE</small>
                 <strong>
-                  {cinematic && identity?.trip_persona
+                  {identity?.trip_persona
                     ? identity.trip_persona.charAt(0).toLocaleUpperCase() +
                       identity.trip_persona.slice(1)
                     : identity?.trip_persona || "Explorer"}
@@ -670,9 +657,7 @@ export function PassportBook({
               <small>Culture Pts</small>
             </Button>
           </div>
-          {cinematic && (
-            <p className="mt-2 text-xs text-muted-foreground">Points never mix between shelves.</p>
-          )}
+          <p className="mt-2 text-xs text-muted-foreground">Points never mix between shelves.</p>
           {cultureOpen && (
             <div className="passport-culture" role="region" aria-label="Culture stamps">
               <p>Culture Points · separate from your Season Score</p>
@@ -727,11 +712,9 @@ export function PassportBook({
               )}
             </div>
           )}
-          {cinematic && (
-            <h3 className="passport-rule-title">
-              TRIPS · PRE-FLIGHT + TRIP SEASON CROWNS · JUNKIE RANK
-            </h3>
-          )}
+          <h3 className="passport-rule-title">
+            TRIPS · PRE-FLIGHT + TRIP SEASON CROWNS · JUNKIE RANK
+          </h3>
           <h3 className="passport-rule-title">✈ PHASES</h3>
           <div className="passport-phases">
             {phases.map((phase) => (
@@ -747,12 +730,10 @@ export function PassportBook({
                 <small>{phase.copy}</small>
                 {phase.key === "preflight" && night && (
                   <em>
-                    {cinematic
-                      ? new Date(night).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })
-                      : date(night)}
+                    {new Date(night).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
                   </em>
                 )}
               </Button>
@@ -788,12 +769,11 @@ export function PassportBook({
                   <small>SAMPLE · {date(new Date().toISOString())}</small>
                 </Button>
               )}
-              {cinematic &&
-                Array.from({ length: Math.max(0, 3 - Math.max(1, stamps.length)) }, (_, i) => (
-                  <span key={`empty-${i}`} className="passport-empty-stamp">
-                    Next stamp
-                  </span>
-                ))}
+              {Array.from({ length: Math.max(0, 3 - Math.max(1, stamps.length)) }, (_, i) => (
+                <span key={`empty-${i}`} className="passport-empty-stamp">
+                  Next stamp
+                </span>
+              ))}
             </div>
             <MorePanel title="stamps" count={Math.max(0, stamps.length - 3)}>
               <div className="passport-stamps">{stamps.slice(3).map(stamp)}</div>
@@ -822,7 +802,7 @@ export function PassportBook({
               <div className="passport-trips">{shownTrips.slice(3).map(tripRow)}</div>
             </MorePanel>
           </section>
-          {cinematic && <h3 className="passport-rule-title">AT HOME · IN-EXPERIENCE CROWNS</h3>}
+          <h3 className="passport-rule-title">AT HOME · IN-EXPERIENCE CROWNS</h3>
           <section aria-label="Postcard wall">
             <h3 className="passport-rule-title">POSTCARD WALL</h3>
             <div className="passport-board">
@@ -852,20 +832,18 @@ export function PassportBook({
               </MorePanel>
             </div>
           </section>
-          {cinematic && (
-            <section aria-label="Culture stories shelf">
-              <h3 className="passport-rule-title">CULTURE STORIES</h3>
-              <p className="text-xs text-muted-foreground">Culture stamps · {culture.length}</p>
-              <CultureBadgeRow />
-              <div
-                className="mt-2 rounded-md border border-border bg-muted p-3 opacity-60"
-                aria-disabled="true"
-              >
-                <strong className="block text-sm">Bronze / Silver / Gold</strong>
-                <span className="text-xs">Tiers unlock with likes and downloads · coming soon</span>
-              </div>
-            </section>
-          )}
+          <section aria-label="Culture stories shelf">
+            <h3 className="passport-rule-title">CULTURE STORIES</h3>
+            <p className="text-xs text-muted-foreground">Culture stamps · {culture.length}</p>
+            <CultureBadgeRow />
+            <div
+              className="mt-2 rounded-md border border-border bg-muted p-3 opacity-60"
+              aria-disabled="true"
+            >
+              <strong className="block text-sm">Bronze / Silver / Gold</strong>
+              <span className="text-xs">Tiers unlock with likes and downloads · coming soon</span>
+            </div>
+          </section>
           {loading && (
             <p role="status" className="mt-4 text-sm">
               Opening your passport…

@@ -2,7 +2,7 @@ import { TripActions } from "@/components/TripActions";
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { safeSetItem } from "@/lib/safe-storage";
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, ChevronDown, ChevronRight, MapPinned } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
@@ -17,7 +17,6 @@ import { TripTimezoneField } from "./TripTimezoneField";
 import { CaptainTakeover, EditPencil, Sheet } from "./CaptainExtras";
 import { TripSectionIcon } from "./TripSectionIcon";
 import { CaptainCrown } from "./CaptainCrown";
-import { useLook } from "@/lib/look";
 
 type Section = "plan" | "games" | "photos";
 type Edit = "itinerary" | "plan" | "vibe" | "tz" | null;
@@ -28,26 +27,20 @@ function Accordion({
   onToggle,
   children,
   action,
-  cinematic = false,
 }: {
   title: string;
   open: boolean;
   onToggle: () => void;
   children: ReactNode;
   action?: ReactNode;
-  cinematic?: boolean;
 }) {
   return (
-    <section
-      className={
-        cinematic ? "cinematic-trip-section mt-[14px]" : "mt-[14px] border-b border-border pb-3"
-      }
-    >
+    <section className="cinematic-trip-section mt-[14px]">
       <div className="flex items-center gap-1">
         <Button
           variant="ghost"
           data-view-navigation="true"
-          className={`flex-1 min-h-14 justify-between text-left font-display text-lg font-extrabold ${cinematic ? "px-3" : "px-0"}`}
+          className="flex-1 min-h-14 justify-between text-left font-display text-lg font-extrabold px-3"
           aria-expanded={open}
           onClick={onToggle}
         >
@@ -86,7 +79,6 @@ export function TripOverview({
   onWindowSeat?: (() => void) | undefined;
   viewOnly?: boolean;
 }) {
-  const cinematic = useLook("journey") === "cinematic";
   const [full, setFull] = useState(false);
   const [edit, setEdit] = useState<Edit>(null),
     [bump, setBump] = useState(0);
@@ -139,12 +131,12 @@ export function TripOverview({
       </div>
     );
   return (
-    <div className={cinematic ? "cinematic-trip-overview pb-8" : "pb-8"}>
+    <div className="cinematic-trip-overview pb-8">
       <p className="eyebrow text-primary">YOUR ROUTE · {trip.destination}</p>
       <h1 className="flex min-w-0 items-center gap-1 font-display text-[28px] font-extrabold mt-1">
         <TripSectionIcon trip={trip} />
         <span className="min-w-0 break-words">{tripDisplayName(trip.name)}</span>
-        {cinematic && trip.myRole === "captain" && <CaptainCrown />}
+        {trip.myRole === "captain" && <CaptainCrown />}
         {!viewOnly && onUpdated && (
           <span className="ml-auto">
             <TripActions
@@ -171,16 +163,7 @@ export function TripOverview({
           {pencil("tz", "trip time zone")}
         </span>
       </div>
-      {!cinematic && onJourney && (
-        <Button variant="outline" className="home-journey-action mt-5" onClick={onJourney}>
-          <MapPinned size={24} className="text-blue" />
-          <span>
-            <strong>Journey</strong>
-            <small>Follow your squad's route</small>
-          </span>
-          <ChevronRight size={18} />
-        </Button>
-      )}
+
       {onWindowSeat && trip.kind !== "at_home" && (
         <Button variant="outline" className="mt-4 min-h-11" onClick={onWindowSeat}>
           Add to Window Seat <ChevronRight size={18} />
@@ -188,7 +171,6 @@ export function TripOverview({
       )}
       <CaptainTakeover trip={trip} onChanged={saved} />
       <Accordion
-        cinematic={cinematic}
         title="What's next · itinerary"
         action={pencil("itinerary", "itinerary, spots and excursions")}
         open={open.includes("plan")}
@@ -205,7 +187,6 @@ export function TripOverview({
         </Button>
       </Accordion>
       <Accordion
-        cinematic={cinematic}
         title="Pre-Flight"
         action={pencil("plan", "Pre-Flight start date")}
         open={open.includes("games")}
@@ -219,7 +200,6 @@ export function TripOverview({
         </p>
       </Accordion>
       <Accordion
-        cinematic={cinematic}
         title="Photo wall"
         open={open.includes("photos")}
         onToggle={() => toggle("photos")}
@@ -239,10 +219,7 @@ export function TripOverview({
         </div>
       )}
       {edit === "plan" && (
-        <Sheet
-          title={cinematic ? "Pre-Flight start date" : "Game Day start date 🎯"}
-          onClose={() => setEdit(null)}
-        >
+        <Sheet title="Pre-Flight start date" onClose={() => setEdit(null)}>
           <GamePlanPicker
             trip={trip}
             compact

@@ -18,11 +18,11 @@ import { TripSectionIcon } from "@/components/TripSectionIcon";
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { TripList } from "@/components/TripList";
 import journeyArt from "@/assets/cinematic-journey-map.jpg";
-import travelFriends from "@/assets/travel-friends-cutout.webp";
+
 import airportSignoff from "@/assets/home-airport-signoff-diverse.jpg";
 import airportSignoffSmall from "@/assets/home-airport-signoff-diverse-768.webp";
 import departuresBoardArt from "@/assets/home-departures-board.jpg";
-import { useLook } from "@/lib/look";
+
 import { phaseBanner } from "@/lib/play-arrangement";
 import { Inspiration } from "@/components/Inspiration";
 
@@ -172,8 +172,6 @@ export function HomeDashboard({
   onMember,
 }: Props) {
   const flightReminder = useFlightReminders(active, userId);
-  const bottomLook = useLook("home-bottom");
-  const topLook = useLook("home-top");
   const homeLayout = useHomeLayout(userId);
   const [tile, setTile] = useState("a");
   useEffect(() => {
@@ -242,7 +240,7 @@ export function HomeDashboard({
         {...(onQuestOpened ? { onQuestOpened } : {})}
       />
     );
-  if (screen === "journey" && !trip && topLook === "cinematic")
+  if (screen === "journey" && !trip)
     return (
       <section className="cinematic-journey pb-8">
         <Button variant="ghost" onClick={back}>
@@ -277,9 +275,7 @@ export function HomeDashboard({
         </Button>
         <h1 className="font-display text-3xl font-extrabold mt-4">Journey</h1>
         <p className="text-sm text-muted-foreground mt-1">{ROOM_COPY.journey}</p>
-        {topLook === "cinematic" && (
-          <p className="text-muted-foreground mt-1 mb-5">Where we're headed</p>
-        )}
+        <p className="text-muted-foreground mt-1 mb-5">Where we're headed</p>
         <TripList
           trips={trips}
           id="home-trips"
@@ -308,10 +304,10 @@ export function HomeDashboard({
 
   const shortcuts = [
     {
-      label: topLook === "cinematic" ? "Journey" : "My trips",
+      label: "Journey",
       subtitle: "Where we're headed",
       img: iconMap,
-      action: () => setScreen(topLook === "cinematic" ? "journey" : "trips"),
+      action: () => setScreen("journey"),
     },
     {
       label: "Passport Junkie",
@@ -366,7 +362,7 @@ export function HomeDashboard({
         label: "GOING ON A TRIP",
         gate: "A",
         img: iconMap,
-        action: () => setScreen(topLook === "cinematic" ? "journey" : "trips"),
+        action: () => setScreen("journey"),
         status: sealedQuestWaiting ? "FINAL CALL" : "ON TIME",
         detail: "",
       },
@@ -431,7 +427,7 @@ export function HomeDashboard({
     ];
     return (
       <section
-        className={`home-reference-page pb-24 ${topLook === "cinematic" ? "cinematic-home-top" : ""} ${bottomLook === "cinematic" ? "cinematic-home-bottom" : ""}`}
+        className="home-reference-page pb-24 cinematic-home-top cinematic-home-bottom"
         aria-label="Home departures"
       >
         {trip && phaseBanner(trip) && (
@@ -600,7 +596,7 @@ export function HomeDashboard({
   }
   return (
     <section
-      className={`home-orbit-page pb-24 ${topLook === "cinematic" ? "cinematic-home-top" : ""} ${bottomLook === "cinematic" ? "cinematic-home-bottom" : ""}`}
+      className="home-orbit-page pb-24 cinematic-home-top cinematic-home-bottom"
       aria-label="Home departures"
     >
       {trip && phaseBanner(trip) && (
@@ -638,22 +634,13 @@ export function HomeDashboard({
                 title={tripDisplayName(trip.name)}
               >
                 <TripSectionIcon trip={trip} />
-                <span className={topLook === "cinematic" ? "min-w-0 text-balance" : "truncate"}>
-                  {topLook === "cinematic"
-                    ? `Week ${next.week_number} · ${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: trip.home_timezone }).format(new Date(next.starts_at))}`
-                    : `Week ${next.week_number} · ${fmtWhen(next.starts_at, trip.home_timezone)}`}
+                <span className="min-w-0 text-balance">
+                  {`Week ${next.week_number} · ${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: trip.home_timezone }).format(new Date(next.starts_at))}`}
                 </span>
               </p>
               <Button variant="secondary" className="home-spin mt-3 font-display" onClick={goPlay}>
                 Check in
               </Button>
-              {topLook !== "cinematic" && (
-                <p className="home-orbit-next text-muted-foreground">
-                  {remaining > 0
-                    ? `Game night in ${Math.ceil(remaining / 86400000)} ${Math.ceil(remaining / 86400000) === 1 ? "day" : "days"}`
-                    : "Game night tonight"}
-                </p>
-              )}
             </>
           ) : (
             <Button
@@ -673,7 +660,7 @@ export function HomeDashboard({
             </Button>
           )}
         </div>
-        {(topLook === "cinematic" ? cinematicShortcuts : shortcuts).map((item, index) => (
+        {cinematicShortcuts.map((item, index) => (
           <div key={item.label} className={`home-orbit-stop home-orbit-stop-${index}`}>
             <Button
               variant="ghost"
@@ -684,43 +671,25 @@ export function HomeDashboard({
               }}
               title={item.subtitle}
             >
-              {topLook === "cinematic" ? (
-                <>
-                  <span className="home-door-medallion">
-                    <img
-                      src={item.label === "Games on Flight" ? gameOptionA : item.img}
-                      alt=""
-                      width={104}
-                      height={104}
-                    />
-                  </span>
-                  <span className="home-door-label">
-                    {item.label === "My trips" ? "My Trips" : item.label}
-                  </span>
-                </>
-              ) : (
-                <>
-                  {item.label === "Window Seat" ? (
-                    <span className="window-seat-icon">
-                      <img src={item.img} alt="" width={104} height={104} />
-                    </span>
-                  ) : (
-                    <img src={item.img} alt="" width={104} height={104} />
-                  )}
-                  <span>
-                    {item.label}
-                    {item.subtitle && <small>{item.subtitle}</small>}
-                  </span>
-                </>
-              )}
+              <>
+                <span className="home-door-medallion">
+                  <img
+                    src={item.label === "Games on Flight" ? gameOptionA : item.img}
+                    alt=""
+                    width={104}
+                    height={104}
+                  />
+                </span>
+                <span className="home-door-label">
+                  {item.label === "My trips" ? "My Trips" : item.label}
+                </span>
+              </>
             </Button>
           </div>
         ))}
       </div>
       {trip && (
-        <div
-          className={`home-trip-line flex items-center gap-1 ${bottomLook === "cinematic" ? "cinematic-trip-line" : ""}`}
-        >
+        <div className="home-trip-line flex items-center gap-1 cinematic-trip-line">
           <Button
             variant="ghost"
             className="min-w-0 flex-1 justify-between h-auto min-h-14 gap-2 text-left"
@@ -735,26 +704,22 @@ export function HomeDashboard({
                 <TripSectionIcon trip={trip} />
                 <span className="min-w-0 truncate">{tripDisplayName(trip.name)}</span>
               </strong>
-              {bottomLook === "cinematic" && (
-                <small className="block text-muted-foreground mt-1">
-                  {new Date(`${trip.start_date}T12:00:00`).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                  })}{" "}
-                  –{" "}
-                  {new Date(`${trip.end_date}T12:00:00`).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </small>
-              )}
+              <small className="block text-muted-foreground mt-1">
+                {new Date(`${trip.start_date}T12:00:00`).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}{" "}
+                –{" "}
+                {new Date(`${trip.end_date}T12:00:00`).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </small>
             </span>
-            {bottomLook === "cinematic" && (
-              <span className="cinematic-destination">
-                <TripSectionIcon trip={trip} />
-              </span>
-            )}
+            <span className="cinematic-destination">
+              <TripSectionIcon trip={trip} />
+            </span>
             <ArrowRight size={18} />
           </Button>
           <span className="flex shrink-0 -space-x-2 pr-2">
@@ -811,9 +776,7 @@ export function HomeDashboard({
           </div>
         </section>
       )}
-      <div
-        className={`home-action-grid mt-6 ${bottomLook === "cinematic" ? "cinematic-home-actions" : ""}`}
-      >
+      <div className="home-action-grid mt-6 cinematic-home-actions">
         <Button
           variant="outline"
           className="home-journey-action"
@@ -850,32 +813,6 @@ export function HomeDashboard({
           </span>
           <ArrowRight size={18} />
         </Button>
-        {topLook !== "cinematic" && (
-          <Button
-            variant="outline"
-            className="home-journey-action"
-            onClick={() => setScreen("journey")}
-            disabled={!trip}
-          >
-            <span className="relative size-8 shrink-0" aria-hidden="true">
-              <svg viewBox="0 0 32 32" className="size-full text-blue" fill="none">
-                <path
-                  d="M4 26C8 26 7 11 14 12c5 0 2 12 9 10"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeDasharray="2 3"
-                />
-                <path d="m21 19 7-9-1 7 3 2-9 1z" fill="currentColor" />
-              </svg>
-            </span>
-            <span>
-              <strong>Journey</strong>
-              <small>{trip ? "Open the route" : "Start a trip to explore"}</small>
-            </span>
-            <ArrowRight size={18} />
-          </Button>
-        )}
       </div>
       {adultUnder21 && (
         <div className="app-card mt-4 text-sm" role="note">
@@ -885,47 +822,29 @@ export function HomeDashboard({
           </Button>
         </div>
       )}
-      {bottomLook === "original" ? (
-        <>
-          <div className="home-people-stage home-departure-people" aria-hidden="true">
-            <img src={travelFriends} alt="" loading="lazy" />
+      <>
+        <div className="mt-5 flex justify-center">
+          <TravelerLevel userId={userId} />
+        </div>
+        {invite && (
+          <div className="mt-7">
+            <h2 className="eyebrow mb-3">YOUR INVITE</h2>
+            {invite}
           </div>
-          <div className="mt-5 flex justify-center">
-            <TravelerLevel userId={userId} />
-          </div>
-          {invite && (
-            <div className="mt-7">
-              <h2 className="eyebrow mb-3">YOUR INVITE</h2>
-              {invite}
-            </div>
-          )}
-          <BrandLockup className="home-signoff text-[clamp(34px,10vw,48px)] mt-5 mb-1" />
-        </>
-      ) : (
-        <>
-          <div className="mt-5 flex justify-center">
-            <TravelerLevel userId={userId} />
-          </div>
-          {invite && (
-            <div className="mt-7">
-              <h2 className="eyebrow mb-3">YOUR INVITE</h2>
-              {invite}
-            </div>
-          )}
-          <div className="cinematic-home-signoff">
-            <img
-              src={airportSignoff}
-              srcSet={`${airportSignoffSmall} 768w, ${airportSignoff} 1536w`}
-              sizes="(max-width: 520px) 100vw, 768px"
-              alt="Four friends watching a plane take off at sunset"
-              loading="lazy"
-              width={1536}
-              height={1024}
-            />
-            <BrandLockup className="home-signoff text-[clamp(28px,8vw,44px)]" />
-          </div>
-        </>
-      )}
+        )}
+        <div className="cinematic-home-signoff">
+          <img
+            src={airportSignoff}
+            srcSet={`${airportSignoffSmall} 768w, ${airportSignoff} 1536w`}
+            sizes="(max-width: 520px) 100vw, 768px"
+            alt="Four friends watching a plane take off at sunset"
+            loading="lazy"
+            width={1536}
+            height={1024}
+          />
+          <BrandLockup className="home-signoff text-[clamp(28px,8vw,44px)]" />
+        </div>
+      </>
     </section>
   );
 }

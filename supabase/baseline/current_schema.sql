@@ -800,16 +800,6 @@ CREATE FUNCTION public.culture_switch_group(p_exp uuid, p_trip uuid, p_format te
 
 
 --
--- Name: current_look(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.current_look() RETURNS jsonb
-    LANGUAGE sql STABLE
-    SET search_path TO 'public'
-    AS $$ SELECT trip_private.current_look() $$;
-
-
---
 -- Name: day_vote_results(uuid, date); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -977,16 +967,6 @@ CREATE FUNCTION public.founder_open_summary() RETURNS TABLE(issue_id uuid, title
     LANGUAGE sql STABLE
     SET search_path TO 'public'
     AS $$ SELECT * FROM trip_private.founder_open_summary() $$;
-
-
---
--- Name: founder_set_look(jsonb); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.founder_set_look(p_look jsonb) RETURNS void
-    LANGUAGE sql
-    SET search_path TO 'public'
-    AS $$ SELECT trip_private.founder_set_look(p_look) $$;
 
 
 --
@@ -5234,16 +5214,6 @@ END $$;
 
 
 --
--- Name: current_look(); Type: FUNCTION; Schema: trip_private; Owner: -
---
-
-CREATE FUNCTION trip_private.current_look() RETURNS jsonb
-    LANGUAGE sql STABLE SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$ SELECT coalesce((SELECT look FROM public.app_settings WHERE id = true), '{"global":"original","pages":{}}'::jsonb) $$;
-
-
---
 -- Name: current_week(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -5772,25 +5742,6 @@ BEGIN
   WHERE r.status IN ('new','looking','need_info') AND NOT coalesce(t.is_sandbox,false)
   GROUP BY r.issue_id, i.title, CASE WHEN r.issue_id IS NULL THEN r.id END
   ORDER BY count(DISTINCT r.user_id) DESC, max(r.created_at) DESC;
-END $$;
-
-
---
--- Name: founder_set_look(jsonb); Type: FUNCTION; Schema: trip_private; Owner: -
---
-
-CREATE FUNCTION trip_private.founder_set_look(p_look jsonb) RETURNS void
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-DECLARE k text; v text;
-BEGIN
- IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Founder only'; END IF;
- IF jsonb_typeof(p_look) IS DISTINCT FROM 'object' OR p_look->>'global' NOT IN ('original','cinematic') OR jsonb_typeof(p_look->'pages') IS DISTINCT FROM 'object' OR (SELECT count(*) FROM jsonb_object_keys(p_look)) <> 2 THEN RAISE EXCEPTION 'Invalid look choice'; END IF;
- FOR k, v IN SELECT key, value #>> '{}' FROM jsonb_each(p_look->'pages') LOOP
-   IF k NOT IN ('splash','home-top','home-bottom','passport','boarding','boarding-pass','game-night','spin','journey','calendar','squad','at-home','culture','me','explore','founder','error','buttons') OR v NOT IN ('original','cinematic') THEN RAISE EXCEPTION 'Invalid page look choice'; END IF;
- END LOOP;
- UPDATE public.app_settings SET look=p_look, updated_at=now() WHERE id=true;
 END $$;
 
 
@@ -11975,7 +11926,6 @@ CREATE TABLE public.app_settings (
     founding_open boolean DEFAULT true NOT NULL,
     founding_closed_at timestamp with time zone,
     boarding_tile text DEFAULT 'a'::text NOT NULL,
-    look jsonb DEFAULT '{"pages": {}, "global": "cinematic"}'::jsonb NOT NULL,
     ai_enabled boolean DEFAULT true NOT NULL,
     ai_daily_global_cap integer DEFAULT 150 NOT NULL,
     ai_daily_user_cap integer DEFAULT 15 NOT NULL,
@@ -21027,16 +20977,6 @@ GRANT ALL ON FUNCTION public.culture_switch_group(p_exp uuid, p_trip uuid, p_for
 
 
 --
--- Name: FUNCTION current_look(); Type: ACL; Schema: public; Owner: -
---
-
-REVOKE ALL ON FUNCTION public.current_look() FROM PUBLIC;
-GRANT ALL ON FUNCTION public.current_look() TO anon;
-GRANT ALL ON FUNCTION public.current_look() TO authenticated;
-GRANT ALL ON FUNCTION public.current_look() TO service_role;
-
-
---
 -- Name: FUNCTION day_vote_results(p_trip uuid, p_date date); Type: ACL; Schema: public; Owner: -
 --
 
@@ -21184,15 +21124,6 @@ GRANT ALL ON FUNCTION public.founder_link_report(p_report uuid, p_issue uuid, p_
 REVOKE ALL ON FUNCTION public.founder_open_summary() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.founder_open_summary() TO authenticated;
 GRANT ALL ON FUNCTION public.founder_open_summary() TO service_role;
-
-
---
--- Name: FUNCTION founder_set_look(p_look jsonb); Type: ACL; Schema: public; Owner: -
---
-
-REVOKE ALL ON FUNCTION public.founder_set_look(p_look jsonb) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.founder_set_look(p_look jsonb) TO authenticated;
-GRANT ALL ON FUNCTION public.founder_set_look(p_look jsonb) TO service_role;
 
 
 --
@@ -23973,16 +23904,6 @@ GRANT ALL ON FUNCTION trip_private.culture_switch_group(p_exp uuid, p_trip uuid,
 
 
 --
--- Name: FUNCTION current_look(); Type: ACL; Schema: trip_private; Owner: -
---
-
-REVOKE ALL ON FUNCTION trip_private.current_look() FROM PUBLIC;
-GRANT ALL ON FUNCTION trip_private.current_look() TO anon;
-GRANT ALL ON FUNCTION trip_private.current_look() TO authenticated;
-GRANT ALL ON FUNCTION trip_private.current_look() TO service_role;
-
-
---
 -- Name: FUNCTION current_week(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -24213,15 +24134,6 @@ GRANT ALL ON FUNCTION trip_private.founder_link_report(p_report uuid, p_issue uu
 REVOKE ALL ON FUNCTION trip_private.founder_open_summary() FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.founder_open_summary() TO authenticated;
 GRANT ALL ON FUNCTION trip_private.founder_open_summary() TO service_role;
-
-
---
--- Name: FUNCTION founder_set_look(p_look jsonb); Type: ACL; Schema: trip_private; Owner: -
---
-
-REVOKE ALL ON FUNCTION trip_private.founder_set_look(p_look jsonb) FROM PUBLIC;
-GRANT ALL ON FUNCTION trip_private.founder_set_look(p_look jsonb) TO authenticated;
-GRANT ALL ON FUNCTION trip_private.founder_set_look(p_look jsonb) TO service_role;
 
 
 --

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { PreviewShareToggle } from "./ExperiencePreviews";
 import { RoomExperienceCard } from "@/components/RoomExperienceCard";
-import { useLook } from "@/lib/look";
 
 import { SAMPLE_EXPERIENCES } from "@/lib/inspiration-samples";
 import { ArrowLeft, ArrowRight, Flag, EyeOff, Heart, Sparkles, Star } from "lucide-react";
@@ -144,7 +143,6 @@ export function CultureExperiences({
   creationKind?: A2eKind;
   onExitCreate?: () => void;
 }) {
-  const cinematic = useLook("culture") === "cinematic";
   const [mine, setMine] = useState<Exp[]>([]),
     [shared, setShared] = useState<Shared[]>([]),
     [badges, setBadges] = useState<Track[]>([]);
@@ -288,7 +286,7 @@ export function CultureExperiences({
             ))}
         </>
       )}
-      {cinematic && <div className="mt-6 border-t border-border" />}
+      <div className="mt-6 border-t border-border" />
       <h3 className="mt-6 font-display text-lg font-extrabold">My Culture Badges</h3>
       <div className="mt-2 flex flex-wrap gap-2">
         <span

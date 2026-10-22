@@ -10,12 +10,12 @@ the deck wins and this list is updated. More rules: `src/AGENTS.md`, `src/compon
 - Photo wall unions existing game-photo tables via trip_photos; Captain deletes hide photos via photo_removed rather than deleting game rows.
 
 - Keep sign-in, onboarding, the on-demand welcome page, five tabs and About at `/`; invite links return there so navigation stays inside the shared app shell.
-- Read the founder-controlled visual look from the public app_settings row so signed-out splash and sign-in honor it without changing account permissions.
+- There is one visual look (M1-03): the former Cinematic look. No look switch, no `useLook`, no Original branches.
 - `profiles` holds only per-user presentation state; trips/roles live in `trips`/`trip_members` for member-scoped access.
 - All privileged trip mutations (roles, spins, draws, hosts, scores, trip games) go through identity-checked private DB functions behind invoker wrappers; RLS denies direct writes so results can't be forged.
 - Player cards are trip-scoped via player_card_read; photos are signed and saved avatar seeds still resolve.
 - AI calls (names, itinerary, cards, trip games) run in authenticated server functions with the key server-side; uploads are processed in memory only.
-- Games/catalog seed data stay immutable; shared Play uses one component tree and member-scoped state in both looks.
+- Games/catalog seed data stay immutable; shared Play uses one component tree and member-scoped state.
 - Hide ballots and trivia answers from other players; reveal counts only on reveal or the next day.
 - Trip motto/call links use leader-checked `set_trip_extras`; signed-in invite previews use `trip_invite_preview`. Role tips live in `profiles.seen_tips`.
 
@@ -40,7 +40,7 @@ the deck wins and this list is updated. More rules: `src/AGENTS.md`, `src/compon
 - Account consent and Founding Member eligibility use identity-checked private functions, while public legal pages stay readable without sign-in; this keeps legal history and badges private.
 - There are no trip levels or per-trip feature switches (M1-10, 09_no_preview_levels.test.sql): every trip gets the same features, and unfinished ones are hidden with environment flags (`src/lib/flags.ts`).
 - Age tiers (13+ self sign-up; 13–17 join a trip only with Captain approval — via the join code on a2c trips, or a guardian-confirmed teen invite — and in one trip at a time; Captains 21+; under-21 joins pending; see supabase/tests/database/02_age_gates.test.sql. The deck's target, 18+ self sign-up and teen invites only, is M6-03) are enforced in trip_private functions/triggers (guard_auth_signup_age, set_teen_dob, join_trip, manage_trip_member, inspiration_age_gate), so the client can't bypass them.
-- Play uses shared flight cards and raw-point footer in both looks; a2c rooms enter the full-screen live cabin and show Home/Play reminders and .ics exports. Legacy Play remains unchanged; no scoring fork.
+- Play uses shared flight cards and raw-point footer; a2c rooms enter the full-screen live cabin and show Home/Play reminders and .ics exports. Legacy Play remains unchanged; no scoring fork.
 - Use season_rule to opt new Trips and At Home rooms into short-season timing; preserve legacy schedules and quest behavior so existing rooms are not retroactively changed.
 - Window Seat prep is creator-checked; A2c quest templates use filtered tags/insights and minor proof excludes squad; legacy stays unchanged.
 - A2e uses a2e_kind/a2e_room opt-in; group rooms share with approved members, solo quests stay private, and Showcase guests only vote, so old rooms and scores stay isolated.

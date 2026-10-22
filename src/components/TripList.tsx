@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShortList } from "@/components/ShortList";
-import { useLook } from "@/lib/look";
+
 import { TripSectionIcon } from "@/components/TripSectionIcon";
 import { supabase } from "@/integrations/supabase/client";
 import type { TripWithRole } from "@/lib/trips";
@@ -104,7 +104,6 @@ export function TripList({
   id: string;
   onChanged?: () => void | Promise<void>;
 }) {
-  const cinematic = useLook("home-bottom") === "cinematic";
   const [earned, setEarned] = useState<Set<string>>(new Set());
   const [hasHome, setHasHome] = useState(true);
   const [past, setPast] = useState<Past[]>([]);
@@ -145,7 +144,7 @@ export function TripList({
     return rank(a) - rank(b) || a.start_date.localeCompare(b.start_date);
   });
   return (
-    <div className={cinematic ? "cinematic-trip-list" : undefined}>
+    <div className="cinematic-trip-list">
       <div className="divide-y divide-border border-y border-border">
         <ShortList items={ordered} id={id} limit={4}>
           {(t) => {

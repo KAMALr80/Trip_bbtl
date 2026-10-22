@@ -217,7 +217,6 @@ export type Database = {
           founding_closed_at: string | null;
           founding_open: boolean;
           id: boolean;
-          look: Json;
           public_launch: boolean;
           updated_at: string;
           welcome_faq: Json;
@@ -233,7 +232,6 @@ export type Database = {
           founding_closed_at?: string | null;
           founding_open?: boolean;
           id?: boolean;
-          look?: Json;
           public_launch?: boolean;
           updated_at?: string;
           welcome_faq?: Json;
@@ -249,7 +247,6 @@ export type Database = {
           founding_closed_at?: string | null;
           founding_open?: boolean;
           id?: boolean;
-          look?: Json;
           public_launch?: boolean;
           updated_at?: string;
           welcome_faq?: Json;
@@ -5949,7 +5946,6 @@ export type Database = {
         Args: { p_exp: string; p_format: string; p_trip: string };
         Returns: undefined;
       };
-      current_look: { Args: never; Returns: Json };
       day_vote_results: {
         Args: { p_date: string; p_trip: string };
         Returns: {
@@ -6054,7 +6050,6 @@ export type Database = {
           title: string;
         }[];
       };
-      founder_set_look: { Args: { p_look: Json }; Returns: undefined };
       founder_trips: {
         Args: never;
         Returns: {

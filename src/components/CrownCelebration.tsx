@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { BrandLockup } from "./BrandLockup";
 import { Avatar } from "./PlayerCards";
 import { supabase } from "@/integrations/supabase/client";
-import { useLook } from "@/lib/look";
+
 import { tripDisplayName } from "@/lib/trip-display-name";
 import type { TripWithRole } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
@@ -30,13 +30,12 @@ export function CrownCelebration({
   userId: string;
   cards: PlayerWithAvatar[];
 }) {
-  const cinematic = useLook("game-night") === "cinematic";
   const [crown, setCrown] = useState<Celebration | null>(null);
   const [seen, setSeen] = useState<string[] | null>(null);
   const [shared, setShared] = useState(false);
 
   useEffect(() => {
-    if (!cinematic || !trips.length) return;
+    if (!trips.length) return;
     let live = true;
     async function check() {
       const profile = await supabase
@@ -118,7 +117,7 @@ export function CrownCelebration({
     return () => {
       live = false;
     };
-  }, [cinematic, trips, userId, cards]);
+  }, [true, trips, userId, cards]);
 
   async function continueOn() {
     if (!crown) return;

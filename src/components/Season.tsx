@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar } from "@/components/PlayerCards";
 import { CaptainCrown } from "@/components/CaptainCrown";
 import { StampBadge } from "@/components/StampBadge";
-import { useLook, type LookKey } from "@/lib/look";
 import { tripDisplayName } from "@/lib/trip-display-name";
 import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
@@ -354,9 +353,7 @@ export function Leaderboard({
   compact,
   onMember,
   expanded = false,
-  lookKey = "squad",
 }: {
-  lookKey?: LookKey;
   trip: TripWithRole;
   members: Member[];
   cards: PlayerWithAvatar[];
@@ -366,7 +363,7 @@ export function Leaderboard({
   onMember?: ((id: string) => void) | undefined;
   expanded?: boolean;
 }) {
-  const cinematic = useLook(lookKey) === "cinematic" && !compact;
+  const full = !compact;
   const { scores, settings, nights, qotw, refresh } = season;
   const table = standings(members, nights, scores, settings, qotw);
   const me = table.find((s) => s.user_id === userId);
@@ -386,23 +383,23 @@ export function Leaderboard({
   const [how, setHow] = useState(false);
   if (!scoringOn(trip)) return null;
   return (
-    <section className={`mt-8 ${cinematic ? "cinematic-leaderboard" : ""}`}>
+    <section className={`mt-8 ${full ? "cinematic-leaderboard" : ""}`}>
       <StampThunk total={me?.stamps ?? 0} />
-      {cinematic && (
+      {full && (
         <div className="cinematic-season-heading">
           <p className="eyebrow text-gold">PRE-FLIGHT · {tripDisplayName(trip.name)}</p>
           <h2 className="font-display text-3xl font-extrabold mt-1">Your squad</h2>
         </div>
       )}
       <div className="flex items-center justify-between">
-        {!cinematic && <h2 className="font-display text-2xl font-extrabold">Pre-Flight 🏆</h2>}
+        {!full && <h2 className="font-display text-2xl font-extrabold">Pre-Flight 🏆</h2>}
         {trip.myRole === "captain" && !compact && (
           <Button variant="ghost" size="sm" onClick={() => setEdit(true)}>
             <Settings2 /> Stamp values
           </Button>
         )}
       </div>
-      {cinematic && table.length > 0 && (
+      {full && table.length > 0 && (
         <div className="cinematic-podium">
           {table.slice(0, 3).map((s, i) => {
             const c = cards.find((x) => x.user_id === s.user_id);
@@ -439,7 +436,7 @@ export function Leaderboard({
         </div>
       ) : (
         <ol className="mt-3 space-y-2">
-          {(cinematic
+          {(full
             ? [
                 ...table.slice(3, 8),
                 ...table.slice(8).filter((s) => s.user_id === userId),
@@ -471,13 +468,13 @@ export function Leaderboard({
                       }
                     : undefined
                 }
-                className={`flex items-center gap-3 rounded-2xl p-3 ${cinematic && i >= 5 && s.user_id !== userId ? "cinematic-extra-row" : ""} ${onMember ? "cursor-pointer hover:border-primary" : ""} ${!cinematic && i === 0 && s.stamps > 0 ? "bg-orange-soft" : "bg-card border border-border"} ${s.user_id === userId ? "ring-2 ring-primary" : ""}`}
+                className={`flex items-center gap-3 rounded-2xl p-3 ${full && i >= 5 && s.user_id !== userId ? "cinematic-extra-row" : ""} ${onMember ? "cursor-pointer hover:border-primary" : ""} ${!full && i === 0 && s.stamps > 0 ? "bg-orange-soft" : "bg-card border border-border"} ${s.user_id === userId ? "ring-2 ring-primary" : ""}`}
               >
                 <span className="font-display font-extrabold w-6 text-center">
-                  {cinematic ? table.indexOf(s) + 1 : i + 1}
+                  {full ? table.indexOf(s) + 1 : i + 1}
                 </span>
                 <span className="relative">
-                  {!cinematic && i === 0 && s.stamps > 0 && (
+                  {!full && i === 0 && s.stamps > 0 && (
                     <Crown
                       size={20}
                       className="absolute -top-3 left-1/2 -translate-x-1/2 text-orange fill-orange"
@@ -488,16 +485,15 @@ export function Leaderboard({
                     name={c?.game_name || "Player"}
                     className="h-11 w-11"
                   />
-                  {cinematic &&
-                    members.some((m) => m.user_id === s.user_id && m.role === "captain") && (
-                      <CaptainCrown badge />
-                    )}
+                  {full && members.some((m) => m.user_id === s.user_id && m.role === "captain") && (
+                    <CaptainCrown badge />
+                  )}
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block font-bold truncate">{c?.game_name || "Player"}</span>
                   <StampBadge tripId={trip.id} userId={s.user_id} />
                   <span className="block text-xs text-ink-soft">
-                    {cinematic
+                    {full
                       ? `${s.attended} nights played`
                       : `🛂 ${s.stamps} stamps · ${s.wins} win${s.wins === 1 ? "" : "s"}`}
                     {s.pen ? ` · −${s.pen} missed hosting` : ""}
@@ -515,7 +511,7 @@ export function Leaderboard({
               </li>
             );
           })}
-          {cinematic && table.length > 8 && (
+          {full && table.length > 8 && (
             <li>
               <Button
                 variant="ghost"
@@ -527,7 +523,7 @@ export function Leaderboard({
               </Button>
             </li>
           )}
-          {!cinematic && rows.length > 3 && (
+          {!full && rows.length > 3 && (
             <li>
               <Button
                 variant="ghost"
@@ -544,7 +540,7 @@ export function Leaderboard({
         </ol>
       )}
       <Button variant="ghost" size="sm" className="mt-2" onClick={() => setHow(true)}>
-        {cinematic ? "How scoring works ›" : "ⓘ How scoring works"}
+        {full ? "How scoring works ›" : "ⓘ How scoring works"}
       </Button>
       {how && <ScoringSheet onClose={() => setHow(false)} />}
       {edit && (

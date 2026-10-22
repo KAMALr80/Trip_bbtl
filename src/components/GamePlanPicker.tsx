@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import type { TripWithRole } from "@/lib/trips";
 import { questionRhythm, skipPasses } from "@/lib/season-plan";
-import { useLook } from "@/lib/look";
 
 type Plan = "recommended" | "short" | "custom";
 type Row = { week_number: number; starts_at: string; kept: boolean };
@@ -166,7 +165,6 @@ function LegacyGamePlanPicker({
   onSaved: () => void | Promise<void>;
   compact?: boolean;
 }) {
-  const cinematic = useLook("journey") === "cinematic";
   const current = (trip as { game_plan?: Plan | null }).game_plan ?? null;
   const [plan, setPlan] = useState<Plan>(current ?? "recommended");
   const [weekday, setWeekday] = useState(0),
@@ -186,14 +184,7 @@ function LegacyGamePlanPicker({
   const captain = trip.myRole === "captain";
   const todayIso = tripToday(trip.home_timezone);
   const win = (p: Plan) => {
-    const from =
-      cinematic || p === "custom"
-        ? start > todayIso
-          ? start
-          : todayIso
-        : addDays(trip.start_date, -84) > todayIso
-          ? addDays(trip.start_date, -84)
-          : todayIso;
+    const from = start > todayIso ? start : todayIso;
     return Math.round(
       (Date.parse(`${trip.start_date}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86400000,
     );
@@ -203,7 +194,7 @@ function LegacyGamePlanPicker({
     p_plan: p,
     p_weekday: weekday,
     p_time: `${time}:00`,
-    p_start: cinematic ? start : p === "custom" ? start : null,
+    p_start: start,
     p_every: every,
     ...(p === "custom" && want !== null ? { p_count: want } : {}),
   });
@@ -252,7 +243,7 @@ function LegacyGamePlanPicker({
   async function save() {
     setBusy(true);
     setMsg("");
-    const r = await db.rpc(cinematic ? "set_preflight_start" : "apply_game_plan", args(plan));
+    const r = await db.rpc("set_preflight_start", args(plan));
     setBusy(false);
     if (r.error) {
       setMsg(friendlyError(r.error));
@@ -287,9 +278,7 @@ function LegacyGamePlanPicker({
     <div className={compact ? "" : "mt-6 rounded-2xl bg-card border border-border p-4"}>
       {!compact && (
         <>
-          <h3 className="font-display font-extrabold">
-            {cinematic ? "Pre-Flight start date" : "Game Day start date 🎯"}
-          </h3>
+          <h3 className="font-display font-extrabold">Pre-Flight start date</h3>
           <p className="text-xs text-ink-soft mt-1">
             Trip dates don't change here. Played nights and the next confirmed night stay. Every
             plan ends with Final Call Night.
@@ -342,53 +331,51 @@ function LegacyGamePlanPicker({
           />
         </label>
       </div>
-      {(plan === "custom" || cinematic) && (
-        <>
+      <>
+        <label className="block text-sm font-bold mt-3">
+          Pre-Flight start date
+          <input
+            type="date"
+            className={field}
+            min={todayIso}
+            max={addDays(trip.start_date, -2)}
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+          />
+        </label>
+        {plan === "custom" && (
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            {[1, 2].map((n) => (
+              <Button
+                key={n}
+                size="sm"
+                variant={every === n ? "playful" : "outline"}
+                onClick={() => setEvery(n)}
+              >
+                {n === 1 ? "Weekly" : "Every other week"}
+              </Button>
+            ))}
+          </div>
+        )}
+        {plan === "custom" && (
           <label className="block text-sm font-bold mt-3">
-            {cinematic ? "Pre-Flight start date" : "First game night on or after"}
+            How many game nights
             <input
-              type="date"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={12}
               className={field}
-              min={cinematic ? todayIso : addDays(trip.start_date, -84)}
-              max={addDays(trip.start_date, -2)}
-              value={start}
-              onChange={(e) => setStart(e.target.value)}
+              value={want ?? ""}
+              onChange={(e) => {
+                const v = Math.round(Number(e.target.value));
+                setWant(e.target.value === "" ? null : Math.min(12, Math.max(1, v || 1)));
+                setRows(null);
+              }}
             />
           </label>
-          {plan === "custom" && (
-            <div className="grid grid-cols-2 gap-2 mt-3">
-              {[1, 2].map((n) => (
-                <Button
-                  key={n}
-                  size="sm"
-                  variant={every === n ? "playful" : "outline"}
-                  onClick={() => setEvery(n)}
-                >
-                  {n === 1 ? "Weekly" : "Every other week"}
-                </Button>
-              ))}
-            </div>
-          )}
-          {plan === "custom" && (
-            <label className="block text-sm font-bold mt-3">
-              How many game nights
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={12}
-                className={field}
-                value={want ?? ""}
-                onChange={(e) => {
-                  const v = Math.round(Number(e.target.value));
-                  setWant(e.target.value === "" ? null : Math.min(12, Math.max(1, v || 1)));
-                  setRows(null);
-                }}
-              />
-            </label>
-          )}
-        </>
-      )}
+        )}
+      </>
       <p className="text-xs text-ink-soft mt-2">Times use {trip.home_timezone}.</p>
       <Button variant="outline" className="w-full mt-3" onClick={() => void preview()}>
         Preview plan

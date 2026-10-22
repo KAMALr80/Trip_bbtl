@@ -8,14 +8,13 @@
 - Manifest-only PWA, no service worker, so previews never go stale.
 - Boarding… art falls back to tile A while its founder setting loads.
 - Appearance: profile, saved, dark. Share nav clearance to avoid overlaps.
-- Cinematic look is a switchable skin (src/lib/look.tsx, app_settings.look, founder-only writes); original components stay as the fallback branch so any page can revert.
-- Read public visual settings from the public app_settings row, not the restricted look RPC, so signed-out splash and sign-in follow the founder's choice.
-- Share cinematic play framing through GameScene without changing game actions or the original branch.
+- One look (M1-03). The `cinematic-*` CSS classes are that look, not a variant; don't add look switches or per-page skins.
+- Share play framing through GameScene without changing game actions.
 - Explore previews and Arcade/sample-night practice use local pretend prompts, not live trip decks, trip writes or AI calls; Mix It Up retains its existing quota path.
-- Use the shared next-night helper across Home, Play and Calendar; cinematic month views read member-scoped schedules and write changes only through identity-checked functions, leaving Original unchanged.
+- Use the shared next-night helper across Home, Play and Calendar; month views read member-scoped schedules and write changes only through identity-checked functions.
 - No per-trip feature switches (M1-10). Hide an unfinished feature with an environment flag in src/lib/flags.ts (VITE_FEATURE_<NAME>), the same for every trip.
 - Place entry and browsing use shared PlacePicker (Country → Region → City); PlaceBrowser wraps it for filtered results.
-- Keep cinematic sign-in artwork responsive with its lower fade; retain the Original sign-in branch for reversible Looks.
-- Keep cinematic-only Home controls and Captain crown badges look-scoped; preserve Original markup and server-authoritative roles.
-- Source cinematic boarding passes from shared GameScene mapping so practice and live play use the same art without duplicating game logic.
+- Keep sign-in artwork responsive with its lower fade.
+- Captain crown badges follow server-authoritative roles.
+- Source boarding passes from shared GameScene mapping so practice and live play use the same art without duplicating game logic.
 - Keep game display titles presentation-only; catalog names and stored timer labels must remain compatible with private timer validation.

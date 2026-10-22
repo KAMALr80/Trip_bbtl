@@ -1,5 +1,5 @@
 import { ROOM_COPY } from "@/lib/room-copy";
-import { useLook } from "@/lib/look";
+
 import { PlacePicker } from "@/components/PlacePicker";
 import { countryName, COUNTRIES, type Place } from "@/lib/places";
 import { tripDisplayName } from "@/lib/trip-display-name";
@@ -30,7 +30,6 @@ type Props = {
 const field =
   "w-full h-14 rounded-2xl border-2 border-border bg-background px-4 outline-none focus:border-primary text-foreground";
 export function TripSheets({ mode, initialCode = "", trip, onClose, onDone }: Props) {
-  const cinematic = useLook("home-top") === "cinematic";
   const [name, setName] = useState("");
   const [createStep, setCreateStep] = useState<"dates" | "who" | "details">("dates");
   const [playMode, setPlayMode] = useState<PlayArrangement | null>(null);
@@ -270,7 +269,7 @@ export function TripSheets({ mode, initialCode = "", trip, onClose, onDone }: Pr
         aria-label={
           mode === "create" ? "Start a trip" : mode === "join" ? "Join a trip" : "Your trip is live"
         }
-        className={`relative w-full max-w-lg overflow-y-auto bg-card border border-border p-6 pb-[max(2rem,env(safe-area-inset-bottom))] ${createdId && cinematic ? "h-dvh max-h-dvh" : "max-h-[92dvh] rounded-t-[24px]"}`}
+        className={`relative w-full max-w-lg overflow-y-auto bg-card border border-border p-6 pb-[max(2rem,env(safe-area-inset-bottom))] ${createdId ? "h-dvh max-h-dvh" : "max-h-[92dvh] rounded-t-[24px]"}`}
       >
         <div className="w-12 h-1.5 bg-border rounded-full mx-auto mb-6" />
         <Button

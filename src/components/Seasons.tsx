@@ -3,7 +3,7 @@ import { confirmInApp } from "@/lib/confirm";
 import { safeSetItem } from "@/lib/safe-storage";
 import { friendlyError } from "@/lib/friendly-error";
 import { fmtWhen } from "@/lib/viewer-time";
-import { useLook } from "@/lib/look";
+
 import { TieWheel } from "@/components/TieWheel";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -248,10 +248,8 @@ export function MysteryPrizes({
     return t > 0 && t < DAY;
   });
   const now = useNow(soon ? 1000 : 60_000);
-  const cinematic = useLook("home-top") === "cinematic";
   const [finalNight, setFinalNight] = useState<string | null>(null);
   useEffect(() => {
-    if (!cinematic) return;
     let live = true;
     void supabase
       .from("game_nights")
@@ -264,7 +262,7 @@ export function MysteryPrizes({
     return () => {
       live = false;
     };
-  }, [cinematic, trip.id]);
+  }, [true, trip.id]);
   const [reveal, setReveal] = useState<SeasonKey | null>(null);
   const finalized = useRef<Record<string, boolean>>({});
   useEffect(() => {
@@ -324,7 +322,7 @@ export function MysteryPrizes({
                           ? ` · ${s.crowning_label}`
                           : ""}
                   {!done && s.crowning_at
-                    ? ` · ${fmtWhen(trip.season_rule !== "a2c" && cinematic && s.crowning_mode === "takeoff" && finalNight ? finalNight : s.crowning_at, trip.home_timezone)}`
+                    ? ` · ${fmtWhen(trip.season_rule !== "a2c" && s.crowning_mode === "takeoff" && finalNight ? finalNight : s.crowning_at, trip.home_timezone)}`
                     : ""}
                 </p>
                 {done && s.prize_note && (
@@ -905,10 +903,8 @@ export function PhotoWall({ trip, members, cards, userId }: Base) {
     [msg, setMsg] = useState(""),
     [busyMem, setBusyMem] = useState(""),
     [collageUrl, setCollageUrl] = useState("");
-  const cinematic = useLook("journey") === "cinematic";
   const [itineraryDays, setItineraryDays] = useState<ItineraryDay[]>([]);
   useEffect(() => {
-    if (!cinematic) return;
     let live = true;
     void loadItinerary(trip.id)
       .then(({ days }) => {
@@ -920,7 +916,7 @@ export function PhotoWall({ trip, members, cards, userId }: Base) {
     return () => {
       live = false;
     };
-  }, [cinematic, trip.id]);
+  }, [true, trip.id]);
   const closed = tripClosed(trip);
   async function downloadAll() {
     setBusyMem("zip");
@@ -1059,267 +1055,42 @@ export function PhotoWall({ trip, members, cards, userId }: Base) {
       n: reactions.filter((r) => r.photo_path === path && r.emoji === e).length,
       mine: reactions.some((r) => r.photo_path === path && r.emoji === e && r.user_id === userId),
     }));
-  if (cinematic) {
-    const byDay = photos.reduce<Record<string, Photo[]>>((groups, photo) => {
-      (groups[photo.day_date] ??= []).push(photo);
-      return groups;
-    }, {});
-    const days = Object.keys(byDay).sort();
-    const start = new Date(`${trip.start_date}T12:00:00Z`).getTime();
-    const firstPlace = trip.destination.split(/[,·]/)[0]?.trim() || trip.destination;
-    const stickers = [Plane, Palmtree, BriefcaseBusiness, MapPin];
-    const tilt = (path: string) => {
-      let hash = 0;
-      for (const char of path) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-      return `photo-tilt-${hash % 5}`;
-    };
-    return (
-      <section className="mt-5 cinematic-photo-wall">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="eyebrow text-primary">PHOTO WALL</p>
-            <h2 className="mt-1 break-words font-display text-2xl font-extrabold">
-              {tripDisplayName(trip.name)} scrapbook
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">{trip.destination} · members only</p>
-          </div>
-          <span
-            className="shrink-0 text-sm text-muted-foreground"
-            aria-label={`${photos.length} photos`}
-          >
-            {photos.length}
-          </span>
-        </div>
-        {photos.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button variant="outline" disabled={!!busyMem} onClick={() => void downloadAll()}>
-              <Download /> {busyMem === "zip" ? "Zipping…" : "Download all"}
-            </Button>
-            <Button variant="outline" disabled={!!busyMem} onClick={() => void collage()}>
-              🖼️ {busyMem === "collage" ? "Building…" : "Make a collage"}
-            </Button>
-          </div>
-        )}
-        {collageUrl && (
-          <div className="mt-4 rounded-2xl bg-card border border-border p-3">
-            <img src={collageUrl} alt="Trip collage" className="w-full rounded-xl" />
-            <div className="grid grid-cols-2 gap-2 mt-3">
-              <a
-                href={collageUrl}
-                download={`${tripDisplayName(trip.name)}-collage.png`}
-                className="h-11 rounded-full bg-primary text-primary-foreground font-bold grid place-items-center text-base"
-              >
-                Save collage
-              </a>
-              <Button variant="ghost" onClick={() => setCollageUrl("")}>
-                Close
-              </Button>
-            </div>
-          </div>
-        )}
-        {msg && (
-          <p role="status" className="text-sm mt-2">
-            {msg}
-          </p>
-        )}
-        <div className="scrapbook-board mt-4">
-          {stickers.map((Icon, i) => (
-            <Icon
-              key={i}
-              aria-hidden="true"
-              className={`scrapbook-sticker scrapbook-sticker-${i}`}
-              strokeWidth={2.5}
-            />
-          ))}
-          {loaded && !photos.length ? (
-            <div className="relative z-10 py-9">
-              <div className="grid grid-cols-3 gap-2 px-1" aria-hidden="true">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className={`scrapbook-polaroid scrapbook-blank photo-tilt-${i}`}>
-                    <span className="scrapbook-photo-empty" />
-                    <span className="scrapbook-fastener" />
-                  </div>
-                ))}
-              </div>
-              <div className="scrapbook-empty mx-auto mt-8 max-w-[290px] px-5 py-5 text-center">
-                <p className="font-display text-lg font-extrabold">No photos yet</p>
-                <p className="mt-2 text-sm">
-                  Bingo, Quest and Photo challenge pics land here as the squad plays.
-                </p>
-              </div>
-            </div>
-          ) : !loaded ? (
-            <div className="scrapbook-empty relative z-10 mx-auto my-10 max-w-[290px] px-5 py-5 text-center text-sm">
-              Loading photos…
-            </div>
-          ) : (
-            <div className="relative z-10 space-y-6">
-              {days.map((date) => {
-                const number = Math.max(
-                  1,
-                  Math.round((new Date(`${date}T12:00:00Z`).getTime() - start) / 86400000) + 1,
-                );
-                const city =
-                  itineraryDays.find((day) => day.date === date)?.city?.trim() || firstPlace;
-                return (
-                  <div key={date}>
-                    <h3 className="scrapbook-day-label">
-                      Day {number} · {city}
-                    </h3>
-                    <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6">
-                      {byDay[date]?.map((p, i) => {
-                        const total = reactions.filter((r) => r.photo_path === p.photo_path).length;
-                        return (
-                          <Button
-                            key={p.photo_path}
-                            variant="ghost"
-                            type="button"
-                            onClick={() => setOpen(p)}
-                            aria-label={`Open ${nameOf(cards, members, p.user_id)}'s photo from day ${number}`}
-                            className={`scrapbook-polaroid ${tilt(p.photo_path)} ${i % 2 ? "scrapbook-taped" : "scrapbook-pinned"}`}
-                          >
-                            <span className="scrapbook-fastener" aria-hidden="true" />
-                            <span className="scrapbook-photo-frame">
-                              {urls[p.photo_path] && (
-                                <img
-                                  src={urls[p.photo_path]}
-                                  alt={`${nameOf(cards, members, p.user_id)}'s ${p.source} photo`}
-                                  loading="lazy"
-                                  decoding="async"
-                                  width={360}
-                                  height={360}
-                                />
-                              )}
-                            </span>
-                            <span className="scrapbook-caption">
-                              {nameOf(cards, members, p.user_id)} · ♥ {total}
-                            </span>
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-        {open && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Photo"
-            className="fixed inset-0 z-50 flex flex-col bg-foreground text-background"
-          >
-            <div className="flex min-w-0 items-center gap-3 p-4 pt-[max(1rem,env(safe-area-inset-top))]">
-              <Avatar
-                url={cards.find((c) => c.user_id === open.user_id)?.avatarUrl}
-                name={nameOf(cards, members, open.user_id)}
-                className="h-10 w-10"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="font-bold truncate">{nameOf(cards, members, open.user_id)}</p>
-                <p className="text-xs opacity-70">
-                  {sourceLabel[open.source]} ·{" "}
-                  {new Date(`${open.day_date}T12:00:00`).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-background"
-                aria-label="Close"
-                onClick={() => setOpen(null)}
-              >
-                <X />
-              </Button>
-            </div>
-            <div className="flex-1 min-h-0 grid place-items-center px-2">
-              {urls[open.photo_path] && (
-                <img
-                  src={urls[open.photo_path]}
-                  alt="Full screen"
-                  className="max-h-full max-w-full object-contain rounded-2xl"
-                />
-              )}
-            </div>
-            <div className="p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-              <div className="flex justify-center gap-2">
-                {counts(open.photo_path).map(({ e, n, mine }) => (
-                  <button
-                    key={e}
-                    type="button"
-                    disabled={closed}
-                    onClick={() => void react(open.photo_path, e)}
-                    className={`h-12 min-w-12 rounded-full px-3 text-lg font-bold transition active:scale-90 ${mine ? "bg-primary text-primary-foreground" : "bg-background/15"}`}
-                  >
-                    {e}
-                    {n > 0 && <span className="ml-1 text-base">{n}</span>}
-                  </button>
-                ))}
-              </div>
-              <div className="flex justify-center gap-2 mt-3">
-                {!closed && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-background"
-                    onClick={() => void report(open.photo_path)}
-                  >
-                    <Flag /> Report
-                  </Button>
-                )}
-                {isLeader(trip) && !closed && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => void remove(open.photo_path)}
-                  >
-                    <Trash2 /> Delete
-                  </Button>
-                )}
-              </div>
-              <p className="mt-2 text-center text-xs text-background">
-                Urgent?{" "}
-                <a href="mailto:safety@tripjunkies.app" className="underline">
-                  Email safety@tripjunkies.app
-                </a>
-              </p>
-            </div>
-          </div>
-        )}
-      </section>
-    );
-  }
+  const byDay = photos.reduce<Record<string, Photo[]>>((groups, photo) => {
+    (groups[photo.day_date] ??= []).push(photo);
+    return groups;
+  }, {});
+  const days = Object.keys(byDay).sort();
+  const start = new Date(`${trip.start_date}T12:00:00Z`).getTime();
+  const firstPlace = trip.destination.split(/[,·]/)[0]?.trim() || trip.destination;
+  const stickers = [Plane, Palmtree, BriefcaseBusiness, MapPin];
+  const tilt = (path: string) => {
+    let hash = 0;
+    for (const char of path) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+    return `photo-tilt-${hash % 5}`;
+  };
   return (
-    <section className="mt-10">
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-xs font-extrabold text-muted-foreground">EVERY SNAP, ONE PLACE</p>
-          <h2 className="font-display text-2xl font-extrabold">Photo wall 📸</h2>
+    <section className="mt-5 cinematic-photo-wall">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="eyebrow text-primary">PHOTO WALL</p>
+          <h2 className="mt-1 break-words font-display text-2xl font-extrabold">
+            {tripDisplayName(trip.name)} scrapbook
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">{trip.destination} · members only</p>
         </div>
-        <span className="text-sm text-muted-foreground">{photos.length}</span>
+        <span
+          className="shrink-0 text-sm text-muted-foreground"
+          aria-label={`${photos.length} photos`}
+        >
+          {photos.length}
+        </span>
       </div>
       {photos.length > 0 && (
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <Button
-            variant="outline"
-            className="bg-card"
-            disabled={!!busyMem}
-            onClick={() => void downloadAll()}
-          >
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button variant="outline" disabled={!!busyMem} onClick={() => void downloadAll()}>
             <Download /> {busyMem === "zip" ? "Zipping…" : "Download all"}
           </Button>
-          <Button
-            variant="outline"
-            className="bg-card"
-            disabled={!!busyMem}
-            onClick={() => void collage()}
-          >
+          <Button variant="outline" disabled={!!busyMem} onClick={() => void collage()}>
             🖼️ {busyMem === "collage" ? "Building…" : "Make a collage"}
           </Button>
         </div>
@@ -1346,47 +1117,88 @@ export function PhotoWall({ trip, members, cards, userId }: Base) {
           {msg}
         </p>
       )}
-      {loaded && photos.length === 0 ? (
-        <div className="mt-4 rounded-[1.75rem] bg-orange-soft p-6 text-center">
-          <p className="text-4xl">🖼️</p>
-          <p className="font-display font-extrabold text-lg mt-1">No photos yet</p>
-          <p className="text-sm text-ink-soft">
-            Bingo, quest and photo challenge shots land here during the trip.
-          </p>
-        </div>
-      ) : (
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          {photos.map((p) => {
-            const total = reactions.filter((r) => r.photo_path === p.photo_path).length;
-            return (
-              <button
-                key={p.photo_path}
-                type="button"
-                onClick={() => setOpen(p)}
-                className="relative aspect-square overflow-hidden rounded-xl bg-muted text-left"
-              >
-                {urls[p.photo_path] && (
-                  <img
-                    src={urls[p.photo_path]}
-                    alt={`${nameOf(cards, members, p.user_id)}'s ${p.source} photo`}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover"
-                  />
-                )}
-                <span className="absolute left-1.5 top-1.5 rounded-full bg-card px-1.5 py-0.5 text-[9px] font-bold">
-                  {sourceLabel[p.source] ?? p.source}
-                </span>
-                {total > 0 && (
-                  <span className="absolute right-1.5 bottom-1.5 rounded-full bg-card px-1.5 py-0.5 text-[10px] font-bold">
-                    ❤️ {total}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <div className="scrapbook-board mt-4">
+        {stickers.map((Icon, i) => (
+          <Icon
+            key={i}
+            aria-hidden="true"
+            className={`scrapbook-sticker scrapbook-sticker-${i}`}
+            strokeWidth={2.5}
+          />
+        ))}
+        {loaded && !photos.length ? (
+          <div className="relative z-10 py-9">
+            <div className="grid grid-cols-3 gap-2 px-1" aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className={`scrapbook-polaroid scrapbook-blank photo-tilt-${i}`}>
+                  <span className="scrapbook-photo-empty" />
+                  <span className="scrapbook-fastener" />
+                </div>
+              ))}
+            </div>
+            <div className="scrapbook-empty mx-auto mt-8 max-w-[290px] px-5 py-5 text-center">
+              <p className="font-display text-lg font-extrabold">No photos yet</p>
+              <p className="mt-2 text-sm">
+                Bingo, Quest and Photo challenge pics land here as the squad plays.
+              </p>
+            </div>
+          </div>
+        ) : !loaded ? (
+          <div className="scrapbook-empty relative z-10 mx-auto my-10 max-w-[290px] px-5 py-5 text-center text-sm">
+            Loading photos…
+          </div>
+        ) : (
+          <div className="relative z-10 space-y-6">
+            {days.map((date) => {
+              const number = Math.max(
+                1,
+                Math.round((new Date(`${date}T12:00:00Z`).getTime() - start) / 86400000) + 1,
+              );
+              const city =
+                itineraryDays.find((day) => day.date === date)?.city?.trim() || firstPlace;
+              return (
+                <div key={date}>
+                  <h3 className="scrapbook-day-label">
+                    Day {number} · {city}
+                  </h3>
+                  <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6">
+                    {byDay[date]?.map((p, i) => {
+                      const total = reactions.filter((r) => r.photo_path === p.photo_path).length;
+                      return (
+                        <Button
+                          key={p.photo_path}
+                          variant="ghost"
+                          type="button"
+                          onClick={() => setOpen(p)}
+                          aria-label={`Open ${nameOf(cards, members, p.user_id)}'s photo from day ${number}`}
+                          className={`scrapbook-polaroid ${tilt(p.photo_path)} ${i % 2 ? "scrapbook-taped" : "scrapbook-pinned"}`}
+                        >
+                          <span className="scrapbook-fastener" aria-hidden="true" />
+                          <span className="scrapbook-photo-frame">
+                            {urls[p.photo_path] && (
+                              <img
+                                src={urls[p.photo_path]}
+                                alt={`${nameOf(cards, members, p.user_id)}'s ${p.source} photo`}
+                                loading="lazy"
+                                decoding="async"
+                                width={360}
+                                height={360}
+                              />
+                            )}
+                          </span>
+                          <span className="scrapbook-caption">
+                            {nameOf(cards, members, p.user_id)} · ♥ {total}
+                          </span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
       {open && (
         <div
           role="dialog"

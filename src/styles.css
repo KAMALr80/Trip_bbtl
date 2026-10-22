@@ -3237,18 +3237,18 @@
   --cinema-ink: #263048;
   --cinema-red: #bb4848;
 }
-html[data-buttons-look="cinematic"] .night-primary {
+html:root .night-primary {
   background: linear-gradient(160deg, var(--cinema-gold-start), var(--cinema-gold-end)) !important;
   color: var(--cinema-deep) !important;
   box-shadow:
     inset 0 2px 2px color-mix(in oklab, var(--cinema-paper) 60%, transparent),
     0 8px 20px color-mix(in oklab, var(--cinema-gold-end) 25%, transparent);
 }
-html[data-buttons-look="cinematic"]
+html:root
   button:not(.night-primary):not(.passport-phase):not(.passport-visa-stamp):not(
     .passport-mini-postcard
   ):not(.boarding-game-tile)[class*="bg-secondary"],
-html[data-buttons-look="cinematic"] button[class*="border-input"] {
+html:root button[class*="border-input"] {
   backdrop-filter: blur(16px);
   border-color: var(--cinema-frost-border);
   background: var(--cinema-frost);
@@ -3293,7 +3293,7 @@ html[data-buttons-look="cinematic"] button[class*="border-input"] {
 .cinematic-captain-tools button {
   border-radius: 999px;
 }
-.light[data-buttons-look="cinematic"] button[class*="border-input"] {
+.light:root button[class*="border-input"] {
   background: var(--card);
   border-color: var(--border);
 }
@@ -5907,7 +5907,7 @@ html[data-buttons-look="cinematic"] button[class*="border-input"] {
   color: var(--splash-ink) !important;
 }
 .cinematic-splash .cinematic-splash-back,
-html[data-buttons-look="cinematic"] .cinematic-splash .cinematic-splash-back {
+html:root .cinematic-splash .cinematic-splash-back {
   background: var(--splash-glass) !important;
   color: var(--splash-paper) !important;
   border-color: var(--cinema-frost-border) !important;
@@ -5927,12 +5927,12 @@ html[data-buttons-look="cinematic"] .cinematic-splash .cinematic-splash-back {
   -webkit-background-clip: text;
   color: transparent;
 }
-html[data-buttons-look="cinematic"] .cinematic-auth .cinematic-auth-google {
+html:root .cinematic-auth .cinematic-auth-google {
   background: var(--splash-paper) !important;
   color: var(--splash-ink) !important;
   box-shadow: 0 8px 20px color-mix(in oklab, var(--splash-night) 45%, transparent) !important;
 }
-html[data-buttons-look="cinematic"] .cinematic-auth .cinematic-auth-email-button {
+html:root .cinematic-auth .cinematic-auth-email-button {
   background: linear-gradient(
     105deg,
     var(--splash-coral),

@@ -6,7 +6,7 @@ import { BrandLockup } from "@/components/BrandLockup";
 import { CaptainCrown } from "@/components/CaptainCrown";
 import { CinematicSplash } from "@/components/CinematicSplash";
 import { CrownCelebration } from "@/components/CrownCelebration";
-import { WelcomeLockup } from "@/components/WelcomeLockup";
+
 import gameOptionA from "@/assets/game-tile-option-a.webp";
 import tripCoast from "@/assets/journey-coast-top.jpg";
 import tripCoastSmall from "@/assets/journey-coast-top-768.jpg";
@@ -25,10 +25,9 @@ import founderReportsIcon from "@/assets/founder-reports.webp";
 import founderFeaturesIcon from "@/assets/founder-features.webp";
 import founderMembersIcon from "@/assets/founder-members.webp";
 import founderLaunchIcon from "@/assets/founder-launch.webp";
-import { useLook } from "@/lib/look";
+
 import { tripDisplayName } from "@/lib/trip-display-name";
 
-import { FounderFeatures } from "@/components/FounderFeatures";
 import { OutOfCreditsHost } from "@/components/AiCredits";
 import { CaptainNudge } from "@/components/CaptainChecklist";
 import { createFileRoute } from "@tanstack/react-router";
@@ -42,7 +41,6 @@ import {
   Crown,
   Home,
   LogOut,
-  Mail,
   Plus,
   Sparkles,
   Users,
@@ -51,7 +49,6 @@ import {
   CalendarDays,
   Ticket,
   Play,
-  MapPin,
   Eye,
   EyeOff,
   BookOpen,
@@ -116,7 +113,6 @@ import {
 import { TripList } from "@/components/TripList";
 import { Bug, HelpCircle, PlayCircle, Trash2 } from "lucide-react";
 
-import signinFriends from "@/assets/signin-night-friends.jpg";
 import cinematicLoginCoast from "@/assets/cinematic-login-coast-tall-768.jpg";
 import cinematicLoginCoastLarge from "@/assets/cinematic-login-coast.jpg";
 import { ExploreTour } from "@/components/ExploreTour";
@@ -146,7 +142,7 @@ import { BetaCodeField, BetaCodesDoor, WaitingToJoin } from "@/components/BetaCo
 import { AiGuardDoor, AiCapBanner } from "@/components/AiGuard";
 import { readPendingBeta, clearPendingBeta } from "@/lib/pending-beta";
 import { dicebearUrl as betaAvatarUrl } from "@/lib/player-cards";
-import { FounderWelcomeEditor, WelcomeExtras } from "@/components/WelcomeCopy";
+import { FounderWelcomeEditor } from "@/components/WelcomeCopy";
 import { DeletedTripNotes } from "@/components/DeletedTripNotes";
 
 import { AppearanceQuickToggle } from "@/components/MeExtras";
@@ -193,7 +189,6 @@ type Tab = (typeof tabs)[number]["name"];
 
 function Index() {
   const { user, profile, loading, refreshProfile } = useAuth();
-  const splashLook = useLook("splash");
   const [splashReady, setSplashReady] = useState(false);
   const [splashTimedOut, setSplashTimedOut] = useState(false);
   const [splashLogin, setSplashLogin] = useState(false);
@@ -205,13 +200,6 @@ function Index() {
       window.clearTimeout(timeout);
     };
   }, []);
-  const exploreLook = useLook("explore");
-  const squadLook = useLook("squad");
-  const meLook = useLook("me");
-  const journeyLook = useLook("journey");
-  const homeTopLook = useLook("home-top");
-  const homeBottomLook = useLook("home-bottom");
-  const useCinematicPlay = useLook("game-night") === "cinematic";
   const legal = useLegalStatus(user?.id);
   const [tab, setTab] = useState<Tab>("Home");
   const [homeScreen, setHomeScreen] = useState<HomeScreen>("dashboard");
@@ -544,7 +532,6 @@ function Index() {
   }
 
   if (
-    splashLook === "cinematic" &&
     !splashLogin &&
     ((!splashReady && !splashTimedOut) ||
       loading ||
@@ -560,13 +547,13 @@ function Index() {
     );
   if (!user) {
     if (launch === null)
-      return splashLook === "cinematic" ? (
+      return (
         <AuthScreen
           allowSignup={false}
           onExplore={() => setPublicView("overview")}
           onStory={() => setPublicView("story")}
         />
-      ) : null;
+      );
     if (publicView === "games")
       return (
         <main className="min-h-dvh max-w-lg mx-auto px-[18px] pt-[max(1rem,env(safe-area-inset-top))] pb-8">
@@ -587,7 +574,7 @@ function Index() {
           <OutOfCreditsHost onSignIn={() => setPublicView(null)} />
         </main>
       );
-    if (publicView === "overview" && exploreLook === "cinematic")
+    if (publicView === "overview")
       return (
         <ExploreTour
           onFinish={() => setPublicView(null)}
@@ -729,7 +716,7 @@ function Index() {
   return (
     <div
       data-vibe={active ? vibeOf(active) : undefined}
-      className={`page-scene page-scene-${tab.toLowerCase()} ${(tab === "Squad" ? squadLook : tab === "Me" ? meLook : tab === "Trip" ? journeyLook : tab === "Play" ? (useCinematicPlay ? "cinematic" : "original") : homeTopLook) === "cinematic" ? "cinematic-page-scene" : ""} min-h-dvh max-w-lg mx-auto relative`}
+      className={`page-scene page-scene-${tab.toLowerCase()} ${(tab === "Squad" ? "cinematic" : tab === "Me" ? "cinematic" : tab === "Trip" ? "cinematic" : tab === "Play" ? "cinematic" : "cinematic") === "cinematic" ? "cinematic-page-scene" : ""} min-h-dvh max-w-lg mx-auto relative`}
     >
       {(active as { is_sandbox?: boolean } | null)?.is_sandbox && <SandboxBanner />}
       <LabViewBanner refresh={(id) => refreshTrips(id)} />
@@ -748,14 +735,14 @@ function Index() {
       )}
       {(
         tab === "Home"
-          ? homeTopLook === "cinematic" || homeBottomLook === "cinematic"
+          ? true
           : tab === "Play"
-            ? useCinematicPlay
+            ? true
             : tab === "Trip"
-              ? journeyLook === "cinematic"
+              ? true
               : tab === "Squad"
-                ? squadLook === "cinematic"
-                : meLook === "cinematic"
+                ? true
+                : true
       ) ? (
         <header className="cinematic-home-header">
           <BrandLockup className="cinematic-home-brand" compact />
@@ -968,23 +955,21 @@ function Index() {
                     `journey-day-${displayedTrip.id}`,
                     String(stop.date),
                   );
-                  {
-                    let tries = 0;
-                    const tripKey = displayedTrip.id;
-                    const seek = () => {
-                      const el = document.getElementById(`itinerary-day-${tripKey}-${stop.date}`);
-                      if (el) {
-                        el.scrollIntoView({ behavior: "smooth", block: "start" });
-                        return;
-                      }
-                      if (++tries < 20) window.setTimeout(seek, 200);
-                      else
-                        document
-                          .getElementById(`trip-calendar-${tripKey}`)
-                          ?.scrollIntoView({ behavior: "smooth" });
-                    };
-                    window.setTimeout(seek, 250);
-                  }
+                  let tries = 0;
+                  const tripKey = displayedTrip.id;
+                  const seek = () => {
+                    const el = document.getElementById(`itinerary-day-${tripKey}-${stop.date}`);
+                    if (el) {
+                      el.scrollIntoView({ behavior: "smooth", block: "start" });
+                      return;
+                    }
+                    if (++tries < 20) window.setTimeout(seek, 200);
+                    else
+                      document
+                        .getElementById(`trip-calendar-${tripKey}`)
+                        ?.scrollIntoView({ behavior: "smooth" });
+                  };
+                  window.setTimeout(seek, 250);
                 } else {
                   setTab("Home");
                   setHomeScreen("trip");
@@ -1314,7 +1299,6 @@ function AuthScreen({
   onExplore: () => void;
   onStory: () => void;
 }) {
-  const cinematic = useLook("splash") === "cinematic";
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [legalChecked, setLegalChecked] = useState(false);
   const [email, setEmail] = useState("");
@@ -1410,323 +1394,98 @@ function AuthScreen({
         }}
       />
     );
-  if (cinematic)
-    return (
-      <main className={`cinematic-auth ${emailOpen ? "cinematic-auth-email" : ""}`}>
-        <img
-          className="cinematic-auth-scene"
-          src={cinematicLoginCoast}
-          srcSet={`${cinematicLoginCoast} 768w, ${cinematicLoginCoastLarge} 1024w`}
-          sizes="(max-width: 520px) 100vw, 520px"
-          alt="Five diverse friends cheering over a tropical coastal town at sunset"
-          width={768}
-          height={1366}
-          fetchPriority="high"
-        />
-        <div className="cinematic-auth-content">
-          <BrandLockup className="cinematic-auth-brand" />
-          <div className="cinematic-auth-spacer">
-            {!emailOpen && <p className="login-hook">Think you can out-travel your crew?</p>}
-          </div>
-          {emailOpen ? (
-            <section
-              className="cinematic-auth-form"
-              aria-label={
-                forgot
-                  ? "Reset your password"
-                  : mode === "signup"
-                    ? "Sign up with email"
-                    : "Sign in with email"
-              }
+  return (
+    <main className={`cinematic-auth ${emailOpen ? "cinematic-auth-email" : ""}`}>
+      <img
+        className="cinematic-auth-scene"
+        src={cinematicLoginCoast}
+        srcSet={`${cinematicLoginCoast} 768w, ${cinematicLoginCoastLarge} 1024w`}
+        sizes="(max-width: 520px) 100vw, 520px"
+        alt="Five diverse friends cheering over a tropical coastal town at sunset"
+        width={768}
+        height={1366}
+        fetchPriority="high"
+      />
+      <div className="cinematic-auth-content">
+        <BrandLockup className="cinematic-auth-brand" />
+        <div className="cinematic-auth-spacer">
+          {!emailOpen && <p className="login-hook">Think you can out-travel your crew?</p>}
+        </div>
+        {emailOpen ? (
+          <section
+            className="cinematic-auth-form"
+            aria-label={
+              forgot
+                ? "Reset your password"
+                : mode === "signup"
+                  ? "Sign up with email"
+                  : "Sign in with email"
+            }
+          >
+            <Button
+              variant="ghost"
+              className="cinematic-auth-back"
+              onClick={() => {
+                setEmailOpen(false);
+                setForgot(false);
+                setMessage("");
+              }}
             >
-              <Button
-                variant="ghost"
-                className="cinematic-auth-back"
-                onClick={() => {
-                  setEmailOpen(false);
-                  setForgot(false);
-                  setMessage("");
+              <ArrowLeft size={17} /> Back
+            </Button>
+            <h1>
+              {forgot
+                ? "Reset your password"
+                : mode === "signup"
+                  ? "Join the squad"
+                  : "Welcome back"}
+            </h1>
+            {forgot ? (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setBusy(true);
+                  try {
+                    await supabase.auth.resetPasswordForEmail(email, {
+                      redirectTo: `${window.location.origin}/reset-password`,
+                    });
+                  } finally {
+                    setMessage(
+                      "If an account uses that email, a reset link is on its way. Check your inbox.",
+                    );
+                    setBusy(false);
+                  }
                 }}
               >
-                <ArrowLeft size={17} /> Back
-              </Button>
-              <h1>
-                {forgot
-                  ? "Reset your password"
-                  : mode === "signup"
-                    ? "Join the squad"
-                    : "Welcome back"}
-              </h1>
-              {forgot ? (
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    setBusy(true);
-                    try {
-                      await supabase.auth.resetPasswordForEmail(email, {
-                        redirectTo: `${window.location.origin}/reset-password`,
-                      });
-                    } finally {
-                      setMessage(
-                        "If an account uses that email, a reset link is on its way. Check your inbox.",
-                      );
-                      setBusy(false);
-                    }
-                  }}
-                >
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  placeholder="Email address"
+                  aria-label="Email address"
+                />
+                <Button type="submit" className="cinematic-auth-submit" disabled={busy}>
+                  Send reset link
+                </Button>
+                <Button type="button" variant="link" onClick={() => setForgot(false)}>
+                  Back to Log in
+                </Button>
+              </form>
+            ) : (
+              <>
+                <form onSubmit={(e) => void emailAuth(e)}>
                   <input
                     type="email"
                     required
+                    autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    autoComplete="email"
                     placeholder="Email address"
                     aria-label="Email address"
                   />
-                  <Button type="submit" className="cinematic-auth-submit" disabled={busy}>
-                    Send reset link
-                  </Button>
-                  <Button type="button" variant="link" onClick={() => setForgot(false)}>
-                    Back to Log in
-                  </Button>
-                </form>
-              ) : (
-                <>
-                  <form onSubmit={(e) => void emailAuth(e)}>
-                    <input
-                      type="email"
-                      required
-                      autoComplete="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Email address"
-                      aria-label="Email address"
-                    />
-                    <div className="cinematic-auth-password">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        required
-                        minLength={6}
-                        autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Password"
-                        aria-label="Password"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setShowPassword(!showPassword)}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? <EyeOff /> : <Eye />}
-                      </Button>
-                    </div>
-                    {mode === "signup" && (
-                      <>
-                        <label className="cinematic-auth-birthday">
-                          Birthday
-                          <input
-                            type="date"
-                            required
-                            max={new Date().toISOString().slice(0, 10)}
-                            value={signupDob}
-                            onChange={(e) => setSignupDob(e.target.value)}
-                          />
-                          <small>
-                            Saved once. Contact support to correct it later. Ages 13 and up can sign
-                            up; 13–17 join a trip with their Captain's code and approval.
-                          </small>
-                        </label>
-                        <LegalCheckbox checked={legalChecked} onChange={setLegalChecked} />
-                      </>
-                    )}
-                    <Button type="submit" className="cinematic-auth-submit" disabled={busy}>
-                      {busy ? "One sec..." : mode === "signup" ? "Sign up" : "Log in"}
-                    </Button>
-                  </form>
-                  <div className="cinematic-auth-links">
-                    {mode === "signin" && (
-                      <Button
-                        variant="link"
-                        onClick={() => {
-                          setForgot(true);
-                          setMessage("");
-                        }}
-                      >
-                        Forgot password?
-                      </Button>
-                    )}
-                    {!allowSignup && onBetaSaved && (
-                      <div className="w-full mt-3">
-                        <BetaCodeField signedIn={false} onRedeemed={onBetaSaved} />
-                      </div>
-                    )}
-                    {allowSignup && (
-                      <Button
-                        variant="link"
-                        onClick={() => {
-                          setMode(mode === "signin" ? "signup" : "signin");
-                          setMessage("");
-                        }}
-                      >
-                        {mode === "signin"
-                          ? "New here? Sign up"
-                          : "Already have an account? Log in"}
-                      </Button>
-                    )}
-                  </div>
-                </>
-              )}
-            </section>
-          ) : (
-            <div className="cinematic-auth-actions">
-              <Button
-                className="cinematic-auth-google"
-                onClick={() => void social("google")}
-                disabled={busy}
-              >
-                <span className="cinematic-google-g" aria-hidden="true">
-                  G
-                </span>
-                Continue with Google
-              </Button>
-              <Button
-                className="cinematic-auth-email-button"
-                onClick={() => {
-                  setEmailOpen(true);
-                  setForgot(false);
-                }}
-              >
-                Sign in with email
-              </Button>
-              <div className="cinematic-auth-chips">
-                <Button variant="outline" onClick={onExplore}>
-                  <Eye size={17} />
-                  Take a look around ›
-                </Button>
-                <Button variant="outline" onClick={onStory}>
-                  <BookOpen size={17} />
-                  Our story ›
-                </Button>
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
-                Need a hand?{" "}
-                <a href="mailto:support@tripjunkies.app" className="underline">
-                  support@tripjunkies.app
-                </a>
-              </p>
-            </div>
-          )}
-          {message && (
-            <p role="status" className="cinematic-auth-message">
-              {message}
-            </p>
-          )}
-        </div>
-      </main>
-    );
-  return (
-    <main className="min-h-dvh w-full max-w-lg mx-auto flex flex-col items-center text-center px-[18px] pt-[max(.75rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-      <div className="night-welcome-art w-full">
-        <img
-          src={signinFriends}
-          sizes="(max-width: 520px) 100vw, 512px"
-          alt="Five adult friends traveling together at night"
-          width={1408}
-          height={912}
-        />
-      </div>
-      <div className="mt-[-26px] relative w-full">
-        <WelcomeLockup />
-      </div>
-      <div className="mt-6 grid w-full gap-3">
-        <Button
-          variant="subtle"
-          size="lg"
-          className="w-full rounded-full"
-          onClick={() => void social("google")}
-          disabled={busy}
-        >
-          Continue with Google
-        </Button>
-        <Button
-          variant="playful"
-          size="lg"
-          className="night-primary w-full rounded-full"
-          onClick={() => {
-            setEmailOpen(true);
-            setForgot(false);
-          }}
-        >
-          Continue with email
-        </Button>
-      </div>
-      <div className="mt-4 w-full max-w-sm [&_label]:justify-center [&_label]:text-center">
-        <LegalCheckbox checked={legalChecked} onChange={setLegalChecked} />
-      </div>
-      {emailOpen && (
-        <div className="mt-5 w-full">
-          {forgot ? (
-            <form
-              className="space-y-3"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setBusy(true);
-                try {
-                  await supabase.auth.resetPasswordForEmail(email, {
-                    redirectTo: `${window.location.origin}/reset-password`,
-                  });
-                } finally {
-                  setMessage(
-                    "If an account uses that email, a reset link is on its way. Check your inbox.",
-                  );
-                  setBusy(false);
-                }
-              }}
-            >
-              <h2 className="font-display text-xl font-extrabold">Reset your password</h2>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                placeholder="Email address"
-                className="w-full h-13 px-4 rounded-2xl border border-border bg-card text-center"
-              />
-              <Button type="submit" variant="playful" className="w-full" disabled={busy}>
-                Send reset link
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => setForgot(false)}>
-                Back to Log in
-              </Button>
-            </form>
-          ) : (
-            <>
-              <form onSubmit={(e) => void emailAuth(e)} className="space-y-3">
-                <label className="block">
-                  <span className="sr-only">Email</span>
-                  <div className="relative">
-                    <Mail
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      size={19}
-                    />
-                    <input
-                      type="email"
-                      required
-                      autoComplete="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Email address"
-                      className="w-full h-13 pl-12 pr-12 rounded-2xl border border-border bg-card text-center outline-none focus:border-primary"
-                    />
-                  </div>
-                </label>
-                <label className="block">
-                  <span className="sr-only">Password</span>
-                  <div className="relative">
+                  <div className="cinematic-auth-password">
                     <input
                       type={showPassword ? "text" : "password"}
                       required
@@ -1735,102 +1494,117 @@ function AuthScreen({
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Password"
-                      className="w-full h-13 px-12 rounded-2xl border border-border bg-card text-center outline-none focus:border-primary"
+                      aria-label="Password"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-1 top-1"
                       onClick={() => setShowPassword(!showPassword)}
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? <EyeOff /> : <Eye />}
                     </Button>
                   </div>
-                </label>
-                {mode === "signup" && (
-                  <label className="block text-sm font-bold">
-                    Birthday
-                    <input
-                      type="date"
-                      required
-                      max={new Date().toISOString().slice(0, 10)}
-                      value={signupDob}
-                      onChange={(e) => setSignupDob(e.target.value)}
-                      className="mt-2 w-full h-13 px-4 rounded-2xl border border-border bg-card text-center"
-                    />
-                    <small className="block mt-1 text-muted-foreground">
-                      Saved once. Contact support to correct it later. Ages 13 and up can sign up;
-                      13–17 join a trip with their Captain's code and approval.
-                    </small>
-                  </label>
-                )}
-                <Button
-                  type="submit"
-                  variant="outline"
-                  size="lg"
-                  className="w-full"
-                  disabled={busy}
-                >
-                  {busy ? "One sec..." : mode === "signup" ? "Sign up" : "Log in"}
-                </Button>
-              </form>
-              <div className="mt-2 flex flex-col items-center">
-                {mode === "signin" && (
-                  <Button
-                    variant="link"
-                    onClick={() => {
-                      setForgot(true);
-                      setMessage("");
-                    }}
-                  >
-                    Forgot password?
+                  {mode === "signup" && (
+                    <>
+                      <label className="cinematic-auth-birthday">
+                        Birthday
+                        <input
+                          type="date"
+                          required
+                          max={new Date().toISOString().slice(0, 10)}
+                          value={signupDob}
+                          onChange={(e) => setSignupDob(e.target.value)}
+                        />
+                        <small>
+                          Saved once. Contact support to correct it later. Ages 13 and up can sign
+                          up; 13–17 join a trip with their Captain's code and approval.
+                        </small>
+                      </label>
+                      <LegalCheckbox checked={legalChecked} onChange={setLegalChecked} />
+                    </>
+                  )}
+                  <Button type="submit" className="cinematic-auth-submit" disabled={busy}>
+                    {busy ? "One sec..." : mode === "signup" ? "Sign up" : "Log in"}
                   </Button>
-                )}
-                {!allowSignup && onBetaSaved && (
-                  <div className="w-full mt-3">
-                    <BetaCodeField signedIn={false} onRedeemed={onBetaSaved} />
-                  </div>
-                )}
-                {allowSignup && (
-                  <Button
-                    variant="link"
-                    onClick={() => {
-                      setMode(mode === "signin" ? "signup" : "signin");
-                      setMessage("");
-                    }}
-                  >
-                    {mode === "signin" ? "New here? Sign up" : "Already have an account? Log in"}
-                  </Button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-      {message && (
-        <p role="status" className="mt-3 text-sm text-center text-ink-soft">
-          {message}
-        </p>
-      )}
-      <p className="mt-5 text-center text-sm text-muted-foreground">
-        No invite yet? Ask your trip's Captain, or{" "}
-        <Button variant="link" className="h-auto p-0 text-sm" onClick={onExplore}>
-          take a look around.
-        </Button>
-      </p>
-      <p className="mt-3 text-center text-xs text-muted-foreground">
-        Need a hand?{" "}
-        <a href="mailto:support@tripjunkies.app" className="underline">
-          support@tripjunkies.app
-        </a>
-      </p>
-      <p className="mt-2 text-center text-xs text-muted-foreground">
-        ✦ Founding Member access during beta
-      </p>
-      <div className="w-full">
-        <WelcomeExtras onStory={onStory} />
+                </form>
+                <div className="cinematic-auth-links">
+                  {mode === "signin" && (
+                    <Button
+                      variant="link"
+                      onClick={() => {
+                        setForgot(true);
+                        setMessage("");
+                      }}
+                    >
+                      Forgot password?
+                    </Button>
+                  )}
+                  {!allowSignup && onBetaSaved && (
+                    <div className="w-full mt-3">
+                      <BetaCodeField signedIn={false} onRedeemed={onBetaSaved} />
+                    </div>
+                  )}
+                  {allowSignup && (
+                    <Button
+                      variant="link"
+                      onClick={() => {
+                        setMode(mode === "signin" ? "signup" : "signin");
+                        setMessage("");
+                      }}
+                    >
+                      {mode === "signin" ? "New here? Sign up" : "Already have an account? Log in"}
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
+        ) : (
+          <div className="cinematic-auth-actions">
+            <Button
+              className="cinematic-auth-google"
+              onClick={() => void social("google")}
+              disabled={busy}
+            >
+              <span className="cinematic-google-g" aria-hidden="true">
+                G
+              </span>
+              Continue with Google
+            </Button>
+            <Button
+              className="cinematic-auth-email-button"
+              onClick={() => {
+                setEmailOpen(true);
+                setForgot(false);
+              }}
+            >
+              Sign in with email
+            </Button>
+            <div className="cinematic-auth-chips">
+              <Button variant="outline" onClick={onExplore}>
+                <Eye size={17} />
+                Take a look around ›
+              </Button>
+              <Button variant="outline" onClick={onStory}>
+                <BookOpen size={17} />
+                Our story ›
+              </Button>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
+              Need a hand?{" "}
+              <a href="mailto:support@tripjunkies.app" className="underline">
+                support@tripjunkies.app
+              </a>
+            </p>
+          </div>
+        )}
+        {message && (
+          <p role="status" className="cinematic-auth-message">
+            {message}
+          </p>
+        )}
       </div>
     </main>
   );
@@ -1900,11 +1674,6 @@ function TabContent({
   viewOnly: boolean;
 }) {
   const queryClient = useQueryClient();
-  const cinematicMe = useLook("me") === "cinematic";
-  const cinematicFounder = useLook("founder") === "cinematic";
-  const cinematicSquad = useLook("squad") === "cinematic";
-  const cinematicJourney = useLook("journey") === "cinematic";
-  const cinematicHomeTrip = useLook("home-top") === "cinematic";
   if (loading && active && tab !== "Me")
     return (
       <div className="space-y-4" aria-busy="true" aria-label="Loading">
@@ -1926,18 +1695,16 @@ function TabContent({
     return (
       <>
         <PhaseNotice trip={active} viewOnly={viewOnly} />
-        <div className={`app-card ${cinematicHomeTrip ? "cinematic-trip-countdown" : ""}`}>
-          {cinematicHomeTrip && (
-            <img
-              className="cinematic-trip-art-strip"
-              src={tripCoast}
-              srcSet={`${tripCoastSmall} 768w, ${tripCoast} 1536w`}
-              sizes="(max-width: 520px) 100vw, 768px"
-              alt=""
-              width={1536}
-              height={1920}
-            />
-          )}
+        <div className="app-card cinematic-trip-countdown">
+          <img
+            className="cinematic-trip-art-strip"
+            src={tripCoast}
+            srcSet={`${tripCoastSmall} 768w, ${tripCoast} 1536w`}
+            sizes="(max-width: 520px) 100vw, 768px"
+            alt=""
+            width={1536}
+            height={1920}
+          />
           <h1 className="font-display text-xl font-extrabold">{active.name}</h1>
           {(active as { motto?: string | null }).motto && (
             <p className="italic text-green text-[13px] mt-1">
@@ -1962,26 +1729,20 @@ function TabContent({
             </p>
           </div>
         </div>
-        <div
-          className={`grid grid-cols-2 gap-3 mt-[14px] ${cinematicHomeTrip ? "cinematic-trip-actions" : ""}`}
-        >
-          <Button
-            variant="outline"
-            className={`h-12 ${cinematicHomeTrip ? "rounded-full" : ""}`}
-            onClick={() => open("Invite")}
-          >
+        <div className="grid grid-cols-2 gap-3 mt-[14px] cinematic-trip-actions">
+          <Button variant="outline" className="h-12 rounded-full" onClick={() => open("Invite")}>
             <Ticket /> Invite squad
           </Button>
           <Button
             variant="outline"
-            className={`h-12 ${cinematicHomeTrip ? "rounded-full" : ""}`}
+            className="h-12 rounded-full"
             onClick={() => open("Quick actions")}
           >
             <Sparkles /> More
           </Button>
         </div>
         {!isUnlocked(active) && <LockedNote trip={active} what="the full trip" />}
-        <div className={cinematicHomeTrip ? "cinematic-trip-extras" : ""}>
+        <div className="cinematic-trip-extras">
           <HomeSeasons
             key={`hs-${active.id}`}
             trip={active}
@@ -2103,16 +1864,7 @@ function TabContent({
           userId={userId}
           viewOnly={viewOnly}
         />
-        {!cinematicJourney && (
-          <Button variant="outline" className="home-journey-action mt-5" onClick={onJourney}>
-            <MapPin size={24} className="text-blue" />
-            <span>
-              <strong>Journey</strong>
-              <small>Follow the postcard route</small>
-            </span>
-            <ArrowRight size={18} />
-          </Button>
-        )}
+
         <Button
           variant="playful"
           className="mt-6 w-full"
@@ -2184,7 +1936,6 @@ function TabContent({
         onMember={onMember}
         open={open}
         viewOnly={viewOnly}
-        cinematic={cinematicSquad}
       />
     );
   if (tab === "Squad")
@@ -2205,7 +1956,7 @@ function TabContent({
         />
       </>
     );
-  if (!meSection && cinematicMe)
+  if (!meSection)
     return (
       <div className="cinematic-me">
         <div className="flex items-start justify-between">
@@ -2275,12 +2026,11 @@ function TabContent({
           All settings ›
         </Button>
         {isAdmin && <AiCapBanner onOpen={() => setMeSection("ai-guard")} />}
-        {isAdmin && cinematicFounder && (
+        {isAdmin && (
           <FounderDashboard
             trips={trips}
             onOpen={(key) =>
               key === "welcome" ||
-              key === "features" ||
               key === "founding-members" ||
               key === "beta-codes" ||
               key === "ai-guard" ||
@@ -2399,7 +2149,6 @@ function TabContent({
                 ["Feedback", "feedback"],
                 ["Test Lab", "lab"],
                 ["Welcome wording", "welcome"],
-                ["Look", "features"],
                 ["Icon options", "icon-options"],
                 ["AI", "ai-guard"],
               ].map(([label, key]) => (
@@ -2408,10 +2157,7 @@ function TabContent({
                   variant="outline"
                   className="home-bubble min-h-24 h-auto whitespace-normal"
                   onClick={() =>
-                    key === "welcome" ||
-                    key === "features" ||
-                    key === "icon-options" ||
-                    key === "ai-guard"
+                    key === "welcome" || key === "icon-options" || key === "ai-guard"
                       ? setMeSection(key)
                       : onMe(key as "reports" | "feedback" | "lab")
                   }
@@ -2463,11 +2209,6 @@ function TabContent({
         </div>
       )}
       {meSection === "welcome" && isAdmin && <FounderWelcomeEditor />}
-      {meSection === "features" && isAdmin && (
-        <>
-          <FounderFeatures />
-        </>
-      )}
       {meSection === "founding-members" && isAdmin && <FoundingControls />}
       {meSection === "beta-codes" && isAdmin && <BetaCodesDoor />}
       {meSection === "ai-guard" && isAdmin && <AiGuardDoor />}
@@ -2669,7 +2410,6 @@ function FounderDashboard({
     ["Test Lab", founderLabIcon, "lab"],
     ["Feedback", founderFeedbackIcon, "feedback"],
     ["Reports", founderReportsIcon, "reports"],
-    ["Look", founderFeaturesIcon, "features"],
     ["Founding Members", founderMembersIcon, "founding-members"],
     ["Public launch", founderLaunchIcon, "me-explore"],
     ["Beta codes", founderLaunchIcon, "beta-codes"],
@@ -2965,9 +2705,7 @@ function SquadView({
   onMember,
   open,
   viewOnly = false,
-  cinematic = false,
 }: {
-  cinematic?: boolean;
   trip: TripWithRole;
   members: Member[];
   cards: PlayerWithAvatar[];
@@ -3009,7 +2747,7 @@ function SquadView({
             name={mine?.game_name || "Player"}
             className="h-[72px] w-[72px] rounded-[22px] border-2 border-foreground"
           />
-          {cinematic && membership?.role === "captain" && <CaptainCrown badge />}
+          {membership?.role === "captain" && <CaptainCrown badge />}
         </span>
         <div className="min-w-0">
           <h2 className="font-display text-[22px] font-extrabold truncate">
@@ -3038,7 +2776,7 @@ function SquadView({
         <ShortList
           items={members.filter((m) => m.user_id !== userId)}
           id={`squad-members-${trip.id}`}
-          scrollPanel={cinematic}
+          scrollPanel={true}
           current={(m) => m.user_id === userId}
         >
           {(m) => {
@@ -3061,7 +2799,7 @@ function SquadView({
                     name={card?.game_name || "New player"}
                     className="h-[34px] w-[34px]"
                   />
-                  {cinematic && m.role === "captain" && <CaptainCrown badge />}
+                  {m.role === "captain" && <CaptainCrown badge />}
                 </span>
                 <span className="flex-1 font-bold truncate">
                   {card?.game_name || "Making their card…"}
@@ -3124,7 +2862,6 @@ function HomeSeasons({
 }
 
 function VerifyCode({ email, onBack }: { email: string; onBack: () => void }) {
-  const cinematic = useLook("splash") === "cinematic";
   const [digits, setDigits] = useState<string[]>(Array(6).fill(""));
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -3181,20 +2918,16 @@ function VerifyCode({ email, onBack }: { email: string; onBack: () => void }) {
     }
   }
   return (
-    <main
-      className={`min-h-dvh max-w-lg mx-auto flex flex-col px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] ${cinematic ? "cinematic-auth cinematic-auth-verify" : ""}`}
-    >
-      {cinematic && (
-        <img
-          className="cinematic-auth-scene"
-          src={cinematicLoginCoast}
-          srcSet={`${cinematicLoginCoast} 768w, ${cinematicLoginCoastLarge} 1024w`}
-          sizes="(max-width: 520px) 100vw, 520px"
-          alt=""
-          width={768}
-          height={1366}
-        />
-      )}
+    <main className="min-h-dvh max-w-lg mx-auto flex flex-col px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] cinematic-auth cinematic-auth-verify">
+      <img
+        className="cinematic-auth-scene"
+        src={cinematicLoginCoast}
+        srcSet={`${cinematicLoginCoast} 768w, ${cinematicLoginCoastLarge} 1024w`}
+        sizes="(max-width: 520px) 100vw, 520px"
+        alt=""
+        width={768}
+        height={1366}
+      />
       <div className="flex items-center justify-between">
         <Button variant="ghost" className="-ml-3" onClick={onBack}>
           <ArrowLeft /> Back

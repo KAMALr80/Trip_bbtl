@@ -13,7 +13,6 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext, type Profile } from "@/lib/auth-context";
 import { ConfirmHost } from "@/components/ConfirmHost";
-import { LookProvider, useLook } from "@/lib/look";
 import { BrandLockup } from "@/components/BrandLockup";
 import errorPilot from "@/assets/cinematic-error-pilot.jpg";
 import loginArt from "@/assets/cinematic-login-coast-tall-768.jpg";
@@ -71,163 +70,111 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent(props: ErrorComponentProps) {
-  return (
-    <LookProvider>
-      <ErrorView {...props} />
-    </LookProvider>
-  );
+  return <ErrorView {...props} />;
 }
 function ErrorView({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
-  const cinematic = useLook("error") === "cinematic";
   const [report, setReport] = useState<"idle" | "sending" | "sent" | "failed">("idle");
   const [reportError, setReportError] = useState("");
   useEffect(() => {
     reportClientError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
-  if (cinematic)
-    return (
-      <main className="cinematic-error min-h-dvh px-5 pb-[var(--nav-clearance)] grid place-items-center">
-        <div className="w-full max-w-md text-center">
-          <BrandLockup className="text-2xl mb-5" />
-          <img
-            src={errorPilot}
-            alt="A friendly bunny pilot"
-            className="cinematic-error-pilot"
-            width={900}
-            height={900}
-          />
-          <p className="cinematic-error-board">FLIGHT TJ404 · DELAYED</p>
-          <h1 className="font-display text-4xl font-extrabold mt-5">This page missed its flight</h1>
-          <p className="mt-3 text-sm">
-            Something went wrong on our end. Your trips and stamps are safe. Try again, or head back
-            to the lounge.
-          </p>
-          <div className="grid gap-3 mt-6">
-            <button
-              className="cinematic-error-primary"
-              onClick={() =>
-                retry(error, () => {
-                  router.invalidate();
-                  reset();
-                })
-              }
-            >
-              Try again
-            </button>
-            <a className="cinematic-error-secondary" href="/">
-              Back to Home
-            </a>
-          </div>
-          {report === "sent" ? (
-            <p role="status" className="mt-5 text-cyan-300">
-              Thanks — the founder has it.
-            </p>
-          ) : (
-            <>
-              <button
-                className="mt-5 text-cyan-300 underline"
-                disabled={report === "sending"}
-                onClick={async () => {
-                  setReport("sending");
-                  const { data } = await supabase.auth.getUser();
-                  if (!data.user) {
-                    setReport("failed");
-                    setReportError("Sign in to report this problem.");
-                    return;
-                  }
-                  const { error: insertError } = await supabase.from("bug_reports").insert({
-                    user_id: data.user.id,
-                    trip_id: null,
-                    page:
-                      typeof window !== "undefined" ? window.location.pathname.slice(0, 80) : "/",
-                    description:
-                      `App error: ${error instanceof Error ? error.message : String(error)}`.slice(
-                        0,
-                        2000,
-                      ),
-                    screenshot_path: null,
-                    user_agent: navigator.userAgent.slice(0, 400),
-                    app_version: APP_VERSION,
-                  });
-                  if (insertError) {
-                    setReport("failed");
-                    setReportError("Couldn't send the report. Please try again.");
-                  } else setReport("sent");
-                }}
-              >
-                ⚑ {report === "sending" ? "Sending…" : "Report this problem"}
-              </button>
-              {reportError && (
-                <p role="alert" className="text-red-300 text-sm mt-2">
-                  {reportError}
-                </p>
-              )}
-            </>
-          )}
-          <p className="mt-4 text-xs text-muted-foreground leading-relaxed">
-            Need a hand?{" "}
-            <a href="mailto:hello@tripjunkies.app" className="underline">
-              hello@tripjunkies.app
-            </a>{" "}
-            ·{" "}
-            <a href="mailto:support@tripjunkies.app" className="underline">
-              support@tripjunkies.app
-            </a>{" "}
-            ·{" "}
-            <a href="mailto:safety@tripjunkies.app" className="underline">
-              safety@tripjunkies.app
-            </a>
-          </p>
-        </div>
-      </main>
-    );
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+    <main className="cinematic-error min-h-dvh px-5 pb-[var(--nav-clearance)] grid place-items-center">
+      <div className="w-full max-w-md text-center">
+        <BrandLockup className="text-2xl mb-5" />
+        <img
+          src={errorPilot}
+          alt="A friendly bunny pilot"
+          className="cinematic-error-pilot"
+          width={900}
+          height={900}
+        />
+        <p className="cinematic-error-board">FLIGHT TJ404 · DELAYED</p>
+        <h1 className="font-display text-4xl font-extrabold mt-5">This page missed its flight</h1>
+        <p className="mt-3 text-sm">
+          Something went wrong on our end. Your trips and stamps are safe. Try again, or head back
+          to the lounge.
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <div className="grid gap-3 mt-6">
           <button
+            className="cinematic-error-primary"
             onClick={() =>
               retry(error, () => {
                 router.invalidate();
                 reset();
               })
             }
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Try again
           </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
+          <a className="cinematic-error-secondary" href="/">
+            Back to Home
           </a>
-          <p className="mt-4 text-xs text-muted-foreground leading-relaxed">
-            Need a hand?{" "}
-            <a href="mailto:hello@tripjunkies.app" className="underline">
-              hello@tripjunkies.app
-            </a>{" "}
-            ·{" "}
-            <a href="mailto:support@tripjunkies.app" className="underline">
-              support@tripjunkies.app
-            </a>{" "}
-            ·{" "}
-            <a href="mailto:safety@tripjunkies.app" className="underline">
-              safety@tripjunkies.app
-            </a>
-          </p>
         </div>
+        {report === "sent" ? (
+          <p role="status" className="mt-5 text-cyan-300">
+            Thanks — the founder has it.
+          </p>
+        ) : (
+          <>
+            <button
+              className="mt-5 text-cyan-300 underline"
+              disabled={report === "sending"}
+              onClick={async () => {
+                setReport("sending");
+                const { data } = await supabase.auth.getUser();
+                if (!data.user) {
+                  setReport("failed");
+                  setReportError("Sign in to report this problem.");
+                  return;
+                }
+                const { error: insertError } = await supabase.from("bug_reports").insert({
+                  user_id: data.user.id,
+                  trip_id: null,
+                  page: typeof window !== "undefined" ? window.location.pathname.slice(0, 80) : "/",
+                  description:
+                    `App error: ${error instanceof Error ? error.message : String(error)}`.slice(
+                      0,
+                      2000,
+                    ),
+                  screenshot_path: null,
+                  user_agent: navigator.userAgent.slice(0, 400),
+                  app_version: APP_VERSION,
+                });
+                if (insertError) {
+                  setReport("failed");
+                  setReportError("Couldn't send the report. Please try again.");
+                } else setReport("sent");
+              }}
+            >
+              ⚑ {report === "sending" ? "Sending…" : "Report this problem"}
+            </button>
+            {reportError && (
+              <p role="alert" className="text-red-300 text-sm mt-2">
+                {reportError}
+              </p>
+            )}
+          </>
+        )}
+        <p className="mt-4 text-xs text-muted-foreground leading-relaxed">
+          Need a hand?{" "}
+          <a href="mailto:hello@tripjunkies.app" className="underline">
+            hello@tripjunkies.app
+          </a>{" "}
+          ·{" "}
+          <a href="mailto:support@tripjunkies.app" className="underline">
+            support@tripjunkies.app
+          </a>{" "}
+          ·{" "}
+          <a href="mailto:safety@tripjunkies.app" className="underline">
+            safety@tripjunkies.app
+          </a>
+        </p>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -399,14 +346,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <LookProvider>
-        <AuthContext.Provider value={{ user, profile, loading, refreshProfile }}>
-          <Outlet />
-          <ConfirmHost />
-          <Toaster position="bottom-center" />
-          <UpdatePrompt />
-        </AuthContext.Provider>
-      </LookProvider>
+      <AuthContext.Provider value={{ user, profile, loading, refreshProfile }}>
+        <Outlet />
+        <ConfirmHost />
+        <Toaster position="bottom-center" />
+        <UpdatePrompt />
+      </AuthContext.Provider>
     </QueryClientProvider>
   );
 }
