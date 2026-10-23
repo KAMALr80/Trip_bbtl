@@ -67,3 +67,22 @@ test("Captain Tools has a URL and Back closes it", async ({ page }) => {
   await expect(page).toHaveURL(/\/trip$/);
   await expect(page.getByRole("heading", { name: "The Squad" })).toBeVisible();
 });
+
+test("Play and Trip URLs name the open trip, and survive a refresh", async ({ page }) => {
+  await signInWithMockBackend(page, { trip: sampleTrip });
+  await page.goto("/play");
+  await expect(page).toHaveURL(new RegExp(`/t/${sampleTrip.id}/play$`));
+  await nav(page).getByRole("link", { name: "Trip", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/t/${sampleTrip.id}/trip$`));
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "The Squad" })).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/t/${sampleTrip.id}/trip$`));
+  await nav(page).getByRole("link", { name: "Home", exact: true }).click();
+  await expect(page).toHaveURL(/\/home$/);
+});
+
+test("a trip URL that isn't one of mine opens my current trip instead", async ({ page }) => {
+  await signInWithMockBackend(page, { trip: sampleTrip });
+  await page.goto("/t/00000000-0000-4000-8000-00000000ffff");
+  await expect(page).toHaveURL(new RegExp(`/t/${sampleTrip.id}/play$`));
+});

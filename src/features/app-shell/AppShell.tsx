@@ -1,5 +1,5 @@
 import { rpc } from "@/data/rpc";
-import { tabPath, useShellNav } from "@/features/app-shell/nav";
+import { tabHref, useShellNav } from "@/features/app-shell/nav";
 import { Link } from "@tanstack/react-router";
 import { TabContent } from "@/features/app-shell/TabContent";
 import { tabs } from "@/features/app-shell/tabs";
@@ -28,7 +28,7 @@ import { OutOfCreditsHost } from "@/components/AiCredits";
 import { CaptainNudge } from "@/components/CaptainChecklist";
 
 import { ShowcaseGuest } from "@/components/CultureShowcase";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { ArrowRight, ArrowLeft } from "lucide-react";
@@ -108,8 +108,11 @@ export function AppShell() {
     };
   }, []);
   const legal = useLegalStatus(user?.id);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const {
     tab,
+    urlTripId,
+    syncTripUrl,
     setTab,
     homeScreen,
     setHomeScreen,
@@ -122,7 +125,7 @@ export function AppShell() {
     tools,
     setTools,
     clearParam,
-  } = useShellNav();
+  } = useShellNav(activeId);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [welcomeStoryReturn, setWelcomeStoryReturn] = useState(false);
   const closeWelcome = () => setWelcomeOpen(false);
@@ -145,7 +148,6 @@ export function AppShell() {
   const queryClient = useQueryClient();
   const tripsQuery = useTrips(user?.id);
   const trips = (user && tripsQuery.data) || noTrips;
-  const [activeId, setActiveId] = useState<string | null>(null);
   const membersQuery = useMembers(activeId);
   const cardsQuery = useCards(activeId);
   const members = membersQuery.data ?? noMembers;
@@ -368,6 +370,19 @@ export function AppShell() {
   useEffect(() => {
     if (user && activeId) safeSetItem(`tripjunkie-active-${user.id}`, activeId);
   }, [user?.id, activeId]);
+  // Play and Trip URLs name the trip (/t/$tripId/…). Opening such a URL (a link, refresh, Back)
+  // opens that trip if it is one of mine; otherwise the URL follows the open trip.
+  const lastUrlTrip = useRef<string | null>(null);
+  useEffect(() => {
+    if (!user || !tripsQuery.data) return;
+    const fromUrl = urlTripId !== lastUrlTrip.current;
+    lastUrlTrip.current = urlTripId;
+    if (fromUrl && urlTripId && urlTripId !== activeId && trips.some((t) => t.id === urlTripId)) {
+      setActiveId(urlTripId);
+      return;
+    }
+    if ((tab === "Play" || tab === "Trip") && urlTripId !== activeId) syncTripUrl(activeId);
+  }, [user?.id, tripsQuery.data, urlTripId, activeId, tab]);
   async function refreshCards() {
     if (!activeId) return;
     await queryClient.refetchQueries({ queryKey: ["trip", activeId] }, { throwOnError: true });
@@ -974,7 +989,7 @@ export function AppShell() {
             className={`h-14 min-w-0 flex-1 flex-col gap-0.5 rounded-full px-1 text-[10px] ${tab === name ? "text-blue" : "text-muted-foreground"}`}
           >
             <Link
-              to={tabPath[name]}
+              to={tabHref(name, activeId)}
               onClick={() => {
                 if (welcomeOpen) closeWelcome();
                 setWelcomeStoryReturn(false);

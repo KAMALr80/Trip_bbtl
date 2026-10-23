@@ -1,5 +1,7 @@
-// App shell navigation backed by the URL (M1-04): the tab is the path (/home, /play, /trip, /me;
-// "/" is Home) and sub-screens are search params, so refresh and back/forward work. The setters keep
+// App shell navigation backed by the URL (M1-04): the tab is the path (/home, /me; "/" is Home)
+// and sub-screens are search params, so refresh and back/forward work. Play and Trip belong to a
+// trip: /t/$tripId/play and /t/$tripId/trip. Plain /play and /trip open the current trip (or the
+// empty tab when there is none). The setters keep
 // the old useState shapes so callers didn't change. Calls made in the same tick are batched into
 // one navigation; changing tab starts from clean sub-screen params, like tapping a tab did.
 import { useRef } from "react";
@@ -56,20 +58,36 @@ export const tabPath: Record<Tab, "/home" | "/play" | "/trip" | "/me"> = {
   Trip: "/trip",
   Me: "/me",
 };
+const tripTabs: Partial<Record<Tab, "play" | "trip">> = { Play: "play", Trip: "trip" };
+const tripPath = /^\/t\/([^/]+)\/(play|trip)\/?$/;
+
+/** The URL of a tab; Play and Trip carry the trip when one is open. */
+export function tabHref(tab: Tab, tripId: string | null | undefined): string {
+  const segment = tripTabs[tab];
+  return segment && tripId ? `/t/${tripId}/${segment}` : tabPath[tab];
+}
 export function tabOf(pathname: string): Tab {
-  if (pathname.startsWith("/play")) return "Play";
-  if (pathname.startsWith("/trip")) return "Trip";
+  const scoped = tripPath.exec(pathname)?.[2];
+  if (scoped === "play" || pathname.startsWith("/play")) return "Play";
+  if (scoped === "trip" || pathname.startsWith("/trip")) return "Trip";
   if (pathname.startsWith("/me")) return "Me";
   return "Home";
+}
+/** The trip in a /t/$tripId/… URL, or null. */
+export function tripIdOf(pathname: string): string | null {
+  const id = tripPath.exec(pathname)?.[1];
+  return id ? decodeURIComponent(id) : null;
 }
 
 type Pending = { tab?: Tab | undefined; search: Partial<Record<keyof ShellSearch, unknown>> };
 
-export function useShellNav() {
+export function useShellNav(activeTripId: string | null) {
   const router = useRouter();
   const location = useLocation();
   const search = validateShellSearch(location.search as Record<string, unknown>);
   const pending = useRef<Pending | null>(null);
+  const activeTrip = useRef(activeTripId);
+  activeTrip.current = activeTripId;
 
   const queue = (change: Pending) => {
     const first = !pending.current;
@@ -88,13 +106,27 @@ export function useShellNav() {
       const base =
         tab === fromTab ? validateShellSearch(current.search as Record<string, unknown>) : {};
       const merged = validateShellSearch({ ...base, ...next.search });
-      const to = tab === fromTab && current.pathname === "/" ? "/" : tabPath[tab];
+      const to =
+        tab === fromTab && current.pathname === "/" ? "/" : tabHref(tab, activeTrip.current);
       void router.navigate({ to, search: merged as never });
     });
   };
 
   return {
     tab: tabOf(location.pathname),
+    urlTripId: tripIdOf(location.pathname),
+    /** Point a trip-scoped URL at `tripId` (or the plain tab when null), keeping sub-screens. */
+    syncTripUrl: (tripId: string | null) => {
+      const current = router.state.location;
+      const tab = tabOf(current.pathname);
+      const to = tabHref(tab, tripId);
+      if (to === current.pathname) return;
+      void router.navigate({
+        to,
+        search: validateShellSearch(current.search as Record<string, unknown>) as never,
+        replace: true,
+      });
+    },
     homeScreen: search.screen ?? "dashboard",
     meView: search.view ?? null,
     meSection: search.section ?? null,

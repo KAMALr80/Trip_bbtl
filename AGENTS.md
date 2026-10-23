@@ -9,7 +9,7 @@ the deck wins and this list is updated. More rules: `src/AGENTS.md`, `src/compon
 - Season prizes are read only through season_info (hidden until crowning); champions are locked in server-side by finalize_season so they can't be forged.
 - Photo wall unions existing game-photo tables via trip_photos; Captain deletes hide photos via photo_removed rather than deleting game rows.
 
-- The app shell is the pathless `_shell` layout route: tabs are URLs (`/home`, `/play`, `/trip`, `/me`; `/` is Home; Home · Play · Trip · Me per Q6, crew list inside Trip) and sub-screens are search params (`src/features/app-shell/nav.ts`). Sign-in, onboarding and invites still start at `/`, and invite links return there.
+- The app shell is the pathless `_shell` layout route: tabs are URLs (`/home`, `/me`; `/` is Home; Home · Play · Trip · Me per Q6, crew list inside Trip) and sub-screens are search params (`src/features/app-shell/nav.ts`). Play and Trip name the trip (`/t/$tripId/play`, `/t/$tripId/trip`); plain `/play` and `/trip` open the current trip. Sign-in, onboarding and invites still start at `/`, and invite links return there.
 - There is one visual look (M1-03): the former Cinematic look. No look switch, no `useLook`, no Original branches.
 - `profiles` holds only per-user presentation state; trips/roles live in `trips`/`trip_members` for member-scoped access.
 - All privileged trip mutations (roles, spins, draws, hosts, scores, trip games) go through identity-checked private DB functions behind invoker wrappers; RLS denies direct writes so results can't be forged.

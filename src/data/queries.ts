@@ -1,8 +1,10 @@
 // TanStack Query hooks for the data every trip screen shares (M1-05). Keys live here so a write
-// can refresh exactly what it changed: `invalidateTrip(queryClient, tripId)` after a roster or card
-// change, `invalidateTrips(queryClient, userId)` after joining, leaving or creating a trip.
+// can refresh exactly what it changed: everything about one trip sits under ["trip", tripId].
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { loadCards, loadMembers, loadTrips } from "./trips";
+
+// Avatar photo links are signed for an hour; a minute keeps tab switches from re-signing them.
+const staleTime = 60_000;
 
 export const queryKeys = {
   trips: (userId: string) => ["trips", userId] as const,
@@ -15,6 +17,7 @@ export function useTrips(userId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.trips(userId ?? ""),
     queryFn: () => loadTrips(userId!),
+    staleTime,
     enabled: !!userId,
   });
 }
@@ -24,6 +27,7 @@ export function useMembers(tripId: string | null | undefined) {
   return useQuery({
     queryKey: queryKeys.members(tripId ?? ""),
     queryFn: () => loadMembers(tripId!),
+    staleTime,
     enabled: !!tripId,
   });
 }
@@ -33,18 +37,24 @@ export function useCards(tripId: string | null | undefined) {
   return useQuery({
     queryKey: queryKeys.cards(tripId ?? ""),
     queryFn: () => loadCards(tripId!),
+    staleTime,
     enabled: !!tripId,
   });
 }
 
-export function fetchTrips(queryClient: QueryClient, userId: string) {
-  return queryClient.fetchQuery({
-    queryKey: queryKeys.trips(userId),
-    queryFn: () => loadTrips(userId),
-    staleTime: 0,
-  });
-}
-
-export function invalidateTrip(queryClient: QueryClient, tripId: string) {
-  return queryClient.invalidateQueries({ queryKey: ["trip", tripId] });
+/** Start loading a trip's roster and cards (route loaders). Browser only: the session lives there. */
+export async function prefetchTrip(queryClient: QueryClient, tripId: string) {
+  if (typeof window === "undefined") return;
+  await Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.members(tripId),
+      queryFn: () => loadMembers(tripId),
+      staleTime,
+    }),
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.cards(tripId),
+      queryFn: () => loadCards(tripId),
+      staleTime,
+    }),
+  ]);
 }

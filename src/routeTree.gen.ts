@@ -20,8 +20,12 @@ import { Route as ShellTripRouteImport } from './routes/_shell.trip'
 import { Route as BetaCodeRouteImport } from './routes/beta.$code'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
 import { Route as LegalDocumentRouteImport } from './routes/legal/$document'
+import { Route as ShellTTripIdRouteImport } from './routes/_shell.t.$tripId'
 import { Route as ApiPublicPurgePhotosRouteImport } from './routes/api/public/purge-photos'
 import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
+import { Route as ShellTTripIdIndexRouteImport } from './routes/_shell.t.$tripId.index'
+import { Route as ShellTTripIdPlayRouteImport } from './routes/_shell.t.$tripId.play'
+import { Route as ShellTTripIdTripRouteImport } from './routes/_shell.t.$tripId.trip'
 
 const ShellRoute = ShellRouteImport.update({
   id: '/_shell',
@@ -77,6 +81,11 @@ const LegalDocumentRoute = LegalDocumentRouteImport.update({
   path: '/legal/$document',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShellTTripIdRoute = ShellTTripIdRouteImport.update({
+  id: '/t/$tripId',
+  path: '/t/$tripId',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ApiPublicPurgePhotosRoute = ApiPublicPurgePhotosRouteImport.update({
   id: '/api/public/purge-photos',
   path: '/api/public/purge-photos',
@@ -86,6 +95,21 @@ const ApiPublicVersionRoute = ApiPublicVersionRouteImport.update({
   id: '/api/public/version',
   path: '/api/public/version',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ShellTTripIdIndexRoute = ShellTTripIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ShellTTripIdRoute,
+} as any)
+const ShellTTripIdPlayRoute = ShellTTripIdPlayRouteImport.update({
+  id: '/play',
+  path: '/play',
+  getParentRoute: () => ShellTTripIdRoute,
+} as any)
+const ShellTTripIdTripRoute = ShellTTripIdTripRouteImport.update({
+  id: '/trip',
+  path: '/trip',
+  getParentRoute: () => ShellTTripIdRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -99,8 +123,12 @@ export interface FileRoutesByFullPath {
   '/beta/$code': typeof BetaCodeRoute
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
+  '/t/$tripId': typeof ShellTTripIdRouteWithChildren
   '/api/public/purge-photos': typeof ApiPublicPurgePhotosRoute
   '/api/public/version': typeof ApiPublicVersionRoute
+  '/t/$tripId/play': typeof ShellTTripIdPlayRoute
+  '/t/$tripId/trip': typeof ShellTTripIdTripRoute
+  '/t/$tripId/': typeof ShellTTripIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/about': typeof AboutRoute
@@ -115,6 +143,9 @@ export interface FileRoutesByTo {
   '/': typeof ShellIndexRoute
   '/api/public/purge-photos': typeof ApiPublicPurgePhotosRoute
   '/api/public/version': typeof ApiPublicVersionRoute
+  '/t/$tripId/play': typeof ShellTTripIdPlayRoute
+  '/t/$tripId/trip': typeof ShellTTripIdTripRoute
+  '/t/$tripId': typeof ShellTTripIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -129,8 +160,12 @@ export interface FileRoutesById {
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
   '/_shell/': typeof ShellIndexRoute
+  '/_shell/t/$tripId': typeof ShellTTripIdRouteWithChildren
   '/api/public/purge-photos': typeof ApiPublicPurgePhotosRoute
   '/api/public/version': typeof ApiPublicVersionRoute
+  '/_shell/t/$tripId/play': typeof ShellTTripIdPlayRoute
+  '/_shell/t/$tripId/trip': typeof ShellTTripIdTripRoute
+  '/_shell/t/$tripId/': typeof ShellTTripIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -145,8 +180,12 @@ export interface FileRouteTypes {
     | '/beta/$code'
     | '/join/$code'
     | '/legal/$document'
+    | '/t/$tripId'
     | '/api/public/purge-photos'
     | '/api/public/version'
+    | '/t/$tripId/play'
+    | '/t/$tripId/trip'
+    | '/t/$tripId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/about'
@@ -161,6 +200,9 @@ export interface FileRouteTypes {
     | '/'
     | '/api/public/purge-photos'
     | '/api/public/version'
+    | '/t/$tripId/play'
+    | '/t/$tripId/trip'
+    | '/t/$tripId'
   id:
     | '__root__'
     | '/_shell'
@@ -174,8 +216,12 @@ export interface FileRouteTypes {
     | '/join/$code'
     | '/legal/$document'
     | '/_shell/'
+    | '/_shell/t/$tripId'
     | '/api/public/purge-photos'
     | '/api/public/version'
+    | '/_shell/t/$tripId/play'
+    | '/_shell/t/$tripId/trip'
+    | '/_shell/t/$tripId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -268,6 +314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalDocumentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_shell/t/$tripId': {
+      id: '/_shell/t/$tripId'
+      path: '/t/$tripId'
+      fullPath: '/t/$tripId'
+      preLoaderRoute: typeof ShellTTripIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/api/public/purge-photos': {
       id: '/api/public/purge-photos'
       path: '/api/public/purge-photos'
@@ -282,8 +335,45 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicVersionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_shell/t/$tripId/': {
+      id: '/_shell/t/$tripId/'
+      path: '/'
+      fullPath: '/t/$tripId/'
+      preLoaderRoute: typeof ShellTTripIdIndexRouteImport
+      parentRoute: typeof ShellTTripIdRoute
+    }
+    '/_shell/t/$tripId/play': {
+      id: '/_shell/t/$tripId/play'
+      path: '/play'
+      fullPath: '/t/$tripId/play'
+      preLoaderRoute: typeof ShellTTripIdPlayRouteImport
+      parentRoute: typeof ShellTTripIdRoute
+    }
+    '/_shell/t/$tripId/trip': {
+      id: '/_shell/t/$tripId/trip'
+      path: '/trip'
+      fullPath: '/t/$tripId/trip'
+      preLoaderRoute: typeof ShellTTripIdTripRouteImport
+      parentRoute: typeof ShellTTripIdRoute
+    }
   }
 }
+
+interface ShellTTripIdRouteChildren {
+  ShellTTripIdPlayRoute: typeof ShellTTripIdPlayRoute
+  ShellTTripIdTripRoute: typeof ShellTTripIdTripRoute
+  ShellTTripIdIndexRoute: typeof ShellTTripIdIndexRoute
+}
+
+const ShellTTripIdRouteChildren: ShellTTripIdRouteChildren = {
+  ShellTTripIdPlayRoute: ShellTTripIdPlayRoute,
+  ShellTTripIdTripRoute: ShellTTripIdTripRoute,
+  ShellTTripIdIndexRoute: ShellTTripIdIndexRoute,
+}
+
+const ShellTTripIdRouteWithChildren = ShellTTripIdRoute._addFileChildren(
+  ShellTTripIdRouteChildren,
+)
 
 interface ShellRouteChildren {
   ShellHomeRoute: typeof ShellHomeRoute
@@ -291,6 +381,7 @@ interface ShellRouteChildren {
   ShellPlayRoute: typeof ShellPlayRoute
   ShellTripRoute: typeof ShellTripRoute
   ShellIndexRoute: typeof ShellIndexRoute
+  ShellTTripIdRoute: typeof ShellTTripIdRouteWithChildren
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
@@ -299,6 +390,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellPlayRoute: ShellPlayRoute,
   ShellTripRoute: ShellTripRoute,
   ShellIndexRoute: ShellIndexRoute,
+  ShellTTripIdRoute: ShellTTripIdRouteWithChildren,
 }
 
 const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)
