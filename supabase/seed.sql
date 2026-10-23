@@ -14,18 +14,7 @@
 -- Trips: "Lisbon Crew" (join code LISBONXX, departs in 7 days) and "Departure Day" (TAKEOFFX,
 -- departs today, so Airport Missions are open).
 
--- ---------------------------------------------------------------- storage buckets
--- The buckets were created outside the migrations on the live project. All private; access goes
--- through the storage.objects policies and signed URLs.
-INSERT INTO storage.buckets (id, name, public) VALUES
-  ('trip-photos', 'trip-photos', false),
-  ('quest-proofs', 'quest-proofs', false),
-  ('player-avatars', 'player-avatars', false),
-  ('culture-photos', 'culture-photos', false),
-  ('inspiration-photos', 'inspiration-photos', false),
-  ('window-guide', 'window-guide', false),
-  ('bug-screenshots', 'bug-screenshots', false)
-ON CONFLICT (id) DO NOTHING;
+-- Storage buckets come from the baseline migration (M1-09).
 
 -- ---------------------------------------------------------------- accounts
 CREATE TEMP TABLE seed_users (handle text, id uuid, age int, tz text, real_name text, game_name text);

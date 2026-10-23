@@ -2,7 +2,7 @@
 
 | File | What it is |
 |---|---|
-| [`../../supabase/baseline/current_schema.sql`](../../supabase/baseline/current_schema.sql) | Schema-only dump of `public` + `trip_private` after replaying all 299 migrations. **Reference only, never applied.** Use it to read the current definition of any function (gotcha G5). |
+| [`../../supabase/baseline/current_schema.sql`](../../supabase/baseline/current_schema.sql) | Schema-only dump of `public` + `trip_private` after replaying the migrations (the baseline, M1-09). **Reference only, never applied.** Use it to read the current definition of any function (gotcha G5). |
 | [`../../supabase/baseline/cron_jobs.tsv`](../../supabase/baseline/cron_jobs.tsv) | The pg_cron jobs the migrations schedule. |
 | [`db-inventory.md`](db-inventory.md) | Overview: totals, security checks, unused objects, table list. |
 | [`db-inventory.tsv`](db-inventory.tsv) | One row per table/function: grants, RLS, write policies, last defining migration, number of migrations defining it, and the `src/` files that reference it. Open it in a spreadsheet to filter. |

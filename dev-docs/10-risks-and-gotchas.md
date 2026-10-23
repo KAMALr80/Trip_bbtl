@@ -10,7 +10,7 @@ Things that will cost days if nobody mentions them.
 | G2 | **13 images live only on Lovable's CDN** (`*.asset.json` pointers: founder photos + 11 state flags). | Download now, before Lovable access changes (M0-09). |
 | G3 | **Google sign-in goes through Lovable's auth broker.** Turning off Lovable breaks Google login. | Replace with your own OAuth client first (M0-07). |
 | G4 | **AI calls go through Lovable's gateway with Lovable model ids.** | Own provider key + model ids from env (M0-08). |
-| G5 | **The latest definition of a SQL function is whatever the last of 299 migrations says.** Searching the migrations finds several versions. | Use the schema dump (M0-06) as the reference. |
+| G5 | **Before M1-09, the latest definition of a SQL function was whatever the last of 304 migrations said** (now archived in `supabase/migrations_archive/`; the baseline holds the current one). Searching the migrations finds several versions. | Use the schema dump (M0-06) as the reference. |
 | G6 | **Rule generations branch on `trips.season_rule`, `a2e_room`, `a2e_kind`, `kind`, `play_arrangement`.** Some code paths are dead for new trips but live for old ones. | Decide Q1, then use `rules_version` and the archive view. |
 | G7 | **Siam Vibes (`VRFQQM`) is a real group** that earlier rounds were told to protect ("verify Siam Vibes unchanged"). | Coordinate the cutover with that Captain. |
 | G8 | **Two scoring readouts can disagree:** `season_points` (raw) vs `trip_season_score` (/100). The roadmap has an open item "switch game_board/finalize_season to season_points (wait for Ty)". | Replaced by the ledger in M3; don't patch it in between. |

@@ -7,6 +7,7 @@
 # real `supabase db dump --schema public,trip_private` once we have DB access (M0-02).
 #
 # Usage: scripts/db/replay-migrations.sh [out_dir]   (default: supabase/baseline)
+#        MIGRATIONS_DIR=supabase/migrations_archive …   replays the pre-baseline history instead
 #        REPLAY_HOOK='python3 scripts/db/inventory.py' scripts/db/replay-migrations.sh
 # Needs: Postgres server binaries (initdb, pg_ctl) and psql / pg_dump on PATH or in PG_BIN.
 set -euo pipefail
@@ -33,7 +34,7 @@ PSQL=(psql -h "$WORK" -p "$PORT" -U postgres -v ON_ERROR_STOP=1 -q -X)
 "${PSQL[@]}" -d "$DB" -f "$ROOT/scripts/db/supabase-shim.sql" >/dev/null
 
 count=0
-for f in "$ROOT"/supabase/migrations/*.sql; do
+for f in "${MIGRATIONS_DIR:-$ROOT/supabase/migrations}"/*.sql; do
   # pg_cron / pg_net are not available on plain Postgres; the shim provides cron.* / net.* stand-ins.
   if ! sed -E 's/^\s*(DROP|CREATE) EXTENSION (IF (NOT )?EXISTS )?pg_(cron|net)\b[^;]*;//I' "$f" \
       | "${PSQL[@]}" -d "$DB" --single-transaction -f - >"$WORK/out.log" 2>&1; then
