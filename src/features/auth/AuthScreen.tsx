@@ -14,9 +14,9 @@ import cinematicLoginCoast from "@/assets/cinematic-login-coast-tall-768.jpg";
 import cinematicLoginCoastLarge from "@/assets/cinematic-login-coast.jpg";
 
 import { readPendingCode } from "@/lib/pending-code";
-import { BetaCodeField } from "@/components/BetaCodes";
+import { BetaCodeField } from "@/features/admin/BetaCodes";
 
-import { LegalCheckbox } from "@/components/LegalConsent";
+import { LegalCheckbox } from "@/features/onboarding/LegalConsent";
 import { LEGAL_VERSION } from "@/lib/legal";
 
 export function AuthScreen({

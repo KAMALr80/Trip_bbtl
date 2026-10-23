@@ -12,13 +12,13 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext, type Profile } from "@/lib/auth-context";
-import { ConfirmHost } from "@/components/ConfirmHost";
+import { ConfirmHost } from "@/features/app-shell/ConfirmHost";
 import { BrandLockup } from "@/components/BrandLockup";
 import errorPilot from "@/assets/cinematic-error-pilot.jpg";
 import loginArt from "@/assets/cinematic-login-coast-tall-768.jpg";
 import { APP_VERSION } from "@/lib/app-version";
 import { Toaster } from "@/components/ui/sonner";
-import { UpdatePrompt } from "@/components/UpdatePrompt";
+import { UpdatePrompt } from "@/features/app-shell/UpdatePrompt";
 
 const CHUNK_RELOAD_KEY = "tj-chunk-reload";
 function isChunkError(error: unknown) {

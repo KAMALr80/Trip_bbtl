@@ -4,14 +4,14 @@ import { ChevronRight, Plus, X, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { loadTrip } from "@/data/account";
 
-import { TripSheets } from "@/components/TripSheets";
-import { SeatCap } from "@/components/SeatCap";
-import { InviteCode } from "@/components/InviteCode";
+import { TripSheets } from "@/features/setup/TripSheets";
+import { SeatCap } from "@/features/trip/SeatCap";
+import { InviteCode } from "@/features/trip/InviteCode";
 
 import { inviteUrl, shareInvite, type TripWithRole } from "@/lib/trips";
 import { Clipboard, Share2 } from "lucide-react";
 
-import { AtHomeSetup } from "@/components/AtHome";
+import { AtHomeSetup } from "@/features/at-home/AtHome";
 
 export function AppSheet({
   title,

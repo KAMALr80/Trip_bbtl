@@ -1,17 +1,17 @@
-import { JourneyPhases } from "@/components/JourneyPhases";
+import { JourneyPhases } from "@/features/trip/JourneyPhases";
 
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-import { TripFeedbackForm, useFeedbackDone } from "@/components/TripFeedback";
+import { TripFeedbackForm, useFeedbackDone } from "@/features/me/TripFeedback";
 
 import {
   ActiveSeasonBoard,
   MysteryPrizes,
   tripHasEnded,
   useSeasonsData,
-} from "@/components/Seasons";
+} from "@/features/points/Seasons";
 import { type TripWithRole, type Member } from "@/lib/trips";
 import { type PlayerWithAvatar } from "@/lib/player-cards";
 

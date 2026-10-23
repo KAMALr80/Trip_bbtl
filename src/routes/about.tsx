@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AboutContent } from "@/components/AboutStory";
+import { AboutContent } from "@/features/onboarding/AboutStory";
 
 // A shareable address for the founder's story, so it can be sent as a link
 // without the reader hitting the sign-in screen first. Same content as

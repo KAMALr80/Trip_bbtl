@@ -6,7 +6,7 @@
 // one navigation; changing tab starts from clean sub-screen params, like tapping a tab did.
 import { useRef } from "react";
 import { useLocation, useRouter } from "@tanstack/react-router";
-import type { HomeScreen } from "@/components/HomeDashboard";
+import type { HomeScreen } from "@/features/home/HomeDashboard";
 import type { Tab } from "./tabs";
 
 export const meViews = ["help", "bug", "delete", "feedback", "lab", "reports"] as const;

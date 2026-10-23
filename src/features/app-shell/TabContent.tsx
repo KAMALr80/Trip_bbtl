@@ -4,7 +4,7 @@ import { Tab } from "@/features/app-shell/tabs";
 import { MaskedEmail } from "@/features/auth/AuthScreen";
 import { SquadView } from "@/features/trip/SquadView";
 
-import { ArchivedTrip } from "@/components/ArchivedTrip";
+import { ArchivedTrip } from "@/features/trip/ArchivedTrip";
 
 import gameOptionA from "@/assets/game-tile-option-a.webp";
 import tripCoast from "@/assets/journey-coast-top.jpg";
@@ -32,16 +32,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/data/account";
 
-import { TripOverview } from "@/components/TripOverview";
-import { BugUpdates } from "@/components/BugInbox";
-import { PhaseNotice } from "@/components/PhaseNotice";
-import { PlayHub } from "@/components/PlayHub";
+import { TripOverview } from "@/features/trip/TripOverview";
+import { BugUpdates } from "@/features/admin/BugInbox";
+import { PhaseNotice } from "@/features/play/PhaseNotice";
+import { PlayHub } from "@/features/play/PlayHub";
 
-import { CaptainBadge, LockedNote, isUnlocked } from "@/components/TripUnlock";
-import { ReadOnlyBanner } from "@/components/Seasons";
+import { CaptainBadge, LockedNote, isUnlocked } from "@/features/trip/TripUnlock";
+import { ReadOnlyBanner } from "@/features/points/Seasons";
 import { type TripWithRole, type Member } from "@/lib/trips";
 
-import { Avatar } from "@/components/PlayerCards";
+import { Avatar } from "@/features/players/PlayerCards";
 import { type PlayerWithAvatar } from "@/lib/player-cards";
 import {
   MyPassport,
@@ -50,23 +50,27 @@ import {
   HomeLayoutSetting,
   TimeZoneSetting,
   PublicLeaderboardSetting,
-} from "@/components/MeExtras";
-import { TripList } from "@/components/TripList";
+} from "@/features/me/MeExtras";
+import { TripList } from "@/features/trip/TripList";
 import { Bug, HelpCircle, PlayCircle, Trash2 } from "lucide-react";
 
-import { TravelerLevel, CultureCreatorBadge, CulturePoints } from "@/components/PassportBook";
+import {
+  TravelerLevel,
+  CultureCreatorBadge,
+  CulturePoints,
+} from "@/features/passport/PassportBook";
 
 import { RememberedSection } from "@/components/RememberedSection";
 
-import { AtHomeHome, AtHomeTrip, Rewards, isAtHome } from "@/components/AtHome";
-import { LaunchSwitch } from "@/components/BetaAccess";
-import { BetaCodesDoor } from "@/components/BetaCodes";
-import { AiGuardDoor, AiCapBanner } from "@/components/AiGuard";
+import { AtHomeHome, AtHomeTrip, Rewards, isAtHome } from "@/features/at-home/AtHome";
+import { LaunchSwitch } from "@/features/onboarding/BetaAccess";
+import { BetaCodesDoor } from "@/features/admin/BetaCodes";
+import { AiGuardDoor, AiCapBanner } from "@/features/admin/AiGuard";
 
-import { FounderWelcomeEditor } from "@/components/WelcomeCopy";
+import { FounderWelcomeEditor } from "@/features/onboarding/WelcomeCopy";
 
-import { AppearanceQuickToggle } from "@/components/MeExtras";
-import { FoundingBadge, FoundingControls } from "@/components/LegalConsent";
+import { AppearanceQuickToggle } from "@/features/me/MeExtras";
+import { FoundingBadge, FoundingControls } from "@/features/onboarding/LegalConsent";
 import { legalLinks } from "@/lib/legal";
 import { Link } from "@tanstack/react-router";
 

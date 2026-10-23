@@ -11,10 +11,10 @@ import { friendlyError } from "@/lib/friendly-error";
 
 import { BrandLockup } from "@/components/BrandLockup";
 import { CaptainCrown } from "@/components/CaptainCrown";
-import { CinematicSplash } from "@/components/CinematicSplash";
-import { CrownCelebration } from "@/components/CrownCelebration";
+import { CinematicSplash } from "@/features/onboarding/CinematicSplash";
+import { CrownCelebration } from "@/features/points/CrownCelebration";
 
-import { GameArcade } from "@/components/GameArcade";
+import { GameArcade } from "@/features/play/GameArcade";
 
 import iconSuitcase from "@/assets/icon-suitcase.webp";
 import iconPassport from "@/assets/icon-passport.webp";
@@ -24,10 +24,10 @@ import iconBoarding from "@/assets/icon-boarding-pass.webp";
 
 import iconHome from "@/assets/icon-at-home.webp";
 
-import { OutOfCreditsHost } from "@/components/AiCredits";
-import { CaptainNudge } from "@/components/CaptainChecklist";
+import { OutOfCreditsHost } from "@/features/ai-credits/AiCredits";
+import { CaptainNudge } from "@/features/captain-tools/CaptainChecklist";
 
-import { ShowcaseGuest } from "@/components/CultureShowcase";
+import { ShowcaseGuest } from "@/features/culture/CultureShowcase";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -35,15 +35,15 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 
-import { JoinRoomCard } from "@/components/InvitePreview";
+import { JoinRoomCard } from "@/features/trip/InvitePreview";
 import { setViewerZone, deviceZone } from "@/lib/viewer-time";
 import { nudgeTopUp } from "@/lib/content.functions";
-import { CaptainTools } from "@/components/CaptainTools";
+import { CaptainTools } from "@/features/captain-tools/CaptainTools";
 
-import { FounderReports, QuickCheckIn } from "@/components/BugInbox";
-import { FeedbackAdmin } from "@/components/TripFeedback";
+import { FounderReports, QuickCheckIn } from "@/features/admin/BugInbox";
+import { FeedbackAdmin } from "@/features/me/TripFeedback";
 
-import { RoleTips } from "@/components/RoleTips";
+import { RoleTips } from "@/features/captain-tools/RoleTips";
 import type { Member, TripWithRole } from "@/lib/trips";
 import { queryKeys, useCards, useMembers, useTrips } from "@/data/queries";
 import { loadMembershipSignature } from "@/data/trips";
@@ -61,18 +61,18 @@ import {
   PlayerCardView,
   QuickJoinCard,
   type AccountProfile,
-} from "@/components/PlayerCards";
+} from "@/features/players/PlayerCards";
 import { dicebearUrl, type PlayerWithAvatar } from "@/lib/player-cards";
-import { HelpPage, BugReport, DeleteAccount } from "@/components/MeExtras";
+import { HelpPage, BugReport, DeleteAccount } from "@/features/me/MeExtras";
 
-import { ExploreTour } from "@/components/ExploreTour";
+import { ExploreTour } from "@/features/onboarding/ExploreTour";
 
-import { HomeDashboard } from "@/components/HomeDashboard";
-import { FirstRunWelcome } from "@/components/FirstRunWelcome";
-import { JourneyMap, type JourneyStop } from "@/components/JourneyMap";
+import { HomeDashboard } from "@/features/home/HomeDashboard";
+import { FirstRunWelcome } from "@/features/onboarding/FirstRunWelcome";
+import { JourneyMap, type JourneyStop } from "@/features/trip/JourneyMap";
 
-import { AboutContent } from "@/components/AboutStory";
-import { TestLab, SandboxBanner, LabViewBanner } from "@/components/TestLab";
+import { AboutContent } from "@/features/onboarding/AboutStory";
+import { TestLab, SandboxBanner, LabViewBanner } from "@/features/admin/TestLab";
 import { setFounder } from "@/lib/lab-mode";
 import { readPendingCode, clearPendingCode } from "@/lib/pending-code";
 import {
@@ -83,12 +83,12 @@ import {
   TeenJoinGate,
   WaitingTrips,
   vibeOf,
-} from "@/components/BetaAccess";
+} from "@/features/onboarding/BetaAccess";
 import { readPendingBeta, clearPendingBeta } from "@/lib/pending-beta";
 
-import { DeletedTripNotes } from "@/components/DeletedTripNotes";
+import { DeletedTripNotes } from "@/features/trip/DeletedTripNotes";
 
-import { LegalConsent, useLegalStatus } from "@/components/LegalConsent";
+import { LegalConsent, useLegalStatus } from "@/features/onboarding/LegalConsent";
 
 const noTrips: TripWithRole[] = [];
 const noMembers: Member[] = [];

@@ -3,7 +3,7 @@
 These are the database and app rules the code was built against. They still describe the current
 code; the target design and the rules from the founder deck are in [`dev-docs/`](dev-docs/README.md).
 When a rule here conflicts with the deck spec ([`dev-docs/02-game-rules-spec.md`](dev-docs/02-game-rules-spec.md)),
-the deck wins and this list is updated. More rules: `src/AGENTS.md`, `src/components/AGENTS.md`,
+the deck wins and this list is updated. More rules: `src/AGENTS.md`, `src/features/AGENTS.md`,
 `supabase/AGENTS.md`. Index: [`docs/decisions/`](docs/decisions/README.md).
 
 - Season prizes are read only through season_info (hidden until crowning); champions are locked in server-side by finalize_season so they can't be forged.
