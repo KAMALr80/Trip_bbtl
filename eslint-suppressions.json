@@ -1,22 +1,244 @@
 {
+  "src/components/AirportMissions.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/ArchivedTrip.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/AtHome.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
   "src/components/BetaAccess.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
+    },
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/BugInbox.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/CaptainChecklist.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/CaptainExtras.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/CaptainTools.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/CinematicSplash.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/CrewGuide.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/CrownCelebration.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/CultureA2eSetup.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/CultureBadgeRow.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/CultureExperiences.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/CultureQuest.tsx": {
+    "no-restricted-imports": {
+      "count": 1
     }
   },
   "src/components/DeletedTripNotes.tsx": {
     "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/GameExtrasC2.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/GamePlanPicker.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/HomeDashboard.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/HostSwaps.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/Inspiration.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/InvitePreview.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/JourneyMap.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/LegalConsent.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/MeExtras.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/NightGamePicker.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/PassportBook.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/PhaseNotice.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/PlayHub.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/PlayerCards.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/RoleTips.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/SealedQuests.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/Season.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/Seasons.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/SeatCap.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/SoloGuide.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/StampBadge.tsx": {
+    "no-restricted-imports": {
       "count": 1
     }
   },
   "src/components/TestLab.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
+    },
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/TripActions.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/TripCosts.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/TripFeedback.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/TripList.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/TripSeasonBoard.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/components/TripSheets.tsx": {
+    "no-restricted-imports": {
+      "count": 1
     }
   },
   "src/components/WelcomeCopy.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
+    },
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/features/admin/FounderDashboard.tsx": {
+    "no-restricted-imports": {
+      "count": 1
     }
   },
   "src/lib/checkout.functions.ts": {
@@ -29,9 +251,29 @@
       "count": 3
     }
   },
+  "src/lib/itinerary.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
   "src/lib/lab.functions.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
+    }
+  },
+  "src/lib/pending-bingo.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/routes/__root.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/routes/reset-password.tsx": {
+    "no-restricted-imports": {
+      "count": 1
     }
   }
 }

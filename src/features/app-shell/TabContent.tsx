@@ -30,7 +30,7 @@ import {
   Ticket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { signOut } from "@/data/account";
 
 import { TripOverview } from "@/components/TripOverview";
 import { BugUpdates } from "@/components/BugInbox";
@@ -796,7 +796,7 @@ export function TabContent({
             onClick={async () => {
               await queryClient.cancelQueries();
               queryClient.clear();
-              await supabase.auth.signOut();
+              await signOut();
               window.location.assign("/");
             }}
           >

@@ -5,6 +5,12 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
+const serverOnly = {
+  name: "server-only",
+  message:
+    "TanStack Start does not use the Next.js `server-only` package. Rename the module to `*.server.ts` or mark it with `@tanstack/react-start/server-only`.",
+};
+
 export default tseslint.config(
   { ignores: ["dist", ".output", ".vinxi"] },
   {
@@ -20,20 +26,29 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      "no-restricted-imports": ["error", { paths: [serverOnly] }],
+      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+  // M1-05: only the data layer and sign-in talk to Supabase directly. Screens use the typed calls
+  // and Query hooks in src/data. Older files are listed in eslint-suppressions.json until moved.
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/data/**", "src/features/auth/**", "src/integrations/**"],
+    rules: {
       "no-restricted-imports": [
         "error",
         {
-          paths: [
+          paths: [serverOnly],
+          patterns: [
             {
-              name: "server-only",
-              message:
-                "TanStack Start does not use the Next.js `server-only` package. Rename the module to `*.server.ts` or mark it with `@tanstack/react-start/server-only`.",
+              group: ["**/integrations/supabase/client"],
+              message: "Use the typed calls and Query hooks in src/data instead.",
             },
           ],
         },
       ],
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
-      "@typescript-eslint/no-unused-vars": "off",
     },
   },
   eslintPluginPrettier,

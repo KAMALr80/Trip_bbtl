@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { ChevronRight, Plus, X, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { loadTrip } from "@/data/account";
 
 import { TripSheets } from "@/components/TripSheets";
 import { SeatCap } from "@/components/SeatCap";
@@ -43,7 +43,7 @@ export function AppSheet({
         onClose={onClose}
         onDone={onDone}
         loadTrip={async (id) => {
-          const { data } = await supabase.from("trips").select("*").eq("id", id).maybeSingle();
+          const data = await loadTrip(id);
           return data ? ({ ...data, myRole: "captain" } as TripWithRole) : null;
         }}
       />

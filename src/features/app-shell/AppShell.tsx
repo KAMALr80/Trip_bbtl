@@ -28,11 +28,11 @@ import { OutOfCreditsHost } from "@/components/AiCredits";
 import { CaptainNudge } from "@/components/CaptainChecklist";
 
 import { ShowcaseGuest } from "@/components/CultureShowcase";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 
 import { JoinRoomCard } from "@/components/InvitePreview";
@@ -44,14 +44,25 @@ import { FounderReports, QuickCheckIn } from "@/components/BugInbox";
 import { FeedbackAdmin } from "@/components/TripFeedback";
 
 import { RoleTips } from "@/components/RoleTips";
-import { loadTrips, loadMembers, type TripWithRole, type Member } from "@/lib/trips";
+import type { Member, TripWithRole } from "@/lib/trips";
+import { queryKeys, useCards, useMembers, useTrips } from "@/data/queries";
+import { loadMembershipSignature } from "@/data/trips";
+import {
+  completeOnboarding,
+  isAppAdmin,
+  isPublicLaunch,
+  loadPlayerProfile,
+  loadTimeZoneSetting,
+  saveDeviceTimeZone,
+  touchLastSeen,
+} from "@/data/account";
 import {
   PlayerCardEditor,
   PlayerCardView,
   QuickJoinCard,
   type AccountProfile,
 } from "@/components/PlayerCards";
-import { loadCards, dicebearUrl, type PlayerWithAvatar } from "@/lib/player-cards";
+import { dicebearUrl, type PlayerWithAvatar } from "@/lib/player-cards";
 import { HelpPage, BugReport, DeleteAccount } from "@/components/MeExtras";
 
 import { ExploreTour } from "@/components/ExploreTour";
@@ -78,6 +89,10 @@ import { readPendingBeta, clearPendingBeta } from "@/lib/pending-beta";
 import { DeletedTripNotes } from "@/components/DeletedTripNotes";
 
 import { LegalConsent, useLegalStatus } from "@/components/LegalConsent";
+
+const noTrips: TripWithRole[] = [];
+const noMembers: Member[] = [];
+const noCards: PlayerWithAvatar[] = [];
 
 export function AppShell() {
   const { user, profile, loading, refreshProfile } = useAuth();
@@ -127,12 +142,15 @@ export function AppShell() {
   const [sheet, setSheet] = useState<string | null>(null);
   const [exploreTour, setExploreTour] = useState(false);
   const [tourDismissed, setTourDismissed] = useState(false);
-  const tripsRequest = useRef(0);
-  const [trips, setTrips] = useState<TripWithRole[]>([]);
+  const queryClient = useQueryClient();
+  const tripsQuery = useTrips(user?.id);
+  const trips = (user && tripsQuery.data) || noTrips;
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [cards, setCards] = useState<PlayerWithAvatar[]>([]);
-  const [cardsLoading, setCardsLoading] = useState(true);
+  const membersQuery = useMembers(activeId);
+  const cardsQuery = useCards(activeId);
+  const members = membersQuery.data ?? noMembers;
+  const cards = cardsQuery.data ?? noCards;
+  const cardsLoading = !!activeId && (membersQuery.isPending || cardsQuery.isPending);
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [editCard, setEditCard] = useState(false);
   const [viewAsPlayer, setViewAsPlayer] = useState(false);
@@ -162,20 +180,16 @@ export function AppShell() {
   const [publicView, setPublicView] = useState<"overview" | "story" | "games" | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
-    void supabase.rpc("is_app_admin").then((r) => {
-      setIsAdmin(!!r.data);
-      setFounder(!!r.data);
+    void isAppAdmin().then((admin) => {
+      setIsAdmin(admin);
+      setFounder(admin);
     });
-    if (user) void supabase.rpc("touch_last_seen" as never);
+    if (user) void touchLastSeen();
   }, [user?.id]);
   const [myProfile, setMyProfile] = useState<AccountProfile | null | undefined>(undefined);
   const loadMyProfile = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("player_profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const data = await loadPlayerProfile(user.id);
     setMyProfile((data as AccountProfile | null) ?? null);
   };
   useEffect(() => {
@@ -194,23 +208,15 @@ export function AppShell() {
   // Personal time zone: follow the device unless the person picked one in Settings. Display only.
   useEffect(() => {
     if (!user) return;
-    void supabase
-      .from("profiles")
-      .select("time_zone,time_zone_manual")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(
-        ({ data }: { data: { time_zone: string | null; time_zone_manual: boolean } | null }) => {
-          const device = deviceZone();
-          if (data?.time_zone_manual && data.time_zone) {
-            setViewerZone(data.time_zone);
-            return;
-          }
-          setViewerZone(device);
-          if (data && data.time_zone !== device)
-            void supabase.from("profiles").update({ time_zone: device }).eq("id", user.id);
-        },
-      );
+    void loadTimeZoneSetting(user.id).then((data) => {
+      const device = deviceZone();
+      if (data?.time_zone_manual && data.time_zone) {
+        setViewerZone(data.time_zone);
+        return;
+      }
+      setViewerZone(device);
+      if (data && data.time_zone !== device) void saveDeviceTimeZone(user.id, device);
+    });
   }, [user?.id]);
   const [launch, setLaunch] = useState<boolean | null>(null);
   const [betaNotice, setBetaNotice] = useState("");
@@ -222,7 +228,7 @@ export function AppShell() {
     age_range: string;
   } | null>(null);
   useEffect(() => {
-    void supabase.rpc("public_launch" as never).then((r: { data: unknown }) => setLaunch(!!r.data));
+    void isPublicLaunch().then(setLaunch);
     setAnonCode(readPendingCode() ?? readPendingBeta());
   }, []);
   const loadAccess = async () => {
@@ -295,21 +301,34 @@ export function AppShell() {
   const displayedMembers = viewAsPlayer
     ? members.map((m) => (m.user_id === user?.id ? { ...m, role: "player" } : m))
     : members;
+  // Keep the open trip if it is still in the list; otherwise the one opened last on this device,
+  // else the first.
+  const pickActive = (list: TripWithRole[], preferredId?: string) => {
+    if (!user) return;
+    setActiveId((previous) => {
+      const preferred =
+        preferredId ?? previous ?? window.localStorage.getItem(`tripjunkie-active-${user.id}`);
+      return list.find((t) => t.id === preferred)?.id ?? list[0]?.id ?? null;
+    });
+  };
+  useEffect(() => {
+    if (tripsQuery.data) pickActive(tripsQuery.data);
+  }, [tripsQuery.data]);
+  useEffect(() => {
+    const error = tripsQuery.error ?? membersQuery.error ?? cardsQuery.error;
+    if (error) setTripError(friendlyError(error));
+  }, [tripsQuery.error, membersQuery.error, cardsQuery.error]);
+  // Reload the trip list (and the open trip's roster and cards); open `preferredId` if given.
   const refreshTrips = async (preferredId?: string, requirePreferred = false) => {
     if (!user) return;
-    const request = ++tripsRequest.current;
+    const key = queryKeys.trips(user.id);
     try {
-      const next = await loadTrips(user.id);
-      if (request !== tripsRequest.current) return;
+      await queryClient.refetchQueries({ queryKey: key, exact: true }, { throwOnError: true });
+      const next = queryClient.getQueryData<TripWithRole[]>(key) ?? [];
       if (requirePreferred && !next.some((t) => t.id === preferredId))
         throw new Error("Your trip hasn't loaded yet. Please try again.");
-      setTrips(next);
-      setCardsLoading(true);
-      setActiveId((previous) => {
-        const preferred =
-          preferredId ?? previous ?? window.localStorage.getItem(`tripjunkie-active-${user.id}`);
-        return next.find((t) => t.id === preferred)?.id ?? next[0]?.id ?? null;
-      });
+      pickActive(next, preferredId);
+      void queryClient.invalidateQueries({ queryKey: ["trip"] });
       setTripError("");
     } catch (error) {
       setTripError(friendlyError(error));
@@ -318,13 +337,10 @@ export function AppShell() {
   };
   useEffect(() => {
     if (!user) {
-      tripsRequest.current++;
-      setTrips([]);
       setActiveId(null);
       return;
     }
     setTourDismissed(false);
-    void refreshTrips();
     setPendingCode(readPendingCode());
   }, [user?.id]);
   // Removed/left/approved: watch my own memberships and refresh right away so no stale trip stays open.
@@ -332,14 +348,7 @@ export function AppShell() {
     if (!user) return;
     let sig = "";
     const check = async () => {
-      const { data } = await supabase
-        .from("trip_members")
-        .select("trip_id,status")
-        .eq("user_id", user.id);
-      const next = (data ?? [])
-        .map((m) => `${m.trip_id}:${m.status}`)
-        .sort()
-        .join(",");
+      const next = await loadMembershipSignature(user.id);
       if (sig && next !== sig) void refreshTrips();
       sig = next;
     };
@@ -357,37 +366,14 @@ export function AppShell() {
     };
   }, [user?.id]);
   useEffect(() => {
-    if (!user || !activeId) {
-      setMembers([]);
-      setCards([]);
-      setCardsLoading(false);
-      return;
-    }
-    setCardsLoading(true);
-    safeSetItem(`tripjunkie-active-${user.id}`, activeId);
-    void Promise.all([loadMembers(activeId), loadCards(activeId)])
-      .then(([nextMembers, nextCards]) => {
-        setMembers(nextMembers);
-        setCards(nextCards);
-        setCardsLoading(false);
-      })
-      .catch((error) => {
-        setTripError(friendlyError(error));
-        setCardsLoading(false);
-      });
-  }, [user?.id, activeId, trips]);
+    if (user && activeId) safeSetItem(`tripjunkie-active-${user.id}`, activeId);
+  }, [user?.id, activeId]);
   async function refreshCards() {
     if (!activeId) return;
-    const [nextMembers, nextCards] = await Promise.all([
-      loadMembers(activeId),
-      loadCards(activeId),
-    ]);
-    setMembers(nextMembers);
-    setCards(nextCards);
+    await queryClient.refetchQueries({ queryKey: ["trip", activeId] }, { throwOnError: true });
   }
   function selectTrip(id: string) {
     setActiveId(id);
-    setCardsLoading(true);
     setTools(false);
     setViewAsPlayer(false);
     setTab("Home");
@@ -407,10 +393,7 @@ export function AppShell() {
     setExploreTour(false);
     setTourDismissed(true);
     if (!profile?.onboarding_completed) {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ onboarding_completed: true })
-        .eq("id", user.id);
+      const { error } = await completeOnboarding(user.id);
       if (error) {
         console.error("Tour completion couldn't be saved", error);
         setTourDismissed(false);
