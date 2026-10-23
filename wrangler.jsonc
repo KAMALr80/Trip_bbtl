@@ -1,0 +1,25 @@
+// Cloudflare Worker settings (M0-03). Nitro merges this into .output/server/wrangler.json at build
+// time and adds the entry point and static assets, so deploy the built file:
+//   scripts/deploy.sh staging|production      (build + secrets + deploy; see README)
+// Secrets are never written here: scripts/deploy.sh sets them with `wrangler secret bulk`.
+{
+  "name": "tripjunkies-dev",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "env": {
+    "staging": {
+      "name": "tripjunkies-staging",
+      "workers_dev": true,
+      "vars": { "APP_ENV": "staging" },
+      // Once the domain is on this Cloudflare account:
+      // "routes": [{ "pattern": "staging.tripjunkies.app", "custom_domain": true }]
+    },
+    "production": {
+      "name": "tripjunkies",
+      "workers_dev": true,
+      "vars": { "APP_ENV": "production" },
+      // "routes": [{ "pattern": "tripjunkies.app", "custom_domain": true }]
+    },
+  },
+}
