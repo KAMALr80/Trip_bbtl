@@ -1,3 +1,4 @@
+import { rpc } from "@/data/rpc";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -111,35 +112,33 @@ export function CultureA2eSetup({
     setError("");
     setBusy(true);
     try {
-      const { data, error: e } = await (
-        supabase as unknown as {
-          rpc: (
-            name: string,
-            args: object,
-          ) => Promise<{ data: string | null; error: { message: string } | null }>;
-        }
-      ).rpc(kind === "inspire" ? "create_window_play_mode" : "create_culture_play_mode", {
-        ...(kind === "inspire"
-          ? { p_mode: choice === "offline" ? "offline" : mode }
-          : { p_kind: kind, p_mode: choice }),
+      const common = {
         p_title: title.trim() || defaultName,
         p_country: place.country,
         p_region: place.region ?? "",
         p_city: place.city ?? "",
         p_start: start,
-        p_days: isHome ? days : travelDays,
-        ...(isHome ? { p_layer: layer } : {}),
         p_vibe: vibe,
         p_types: mode === "solo" ? types : [],
-        ...(kind === "inspire" ? { p_prep: !group ? prep : 0 } : {}),
-        ...(isHome
-          ? {
+      };
+      const { data, error: e } =
+        kind === "inspire"
+          ? await rpc("create_window_play_mode", {
+              ...common,
+              p_mode: choice === "offline" ? "offline" : mode,
+              p_days: travelDays,
+              p_prep: !group ? prep : 0,
+            })
+          : await rpc("create_culture_play_mode", {
+              ...common,
+              p_kind: kind,
+              p_mode: choice,
+              p_days: days,
+              p_layer: layer,
               p_finale: group ? finale : null,
               p_place: group ? finalePlace : null,
               p_repeat: repeat,
-            }
-          : {}),
-      });
+            });
       if (e) throw e;
       if (data) {
         if (choice === "offline") {

@@ -5,9 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export function CultureBadgeRow() {
   const [tracks, setTracks] = useState<string[]>([]);
   useEffect(() => {
-    void (
-      supabase as unknown as { rpc: (n: string) => Promise<{ data: { track: string }[] | null }> }
-    )
+    void supabase
       .rpc("culture_badges")
       .then(({ data }) => setTracks((data ?? []).map((x) => x.track)));
   }, []);

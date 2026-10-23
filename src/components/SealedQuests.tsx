@@ -1,3 +1,4 @@
+import { rpc, type RpcArgs } from "@/data/rpc";
 import { useCallback, useEffect, useState } from "react";
 import { Check, Clock3, ImagePlus, Ticket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,12 +38,6 @@ type Feed = {
   speed: boolean;
   state: string;
 };
-const rpc = supabase as unknown as {
-  rpc: (
-    name: string,
-    args: object,
-  ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-};
 function left(iso: string | null, now: number) {
   if (!iso) return "";
   const m = Math.max(0, Math.ceil((new Date(iso).getTime() - now) / 60000));
@@ -78,12 +73,12 @@ export function SealedQuests({
     const [s, f, i] = await Promise.all([
       proofOnly
         ? Promise.resolve({ data: [], error: null })
-        : rpc.rpc("sealed_quest_state", { p_trip: trip.id }),
+        : rpc("sealed_quest_state", { p_trip: trip.id }),
       leader
-        ? rpc.rpc("sealed_proof_feed", { p_trip: trip.id })
+        ? rpc("sealed_proof_feed", { p_trip: trip.id })
         : Promise.resolve({ data: [], error: null }),
       !proofOnly && trip.season_rule === "a2c"
-        ? rpc.rpc("a2c_quest_insights", { p_trip: trip.id })
+        ? rpc("a2c_quest_insights", { p_trip: trip.id })
         : Promise.resolve({ data: [], error: null }),
     ]);
     if (s.error || f.error) {
@@ -122,10 +117,10 @@ export function SealedQuests({
       window.clearInterval(c);
     };
   }, [load]);
-  async function act(args: object) {
+  async function act(args: RpcArgs<"sealed_quest_action">) {
     setBusy(true);
     setError("");
-    const r = await rpc.rpc("sealed_quest_action", args);
+    const r = await rpc("sealed_quest_action", args);
     if (r.error) setError(friendlyError(r.error));
     else await load();
     setBusy(false);
@@ -133,7 +128,7 @@ export function SealedQuests({
   async function decline(id: string) {
     setBusy(true);
     setError("");
-    const r = await rpc.rpc("season_game_decline", { p_find: id });
+    const r = await rpc("season_game_decline", { p_find: id });
     if (r.error) setError(friendlyError(r.error));
     else await load();
     setBusy(false);
@@ -151,7 +146,7 @@ export function SealedQuests({
         setError(friendlyError(up.error));
         return;
       }
-      const result = await rpc.rpc("sealed_quest_action", {
+      const result = await rpc("sealed_quest_action", {
         p_quest: q.id,
         p_action: "submit",
         p_mode: "upload",

@@ -1,13 +1,10 @@
+import { rpc } from "@/data/rpc";
 import { friendlyError } from "@/lib/friendly-error";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+
 import type { TripWithRole } from "@/lib/trips";
 import { tripTz } from "@/lib/itinerary";
-
-const db = supabase as unknown as {
-  rpc: (f: string, a: object) => PromiseLike<{ error: { message: string } | null }>;
-};
 
 /** Captain Tools: where the trip happens. Trip-day games and votes follow this clock; pre-trip nights stay on home time. */
 export function TripTimezoneField({ trip }: { trip: TripWithRole }) {
@@ -24,7 +21,7 @@ export function TripTimezoneField({ trip }: { trip: TripWithRole }) {
   async function save() {
     setBusy(true);
     setMsg("");
-    const r = await db.rpc("set_trip_timezone", { p_trip: trip.id, p_tz: tz });
+    const r = await rpc("set_trip_timezone", { p_trip: trip.id, p_tz: tz });
     setBusy(false);
     setMsg(r.error ? friendlyError(r.error) : "Trip time zone saved ✓");
   }

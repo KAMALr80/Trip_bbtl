@@ -1,7 +1,8 @@
+import { rpc } from "@/data/rpc";
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+
 import { fmtWhen, viewerZone } from "@/lib/viewer-time";
 import { friendlyError } from "@/lib/friendly-error";
 import { tripToday } from "@/lib/itinerary";
@@ -23,12 +24,6 @@ type Entry = {
   place: string | null;
   week?: number;
   night?: Night;
-};
-const rpc = supabase as unknown as {
-  rpc: (
-    name: string,
-    args: object,
-  ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
 };
 const dateKey = (s: string) => {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -93,7 +88,7 @@ export function CinematicMonthCalendar({
   useEffect(() => {
     if (!atHome) return;
     let alive = true;
-    void rpc.rpc("home_day_view", { p_trip: trip.id }).then((r) => {
+    void rpc("home_day_view", { p_trip: trip.id }).then((r) => {
       if (!alive) return;
       const data = r.data as { day: string; startsAt: string; place: string | null }[] | null;
       if (r.error) setError(friendlyError(r.error));
@@ -158,14 +153,21 @@ export function CinematicMonthCalendar({
     if (!active) return;
     setBusy(true);
     setError("");
-    const args = atHome
-      ? { p_trip: trip.id, p_day: active.key, p_place: place.trim() }
-      : { p_trip: trip.id, p_week: active.week, p_place: place.trim() };
-    const result = await rpc.rpc(atHome ? "set_home_day_place" : "set_game_night_place", args);
+    const result = atHome
+      ? await rpc("set_home_day_place", {
+          p_trip: trip.id,
+          p_day: active.key,
+          p_place: place.trim(),
+        })
+      : await rpc("set_game_night_place", {
+          p_trip: trip.id,
+          p_week: active.week ?? null,
+          p_place: place.trim(),
+        });
     if (result.error) setError(friendlyError(result.error));
     else {
       if (atHome && time) {
-        const timed = await rpc.rpc("home_day_schedule", {
+        const timed = await rpc("home_day_schedule", {
           p_trip: trip.id,
           p_day: active.key,
           p_time: time,
@@ -197,9 +199,9 @@ export function CinematicMonthCalendar({
       return;
     setBusy(true);
     setError("");
-    const result = await rpc.rpc("set_night_skipped", {
+    const result = await rpc("set_night_skipped", {
       p_trip: trip.id,
-      p_week: entry.week,
+      p_week: entry.week ?? null,
       p_skipped: !entry.night.skipped,
     });
     if (result.error) setError(friendlyError(result.error));

@@ -1,11 +1,8 @@
+import { rpc } from "@/data/rpc";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { friendlyError } from "@/lib/friendly-error";
 
-const db = supabase as unknown as {
-  rpc: (n: string, a?: object) => Promise<{ data: unknown; error: { message: string } | null }>;
-};
+import { friendlyError } from "@/lib/friendly-error";
 type Totals = { calls: number; credits: number; input: number; output: number };
 type Report = {
   settings: { enabled: boolean; global_cap: number; user_cap: number; updated_at: string | null };
@@ -26,7 +23,7 @@ type Report = {
 const field = "min-h-11 w-24 rounded-full border border-border bg-background px-3 text-center";
 
 async function loadReport() {
-  const r = await db.rpc("ai_guard_report");
+  const r = await rpc("ai_guard_report");
   if (r.error) throw new Error(r.error.message);
   return r.data as Report;
 }
@@ -57,7 +54,7 @@ export function AiGuardDoor() {
   ) => {
     setBusy(true);
     setMsg("");
-    const r = await db.rpc("set_ai_guard", {
+    const r = await rpc("set_ai_guard", {
       p_enabled: enabled,
       p_global_cap: gc,
       p_user_cap: uc,

@@ -1,12 +1,8 @@
+import { rpc } from "@/data/rpc";
 import { friendlyError } from "@/lib/friendly-error";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-
-const db = supabase as unknown as {
-  from: (t: string) => any;
-  rpc: (n: string, a?: object) => Promise<{ data: unknown; error: { message: string } | null }>;
-};
 const field = "w-full rounded-2xl border border-border bg-card px-3 py-2 text-sm";
 
 /** Optional shared countdown. Only leaders/host can start it (server-checked); everyone sees it. */
@@ -20,7 +16,7 @@ export function ActivityTimer({ tripId, canRun }: { tripId: string; canRun: bool
     [custom, setCustom] = useState(""),
     [err, setErr] = useState("");
   const load = () =>
-    void db
+    void supabase
       .from("trip_play_state")
       .select("timer_ends_at,timer_label,timer_secs")
       .eq("trip_id", tripId)
@@ -55,7 +51,7 @@ export function ActivityTimer({ tripId, canRun }: { tripId: string; canRun: bool
   }, [ends]);
   async function set(secs: number | null, label: string | null = null) {
     setErr("");
-    const r = await db.rpc("set_activity_timer", { p_trip: tripId, p_secs: secs, p_label: label });
+    const r = await rpc("set_activity_timer", { p_trip: tripId, p_secs: secs, p_label: label });
     if (r.error) setErr(friendlyError(r.error));
     setNow(Date.now());
     load();
@@ -65,7 +61,7 @@ export function ActivityTimer({ tripId, canRun }: { tripId: string; canRun: bool
   const drawing = ["20-sec Draw", "30-sec Draw"].includes(state?.timer_label ?? "");
   async function extend() {
     setErr("");
-    const r = await db.rpc("extend_draw_timer", { p_trip: tripId });
+    const r = await rpc("extend_draw_timer", { p_trip: tripId });
     if (r.error) setErr(friendlyError(r.error));
     setNow(Date.now());
     load();
@@ -182,7 +178,7 @@ export function SingOff({
     [artist, setArtist] = useState(""),
     [msg, setMsg] = useState("");
   const load = () =>
-    void db
+    void supabase
       .from("song_discs")
       .select("user_id,title,artist")
       .eq("trip_id", tripId)
@@ -194,7 +190,7 @@ export function SingOff({
   const mine = discs.find((d) => d.user_id === userId);
   async function save(t: string, a: string) {
     setMsg("");
-    const r = await db.rpc("set_song_disc", { p_trip: tripId, p_title: t, p_artist: a });
+    const r = await rpc("set_song_disc", { p_trip: tripId, p_title: t, p_artist: a });
     if (r.error) setMsg(friendlyError(r.error));
     else {
       setTitle("");
@@ -312,7 +308,7 @@ export function SingOff({
             variant="outline"
             className={onVote ? "" : "col-span-2"}
             onClick={async () => {
-              const r = await db.rpc("clear_song_discs", { p_trip: tripId });
+              const r = await rpc("clear_song_discs", { p_trip: tripId });
               if (r.error) setMsg(friendlyError(r.error));
               else load();
             }}

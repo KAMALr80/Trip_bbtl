@@ -1,13 +1,9 @@
+import { rpc } from "@/data/rpc";
 import { confirmInApp } from "@/lib/confirm";
 import { friendlyError } from "@/lib/friendly-error";
 import { useEffect, useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-
-const db = supabase as unknown as {
-  rpc: (f: string, a?: object) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-};
 
 export const CREDIT_COST = {
   custom_game: 3,
@@ -39,7 +35,7 @@ type Status = {
   itinerary_today: number;
 };
 export async function creditStatus(tripId: string): Promise<Status | null> {
-  const r = await db.rpc("ai_credit_status", { p_trip: tripId });
+  const r = await rpc("ai_credit_status", { p_trip: tripId });
   return (r.data as Status[] | null)?.[0] ?? null;
 }
 
@@ -62,9 +58,9 @@ export function WalletLine({
 }) {
   const [w, setW] = useState<Wallet | null>(null);
   useEffect(() => {
-    void db
-      .rpc("my_credits", { p_trip: tripId ?? null })
-      .then((r) => setW((r.data as Wallet[] | null)?.[0] ?? null));
+    void rpc("my_credits", { p_trip: tripId ?? null }).then((r) =>
+      setW((r.data as Wallet[] | null)?.[0] ?? null),
+    );
   }, [tripId]);
   if (!w) return null;
   return (
@@ -252,10 +248,10 @@ export function AiCostSummary() {
     [perTrip, setPerTrip] = useState<number | null>(null),
     [err, setErr] = useState("");
   useEffect(() => {
-    void db
-      .rpc("ai_cost_summary")
-      .then((r) => (r.error ? setErr(friendlyError(r.error)) : setRows((r.data as Row[]) ?? [])));
-    void db.rpc("ai_cost_per_trip").then((r) => setPerTrip(Number(r.data ?? 0)));
+    void rpc("ai_cost_summary").then((r) =>
+      r.error ? setErr(friendlyError(r.error)) : setRows((r.data as Row[]) ?? []),
+    );
+    void rpc("ai_cost_per_trip").then((r) => setPerTrip(Number(r.data ?? 0)));
   }, []);
   const usd = (n: number | null) => `$${Number(n ?? 0).toFixed(4)}`;
   return (

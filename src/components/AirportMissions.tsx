@@ -1,3 +1,4 @@
+import { rpc, type RpcArgs } from "@/data/rpc";
 import { useCallback, useEffect, useState } from "react";
 import { Check, LockKeyhole, ScanLine, ShieldCheck, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,34 +29,6 @@ export type Claim = {
   status: "revealed" | "pending" | "released" | "declined" | "skipped";
 };
 type MissionWindow = { opens_at: string; closes_at: string; proof_due_at: string | null };
-const db = supabase as unknown as {
-  rpc: (f: string, a: object) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-  from: (t: string) => {
-    select: (c: string) => {
-      eq: (
-        k: string,
-        v: string,
-      ) => {
-        eq: (
-          k: string,
-          v: string,
-        ) => {
-          eq: (
-            k: string,
-            v: string,
-          ) => {
-            order: (
-              c: string,
-            ) => PromiseLike<{ data: Claim[] | null; error: { message: string } | null }>;
-          };
-          order: (
-            c: string,
-          ) => PromiseLike<{ data: Claim[] | null; error: { message: string } | null }>;
-        };
-      };
-    };
-  };
-};
 const MAX = 12;
 const STATUS: Record<Claim["status"], string> = {
   revealed: "Your mission",
@@ -89,18 +62,18 @@ export function AirportMissions({
     [now, setNow] = useState(() => Date.now());
   const load = useCallback(async () => {
     const [{ data, error: e }, windowResult] = await Promise.all([
-      db
+      supabase
         .from("mission_claims")
         .select("*")
         .eq("trip_id", trip.id)
         .eq("user_id", userId)
         .eq("phase", "takeoff")
         .order("slot"),
-      db.rpc("mission_window", { p_trip: trip.id }),
+      rpc("mission_window", { p_trip: trip.id }),
     ]);
     if (e || windowResult.error) setError(friendlyError(e ?? windowResult.error));
     else {
-      setClaims(data ?? []);
+      setClaims((data ?? []) as Claim[]);
       setWindowState(
         (Array.isArray(windowResult.data)
           ? windowResult.data[0]
@@ -120,10 +93,10 @@ export function AirportMissions({
     document.addEventListener("visibilitychange", refresh);
     return () => document.removeEventListener("visibilitychange", refresh);
   }, []);
-  async function act(args: object) {
+  async function act(args: Omit<RpcArgs<"mission_action">, "p_trip">) {
     setBusy(true);
     setError("");
-    const { error: e } = await db.rpc("mission_action", { p_trip: trip.id, ...args });
+    const { error: e } = await rpc("mission_action", { p_trip: trip.id, ...args });
     if (e) setError(friendlyError(e));
     await load();
     setBusy(false);
@@ -410,14 +383,14 @@ export function PendingMissions({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const load = useCallback(async () => {
-    const { data, error: e } = await db
+    const { data, error: e } = await supabase
       .from("mission_claims")
       .select("*")
       .eq("trip_id", trip.id)
       .eq("status", "pending")
       .order("created_at");
     if (e) setError(friendlyError(e));
-    else setRows(data ?? []);
+    else setRows((data ?? []) as Claim[]);
   }, [trip.id]);
   useEffect(() => {
     void load();
@@ -431,7 +404,7 @@ export function PendingMissions({
     if (c.user_id === userId) return;
     setBusy(true);
     setError("");
-    const { error: e } = await db.rpc("mission_action", {
+    const { error: e } = await rpc("mission_action", {
       p_trip: trip.id,
       p_action: action,
       p_claim: c.id,

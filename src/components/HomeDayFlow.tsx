@@ -1,7 +1,9 @@
+import { rpcByName } from "@/data/rpc";
+import { rpc } from "@/data/rpc";
 import { useCallback, useEffect, useState } from "react";
 import { Check, Clock3, Crown, Vote } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+
 import { fmtWhen, zoneLabel } from "@/lib/viewer-time";
 import { friendlyError } from "@/lib/friendly-error";
 import type { TripWithRole, Member } from "@/lib/trips";
@@ -21,12 +23,6 @@ type Day = {
   counts: [number, number] | null;
 };
 type Score = { user_id: string; points: number };
-const rpc = supabase as unknown as {
-  rpc: (
-    name: string,
-    args: object,
-  ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-};
 const localDay = (s: string) =>
   new Date(`${s}T12:00:00`).toLocaleDateString(undefined, {
     weekday: "long",
@@ -65,8 +61,8 @@ export function HomeDayFlow({
     "Player";
   const load = useCallback(async () => {
     const [plan, board] = await Promise.all([
-      rpc.rpc("home_day_view", { p_trip: trip.id }),
-      rpc.rpc("home_day_scores", { p_trip: trip.id }),
+      rpc("home_day_view", { p_trip: trip.id }),
+      rpc("home_day_scores", { p_trip: trip.id }),
     ]);
     if (plan.error || board.error) {
       setError(friendlyError(plan.error || board.error));
@@ -86,7 +82,7 @@ export function HomeDayFlow({
   async function action(name: string, args: object) {
     setBusy(true);
     setError("");
-    const result = await rpc.rpc(name, args);
+    const result = await rpcByName(name, args);
     if (result.error) setError(friendlyError(result.error));
     await load();
     setBusy(false);

@@ -1,3 +1,5 @@
+import { rpcByName } from "@/data/rpc";
+
 import { confirmInApp } from "@/lib/confirm";
 import { friendlyError } from "@/lib/friendly-error";
 import { fmtWhen } from "@/lib/viewer-time";
@@ -33,19 +35,6 @@ type NightLite = {
 };
 
 // New tables aren't in the generated types yet; keep the cast in one place.
-const db = supabase as unknown as {
-  from: (t: string) => {
-    select: (c: string) => {
-      eq: (
-        k: string,
-        v: string,
-      ) => {
-        order: (c: string, o: { ascending: boolean }) => PromiseLike<{ data: unknown[] | null }>;
-      };
-    };
-  };
-  rpc: (f: string, a: object) => PromiseLike<{ error: { message: string } | null }>;
-};
 const fmt = (iso: string, tz: string) => fmtWhen(iso, tz);
 
 function useHostData(tripId: string) {
@@ -54,17 +43,17 @@ function useHostData(tripId: string) {
     [nights, setNights] = useState<NightLite[]>([]);
   const refresh = useCallback(async () => {
     const [s, p, n] = await Promise.all([
-      db
+      supabase
         .from("host_swaps")
         .select("*")
         .eq("trip_id", tripId)
         .order("created_at", { ascending: false }),
-      db
+      supabase
         .from("host_penalties")
         .select("*")
         .eq("trip_id", tripId)
         .order("week_number", { ascending: true }),
-      db
+      supabase
         .from("game_nights")
         .select("week_number,starts_at,host_id,host_checked_in_at,skipped")
         .eq("trip_id", tripId)
@@ -130,7 +119,7 @@ export function HostNightActions({
   async function run(f: string, a: object, ok: string) {
     setBusy(true);
     setMsg("");
-    const r = await db.rpc(f, a);
+    const r = await rpcByName(f, a);
     setBusy(false);
     if (r.error) {
       setMsg(friendlyError(r.error));

@@ -1,3 +1,4 @@
+import { rpc, rpcByName } from "@/data/rpc";
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { countPendingBingo } from "@/lib/pending-bingo";
 import { confirmInApp } from "@/lib/confirm";
@@ -18,10 +19,6 @@ import {
 import type { TripWithRole } from "@/lib/trips";
 import { savePendingCode, clearPendingCode } from "@/lib/pending-code";
 import { setLabView, useLabView, VIEW_LABELS } from "@/lib/lab-mode";
-
-const db = supabase as unknown as {
-  rpc: (n: string, a?: object) => Promise<{ data: unknown; error: { message: string } | null }>;
-};
 type Tab = "Home" | "Play" | "Trip" | "Me";
 type Props = {
   trips: TripWithRole[];
@@ -69,7 +66,7 @@ export function LabViewBanner({ refresh }: { refresh: (id?: string) => Promise<v
   const { founder, view } = useLabView();
   useEffect(() => {
     if (founder)
-      void db.rpc("my_lab_view").then((r) => {
+      void rpc("my_lab_view").then((r) => {
         const row = (r.data as { trip_id: string; view: string }[] | null)?.[0];
         setLabView(row ?? null);
       });
@@ -82,7 +79,7 @@ export function LabViewBanner({ refresh }: { refresh: (id?: string) => Promise<v
         variant="ghost"
         className="h-8 text-primary-foreground underline"
         onClick={async () => {
-          await db.rpc("lab_view", { p_trip: view.trip_id, p_view: "exit" });
+          await rpc("lab_view", { p_trip: view.trip_id, p_view: "exit" });
           clearPendingCode();
           setLabView(null);
           await refresh(view.trip_id);
@@ -197,7 +194,7 @@ export function TestLab({
     }
   }
   const rpc = async (n: string, a: object) => {
-    const r = await db.rpc(n, a);
+    const r = await rpcByName(n, a);
     if (r.error) throw new Error(r.error.message);
     return r.data;
   };

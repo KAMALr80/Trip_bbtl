@@ -69,23 +69,7 @@ export function useSeason(tripId: string, key = "main") {
         .select("user_id,start_stamps,joined_week,season_closed")
         .eq("trip_id", tripId)
         .eq("status", "approved"),
-      (
-        supabase as unknown as {
-          from: (t: string) => {
-            select: (c: string) => {
-              eq: (
-                k: string,
-                v: string,
-              ) => PromiseLike<{
-                data: { user_id: string; stamps: number; week_number?: number }[] | null;
-              }>;
-            };
-          };
-        }
-      )
-        .from("host_penalties")
-        .select("user_id,stamps,week_number")
-        .eq("trip_id", tripId),
+      supabase.from("host_penalties").select("user_id,stamps,week_number").eq("trip_id", tripId),
     ]);
     const { data: skippedRows } = await supabase
       .from("game_nights")
@@ -123,14 +107,7 @@ export function useSeason(tripId: string, key = "main") {
         pen[p.user_id] = (pen[p.user_id] ?? 0) - p.stamps;
     const total = rev.reduce((t, q) => t + (q.week_number >= 1000 ? 1 : 3), 0);
     // Released Secret Mission bonus (server-capped at 12) — mirrors trip_private.mission_bonus in game_board.
-    const mb = await (
-      supabase as unknown as {
-        rpc: (
-          f: string,
-          a: object,
-        ) => PromiseLike<{ data: { user_id: string; points: number }[] | null }>;
-      }
-    ).rpc("mission_bonus", { p_trip: tripId });
+    const mb = await supabase.rpc("mission_bonus", { p_trip: tripId });
     const bonus: Record<string, number> = {};
     for (const r of mb.data ?? []) bonus[r.user_id] = Number(r.points) || 0;
     setQotw({ total, by, start, joined, closed, pen, excused, bonus });

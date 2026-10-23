@@ -1,14 +1,11 @@
+import { rpc } from "@/data/rpc";
 import { useEffect, useState } from "react";
 import { Check, Copy, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+
 import { friendlyError } from "@/lib/friendly-error";
 import { confirmInApp } from "@/lib/confirm";
 import { savePendingBeta } from "@/lib/pending-beta";
-
-const db = supabase as unknown as {
-  rpc: (n: string, a?: object) => Promise<{ data: any; error: { message: string } | null }>;
-};
 const field =
   "min-h-11 w-full rounded-full border border-border bg-card px-4 text-base outline-none focus:border-primary";
 
@@ -38,7 +35,7 @@ export function BetaCodeField({
     }
     setBusy(true);
     setMsg("");
-    const r = await db.rpc("redeem_beta_code", { p_code: c });
+    const r = await rpc("redeem_beta_code", { p_code: c });
     setBusy(false);
     if (r.error) return setMsg(friendlyError(r.error));
     if (r.data === "invalid") return setMsg("We couldn't find that code. Check it and try again.");
@@ -85,7 +82,7 @@ export function WaitlistField() {
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);
-        const r = await db.rpc("join_waitlist", { p_email: email });
+        const r = await rpc("join_waitlist", { p_email: email });
         setBusy(false);
         setMsg(r.error ? friendlyError(r.error) : "You're on the waitlist 💌 We'll email you.");
       }}
@@ -131,7 +128,7 @@ export function BetaCodesDoor() {
     [msg, setMsg] = useState(""),
     [busy, setBusy] = useState(false);
   const load = async () => {
-    const [a, b] = await Promise.all([db.rpc("list_beta_codes"), db.rpc("list_waitlist")]);
+    const [a, b] = await Promise.all([rpc("list_beta_codes"), rpc("list_waitlist")]);
     if (a.error) setMsg(friendlyError(a.error));
     setRows(a.data ?? []);
     setWait(b.data ?? []);
@@ -184,7 +181,7 @@ export function BetaCodesDoor() {
           disabled={busy}
           onClick={async () => {
             setBusy(true);
-            const r = await db.rpc("create_beta_codes", { p_count: count, p_note: note });
+            const r = await rpc("create_beta_codes", { p_count: count, p_note: note });
             setBusy(false);
             if (r.error) setMsg(friendlyError(r.error));
             else {
@@ -243,7 +240,7 @@ export function BetaCodesDoor() {
                       aria-label={`Revoke ${c.code}`}
                       onClick={async () => {
                         if (!(await confirmInApp(`Revoke ${c.code}?`))) return;
-                        const r = await db.rpc("revoke_beta_code", { p_code: c.code });
+                        const r = await rpc("revoke_beta_code", { p_code: c.code });
                         setMsg(r.error ? friendlyError(r.error) : "Code revoked");
                         await load();
                       }}
@@ -286,7 +283,7 @@ export function usePendingCount(tripId: string | undefined, leader: boolean) {
       return;
     }
     const load = () =>
-      void db.rpc("pending_count", { p_trip: tripId }).then((r) => setN(Number(r.data) || 0));
+      void rpc("pending_count", { p_trip: tripId }).then((r) => setN(Number(r.data) || 0));
     load();
     const t = window.setInterval(() => {
       if (!document.hidden) load();
@@ -334,7 +331,7 @@ export function WaitingToJoin({
     [msg, setMsg] = useState("");
   const load = async () => {
     if (!leader) return;
-    const r = await db.rpc("pending_members", { p_trip: trip.id });
+    const r = await rpc("pending_members", { p_trip: trip.id });
     setRows(r.data ?? []);
   };
   useEffect(() => {
@@ -343,7 +340,7 @@ export function WaitingToJoin({
   if (!leader || !rows.length) return null;
   const act = async (p: Pending, ok: boolean) => {
     if (!ok && !(await confirmInApp(`Decline ${p.name}?`))) return;
-    const r = await db.rpc("approve_member", { p_trip: trip.id, p_user: p.user_id, p_approve: ok });
+    const r = await rpc("approve_member", { p_trip: trip.id, p_user: p.user_id, p_approve: ok });
     setMsg(r.error ? friendlyError(r.error) : ok ? `${p.name} approved ✓` : "Request declined");
     await load();
     window.dispatchEvent(new Event("tj-pending-changed"));

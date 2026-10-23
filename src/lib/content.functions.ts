@@ -21,9 +21,7 @@ export const topUpContent = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!member) return { added: 0 };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const admin = supabaseAdmin as unknown as Parameters<
-      typeof import("./content.server").seenSets
-    >[0];
+    const admin = supabaseAdmin;
     const { seenSets, poolWithVariants, keyOf, askList } = await import("./content.server");
     const { data: trip } = await supabaseAdmin
       .from("trips")

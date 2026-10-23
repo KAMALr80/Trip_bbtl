@@ -1,3 +1,4 @@
+import { rpc } from "@/data/rpc";
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { confirmInApp } from "@/lib/confirm";
 import { safeSetItem } from "@/lib/safe-storage";
@@ -129,7 +130,7 @@ export function EndTripTool({
             disabled={!can}
             onClick={async () => {
               if (!(await confirmInApp("End the trip? This can't be undone."))) return;
-              const { error } = await db.rpc("end_trip", { p_trip: trip.id });
+              const { error } = await rpc("end_trip", { p_trip: trip.id });
               if (error) setErr(friendlyError(error));
               else await onEnded();
             }}
@@ -146,10 +147,6 @@ export function EndTripTool({
     </>
   );
 }
-const db = supabase as unknown as {
-  from: (t: string) => any;
-  rpc: (f: string, a: Record<string, unknown>) => any;
-};
 
 /* ---------- shared data ---------- */
 export function useSeasonsData(tripId: string) {
@@ -158,8 +155,8 @@ export function useSeasonsData(tripId: string) {
     [tripRows, setTripRows] = useState<SeasonRow[]>([]);
   const refresh = async () => {
     const [i, c, ts] = await Promise.all([
-      db.rpc("season_info", { p_trip: tripId }),
-      db
+      rpc("season_info", { p_trip: tripId }),
+      supabase
         .from("season_champions")
         .select("season,user_id,score,stamps,tie_ids,created_at")
         .eq("trip_id", tripId)
@@ -271,7 +268,7 @@ export function MysteryPrizes({
       const key = `tj-crowned-${trip.id}-${s.season}`;
       if (finalized.current[s.season]) continue;
       finalized.current[s.season] = true;
-      void db.rpc("finalize_season", { p_trip: trip.id, p_season: s.season }).then(async () => {
+      void rpc("finalize_season", { p_trip: trip.id, p_season: s.season }).then(async () => {
         await data.refresh();
         if (!localStorage.getItem(key)) {
           safeSetItem(key, "1");
@@ -711,7 +708,7 @@ function PrizeForm({
   async function save() {
     setBusy(true);
     setMsg("");
-    const { error } = await db.rpc("set_season", {
+    const { error } = await rpc("set_season", {
       p_trip: trip.id,
       p_season: season,
       p_winners: winners,
@@ -866,8 +863,8 @@ function usePhotos(tripId: string) {
     [loaded, setLoaded] = useState(false);
   const refresh = async () => {
     const [p, r] = await Promise.all([
-      db.rpc("trip_photos", { p_trip: tripId }),
-      db.from("photo_reactions").select("photo_path,user_id,emoji").eq("trip_id", tripId),
+      rpc("trip_photos", { p_trip: tripId }),
+      supabase.from("photo_reactions").select("photo_path,user_id,emoji").eq("trip_id", tripId),
     ]);
     const list: Photo[] = p.data ?? [];
     setPhotos(list);
@@ -1015,8 +1012,11 @@ export function PhotoWall({ trip, members, cards, userId }: Base) {
       (r) => r.photo_path === path && r.user_id === userId && r.emoji === emoji,
     );
     const q = mine
-      ? db.from("photo_reactions").delete().match({ photo_path: path, user_id: userId, emoji })
-      : db
+      ? supabase
+          .from("photo_reactions")
+          .delete()
+          .match({ photo_path: path, user_id: userId, emoji })
+      : supabase
           .from("photo_reactions")
           .insert({ trip_id: trip.id, photo_path: path, user_id: userId, emoji });
     const { error } = await q;
@@ -1026,7 +1026,7 @@ export function PhotoWall({ trip, members, cards, userId }: Base) {
   async function report(path: string) {
     const reason = window.prompt("What's wrong with this photo? (optional)") ?? null;
     if (reason === null) return;
-    const { error } = await db.from("photo_reports").insert({
+    const { error } = await supabase.from("photo_reports").insert({
       trip_id: trip.id,
       photo_path: path,
       user_id: userId,
@@ -1042,7 +1042,7 @@ export function PhotoWall({ trip, members, cards, userId }: Base) {
   }
   async function remove(path: string) {
     if (!(await confirmInApp("Delete this photo from the wall?"))) return;
-    const { error } = await db.rpc("remove_photo", { p_trip: trip.id, p_path: path });
+    const { error } = await rpc("remove_photo", { p_trip: trip.id, p_path: path });
     if (error) setMsg(friendlyError(error));
     else {
       setOpen(null);

@@ -1,8 +1,10 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 // No-repeat helpers for trip content. Server only (uses the admin client passed in).
 import { hashSeed } from "./trip-games";
 import { RULES, safeContent } from "./content-rules";
 
-type Admin = { from: (t: string) => any; rpc: (f: string, a?: object) => any };
+type Admin = SupabaseClient<Database>;
 export type TextKind = "bingo" | "quest" | "mission";
 
 export const keyOf = (text: string) => `h${hashSeed(text.trim().toLowerCase()).toString(36)}`;

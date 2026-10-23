@@ -1,3 +1,4 @@
+import { rpcOn } from "@/data/rpc-core";
 type Rpc = {
   rpc: (
     fn: string,
@@ -94,7 +95,7 @@ export async function refundableCredits(
     log: logger(supabase, data),
     refund: async () => {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const result = await (supabaseAdmin as unknown as Rpc).rpc("refund_failed_ai", {
+      const result = await supabaseAdmin.rpc("refund_failed_ai", {
         p_usage: data,
         p_user: userId,
       });
@@ -112,7 +113,7 @@ export async function appAiAllowed(
 ): Promise<boolean> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await (supabaseAdmin as unknown as Rpc).rpc("ai_gate_server", {
+    const { data, error } = await rpcOn(supabaseAdmin, "ai_gate_server", {
       p_kind: kind,
       p_trip: tripId,
       p_user: userId,
@@ -136,21 +137,15 @@ export async function logAppAi(
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const i = usage?.inputTokens ?? 0,
       o = usage?.outputTokens ?? 0;
-    await (
-      supabaseAdmin as unknown as {
-        from: (t: string) => { insert: (r: object) => PromiseLike<unknown> };
-      }
-    )
-      .from("ai_usage")
-      .insert({
-        trip_id: tripId,
-        user_id: userId,
-        kind,
-        model,
-        input_tokens: i,
-        output_tokens: o,
-        est_cost_usd: estimateCost(model, i, o),
-      });
+    await supabaseAdmin.from("ai_usage").insert({
+      trip_id: tripId,
+      user_id: userId,
+      kind,
+      model,
+      input_tokens: i,
+      output_tokens: o,
+      est_cost_usd: estimateCost(model, i, o),
+    });
   } catch {
     /* never blocks */
   }

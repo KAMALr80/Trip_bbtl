@@ -1,3 +1,4 @@
+import { rpc } from "@/data/rpc";
 import { safeSetItem } from "@/lib/safe-storage";
 import { friendlyError } from "@/lib/friendly-error";
 import { ROLE_TIPS } from "./RoleTips";
@@ -16,11 +17,6 @@ import { PassportBook } from "./PassportBook";
 import { APP_VERSION } from "@/lib/app-version";
 import { Link } from "@tanstack/react-router";
 import { legalLinks } from "@/lib/legal";
-
-const db = supabase as unknown as {
-  from: (t: string) => any;
-  rpc: (f: string, a?: Record<string, unknown>) => any;
-};
 
 export function Skeleton({ className = "h-16" }: { className?: string }) {
   return <div aria-hidden="true" className={`skeleton-shimmer rounded-lg bg-muted ${className}`} />;
@@ -185,8 +181,12 @@ export function PublicLeaderboardSetting({ userId }: { userId: string }) {
   useEffect(() => {
     let live = true;
     void Promise.all([
-      db.from("player_profiles").select("public_leaderboard").eq("user_id", userId).maybeSingle(),
-      db.rpc("my_access"),
+      supabase
+        .from("player_profiles")
+        .select("public_leaderboard")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      rpc("my_access"),
     ]).then(([profile, access]) => {
       if (!live) return;
       const isMinor = access.data?.[0]?.age_range === "Teen 13–17";
@@ -198,7 +198,7 @@ export function PublicLeaderboardSetting({ userId }: { userId: string }) {
     };
   }, [userId]);
   async function change(value: boolean) {
-    const { data, error: err } = await db.rpc("set_public_leaderboard", { p_public: value });
+    const { data, error: err } = await rpc("set_public_leaderboard", { p_public: value });
     if (err) setError(friendlyError(err));
     else {
       setOn(data === true);
@@ -515,7 +515,7 @@ export function BugReport({
           .upload(path, small, { contentType: small.type });
         if (error) throw new Error("Screenshot upload failed.");
       }
-      const { error } = await db.from("bug_reports").insert({
+      const { error } = await supabase.from("bug_reports").insert({
         user_id: uid,
         trip_id: tripId ?? null,
         page: underage ? "Safety · Report underage user" : page,
@@ -623,7 +623,7 @@ export function BugReportsList({ tripId }: { tripId: string }) {
   const [rows, setRows] = useState<BugRow[] | null>(null),
     [urls, setUrls] = useState<Record<string, string>>({});
   useEffect(() => {
-    void db
+    void supabase
       .from("bug_reports")
       .select("id,description,page,created_at,screenshot_path")
       .eq("trip_id", tripId)
@@ -744,7 +744,7 @@ export function TimeZoneSetting({ userId, onChange }: { userId: string; onChange
     [open, setOpen] = useState(false),
     [msg, setMsg] = useState("");
   useEffect(() => {
-    void db
+    void supabase
       .from("profiles")
       .select("time_zone,time_zone_manual")
       .eq("id", userId)
@@ -761,7 +761,7 @@ export function TimeZoneSetting({ userId, onChange }: { userId: string; onChange
     .slice(0, 60);
   async function save(next: string | null) {
     const value = next ?? deviceZone();
-    const { error } = await db
+    const { error } = await supabase
       .from("profiles")
       .update({ time_zone: value, time_zone_manual: next !== null })
       .eq("id", userId);

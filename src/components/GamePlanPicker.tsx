@@ -1,3 +1,4 @@
+import { rpc } from "@/data/rpc";
 import { friendlyError } from "@/lib/friendly-error";
 import { fmtWhen } from "@/lib/viewer-time";
 import { tripToday } from "@/lib/itinerary";
@@ -11,9 +12,6 @@ type Plan = "recommended" | "short" | "custom";
 type Row = { week_number: number; starts_at: string; kept: boolean };
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const field = "w-full h-12 rounded-xl bg-card border-2 border-border px-3 text-foreground mt-1";
-const db = supabase as unknown as {
-  rpc: (f: string, a: object) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-};
 const fmt = (iso: string, tz: string) => fmtWhen(iso, tz);
 const addDays = (d: string, n: number) => {
   const x = new Date(`${d}T12:00:00Z`);
@@ -129,7 +127,7 @@ function NewSeasonPlanPicker({
             disabled={busy || !start}
             onClick={async () => {
               setBusy(true);
-              const r = await db.rpc("set_preflight_a2c", {
+              const r = await rpc("set_preflight_a2c", {
                 p_trip: trip.id,
                 p_start: start,
                 p_weekday: weekday,
@@ -226,7 +224,7 @@ function LegacyGamePlanPicker({
     setRows(null);
     void Promise.all(
       (["recommended", "short", "custom"] as Plan[]).map(async (p) => {
-        const r = await db.rpc("plan_game_nights", args(p));
+        const r = await rpc("plan_game_nights", args(p));
         return [p, ((r.data ?? []) as Row[]).length] as const;
       }),
     ).then((x) => setCounts(Object.fromEntries(x)));
@@ -236,14 +234,14 @@ function LegacyGamePlanPicker({
   }, [counts, want]);
   async function preview() {
     setMsg("");
-    const r = await db.rpc("plan_game_nights", args(plan));
+    const r = await rpc("plan_game_nights", args(plan));
     if (r.error) setMsg(friendlyError(r.error));
     else setRows((r.data ?? []) as Row[]);
   }
   async function save() {
     setBusy(true);
     setMsg("");
-    const r = await db.rpc("set_preflight_start", args(plan));
+    const r = await rpc("set_preflight_start", args(plan));
     setBusy(false);
     if (r.error) {
       setMsg(friendlyError(r.error));

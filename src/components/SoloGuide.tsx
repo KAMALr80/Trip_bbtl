@@ -1,3 +1,5 @@
+import type { Json } from "@/integrations/supabase/types";
+import { rpc } from "@/data/rpc";
 import { useEffect, useState } from "react";
 import { Award, CalendarPlus, Clock3, Flame, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,11 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { compressImage } from "@/lib/compress-image";
 import { friendlyError } from "@/lib/friendly-error";
 import passArt from "@/assets/play-sealed-pass.webp";
-
-const db = supabase as unknown as {
-  rpc: (n: string, a?: object) => Promise<{ data: any; error: { message: string } | null }>;
-  storage: typeof supabase.storage;
-};
 
 type Quest = {
   day: number;
@@ -97,10 +94,10 @@ export function SoloGuide({ exp, userId, place }: { exp: SoloExp; userId: string
   const [file, setFile] = useState<File | null>(null),
     [story, setStory] = useState(""),
     [urls, setUrls] = useState<Record<string, string>>({});
-  async function call(action: string, p: object = {}) {
+  async function call(action: string, p: Json = {}) {
     setBusy(true);
     setError("");
-    const r = await db.rpc("solo_action", { p_action: action, p_exp: exp.id, p });
+    const r = await rpc("solo_action", { p_action: action, p_exp: exp.id, p });
     setBusy(false);
     if (r.error) {
       setError(friendlyError(r.error));
@@ -110,7 +107,7 @@ export function SoloGuide({ exp, userId, place }: { exp: SoloExp; userId: string
     setS(next);
     const paths = next.quests.map((q) => q.photo).filter(Boolean) as string[];
     if (paths.length) {
-      const { data } = await db.storage.from("culture-photos").createSignedUrls(paths, 3600);
+      const { data } = await supabase.storage.from("culture-photos").createSignedUrls(paths, 3600);
       setUrls(Object.fromEntries((data ?? []).map((x) => [x.path ?? "", x.signedUrl ?? ""])));
     }
   }
@@ -139,7 +136,7 @@ export function SoloGuide({ exp, userId, place }: { exp: SoloExp; userId: string
     try {
       const small = await compressImage(file, 1600, 400_000);
       const path = `${exp.id}/${userId}/solo-${q.day}-${crypto.randomUUID()}.${small.type === "image/png" ? "png" : small.type === "image/webp" ? "webp" : "jpg"}`;
-      const { error: up } = await db.storage
+      const { error: up } = await supabase.storage
         .from("culture-photos")
         .upload(path, small, { contentType: small.type });
       if (up) throw new Error(up.message);

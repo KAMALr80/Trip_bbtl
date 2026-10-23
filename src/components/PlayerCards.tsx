@@ -1,3 +1,4 @@
+import { rpc } from "@/data/rpc";
 import { useEffect, useState, type FormEvent } from "react";
 import { BookOpen, Check, ChevronDown, Crown, Stamp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -154,12 +155,6 @@ type PlayerCardPayload = {
   };
   facts?: CardFacts;
 };
-const cardRpc = supabase as unknown as {
-  rpc: (
-    name: string,
-    args: object,
-  ) => PromiseLike<{ data: PlayerCardPayload | null; error: { message: string } | null }>;
-};
 
 export function PlayerCardView({
   tripId,
@@ -184,23 +179,24 @@ export function PlayerCardView({
     let live = true;
     setLoading(true);
     setError("");
-    void cardRpc
-      .rpc("player_card_read", { p_trip: tripId, p_user: userId })
-      .then(({ data, error: readError }) => {
+    void rpc("player_card_read", { p_trip: tripId, p_user: userId }).then(
+      ({ data, error: readError }) => {
         if (!live) return;
         if (readError || !data) {
           setError("This player card isn't available.");
           setLoading(false);
           return;
         }
-        setCard(data);
+        const payload = data as PlayerCardPayload;
+        setCard(payload);
         setAvatar(
-          data.avatar_style === "photo"
+          payload.avatar_style === "photo"
             ? (fallback?.avatarUrl ?? "")
-            : dicebearUrl(data.avatar_style, data.avatar_seed || userId),
+            : dicebearUrl(payload.avatar_style, payload.avatar_seed || userId),
         );
         setLoading(false);
-      });
+      },
+    );
     return () => {
       live = false;
     };
@@ -410,7 +406,6 @@ export type AccountProfile = {
   next_year_goal: string | null;
   pronouns: string | null;
 };
-const db = supabase as unknown as { from: (t: string) => any };
 const blankCard = { real_name: "-", game_name: "-", avatar_style: "street", avatar_seed: "-" };
 // Curated choices only: all other seeds remain resolvable for existing player cards.
 const buddyChoices = Array.from({ length: 30 }, (_, i) => 25 + i);
@@ -620,23 +615,17 @@ export function PlayerCardEditor({
     }
     setNameStatus({ ok: false, msg: "Checking…" });
     const t = window.setTimeout(() => {
-      void (
-        supabase as unknown as {
-          rpc: (n: string, a: object) => PromiseLike<{ data: string | null; error: unknown }>;
+      void supabase.rpc("game_name_available", { p_name: value }).then(({ data, error: e }) => {
+        if (e) {
+          setNameStatus(null);
+          return;
         }
-      )
-        .rpc("game_name_available", { p_name: value })
-        .then(({ data, error: e }) => {
-          if (e) {
-            setNameStatus(null);
-            return;
-          }
-          if (!data) setNameStatus({ ok: true, msg: "✓ Available" });
-          else if (data === "TAKEN") {
-            const [a, b] = nameSuggestions(value);
-            setNameStatus({ ok: false, msg: `Taken — try ${a} or ${b}` });
-          } else setNameStatus({ ok: false, msg: data });
-        });
+        if (!data) setNameStatus({ ok: true, msg: "✓ Available" });
+        else if (data === "TAKEN") {
+          const [a, b] = nameSuggestions(value);
+          setNameStatus({ ok: false, msg: `Taken — try ${a} or ${b}` });
+        } else setNameStatus({ ok: false, msg: data });
+      });
     }, 400);
     return () => window.clearTimeout(t);
   }, [gameName]);
@@ -696,7 +685,7 @@ export function PlayerCardEditor({
         ),
         trip_persona: persona || null,
       };
-      const { error: pErr } = await db
+      const { error: pErr } = await supabase
         .from("player_profiles")
         .upsert(details, { onConflict: "user_id" });
       if (pErr) throw new Error(pErr.message);

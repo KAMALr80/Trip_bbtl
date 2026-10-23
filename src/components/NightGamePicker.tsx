@@ -42,11 +42,7 @@ export function NightGamePicker({
   async function save() {
     setBusy(true);
     setError("");
-    const result = await (
-      supabase as unknown as {
-        rpc: (name: string, args: object) => PromiseLike<{ error: { message: string } | null }>;
-      }
-    ).rpc(
+    const result = await supabase.rpc(
       choice === "surprise" ? "surprise_night_game" : "pick_night_game",
       choice === "surprise"
         ? { p_trip: tripId, p_week: night.week_number }

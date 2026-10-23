@@ -1,3 +1,4 @@
+import { rpc, type RpcArgs } from "@/data/rpc";
 import { friendlyError } from "@/lib/friendly-error";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Copy, Sparkles } from "lucide-react";
@@ -56,10 +57,6 @@ type State = {
     needs: string;
   } | null;
 };
-const db = supabase as unknown as {
-  from: (table: string) => any;
-  rpc: (name: string, args?: object) => Promise<{ data: any; error: { message: string } | null }>;
-};
 const rounds = ["Guess It", "Picture It", "Live It"];
 const sizes = { quick: 1, classic: 3, deep: 5 } as const;
 const input =
@@ -111,9 +108,9 @@ export function CultureQuest({
   useEffect(() => {
     if (initialCode && initialCode.length === 6) {
       setCode(initialCode);
-      void db.rpc("culture_quest", { p_action: "join", p_code: initialCode }).then((r) => {
+      void rpc("culture_quest", { p_action: "join", p_code: initialCode }).then((r) => {
         if (r.data) {
-          setState(r.data);
+          setState(r.data as State);
           setScreen("play");
         } else if (r.error) setError(friendlyError(r.error));
       });
@@ -121,19 +118,21 @@ export function CultureQuest({
   }, [initialCode]);
   const refreshItems = async () => {
     if (!creator) return;
-    const r = await db
+    const r = await supabase
       .from("culture_quest_items")
       .select("*")
       .eq("card_id", card.id)
       .order("round_number")
       .order("position");
     if (r.error) setError(friendlyError(r.error));
-    else setItems(r.data ?? []);
+    else setItems((r.data ?? []) as Item[]);
   };
   useEffect(() => {
     void refreshItems();
     if (creator)
-      void db.rpc("culture_quest_stats", { p_card: card.id }).then((r) => setStats(r.data));
+      void rpc("culture_quest_stats", { p_card: card.id }).then((r) =>
+        setStats(r.data as typeof stats),
+      );
     if (card.photo_path)
       void supabase.storage
         .from("inspiration-photos")
@@ -143,8 +142,8 @@ export function CultureQuest({
   useEffect(() => {
     if (screen !== "play" || !state || state.finished) return;
     const timer = window.setInterval(() => {
-      void db.rpc("culture_quest", { p_action: "state", p_session: state.session }).then((r) => {
-        if (r.data) setState(r.data);
+      void rpc("culture_quest", { p_action: "state", p_session: state.session }).then((r) => {
+        if (r.data) setState(r.data as State);
       });
     }, 4000);
     return () => window.clearInterval(timer);
@@ -190,18 +189,18 @@ export function CultureQuest({
             challenge: item.challenge,
           };
           const r = item.id
-            ? await db.from("culture_quest_items").update(data).eq("id", item.id)
-            : await db.from("culture_quest_items").insert(data);
+            ? await supabase.from("culture_quest_items").update(data).eq("id", item.id)
+            : await supabase.from("culture_quest_items").insert(data);
           if (r.error) throw r.error;
         }
       const extras = items.filter((i) => i.position > sizes[length]);
       for (const extra of extras) {
         if (extra.id) {
-          const r = await db.from("culture_quest_items").delete().eq("id", extra.id);
+          const r = await supabase.from("culture_quest_items").delete().eq("id", extra.id);
           if (r.error) throw r.error;
         }
       }
-      const r = await db
+      const r = await supabase
         .from("cultural_inspirations")
         .update({ quest_length: length })
         .eq("id", card.id);
@@ -242,13 +241,13 @@ export function CultureQuest({
       setBusy(false);
     }
   }
-  async function action(name: string, args: object = {}) {
+  async function action(name: string, args: Partial<RpcArgs<"culture_quest">> = {}) {
     setBusy(true);
     setError("");
     try {
-      const r = await db.rpc("culture_quest", {
+      const r = await rpc("culture_quest", {
         p_action: name,
-        p_session: state?.session,
+        p_session: state?.session ?? null,
         p_card: card.id,
         ...args,
       });

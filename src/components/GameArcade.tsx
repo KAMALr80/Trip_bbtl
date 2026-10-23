@@ -1,3 +1,4 @@
+import { rpc } from "@/data/rpc";
 import { ROOM_COPY } from "@/lib/room-copy";
 import { showOutOfCredits, WalletLine } from "./AiCredits";
 import { OnePhoneNight } from "./OnePhoneNight";
@@ -14,7 +15,6 @@ import { premadeAvatars, buddyAvatars } from "@/lib/player-cards";
 import { arcadeMix } from "@/lib/arcade-mix.functions";
 import { friendlyError } from "@/lib/friendly-error";
 
-import { supabase } from "@/integrations/supabase/client";
 import type { TripWithRole } from "@/lib/trips";
 import gameOptionA from "@/assets/game-tile-option-a.webp";
 import mixIcon from "@/assets/boarding-mix-icon.webp";
@@ -520,9 +520,7 @@ export function GameArcade({
     return items;
   }, []);
   const loadUsed = () => {
-    void (supabase as unknown as { rpc: (n: string) => PromiseLike<{ data: number | null }> })
-      .rpc("my_mix_used")
-      .then((r) => setMixUsed(r.data ?? 0));
+    void rpc("my_mix_used").then((r) => setMixUsed(r.data ?? 0));
   };
   useEffect(() => {
     if (!guest) loadUsed();

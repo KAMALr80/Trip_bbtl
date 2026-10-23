@@ -1,3 +1,4 @@
+import { rpc } from "@/data/rpc";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
@@ -90,12 +91,6 @@ type Props = {
   onWrapped?: (() => void) | undefined;
   onMember?: ((id: string) => void) | undefined;
   refresh: () => Promise<void>;
-};
-const rpc = supabase as unknown as {
-  rpc: (
-    name: string,
-    args: object,
-  ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
 };
 const PHASES: { id: Phase; label: string; art: string; tagline: string }[] = [
   {
@@ -425,13 +420,13 @@ export function PlayHub(props: Props) {
     ] = await Promise.all([
       local
         ? Promise.resolve({ data: [], error: null })
-        : rpc.rpc("season_points", { p_trip: trip.id, p_season: season }),
+        : rpc("season_points", { p_trip: trip.id, p_season: season }),
       local
         ? Promise.resolve({ data: [], error: null })
         : supabase.rpc("trip_season_score", { p_trip: trip.id }),
       trip.play_arrangement === "offline"
         ? Promise.resolve({ data: [], error: null })
-        : rpc.rpc("sealed_quest_state", { p_trip: trip.id }),
+        : rpc("sealed_quest_state", { p_trip: trip.id }),
       supabase
         .from("mission_claims")
         .select("id,status,points")
@@ -443,8 +438,8 @@ export function PlayHub(props: Props) {
         .select("season,user_id,score,stamps")
         .eq("trip_id", trip.id)
         .in("season", ["game", "trip"]),
-      rpc.rpc("trip_season_started", { p_trip: trip.id }),
-      rpc.rpc("mission_window", { p_trip: trip.id }),
+      rpc("trip_season_started", { p_trip: trip.id }),
+      rpc("mission_window", { p_trip: trip.id }),
       trip.a2e_room
         ? supabase
             .from("culture_experiences")
@@ -1445,7 +1440,7 @@ function LandTrip({
         disabled={busy}
         onClick={async () => {
           setBusy(true);
-          const r = await rpc.rpc("end_trip", { p_trip: trip.id });
+          const r = await rpc("end_trip", { p_trip: trip.id });
           setBusy(false);
           if (r.error) setMsg(friendlyError(r.error));
           else {

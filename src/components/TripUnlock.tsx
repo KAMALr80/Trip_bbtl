@@ -1,8 +1,9 @@
+import { rpc } from "@/data/rpc";
 import { useEffect, useState } from "react";
 import { Lock } from "lucide-react";
 
 import { Confetti } from "@/components/Season";
-import { supabase } from "@/integrations/supabase/client";
+
 import type { TripWithRole } from "@/lib/trips";
 import { Checkout } from "@/components/Checkout";
 
@@ -13,9 +14,6 @@ type Price = {
   total_cents: number;
   headcount: number;
   unlocked: boolean;
-};
-const db = supabase as unknown as {
-  rpc: (f: string, a?: object) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
 };
 const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
 
@@ -58,7 +56,7 @@ export function TripUnlock({
   const captain = trip.myRole === "captain";
   useEffect(() => {
     const n = Math.max(1, Math.min(30, head || 1));
-    void db.rpc("trip_price", { p_trip: trip.id, p_headcount: n }).then((r) => {
+    void rpc("trip_price", { p_trip: trip.id, p_headcount: n }).then((r) => {
       const row = (r.data as Price[] | null)?.[0];
       if (row) setPrice(row);
     });
@@ -122,7 +120,7 @@ const TIERS = [
 export function CaptainBadge() {
   const [count, setCount] = useState<number | null>(null);
   useEffect(() => {
-    void db.rpc("my_unlocked_trips").then((r) => setCount(typeof r.data === "number" ? r.data : 0));
+    void rpc("my_unlocked_trips").then((r) => setCount(typeof r.data === "number" ? r.data : 0));
   }, []);
   if (!count) return null;
   const tier = TIERS.find((t) => count >= t.n)!;

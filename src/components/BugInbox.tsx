@@ -1,3 +1,4 @@
+import { rpc } from "@/data/rpc";
 import { safeSetItem } from "@/lib/safe-storage";
 import { friendlyError } from "@/lib/friendly-error";
 import { useEffect, useMemo, useState } from "react";
@@ -8,11 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { deviceLabel } from "@/lib/app-version";
 import { suggestSimilarReports } from "@/lib/bug-ai.functions";
 import type { TripWithRole } from "@/lib/trips";
-
-const db = supabase as unknown as {
-  from: (t: string) => any;
-  rpc: (f: string, a?: Record<string, unknown>) => any;
-};
 
 export const STATUS: Record<string, string> = {
   new: "🆕 New",
@@ -74,12 +70,12 @@ export function FounderReports({ onBack }: { onBack: () => void }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [tiers, setTiers] = useState<{ tier: string; people: number }[]>([]);
   useEffect(() => {
-    void db
-      .rpc("founder_age_tiers")
-      .then((r: { data: { tier: string; people: number }[] | null }) => setTiers(r.data ?? []));
+    void rpc("founder_age_tiers").then((r: { data: { tier: string; people: number }[] | null }) =>
+      setTiers(r.data ?? []),
+    );
   }, []);
   async function load() {
-    const r = await db.rpc("founder_bug_reports");
+    const r = await rpc("founder_bug_reports");
     if (r.error) {
       setErr("Founder only.");
       setRows([]);
@@ -100,9 +96,10 @@ export function FounderReports({ onBack }: { onBack: () => void }) {
         ),
       );
     }
-    const [s, c] = await Promise.all([db.rpc("founder_open_summary"), db.rpc("founder_checkins")]);
+    const [s, c] = await Promise.all([rpc("founder_open_summary"), rpc("founder_checkins")]);
     setSummary(s.data ?? []);
-    setCheckins(c.data ?? []);
+    // answers is a JSON object of question → answer text (founder_checkins).
+    setCheckins((c.data ?? []) as CheckIn[]);
   }
   useEffect(() => {
     void load();
@@ -231,17 +228,15 @@ function AiDailyCounts() {
   const [rows, setRows] = useState<{ day: string; user_id: string; calls: number }[]>([]);
   const [error, setError] = useState("");
   useEffect(() => {
-    void db
-      .rpc("ai_daily_counts")
-      .then(
-        (r: {
-          data: { day: string; user_id: string; calls: number }[] | null;
-          error: { message: string } | null;
-        }) => {
-          if (r.error) setError("AI usage is unavailable.");
-          else setRows(r.data ?? []);
-        },
-      );
+    void rpc("ai_daily_counts").then(
+      (r: {
+        data: { day: string; user_id: string; calls: number }[] | null;
+        error: { message: string } | null;
+      }) => {
+        if (r.error) setError("AI usage is unavailable.");
+        else setRows(r.data ?? []);
+      },
+    );
   }, []);
   const daily = Object.entries(
     rows.reduce<Record<string, number>>((acc, row) => {
@@ -313,7 +308,7 @@ function ReportCard({
     setStatus(r.status);
     setNote(r.founder_note ?? "");
   }, [r.status, r.founder_note]);
-  async function run(f: () => Promise<{ error: { message: string } | null }>, ok: string) {
+  async function run(f: () => PromiseLike<{ error: { message: string } | null }>, ok: string) {
     setBusy(true);
     setMsg("");
     const { error } = await f();
@@ -327,7 +322,7 @@ function ReportCard({
   const save = () =>
     run(
       () =>
-        db.rpc("founder_update_report", {
+        rpc("founder_update_report", {
           p_report: r.id,
           p_status: status,
           p_note: note.trim() || null,
@@ -336,7 +331,7 @@ function ReportCard({
     );
   const link = (issue: string | null, title: string | null, id = r.id) =>
     run(
-      () => db.rpc("founder_link_report", { p_report: id, p_issue: issue, p_title: title }),
+      () => rpc("founder_link_report", { p_report: id, p_issue: issue, p_title: title }),
       "Linked ✓",
     );
   async function ai() {
@@ -596,12 +591,12 @@ type Update = { id: string; page: string; status: string; founder_note: string |
 export function BugUpdates() {
   const [rows, setRows] = useState<Update[]>([]);
   useEffect(() => {
-    void db.rpc("my_bug_updates").then((r: { data: Update[] | null }) => setRows(r.data ?? []));
+    void rpc("my_bug_updates").then((r: { data: Update[] | null }) => setRows(r.data ?? []));
   }, []);
   if (!rows.length) return null;
   const dismiss = async (id: string) => {
     setRows((x) => x.filter((r) => r.id !== id));
-    await db.rpc("dismiss_bug_update", { p_report: id });
+    await rpc("dismiss_bug_update", { p_report: id });
   };
   return (
     <div className="mt-4 space-y-2">
@@ -679,14 +674,14 @@ export function QuickCheckIn({ trip }: { trip: TripWithRole }) {
       let found: { context: "game_night" | "trip_day"; key: string; label: string } | null = null;
       const now = Date.now();
       const { data: auth } = await supabase.auth.getUser();
-      const { data: me } = await db
+      const { data: me } = await supabase
         .from("trip_members")
         .select("status")
         .eq("trip_id", trip.id)
         .eq("user_id", auth.user?.id ?? "")
         .maybeSingle();
       if ((me as { status?: string } | null)?.status !== "approved") return;
-      const { data: nights } = await db
+      const { data: nights } = await supabase
         .from("game_nights")
         .select("week_number,starts_at,skipped")
         .eq("trip_id", trip.id)
@@ -708,7 +703,7 @@ export function QuickCheckIn({ trip }: { trip: TripWithRole }) {
       }
       if (!found) return;
       if (localStorage.getItem(`tj-checkin:${trip.id}:${found.context}:${found.key}`)) return;
-      const { data: mine } = await db
+      const { data: mine } = await supabase
         .from("checkin_responses")
         .select("id")
         .eq("trip_id", trip.id)
@@ -728,7 +723,7 @@ export function QuickCheckIn({ trip }: { trip: TripWithRole }) {
   };
   async function send() {
     setBusy(true);
-    const { error } = await db.rpc("submit_checkin", {
+    const { error } = await rpc("submit_checkin", {
       p_trip: trip.id,
       p_context: target!.context,
       p_key: target!.key,

@@ -1,3 +1,4 @@
+import { rpc } from "@/data/rpc";
 import { useEffect, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, LockKeyhole, Plane, Search, Share2 } from "lucide-react";
 import iconMap from "@/assets/icon-map.webp";
@@ -125,13 +126,7 @@ function useSealedQuestWaiting(tripId: string | undefined) {
       return;
     }
     let live = true;
-    const rpc = supabase as unknown as {
-      rpc: (
-        name: string,
-        args: { p_trip: string },
-      ) => PromiseLike<{ data: { state?: string }[] | null }>;
-    };
-    void rpc.rpc("sealed_quest_state", { p_trip: tripId }).then(({ data }) => {
+    void rpc("sealed_quest_state", { p_trip: tripId }).then(({ data }) => {
       if (live) setWaiting((data ?? []).some((quest) => quest.state === "sealed"));
     });
     return () => {
@@ -175,9 +170,7 @@ export function HomeDashboard({
   const homeLayout = useHomeLayout(userId);
   const [tile, setTile] = useState("a");
   useEffect(() => {
-    void (supabase as unknown as { rpc: (n: string) => PromiseLike<{ data: string | null }> })
-      .rpc("boarding_tile")
-      .then((r) => setTile(r.data ?? "a"));
+    void rpc("boarding_tile").then((r) => setTile(r.data ?? "a"));
   }, []);
   const trip = active ?? trips[0] ?? null;
   const { nights, now } = useNights(trip?.id);

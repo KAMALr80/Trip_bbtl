@@ -1,16 +1,12 @@
+import { rpc } from "@/data/rpc";
 import { useEffect, useState } from "react";
 import { EyeOff, Flag, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { supabase } from "@/integrations/supabase/client";
+
 import { friendlyError } from "@/lib/friendly-error";
 import { COUNTRIES, placeLabel } from "@/lib/places";
 import { ReportSheet } from "./ReportSheet";
-
-const db = supabase as unknown as {
-  rpc: (f: string, a?: object) => PromiseLike<{ data: any; error: { message: string } | null }>;
-  from: (t: string) => any;
-};
 
 export type Preview = {
   id: string;
@@ -56,14 +52,14 @@ export function PreviewShareToggle({ tripId, expId }: { tripId?: string; expId?:
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   useEffect(() => {
-    void db
-      .rpc("my_preview_shared", { p_trip: tripId ?? null, p_exp: expId ?? null })
-      .then(({ data }) => setOn(!!data));
+    void rpc("my_preview_shared", { p_trip: tripId ?? null, p_exp: expId ?? null }).then(
+      ({ data }) => setOn(!!data),
+    );
   }, [tripId, expId]);
   async function change(value: boolean) {
     setBusy(true);
     setError("");
-    const { data, error: e } = await db.rpc("share_preview", {
+    const { data, error: e } = await rpc("share_preview", {
       p_trip: tripId ?? null,
       p_exp: expId ?? null,
       p_on: value,
@@ -113,7 +109,7 @@ export function PreviewCard({
   async function act(action: string, reason?: string) {
     setBusy(true);
     setError("");
-    const { error: e } = await db.rpc("preview_action", {
+    const { error: e } = await rpc("preview_action", {
       p_preview: p.id,
       p_action: action,
       p_reason: reason ?? null,

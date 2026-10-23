@@ -1,16 +1,11 @@
+import { rpc } from "@/data/rpc";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 /** List prices come only from the server price list (public.price_rules). Never hardcode amounts in the UI. */
 export type PriceRow = { key: string; label: string; cents: number; beta_free: boolean };
-const db = supabase as unknown as {
-  rpc: (f: string, a?: object) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-};
 let cache: Promise<PriceRow[]> | null = null;
 export const loadPrices = () =>
-  (cache ??= Promise.resolve(db.rpc("price_list")).then(
-    (r) => (r.data as PriceRow[] | null) ?? [],
-  ));
+  (cache ??= Promise.resolve(rpc("price_list")).then((r) => (r.data as PriceRow[] | null) ?? []));
 export const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
 
 export function usePrices() {

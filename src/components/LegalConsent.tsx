@@ -1,19 +1,10 @@
+import { rpc } from "@/data/rpc";
 import { friendlyError } from "@/lib/friendly-error";
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { LEGAL_VERSION, legalLinks } from "@/lib/legal";
-
-const db = supabase as unknown as {
-  rpc: (
-    name: string,
-    args?: object,
-  ) => Promise<{
-    data: { legal_version: string | null }[] | null;
-    error: { message: string } | null;
-  }>;
-};
 export function LegalCheckbox({
   checked,
   onChange,
@@ -76,7 +67,7 @@ export function LegalConsent({ onAccepted }: { onAccepted: () => void }) {
         disabled={!checked || busy}
         onClick={async () => {
           setBusy(true);
-          const r = await db.rpc("accept_legal", { p_version: LEGAL_VERSION });
+          const r = await rpc("accept_legal", { p_version: LEGAL_VERSION });
           setBusy(false);
           if (r.error) setError(friendlyError(r.error));
           else onAccepted();
@@ -95,7 +86,7 @@ export function useLegalStatus(userId: string | undefined) {
       return;
     }
     let live = true;
-    void db.rpc("account_status").then((r) => {
+    void rpc("account_status").then((r) => {
       if (live)
         setStatus(
           r.error || r.data?.[0]?.legal_version !== LEGAL_VERSION ? "required" : "accepted",
@@ -117,13 +108,9 @@ export function FoundingBadge({
   const [member, setMember] = useState(false);
   useEffect(() => {
     let live = true;
-    void (
-      supabase as unknown as { rpc: (n: string, a: object) => Promise<{ data: boolean | null }> }
-    )
-      .rpc("founding_member", { p_user: userId })
-      .then((r) => {
-        if (live) setMember(!!r.data);
-      });
+    void supabase.rpc("founding_member", { p_user: userId }).then((r) => {
+      if (live) setMember(!!r.data);
+    });
     return () => {
       live = false;
     };
@@ -144,13 +131,7 @@ export function FoundingControls() {
   const [open, setOpen] = useState<boolean | null>(null),
     [error, setError] = useState("");
   useEffect(() => {
-    void (
-      supabase as unknown as {
-        rpc: (n: string) => Promise<{ data: { founding_open: boolean }[] | null }>;
-      }
-    )
-      .rpc("account_status")
-      .then((r) => setOpen(r.data?.[0]?.founding_open ?? null));
+    void supabase.rpc("account_status").then((r) => setOpen(r.data?.[0]?.founding_open ?? null));
   }, []);
   return (
     <section className="mt-5">
@@ -164,11 +145,7 @@ export function FoundingControls() {
         disabled={open === null}
         onClick={async () => {
           const next = !open;
-          const r = await (
-            supabase as unknown as {
-              rpc: (n: string, a: object) => Promise<{ error: { message: string } | null }>;
-            }
-          ).rpc("set_founding_open", { p_open: next });
+          const r = await supabase.rpc("set_founding_open", { p_open: next });
           if (r.error) setError(friendlyError(r.error));
           else {
             setOpen(next);

@@ -1,3 +1,4 @@
+import { rpc } from "@/data/rpc";
 import { useEffect, useState } from "react";
 import { ChevronDown, X } from "lucide-react";
 import { CountryFlag } from "@/components/CountryFlag";
@@ -49,13 +50,6 @@ type CultureStamp = {
 };
 type Collectible = { trip_id: string; kind: "postcard"; pack: string; created_at: string } | Ink;
 type PassportDestination = "preflight" | "touchdown" | "athome" | "culture";
-const db = supabase as unknown as {
-  rpc: (
-    name: string,
-    args?: object,
-  ) => PromiseLike<{ data: any; error: { message: string } | null }>;
-  from: (table: string) => any;
-};
 const date = (value: string) =>
   new Date(`${value.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, {
     month: "short",
@@ -110,7 +104,7 @@ export function CultureCreatorBadge({ userId }: { userId: string }) {
   const [badge, setBadge] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
-    void db.rpc("culture_creator_badge", { p_user: userId }).then(({ data }) => {
+    void rpc("culture_creator_badge", { p_user: userId }).then(({ data }) => {
       if (live) setBadge(data ?? null);
     });
     return () => {
@@ -130,7 +124,7 @@ export function CulturePoints({ userId }: { userId: string }) {
   const [points, setPoints] = useState(0);
   useEffect(() => {
     let live = true;
-    void db
+    void supabase
       .from("culture_stamps")
       .select("points")
       .eq("user_id", userId)
@@ -221,7 +215,7 @@ export function PassportBook({
   >([]);
   useEffect(() => {
     let live = true;
-    void db
+    void supabase
       .from("culture_layer_stamps")
       .select("country,culture_layer,earned_at")
       .eq("creator_id", userId)
@@ -237,7 +231,7 @@ export function PassportBook({
     [night, setNight] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
-    void db
+    void supabase
       .from("player_profiles")
       .select("game_name,avatar_style,avatar_seed,avatar_path,hometown,trip_persona")
       .eq("user_id", userId)
@@ -258,7 +252,7 @@ export function PassportBook({
   }, [userId]);
   useEffect(() => {
     let live = true;
-    void db
+    void supabase
       .from("culture_stamps")
       .select("card_id,title,points,champion,created_at")
       .eq("user_id", userId)
@@ -273,12 +267,12 @@ export function PassportBook({
   useEffect(() => {
     let live = true;
     void Promise.all([
-      db.rpc("passport_collection"),
-      db.from("postcard_stickers").select("trip_id,pack,created_at").eq("user_id", userId),
-      db.from("player_profiles").select("home_country").eq("user_id", userId).maybeSingle(),
+      rpc("passport_collection"),
+      supabase.from("postcard_stickers").select("trip_id,pack,created_at").eq("user_id", userId),
+      supabase.from("player_profiles").select("home_country").eq("user_id", userId).maybeSingle(),
     ]).then(([stamps, cards, profile]) => {
       if (!live) return;
-      setInk(stamps.data ?? []);
+      setInk((stamps.data ?? []) as Ink[]);
       setPostcards(cards.data ?? []);
       setHome(profile.data?.home_country ?? "");
       setError(stamps.error ? friendlyError(stamps.error) : "");
@@ -294,7 +288,7 @@ export function PassportBook({
       return;
     }
     let live = true;
-    void db
+    void supabase
       .from("trip_members")
       .select("user_id", { count: "exact", head: true })
       .eq("trip_id", entry.trip_id)
@@ -329,7 +323,7 @@ export function PassportBook({
     [guess, setGuess] = useState("");
   useEffect(() => {
     let live = true;
-    void db
+    void supabase
       .from("profiles")
       .select("seen_tips")
       .eq("id", userId)
@@ -356,7 +350,7 @@ export function PassportBook({
       setError("Home country should be 2–40 characters.");
       return;
     }
-    const { error: e } = await db
+    const { error: e } = await supabase
       .from("player_profiles")
       .update({ home_country: trimmed || null })
       .eq("user_id", userId);
@@ -365,8 +359,8 @@ export function PassportBook({
       return;
     }
     setError("");
-    const result = await db.rpc("passport_collection");
-    setInk(result.data ?? []);
+    const result = await rpc("passport_collection");
+    setInk((result.data ?? []) as Ink[]);
     if (result.error) setError(friendlyError(result.error));
   }
   async function confirmHome(value: string) {
@@ -379,16 +373,20 @@ export function PassportBook({
       setHome(trimmed);
       await saveHome(trimmed);
     }
-    const { data } = await db.from("profiles").select("seen_tips").eq("id", userId).maybeSingle();
+    const { data } = await supabase
+      .from("profiles")
+      .select("seen_tips")
+      .eq("id", userId)
+      .maybeSingle();
     const seen: string[] = data?.seen_tips ?? [];
-    await db
+    await supabase
       .from("profiles")
       .update({ seen_tips: [...new Set([...seen, "home_country"])] })
       .eq("id", userId);
     setAskHome(false);
   }
   async function openCulture(stamp: CultureStamp) {
-    const r = await db
+    const r = await supabase
       .from("cultural_inspirations")
       .select("title,backstory,steps,meaning")
       .eq("id", stamp.card_id)

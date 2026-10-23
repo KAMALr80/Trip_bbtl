@@ -1,11 +1,9 @@
+import { rpc } from "@/data/rpc";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+
 import type { TripWithRole } from "@/lib/trips";
 
 type Quest = { state: string; kind: string; open_by: string | null; destroy_at: string | null };
-const rpc = supabase as unknown as {
-  rpc: (name: string, args: object) => PromiseLike<{ data: unknown; error: unknown }>;
-};
 export function useFlightReminders(trip: TripWithRole | null, userId: string) {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [live, setLive] = useState(false);
@@ -19,8 +17,8 @@ export function useFlightReminders(trip: TripWithRole | null, userId: string) {
     let active = true;
     const load = async () => {
       const [q, n] = await Promise.all([
-        rpc.rpc("sealed_quest_state", { p_trip: trip.id }),
-        rpc.rpc("games_live", { p_trip: trip.id }),
+        rpc("sealed_quest_state", { p_trip: trip.id }),
+        rpc("games_live", { p_trip: trip.id }),
       ]);
       if (active) {
         setQuests(q.error ? [] : ((q.data as Quest[]) ?? []));

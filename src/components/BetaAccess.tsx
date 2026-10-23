@@ -1,3 +1,5 @@
+import { rpcByName } from "@/data/rpc";
+import { rpc } from "@/data/rpc";
 import { TripPeekCard } from "@/components/TripList";
 import { BetaCodeField, WaitlistField } from "@/components/BetaCodes";
 import { GameArcade } from "@/components/GameArcade";
@@ -15,10 +17,6 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { WelcomeExtras } from "@/components/WelcomeCopy";
 import signinFriends from "@/assets/signin-night-friends.jpg";
-
-const db = supabase as unknown as {
-  rpc: (n: string, a?: object) => Promise<{ data: any; error: { message: string } | null }>;
-};
 
 export type Vibe = "family" | "chill" | "party";
 export const VIBES: Record<Vibe, { emoji: string; label: string; line: string; color: string }> = {
@@ -101,7 +99,7 @@ export function TripVibeTools({
   async function pick(v: Vibe) {
     setVibe(v);
     setMsg("");
-    const r = await db.rpc("set_trip_vibe", { p_trip: trip.id, p_vibe: v });
+    const r = await rpc("set_trip_vibe", { p_trip: trip.id, p_vibe: v });
     if (r.error) setMsg(friendlyError(r.error));
     else {
       setMsg(`Vibe set to ${VIBES[v].label} ${VIBES[v].emoji}`);
@@ -296,8 +294,8 @@ export function AgeGate({ onDone }: { onDone: () => void }) {
           setMsg("");
           const code = readPendingCode();
           const r = code
-            ? await db.rpc("set_teen_dob", { p_dob: dob, p_agree: agree, p_invite: code })
-            : await db.rpc("set_my_dob", { p_dob: dob, p_agree: agree });
+            ? await rpc("set_teen_dob", { p_dob: dob, p_agree: agree, p_invite: code })
+            : await rpc("set_my_dob", { p_dob: dob, p_agree: agree });
           setBusy(false);
           if (r.error) setMsg(friendlyError(r.error));
           else onDone();
@@ -359,11 +357,11 @@ export function WaitingTrips() {
   const [peeks, setPeeks] = useState<Record<string, any>>({});
   useEffect(() => {
     const load = () =>
-      void db.rpc("my_waiting_trips").then(async (r) => {
+      void rpc("my_waiting_trips").then(async (r) => {
         const next = r.data ?? [];
         setRows(next);
         const got = await Promise.all(
-          next.map((w: { trip_id: string }) => db.rpc("trip_peek", { p_trip: w.trip_id })),
+          next.map((w: { trip_id: string }) => rpc("trip_peek", { p_trip: w.trip_id })),
         );
         setPeeks(
           Object.fromEntries(
@@ -405,7 +403,7 @@ export function WaitingGate({
   const [has, setHas] = useState<boolean | null>(null);
   const [games, setGames] = useState(false);
   useEffect(() => {
-    void db.rpc("my_waiting_trips").then((r) => setHas(!!r.data?.length));
+    void rpc("my_waiting_trips").then((r) => setHas(!!r.data?.length));
   }, []);
   if (has === null) return null;
   if (games)
@@ -468,7 +466,7 @@ export function TripAccessTools({
   const isCaptain = trip.myRole === "captain";
   async function load() {
     const [p, i] = await Promise.all([
-      db.rpc("pending_members", { p_trip: trip.id }),
+      rpc("pending_members", { p_trip: trip.id }),
       (supabase as any)
         .from("trip_invites")
         .select("*")
@@ -484,7 +482,7 @@ export function TripAccessTools({
   }, [trip.id]);
   async function call(n: string, a: object, ok: string) {
     setMsg("");
-    const r = await db.rpc(n, a);
+    const r = await rpcByName(n, a);
     if (r.error) {
       setMsg(friendlyError(r.error));
       return null;
@@ -804,7 +802,7 @@ export function NoAlcoholToggle() {
   const [on, setOn] = useState<boolean | null>(null);
   const [msg, setMsg] = useState("");
   useEffect(() => {
-    void db.rpc("my_access").then((r) => setOn(!!r.data?.[0]?.no_alcohol));
+    void rpc("my_access").then((r) => setOn(!!r.data?.[0]?.no_alcohol));
   }, []);
   if (on === null) return null;
   return (
@@ -823,7 +821,7 @@ export function NoAlcoholToggle() {
         onChange={async (e) => {
           const v = e.target.checked;
           setOn(v);
-          const r = await db.rpc("set_no_alcohol", { p_on: v });
+          const r = await rpc("set_no_alcohol", { p_on: v });
           if (r.error) {
             setOn(!v);
             setMsg(friendlyError(r.error));
@@ -838,7 +836,7 @@ export function LaunchSwitch() {
   const [msg, setMsg] = useState("");
   const [on, setOn] = useState<boolean | null>(null);
   useEffect(() => {
-    void db.rpc("public_launch").then((r) => setOn(!!r.data));
+    void rpc("public_launch").then((r) => setOn(!!r.data));
   }, []);
   if (on === null) return null;
   return (
@@ -862,7 +860,7 @@ export function LaunchSwitch() {
             !(await confirmInApp(v ? "Open TripJunkies to everyone?" : "Go back to invite-only?"))
           )
             return;
-          const r = await db.rpc("set_public_launch", { p_on: v });
+          const r = await rpc("set_public_launch", { p_on: v });
           if (r.error) setMsg(friendlyError(r.error));
           else setOn(v);
         }}
@@ -877,7 +875,7 @@ export function TeenJoinGate({ onJoined }: { onJoined: () => void }) {
   const [code, setCode] = useState(readPendingCode() ?? "");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
-  const load = () => void db.rpc("my_waiting_trips").then((r) => setWaiting(!!r.data?.length));
+  const load = () => void rpc("my_waiting_trips").then((r) => setWaiting(!!r.data?.length));
   useEffect(() => {
     load();
     const t = window.setInterval(() => {
@@ -907,7 +905,7 @@ export function TeenJoinGate({ onJoined }: { onJoined: () => void }) {
             e.preventDefault();
             setBusy(true);
             setMsg("");
-            const r = await db.rpc("join_trip", { p_code: code.trim().toUpperCase() });
+            const r = await rpc("join_trip", { p_code: code.trim().toUpperCase() });
             setBusy(false);
             if (r.error) setMsg(friendlyError(r.error));
             else if (!r.data) setMsg("That code wasn't found. Check it and try again.");

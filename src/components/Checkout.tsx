@@ -1,10 +1,11 @@
+import { rpc } from "@/data/rpc";
 import { friendlyError } from "@/lib/friendly-error";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Confetti } from "@/components/Season";
-import { supabase } from "@/integrations/supabase/client";
+
 import { checkoutBeta } from "@/lib/checkout.functions";
 import type { TripWithRole } from "@/lib/trips";
 import { usd, tierName, BETA_LINE } from "@/lib/prices";
@@ -21,9 +22,6 @@ export type Quote = {
   paid: boolean;
   upgrade_cents: number;
   order_id: string | null;
-};
-const db = supabase as unknown as {
-  rpc: (f: string, a?: object) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
 };
 export { usd };
 const discountLabel = (s: string | null) =>
@@ -50,7 +48,7 @@ export function Checkout({
     [err, setErr] = useState(""),
     [burst, setBurst] = useState(0);
   const load = () =>
-    db.rpc("order_quote", { p_trip: trip.id }).then((r) => {
+    rpc("order_quote", { p_trip: trip.id }).then((r) => {
       if (r.error) setErr(friendlyError(r.error));
       else {
         const row = (r.data as Quote[] | null)?.[0] ?? null;

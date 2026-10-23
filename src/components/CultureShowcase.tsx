@@ -1,7 +1,9 @@
+import { rpc } from "@/data/rpc";
+import type { Json } from "@/integrations/supabase/types";
 import { useEffect, useState } from "react";
 import { ArrowLeft, CalendarDays, Copy, Heart, Sparkles, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+
 import { friendlyError } from "@/lib/friendly-error";
 import { RoomExperienceCard } from "@/components/RoomExperienceCard";
 
@@ -9,16 +11,14 @@ const call = async (
   action: string,
   exp: string | null,
   code: string | null = null,
-  values: object = {},
+  values: Json = {},
 ) => {
-  const { data, error } = await (
-    supabase as unknown as {
-      rpc: (
-        name: string,
-        args: object,
-      ) => Promise<{ data: any; error: { message: string } | null }>;
-    }
-  ).rpc("culture_showcase", { p_action: action, p_exp: exp, p_code: code, p: values });
+  const { data, error } = await rpc("culture_showcase", {
+    p_action: action,
+    p_exp: exp,
+    p_code: code,
+    p: values,
+  });
   if (error) throw new Error(error.message);
   return data;
 };
@@ -44,7 +44,7 @@ export function ShowcaseInvite({
     [location, setLocation] = useState("");
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
-  const act = async (action: string, values: object = {}) => {
+  const act = async (action: string, values: Json = {}) => {
     setBusy(true);
     setError("");
     try {
@@ -164,8 +164,8 @@ export function ShowcaseGuest({ code, onBack }: { code: string; onBack: () => vo
     let live = true;
     (async () => {
       try {
-        const { id } = await call("join", null, code);
-        const data = await call("view", id);
+        const { id } = (await call("join", null, code)) as { id: string };
+        const data = (await call("view", id)) as Guide;
         if (live) setGuide(data);
       } catch (e) {
         if (live) setError(friendlyError(e));
@@ -181,7 +181,7 @@ export function ShowcaseGuest({ code, onBack }: { code: string; onBack: () => vo
     setError("");
     try {
       await call("react", guide.id, null, { reaction, vote });
-      setGuide(await call("view", guide.id));
+      setGuide((await call("view", guide.id)) as Guide);
     } catch (e) {
       setError(friendlyError(e));
     } finally {

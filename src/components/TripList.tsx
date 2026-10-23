@@ -1,3 +1,4 @@
+import { rpc } from "@/data/rpc";
 import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,10 +21,6 @@ type Peek = {
   top: { name: string; score: number }[];
 };
 type Past = { trip_id: string; name: string; start_date: string; end_date: string };
-const db = supabase as unknown as {
-  rpc: (n: string, a?: object) => Promise<{ data: any; error: unknown }>;
-  from: (t: string) => any;
-};
 const fmt = (d: string) =>
   new Date(`${d}T12:00:00`).toLocaleDateString(undefined, {
     month: "short",
@@ -115,7 +112,7 @@ export function TripList({
     });
     void supabase.auth.getUser().then(({ data }) => {
       if (data.user)
-        void db
+        void supabase
           .from("player_profiles")
           .select("home_country")
           .eq("user_id", data.user.id)
@@ -124,7 +121,7 @@ export function TripList({
             if (live) setHasHome(!!p?.home_country);
           });
     });
-    void db.rpc("my_past_trips").then(({ data }) => {
+    void rpc("my_past_trips").then(({ data }) => {
       if (live) setPast(data ?? []);
     });
     return () => {
@@ -187,9 +184,9 @@ export function TripList({
                 variant="ghost"
                 className="flex h-auto min-h-14 w-full items-center justify-between gap-3 rounded-none px-1 text-left"
                 onClick={() =>
-                  void db
-                    .rpc("trip_peek", { p_trip: p.trip_id })
-                    .then(({ data }) => data && setPeek(data))
+                  void rpc("trip_peek", { p_trip: p.trip_id }).then(
+                    ({ data }) => data && setPeek(data as Peek),
+                  )
                 }
               >
                 <span className="min-w-0 flex-1">

@@ -1,3 +1,4 @@
+import { rpc } from "@/data/rpc";
 import { tabPath, useShellNav } from "@/features/app-shell/nav";
 import { Link } from "@tanstack/react-router";
 import { TabContent } from "@/features/app-shell/TabContent";
@@ -170,7 +171,7 @@ export function AppShell() {
   const [myProfile, setMyProfile] = useState<AccountProfile | null | undefined>(undefined);
   const loadMyProfile = async () => {
     if (!user) return;
-    const { data } = await (supabase as unknown as { from: (t: string) => any })
+    const { data } = await supabase
       .from("player_profiles")
       .select("*")
       .eq("user_id", user.id)
@@ -193,7 +194,7 @@ export function AppShell() {
   // Personal time zone: follow the device unless the person picked one in Settings. Display only.
   useEffect(() => {
     if (!user) return;
-    void (supabase as unknown as { from: (t: string) => any })
+    void supabase
       .from("profiles")
       .select("time_zone,time_zone_manual")
       .eq("id", user.id)
@@ -207,10 +208,7 @@ export function AppShell() {
           }
           setViewerZone(device);
           if (data && data.time_zone !== device)
-            void (supabase as unknown as { from: (t: string) => any })
-              .from("profiles")
-              .update({ time_zone: device })
-              .eq("id", user.id);
+            void supabase.from("profiles").update({ time_zone: device }).eq("id", user.id);
         },
       );
   }, [user?.id]);
@@ -228,13 +226,6 @@ export function AppShell() {
     setAnonCode(readPendingCode() ?? readPendingBeta());
   }, []);
   const loadAccess = async () => {
-    // Call through the client so `this` stays bound (a detached `.rpc` crashes with "reading 'rest'").
-    const rpc = (n: string, a?: object) =>
-      (
-        supabase as unknown as {
-          rpc: (n: string, a?: object) => Promise<{ data: any; error: unknown }>;
-        }
-      ).rpc(n, a);
     let r = await rpc("my_access");
     let next = r.data?.[0] ?? { beta: false, has_dob: false, age_range: "Unknown" };
     // A saved /beta/<CODE> is redeemed automatically after the first sign-in (server-checked).

@@ -1,3 +1,4 @@
+import { rpc } from "@/data/rpc";
 import { confirmInApp } from "@/lib/confirm";
 import { friendlyError } from "@/lib/friendly-error";
 import { useEffect, useState } from "react";
@@ -131,10 +132,6 @@ const initial = (): Draft => ({
 });
 const field =
   "mt-2 w-full rounded-xl border border-border bg-card p-3 text-foreground outline-none focus:border-primary";
-const db = supabase as unknown as {
-  from: (t: string) => any;
-  rpc: (n: string, a: object) => Promise<{ data: any; error: { message: string } | null }>;
-};
 
 export function Inspiration({
   trips,
@@ -228,17 +225,17 @@ export function Inspiration({
   async function load() {
     const ids = trips.map((t) => t.id);
     if (!ids.length) return;
-    const { data } = await db
+    const { data } = await supabase
       .from("cultural_inspirations")
       .select("*")
       .in("trip_id", ids)
       .order("created_at", { ascending: false });
     const next = (data ?? []) as Card[];
     setCards(next);
-    const previewsResult = await db.rpc("culture_quest_previews", {});
+    const previewsResult = await rpc("culture_quest_previews", {});
     const visible = (previewsResult.data ?? []) as Preview[];
     setPreviews(visible.filter((c) => ids.includes(c.trip_id)));
-    const votesResult = await db
+    const votesResult = await supabase
       .from("inspiration_votes")
       .select("card_id,voter_id,choice")
       .in(
@@ -257,7 +254,7 @@ export function Inspiration({
     );
     setNames(map);
     if (isFounder) {
-      const qr = await db.rpc("public_inspiration_queue", {});
+      const qr = await rpc("public_inspiration_queue", {});
       setQueue(qr.data ?? []);
     }
   }
@@ -266,9 +263,10 @@ export function Inspiration({
   }, [trips.map((t) => t.id).join("|")]);
   useEffect(() => {
     if (!initialCode || !previews.length) return;
-    void db.rpc("culture_quest", { p_action: "join", p_code: initialCode }).then((r) => {
+    void rpc("culture_quest", { p_action: "join", p_code: initialCode }).then((r) => {
       if (r.data) {
-        const found = previews.find((c) => c.id === r.data.card);
+        const card = (r.data as { card?: string }).card;
+        const found = previews.find((c) => c.id === card);
         if (found) {
           setJoinedCode(initialCode);
           setSelected(found);
@@ -343,6 +341,11 @@ export function Inspiration({
       setError("Choose a trip and add a title, backstory, steps and meaning.");
       return;
     }
+    if (!category) {
+      setError("Choose a category first.");
+      setStep(0);
+      return;
+    }
     if (!draft.country) {
       setError("Choose the country this experience is from.");
       setStep(1);
@@ -366,7 +369,7 @@ export function Inspiration({
       if (mode !== "solo" && !partner && !editing) throw new Error("Choose a squadmate first.");
       let id = editing?.id;
       if (editing) {
-        const { error: e } = await db
+        const { error: e } = await supabase
           .from("cultural_inspirations")
           .update({
             title: payload.title,
@@ -383,10 +386,10 @@ export function Inspiration({
             region: draft.region || null,
             city: draft.city || null,
           })
-          .eq("id", id);
+          .eq("id", editing.id);
         if (e) throw e;
       } else {
-        const { data, error: e } = await db
+        const { data, error: e } = await supabase
           .from("cultural_inspirations")
           .insert(payload)
           .select("id")
@@ -402,7 +405,7 @@ export function Inspiration({
           .from("inspiration-photos")
           .upload(path, small, { contentType: small.type });
         if (e) throw e;
-        const { error: ue } = await db
+        const { error: ue } = await supabase
           .from("cultural_inspirations")
           .update({ photo_path: path })
           .eq("id", id);
@@ -414,7 +417,7 @@ export function Inspiration({
       setPendingPlace(null);
       await load();
       if (id) {
-        const saved = await db
+        const saved = await supabase
           .from("cultural_inspirations")
           .select(
             "id,trip_id,creator_id,partner_id,category,title,photo_path,quest_length,country,region,city",
@@ -451,7 +454,7 @@ export function Inspiration({
   }
   async function act(cardId: string, choice: string) {
     const existing = votes.find((v) => v.card_id === cardId && v.voter_id === userId);
-    const q = db.from("inspiration_votes");
+    const q = supabase.from("inspiration_votes");
     const r = existing
       ? await q.update({ choice }).eq("card_id", cardId).eq("voter_id", userId)
       : await q.insert({ card_id: cardId, voter_id: userId, choice });
@@ -469,7 +472,7 @@ export function Inspiration({
         return;
       }
     }
-    const r = await db.from("cultural_inspirations").delete().eq("id", c.id);
+    const r = await supabase.from("cultural_inspirations").delete().eq("id", c.id);
     if (r.error) setError(friendlyError(r.error));
     else {
       setConfirmDelete(null);
@@ -499,7 +502,7 @@ export function Inspiration({
   );
 
   async function moderate(id: string, action: string) {
-    const r = await db.rpc("moderate_inspiration", { p_card: id, p_action: action });
+    const r = await rpc("moderate_inspiration", { p_card: id, p_action: action });
     if (r.error) setError(friendlyError(r.error));
     else await load();
   }
@@ -764,7 +767,7 @@ export function Inspiration({
                       disabled={busy}
                       onClick={async () => {
                         setBusy(true);
-                        const r = await db.rpc("approve_inspiration", {
+                        const r = await rpc("approve_inspiration", {
                           p_card: c.id,
                           p_approve: true,
                         });
@@ -782,7 +785,7 @@ export function Inspiration({
                       onClick={async () => {
                         if (!(await confirmInApp(`Decline "${c.title}"?`))) return;
                         setBusy(true);
-                        const r = await db.rpc("approve_inspiration", {
+                        const r = await rpc("approve_inspiration", {
                           p_card: c.id,
                           p_approve: false,
                         });

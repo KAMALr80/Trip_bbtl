@@ -15,12 +15,7 @@ export const suggestSimilarReports = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v) => z.object({ reportId: z.string().uuid() }).parse(v))
   .handler(async ({ data, context }) => {
-    const sb = context.supabase as unknown as {
-      rpc: (
-        f: string,
-        a?: object,
-      ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-    };
+    const sb = context.supabase;
     const admin = await sb.rpc("is_app_admin");
     if (admin.error || admin.data !== true) throw new Error("Founder only.");
     const list = await sb.rpc("founder_bug_reports");

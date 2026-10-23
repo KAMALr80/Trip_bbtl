@@ -1,80 +1,10 @@
 {
-  "src/components/AtHome.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/components/BetaAccess.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    }
-  },
-  "src/components/BetaCodes.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/components/BugInbox.tsx": {
-    "@typescript-eslint/no-explicit-any": {
       "count": 2
-    }
-  },
-  "src/components/CultureExperiences.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/components/CultureQuest.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/components/CultureShowcase.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
     }
   },
   "src/components/DeletedTripNotes.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/components/ExperiencePreviews.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/components/GameExtrasC2.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/components/Inspiration.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/components/MeExtras.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/components/PassportBook.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/components/PlayerCards.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/components/Seasons.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/components/SoloGuide.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
     }
@@ -84,29 +14,14 @@
       "count": 1
     }
   },
-  "src/components/TripList.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "src/components/WelcomeCopy.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
     }
   },
-  "src/features/app-shell/AppShell.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    }
-  },
   "src/lib/checkout.functions.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    }
-  },
-  "src/lib/content.server.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
     }
   },
   "src/lib/culture-exp.functions.ts": {

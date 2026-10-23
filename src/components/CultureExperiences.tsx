@@ -1,3 +1,5 @@
+import type { Json } from "@/integrations/supabase/types";
+import { rpc } from "@/data/rpc";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { PreviewShareToggle } from "./ExperiencePreviews";
 import { RoomExperienceCard } from "@/components/RoomExperienceCard";
@@ -91,11 +93,6 @@ type Shared = {
   liked: boolean;
   mine: boolean;
 };
-const db = supabase as unknown as {
-  from: (t: string) => any;
-  rpc: (n: string, a?: object) => Promise<{ data: any; error: { message: string } | null }>;
-  storage: typeof supabase.storage;
-};
 const TRAVELER_TYPES = [
   ["foodie", "Foodie"],
   ["explorer", "Explorer"],
@@ -107,8 +104,8 @@ const TRAVELER_TYPES = [
 ] as const;
 const field =
   "mt-2 w-full rounded-xl border border-border bg-card p-3 text-base text-foreground outline-none focus:border-primary";
-const act = async (action: string, exp: string | null, p: object = {}) => {
-  const { data, error } = await db.rpc("culture_action", { p_action: action, p_exp: exp, p });
+const act = async (action: string, exp: string | null, p: Json = {}) => {
+  const { data, error } = await rpc("culture_action", { p_action: action, p_exp: exp, p });
   if (error) throw new Error(error.message);
   return data;
 };
@@ -155,21 +152,21 @@ export function CultureExperiences({
   async function load() {
     const tripIds = trips.map((t) => t.id);
     const [m, g, s, b] = await Promise.all([
-      db
+      supabase
         .from("culture_experiences")
         .select("*")
         .eq("creator_id", userId)
         .order("created_at", { ascending: false }),
       tripIds.length
-        ? db
+        ? supabase
             .from("culture_experiences")
             .select("*")
             .in("trip_id", tripIds)
             .not("a2e_kind", "is", null)
             .eq("play_mode", "group")
         : Promise.resolve({ data: [] }),
-      db.rpc("culture_shared", { p_scope: "all" }),
-      db.rpc("culture_badges"),
+      rpc("culture_shared", { p_scope: "all" }),
+      rpc("culture_badges"),
     ]);
     setMine(
       Array.from(
@@ -413,7 +410,7 @@ function SwitchToGroup({
   async function go() {
     setBusy(true);
     setError("");
-    const { error: e } = await db.rpc("culture_switch_group", {
+    const { error: e } = await rpc("culture_switch_group", {
       p_exp: exp.id,
       p_trip: tripId,
       p_format: home ? finale : null,
@@ -551,7 +548,7 @@ function CreateFlow({
         start_date: start,
         days: n,
       });
-      const { error: modeError } = await db.rpc("set_culture_mode", {
+      const { error: modeError } = await rpc("set_culture_mode", {
         p_exp: (r as { id: string }).id,
         p_mode: who ?? "group",
         p_types: who === "solo" ? types : [],
@@ -559,14 +556,14 @@ function CreateFlow({
       });
       if (modeError) throw new Error(modeError.message);
       if (track === "home") {
-        const { error: fErr } = await db.rpc("set_culture_finale", {
+        const { error: fErr } = await rpc("set_culture_finale", {
           p_exp: (r as { id: string }).id,
           p_format: who === "solo" ? null : finale,
         });
         if (fErr) throw new Error(fErr.message);
       }
       if (track === "travel") {
-        const { error: prepError } = await db.rpc("set_window_prep", {
+        const { error: prepError } = await rpc("set_window_prep", {
           p_exp: (r as { id: string }).id,
           p_days: prepDays || null,
         });
@@ -922,15 +919,15 @@ function ExperienceView({
   const isCreator = exp?.creator_id === userId;
   async function load() {
     const [e, d] = await Promise.all([
-      db.from("culture_experiences").select("*").eq("id", id).maybeSingle(),
-      db.rpc("culture_days", { p_exp: id }),
+      supabase.from("culture_experiences").select("*").eq("id", id).maybeSingle(),
+      rpc("culture_days", { p_exp: id }),
     ]);
     setExp(e.data as Exp | null);
     const list = (d.data ?? []) as Day[];
     setDays(list);
     const paths = list.flatMap((x) => x.photos);
     if (paths.length) {
-      const { data } = await db.storage.from("culture-photos").createSignedUrls(paths, 3600);
+      const { data } = await supabase.storage.from("culture-photos").createSignedUrls(paths, 3600);
       setUrls(Object.fromEntries((data ?? []).map((s) => [s.path ?? "", s.signedUrl ?? ""])));
     }
   }
@@ -1155,7 +1152,7 @@ function ExperienceView({
                 onClick={() =>
                   void run(async () => {
                     if (exp.a2e_kind) {
-                      const { error: saveError } = await db.rpc("culture_a2e_action", {
+                      const { error: saveError } = await rpc("culture_a2e_action", {
                         p_exp: exp.id,
                         p_action: "save_days",
                         p_cards: cards,
@@ -1382,7 +1379,7 @@ function ExperienceView({
                 onClick={() =>
                   void run(async () => {
                     if (exp.a2e_kind) {
-                      const { error: finishError } = await db.rpc("culture_a2e_action", {
+                      const { error: finishError } = await rpc("culture_a2e_action", {
                         p_exp: exp.id,
                         p_action: "finish",
                       });
@@ -1598,7 +1595,7 @@ function LogDay({
       for (const f of files.slice(0, 3 - photos.length)) {
         const small = await compressImage(f, 1600, 400_000);
         const path = `${exp.id}/${userId}/${crypto.randomUUID()}.${small.type === "image/png" ? "png" : small.type === "image/webp" ? "webp" : "jpg"}`;
-        const { error: up } = await db.storage
+        const { error: up } = await supabase.storage
           .from("culture-photos")
           .upload(path, small, { contentType: small.type });
         if (up) throw new Error(up.message);

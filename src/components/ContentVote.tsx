@@ -1,12 +1,10 @@
+import { rpc } from "@/data/rpc";
 import { safeSetItem } from "@/lib/safe-storage";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+
 import { hapticTap } from "@/lib/haptics";
 
 type Kind = "card" | "qotw" | "bingo" | "quest" | "mission";
-const db = supabase as unknown as {
-  rpc: (f: string, a: object) => PromiseLike<{ error: { message: string } | null }>;
-};
 const keyFor = (text: string) => {
   let h = 2166136261;
   const s = text.trim().toLowerCase();
@@ -40,7 +38,7 @@ export function ContentVote({
     hapticTap();
     setDone(vote === 1 ? "up" : "down");
     safeSetItem(local, vote === 1 ? "up" : "down");
-    await db.rpc("rate_content", {
+    await rpc("rate_content", {
       p_trip: tripId,
       p_kind: kind,
       p_key: key,
@@ -83,9 +81,7 @@ export function ContentRatings() {
     { kind: string; item_text: string; ups: number; downs: number }[] | null
   >(null);
   useEffect(() => {
-    void (supabase as unknown as { rpc: (f: string) => PromiseLike<{ data: typeof rows }> })
-      .rpc("content_feedback_summary")
-      .then(({ data }) => setRows(data ?? []));
+    void rpc("content_feedback_summary").then(({ data }) => setRows(data ?? []));
   }, []);
   return (
     <div className="mt-8">

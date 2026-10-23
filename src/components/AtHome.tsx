@@ -1,3 +1,5 @@
+import { rpcByName } from "@/data/rpc";
+import { rpc } from "@/data/rpc";
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { CountryFlag } from "@/components/CountryFlag";
 import { PlacePicker } from "@/components/PlacePicker";
@@ -26,11 +28,6 @@ import atHomeArt from "@/assets/cinematic-at-home.jpg";
 
 import { CinematicMonthCalendar } from "./CinematicMonthCalendar";
 import { RoomPriceNote } from "@/lib/prices";
-
-const db = supabase as unknown as {
-  rpc: (f: string, a?: object) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-  from: (t: string) => any;
-};
 type T = TripWithRole & {
   kind?: string;
   at_home_pack?: string | null;
@@ -105,7 +102,7 @@ export function AtHomeSetup({
   async function create(vibe: string) {
     setBusy(true);
     setErr("");
-    const r = await db.rpc("create_at_home_a2c", {
+    const r = await rpc("create_at_home_a2c", {
       p_pack: pack,
       p_days: Number(len.slice(1)),
       p_start: start,
@@ -121,7 +118,7 @@ export function AtHomeSetup({
     }
     const id = r.data as string;
     if (minors) {
-      const m = await db.rpc("set_trip_minors", { p_trip: id, p_has: true });
+      const m = await rpc("set_trip_minors", { p_trip: id, p_has: true });
       if (m.error) {
         setErr(friendlyError(m.error));
         return;
@@ -409,7 +406,7 @@ function usePlan(tripId: string) {
   const [plan, setPlan] = useState<Act[] | null>(null),
     [err, setErr] = useState("");
   const load = () =>
-    db.rpc("at_home_plan", { p_trip: tripId }).then((r) => {
+    rpc("at_home_plan", { p_trip: tripId }).then((r) => {
       if (r.error) setErr(friendlyError(r.error));
       else setPlan((r.data as Act[]) ?? []);
     });
@@ -543,9 +540,12 @@ export function AtHomePlay({
       const ids = (plan ?? []).filter((a) => a.released).map((a) => a.id);
       const [wins, hosts] = await Promise.all([
         ids.length
-          ? db.from("at_home_song_winners").select("activity_id,user_id").in("activity_id", ids)
+          ? supabase
+              .from("at_home_song_winners")
+              .select("activity_id,user_id")
+              .in("activity_id", ids)
           : Promise.resolve({ data: [] }),
-        db
+        supabase
           .from("game_nights")
           .select("starts_at,host_id")
           .eq("trip_id", trip.id)
@@ -583,7 +583,7 @@ export function AtHomePlay({
   const nameOf = (id: string | null) => cards.find((c) => c.user_id === id)?.game_name ?? "Player";
   const act = async (f: string, a: object) => {
     setMsg("");
-    const r = await db.rpc(f, a);
+    const r = await rpcByName(f, a);
     if (r.error) setMsg(friendlyError(r.error));
     await reload();
   };
@@ -618,7 +618,7 @@ export function AtHomePlay({
             onPick={
               songActivity
                 ? async (id) => {
-                    const r = await db.rpc("pick_at_home_song", {
+                    const r = await rpc("pick_at_home_song", {
                       p_activity: songActivity.id,
                       p_user: id,
                     });
@@ -680,7 +680,7 @@ export function AtHomePlay({
           variant="outline"
           className="w-full mt-4"
           onClick={async () => {
-            const r = await db.rpc("end_trip", { p_trip: trip.id });
+            const r = await rpc("end_trip", { p_trip: trip.id });
             if (r.error) setMsg(friendlyError(r.error));
             else {
               setMsg("");
@@ -907,7 +907,7 @@ function Question({
   const [text, setText] = useState(""),
     [ans, setAns] = useState<Ans[]>([]);
   const load = () =>
-    db.rpc("at_home_question", { p_activity: a.id }).then((r) => setAns((r.data as Ans[]) ?? []));
+    rpc("at_home_question", { p_activity: a.id }).then((r) => setAns((r.data as Ans[]) ?? []));
   useEffect(() => {
     void load();
   }, [a.id, a.answers, a.revealed, a.voted]);
@@ -985,9 +985,9 @@ function Mvp({
     { user_id: string; points: number; wins: number; votes: number }[]
   >([]);
   useEffect(() => {
-    void db
-      .rpc("at_home_mvp", { p_trip: trip.id })
-      .then((r) => setRows((r.data as typeof rows) ?? []));
+    void rpc("at_home_mvp", { p_trip: trip.id }).then((r) =>
+      setRows((r.data as typeof rows) ?? []),
+    );
   }, [trip.id]);
   if (solo || !rows.length || !rows[0]!.points) return null;
   const top = rows[0]!;
@@ -1023,7 +1023,7 @@ export function AtHomeTrip({
   const p = packOf(trip);
   const [overview, setOverview] = useState("");
   useEffect(() => {
-    void db
+    void supabase
       .from("at_home_packs")
       .select("overview")
       .eq("key", p.key)
@@ -1088,18 +1088,18 @@ export function Rewards({ userId }: { userId: string }) {
       }[]
     >([]);
   useEffect(() => {
-    void db
+    void supabase
       .from("reward_codes")
       .select("code,cents,expires_at,used_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .then((r: { data: typeof codes | null }) => setCodes(r.data ?? []));
-    void db
+    void supabase
       .from("postcard_stickers")
       .select("pack,created_at")
       .eq("user_id", userId)
       .then((r: { data: typeof cards | null }) => setCards(r.data ?? []));
-    void db
+    void supabase
       .from("orders")
       .select("id,label,amount_due_cents,discount_cents,created_at,kind")
       .eq("captain_id", userId)
