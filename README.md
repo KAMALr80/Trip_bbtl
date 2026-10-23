@@ -3,23 +3,33 @@
 A mobile-first game for group trips: crews play through Pre-Flight, Takeoff, Trip Season and Baggage Claim, earn two crowns, and keep a passport of stamps and postcards.
 
 - **Handover pack, plans and rules:** [`dev-docs/`](dev-docs/README.md). Start with [`01-current-state`](dev-docs/01-current-state.md) and the [milestones](dev-docs/milestones/).
-- **Architecture rules for the current code:** [`docs/decisions/`](docs/decisions/README.md).
+- **Architecture rules for the current code:** [`AGENTS.md`](AGENTS.md) and [`docs/decisions/`](docs/decisions/README.md).
 
 ## Stack
 
-TypeScript, React 19, TanStack Start / Router / Query, Tailwind v4, shadcn/ui. The app is served by a Cloudflare Worker (Nitro). Supabase provides Postgres, Auth, Storage and pg_cron. Game rules are `SECURITY DEFINER` functions in the `trip_private` schema.
+TypeScript, React 19, TanStack Start / Router / Query, Tailwind v4, shadcn/ui, i18next. The app is served by a Cloudflare Worker (Nitro). Supabase provides Postgres, Auth, Storage and pg_cron. Game rules are `SECURITY DEFINER` functions in the `trip_private` schema.
 
-## Setup
+```
+src/routes/     thin route files (tabs, /t/$tripId/…, invites, legal, /api/public/*)
+src/features/   one folder per product area (see src/features/README.md)
+src/data/       typed RPC calls and TanStack Query hooks: the only place that talks to Supabase
+src/i18n/       English copy catalog (en.json)
+src/components/ ui/ (shadcn) and a few pieces shared across features
+supabase/       migrations (one baseline + newer), seed, pgTAP tests
+scripts/        database tooling and the deploy script
+```
 
-Requirements: [bun](https://bun.sh) 1.x and Node 22. For the database tools you also need the PostgreSQL 16 server binaries (`initdb`, `pg_ctl`); Docker isn't required.
+## Local development
+
+Requirements: [bun](https://bun.sh) 1.x and Node 22. For the database tools you also need the PostgreSQL server binaries (`initdb`, `pg_ctl`, 16 or newer); Docker isn't required for them.
 
 ```bash
 bun install
-cp .env.example .env.local     # then fill in the Supabase URL and publishable key
+cp .env.example .env.local     # point VITE_SUPABASE_URL / key at a local stack or staging
 bun run dev                    # http://localhost:8080
 ```
 
-> Point `.env.local` at a local or staging Supabase project, not production (see [dev-docs/07](dev-docs/07-dev-setup-and-lovable-exit.md)).
+A local Supabase stack (`npx supabase start`, needs Docker) applies `supabase/migrations/` and `supabase/seed.sql`, which creates test accounts and sample trips. Never point a dev server at production.
 
 ## Scripts
 
@@ -27,11 +37,46 @@ bun run dev                    # http://localhost:8080
 |---|---|
 | `bun run dev` | Dev server with SSR |
 | `bun run build` | Production build into `.output/` (Cloudflare Worker + static assets) |
-| `npx tsc --noEmit` | Typecheck |
-| `bun run lint` | ESLint |
-| `scripts/db/test.sh` | Replays every migration onto a throwaway Postgres and runs the pgTAP tests ([details](supabase/tests/README.md)) |
-| `REPLAY_HOOK='python3 scripts/db/inventory.py' scripts/db/replay-migrations.sh` | Regenerates the schema snapshot and DB inventory ([details](docs/inventory/README.md)) |
+| `bun run typecheck` / `bun run lint` | TypeScript; ESLint (existing exceptions in `eslint-suppressions.json`) |
+| `bun run test` | Unit tests (Vitest) |
+| `npx playwright test` | End-to-end tests, including the accessibility pass, against a mocked backend |
+| `scripts/db/test.sh` | Replays the migrations onto a throwaway Postgres and runs the pgTAP tests ([details](supabase/tests/README.md)) |
+| `REPLAY_HOOK='python3 scripts/db/inventory.py' scripts/db/replay-migrations.sh` | Regenerates the schema snapshot and DB inventory ([details](docs/inventory/README.md)); CI fails if they're stale |
+| `scripts/db/gen-types.sh` | Regenerates `src/integrations/supabase/types.ts` from the migrations; CI fails if it's stale |
 
-## Configuration
+## Database changes
 
-All environment variables are listed in [`.env.example`](.env.example). Server secrets (`SUPABASE_SERVICE_ROLE_KEY`, `AI_API_KEY`, `CRON_SECRET`) are set per environment with `wrangler secret put` and never go in the client bundle.
+`supabase/migrations/00000000000000_baseline.sql` is the whole schema as of M1-09; the Lovable-era history is in [`supabase/migrations_archive/`](supabase/migrations_archive/README.md). Add each change as a new timestamped file after it, then regenerate the snapshot, inventory and types (above). Every new table with a `trip_id` needs an archive guard trigger ([`AGENTS.md`](AGENTS.md)).
+
+## Environments and deploys
+
+There are two environments, each a Supabase project plus a Cloudflare Worker: **staging** (`tripjunkies-staging`) and **production** (`tripjunkies`). Both start from the baseline migration; no data came over from the Lovable prototype.
+
+**One-time setup, per environment**
+
+1. Create the Supabase project. Note its ref (`https://<ref>.supabase.co`) and database password.
+2. In Google Cloud Console, create an OAuth client (web) with the redirect URI `https://<ref>.supabase.co/auth/v1/callback`.
+3. Set up an email sender (Resend, Postmark or SES) for sign-up codes and password resets, with its DNS records on the domain.
+4. Provide these settings as environment variables (in a cloud session, as the environment's secrets):
+
+| Variable | |
+|---|---|
+| `SUPABASE_ACCESS_TOKEN` | Supabase personal access token |
+| `SUPABASE_STAGING_REF`, `SUPABASE_STAGING_DB_PASSWORD` | the staging project (`PROD` instead of `STAGING` for production) |
+| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | a token that can edit Workers |
+| `AI_API_KEY`, `AI_MODEL` (+ optional `AI_BASE_URL`, `AI_PRICE_IN`, `AI_PRICE_OUT`) | AI features stay off without them |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google sign-in |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SENDER_EMAIL` | auth emails |
+| `STAGING_APP_URL` / `PROD_APP_URL` | only once a custom domain is set; otherwise the workers.dev URL is used |
+| `VITE_SENTRY_DSN` | optional browser error reporting |
+
+**Deploy**
+
+```bash
+scripts/deploy.sh staging check   # which settings are present
+scripts/deploy.sh staging         # db push → build + deploy + Worker secrets + cron URL → auth URLs
+```
+
+Steps can also run alone: `db`, `web`, `auth`. Publishable values (`VITE_*`) are baked in at build time, so each environment gets its own build; the script fetches the project's keys from Supabase. Server secrets go to the Worker with `wrangler secret bulk` and never into the client bundle or the repo.
+
+**Custom domain:** once the domain is on the Cloudflare account, uncomment the `routes` lines in [`wrangler.jsonc`](wrangler.jsonc), set `<ENV>_APP_URL`, and run `scripts/deploy.sh <env> web` and `auth` again.

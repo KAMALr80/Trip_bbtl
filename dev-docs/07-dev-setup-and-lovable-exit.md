@@ -18,7 +18,7 @@ bun run preview      # preview the build
 bun run lint         # eslint
 ```
 
-> ⚠ **The committed `.env` points at the production Supabase project** (`kymflipjxxpyxksdfgdw`). A local `bun dev` therefore talks to **live data**. Until M0-04 (local Supabase) is done, use only a test account and sandbox trips, or point `.env.local` at a staging project.
+> No `.env` is committed any more, and no environment uses the Lovable Cloud project (`kymflipjxxpyxksdfgdw`): the founder chose a fresh start on Oct 23, 2026. Copy `.env.example` to `.env.local` and point it at a local stack or staging.
 
 ### Environment variables
 
@@ -27,7 +27,7 @@ bun run lint         # eslint
 | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` | client (`.env`) | browser Supabase client | Publishable / anon key, safe in the client |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | server | SSR / server functions | |
 | `SUPABASE_SERVICE_ROLE_KEY` | **server secret** | `client.server.ts` (admin client: sandbox, AI top-ups, purge) | **Never** expose to the client |
-| `AI_API_KEY`, `AI_MODEL`, `AI_BASE_URL` (optional) | server secret | AI provider for all 12 call sites (`src/integrations/ai/index.server.ts`) | Done (M0-08). While `AI_API_KEY` is unset, an existing `LOVABLE_API_KEY` still uses the Lovable gateway; remove it once every environment has the new key |
+| `AI_API_KEY`, `AI_MODEL`, `AI_BASE_URL` (optional) | server secret | AI provider for all 12 call sites (`src/integrations/ai/index.server.ts`) | Done (M0-08). The Lovable fallback is removed; AI is off until both are set. `AI_PRICE_IN` / `AI_PRICE_OUT` feed the cost report |
 | `CRON_SECRET`, `CRON_SECRET_PREVIOUS` | server secret | `/api/public/*` cron auth (`cron-auth.ts`) | Renamed (M0-10). The photo-purge job authenticates with the DB-held key in `trip_private.cron_keys` and reads its URL from `trip_private.cron_endpoints` (set per environment) |
 | `VITE_SENTRY_DSN` | client | Browser error reporting (`src/lib/error-reporting.ts`) | Done (M0-12, browser side) |
 | *(new)* `SENTRY_DSN` (Worker), `FCM_SERVICE_ACCOUNT`, `EMAIL_API_KEY`, `PLACES_API_KEY` | server secrets | M0/M4 | |
@@ -73,23 +73,13 @@ The project is tied to Lovable in **ten places**. Do them in this order (it's M0
 - [ ] Move the four `AGENTS.md` files into `docs/decisions/` as "architecture decision notes". They hold the real database rules.
 - [ ] Delete the stray `null` file at the repo root.
 
-### 3.2 Database (Supabase project under "Lovable Cloud")
-- [ ] Find out what access you have to project `kymflipjxxpyxksdfgdw`:
-  - DB connection string / password
-  - service role key
-  - Auth settings (providers, redirect URLs, SMTP)
-  - Storage
-  - pg_cron
-  - backups / PITR
-  - logs
-- [ ] **If you don't have full dashboard access, migrate to a Supabase project in your own org.** Re-check Supabase's current project-migration guide when you do this. The usual steps:
-  1. Schema + data: `pg_dump` / `supabase db dump --data-only`, including the `auth` schema for users (password hashes carry over between Supabase projects).
-  2. **Storage objects:** copy the 7 buckets with a script (list + download + upload). Bucket policies come from migrations.
-  3. Re-create **pg_cron jobs** and the `trip_private.cron_keys` secret.
-  4. Re-configure **Auth**: Site URL, redirect URLs (web + native deep links), Google/Apple providers, SMTP sender.
-  5. Point the app env vars at the new project. Plan a short read-only window.
+### 3.2 Database
+- [x] *(Decided Oct 23, 2026: start fresh.)* Nothing moves from the Lovable Cloud project
+  (`kymflipjxxpyxksdfgdw`): no users, trips or photos. Staging and production are new Supabase
+  projects that start from `supabase/migrations/00000000000000_baseline.sql` (M1-09), which also
+  creates the storage buckets, cron jobs and a cron key per database.
+- [ ] Create the **staging** and **production** projects, then `scripts/deploy.sh <env> db`.
 - [ ] Turn on **daily backups / PITR** on production.
-- [ ] Create a **staging** project with the same schema.
 
 ### 3.3 Authentication
 - [ ] Google sign-in goes through `@lovable.dev/cloud-auth-js` (`src/integrations/lovable/index.ts`, called from `src/routes/index.tsx` around line 1273). **Replace** it with `supabase.auth.signInWithOAuth({ provider: 'google' })` using **your own Google OAuth client**.
@@ -98,9 +88,9 @@ The project is tied to Lovable in **ten places**. Do them in this order (it's M0
 - [ ] Set up **custom SMTP** (Resend, Postmark or SES) for auth emails. The roadmap says email-code verification is "waiting on an email domain"; turn it on.
 
 ### 3.4 Hosting
-- [ ] Create a Cloudflare account/project. Deploy `.output/` with `wrangler deploy` (Nitro generates `wrangler.json`).
+- [ ] Create a Cloudflare account and a token that can edit Workers. `wrangler.jsonc` defines the staging and production Workers; `scripts/deploy.sh <env> web` builds and deploys (Nitro merges `wrangler.jsonc` into `.output/server/wrangler.json`).
 - [ ] Move the **`tripjunkies.app`** domain DNS to your Cloudflare and set staging + production routes.
-- [ ] Set server secrets with `wrangler secret put …` for each environment.
+- [x] Server secrets per environment: `scripts/deploy.sh <env> web` sets them with `wrangler secret bulk` from the environment's settings.
 
 ### 3.5 AI gateway
 - [x] *(Done Oct 21, 2026, see M0 status.)* Twelve call sites read `LOVABLE_API_KEY` and call `https://ai.gateway.lovable.dev/v1` with Lovable model ids (e.g. `openai/gpt-6-astra` in `arcade-mix.server.ts`). Files:
@@ -143,7 +133,7 @@ The project is tied to Lovable in **ten places**. Do them in this order (it's M0
 
 | Step | Command / place |
 |---|---|
-| DB migration | `supabase db push --linked` (staging, then prod) from CI on merge to `main` / release tag |
-| Web | `bun run build && wrangler deploy --env staging` / `--env production` |
+| DB migration | `scripts/deploy.sh staging db`, then `production` (later from CI on merge to `main` / release tag) |
+| Web | `scripts/deploy.sh staging web` / `production web` (build with that project's keys, deploy, secrets, cron URL) |
 | Native | `bun run build:spa && npx cap sync && fastlane ios beta / android beta` (M4) |
 | Version | Bump `src/lib/app-version.ts`. `/api/public/version` + `UpdatePrompt` already ask open clients to reload |

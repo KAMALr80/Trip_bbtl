@@ -2,7 +2,9 @@
 
 Each question has a **recommended default**. If no answer arrives by the milestone that needs it, the team builds the default and flags it in the release notes. Write answers inline (`**Answer:** …`) and commit.
 
-**Decisions recorded Oct 21, 2026 (founder):** Q1, Q6, Q15 and Q20 take the recommended default. The other questions are still open; their defaults apply if no answer arrives by the milestone that needs them.
+**Decisions recorded Oct 21, 2026 (founder):** Q1, Q6, Q15 and Q20 take the recommended default.
+
+**Oct 23, 2026 (founder): start fresh.** There is no production setup to keep: staging and production are new Supabase projects built from the baseline migration (M1-09), and no data comes over from the Lovable Cloud prototype. So Q1 needs no cutover; archive mode stays for future rule changes. The other questions are still open; their defaults apply if no answer arrives by the milestone that needs them.
 
 | # | Needed by | Question | Recommended default |
 |---|---|---|---|
