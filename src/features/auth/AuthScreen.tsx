@@ -337,10 +337,11 @@ export function MaskedEmail({ email }: { email: string }) {
     <Button
       variant="ghost"
       className="h-auto max-w-full min-w-0 p-0 justify-start text-sm text-muted-foreground font-normal"
-      aria-label={t(revealed ? "auth.hideEmail" : "auth.revealEmail")}
+      aria-pressed={revealed}
       onClick={() => setRevealed((v) => !v)}
     >
       <span className="truncate">{revealed ? email : masked}</span>
+      <span className="sr-only">{t(revealed ? "auth.hideEmail" : "auth.revealEmail")}</span>
       {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
     </Button>
   );

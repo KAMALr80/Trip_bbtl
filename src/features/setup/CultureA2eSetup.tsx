@@ -12,6 +12,7 @@ import { CULTURE_LAYERS, type CultureLayer } from "@/lib/culture-pool";
 import { PlayingChoice } from "@/features/setup/PlayingChoice";
 import { saveOfflineRoster, type PlayArrangement } from "@/lib/play-arrangement";
 import { gameNameProblem, normalizeName } from "@/lib/game-name";
+import { useT } from "@/i18n";
 
 export type A2eKind = "explore" | "show" | "inspire";
 const travelerTypes = [
@@ -36,6 +37,7 @@ export function CultureA2eSetup({
   onBack: () => void;
   ageRange?: string;
 }) {
+  const t = useT();
   const [accountAge, setAccountAge] = useState(ageRange ?? "Unknown");
   useEffect(() => {
     let live = true;
@@ -355,7 +357,7 @@ export function CultureA2eSetup({
                 </label>
                 {!group && (
                   <label className="mt-4 block font-bold">
-                    Optional preparation before travel
+                    {t("roomSetup.preflightDays")}
                     <select
                       className={field}
                       value={prep}

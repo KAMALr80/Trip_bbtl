@@ -72,5 +72,15 @@
     "resendIn": "Resend code in {{seconds}}s",
     "resend": "Resend code",
     "spam": "Can't find it? Peek in spam or promotions."
+  },
+  "roomPlan": {
+    "readyMade": "Start from ready-made cards · free",
+    "readyMadeHint": "You get ready-made {{label}} cards to edit or replace. No AI credits used."
+  },
+  "roomSetup": {
+    "preflightDays": "Pre-Flight warm-up days before you go (optional)"
+  },
+  "home": {
+    "gate": "gate"
   }
 }

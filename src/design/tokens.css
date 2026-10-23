@@ -40,6 +40,8 @@
   --popover: #342951;
   --popover-foreground: #f4f1ff;
   --primary: #ff3d9a;
+  /* Pink for small text on the dark cards: --primary itself is 3.8:1 there (M1-12, AA needs 4.5). */
+  --primary-text: #ff6eb5;
   --primary-foreground: #111021;
   --secondary: #49376e;
   --secondary-foreground: #f4f1ff;
@@ -47,7 +49,7 @@
   --muted-foreground: #d2cbe6;
   --accent: #574273;
   --accent-foreground: #f4f1ff;
-  --destructive: #ff6677;
+  --destructive: #ff7a88;
   --destructive-foreground: #111021;
   --border: rgba(255, 255, 255, 0.27);
   --input: rgba(255, 255, 255, 0.56);
@@ -81,6 +83,7 @@
   --popover: #ffffff;
   --popover-foreground: #18132b;
   --primary: #b50b60;
+  --primary-text: var(--primary);
   --primary-foreground: #111021;
   --secondary: #ebe2f4;
   --secondary-foreground: #251d3e;
@@ -210,4 +213,9 @@
   --passport-card-paper: var(--paper);
   --passport-card-ink: var(--paper-ink);
   --passport-card-rule: var(--gold);
+}
+
+/* M1-12: text-primary reads --primary-text, which is lighter than the button pink in dark mode. */
+.text-primary {
+  color: var(--primary-text, var(--primary));
 }

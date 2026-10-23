@@ -184,7 +184,7 @@ export function PlacePicker({
               <div
                 id={`${id}-place-options-${key}`}
                 role="listbox"
-                className="absolute z-30 mt-1 max-h-80 w-full overflow-y-auto rounded-lg border border-border bg-card shadow-lg"
+                className="absolute z-30 mt-1 max-h-80 w-full overflow-y-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-lg"
               >
                 {list.map((o, i) => (
                   <Button

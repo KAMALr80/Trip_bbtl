@@ -38,6 +38,7 @@ import welcomeLetter from "@/assets/welcome-letter.webp";
 import { supabase } from "@/integrations/supabase/client";
 import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
+import { useT } from "@/i18n";
 
 export type HomeScreen =
   "dashboard" | "trip" | "trips" | "passport" | "inspiration" | "window" | "journey" | "arcade";
@@ -166,6 +167,7 @@ export function HomeDashboard({
   onWelcome,
   onMember,
 }: Props) {
+  const t = useT();
   const flightReminder = useFlightReminders(active, userId);
   const homeLayout = useHomeLayout(userId);
   const [tile, setTile] = useState("a");
@@ -466,11 +468,13 @@ export function HomeDashboard({
                   void import("@/lib/haptics").then(({ hapticTap }) => hapticTap());
                   row.action();
                 }}
-                aria-label={`${row.label}, gate ${row.gate}, ${row.status}${row.detail ? `, ${row.detail}` : ""}`}
               >
                 <img src={row.img} alt="" width={104} height={104} />
                 <span>{row.label}</span>
-                <span>{row.gate}</span>
+                <span>
+                  <span className="sr-only">{t("home.gate")} </span>
+                  {row.gate}
+                </span>
                 <b
                   className={
                     row.status === "GATE OPEN"

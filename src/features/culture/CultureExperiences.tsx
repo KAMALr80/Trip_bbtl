@@ -26,6 +26,7 @@ import { SoloGuide } from "@/features/window-seat/SoloGuide";
 import { CultureA2eSetup, type A2eKind } from "@/features/setup/CultureA2eSetup";
 import { CULTURE_LAYERS } from "@/lib/culture-pool";
 import { ShowcaseInvite } from "@/features/culture/CultureShowcase";
+import { useT } from "@/i18n";
 
 type Track = "home" | "travel";
 type Exp = {
@@ -905,6 +906,7 @@ function ExperienceView({
   isFounder: boolean;
   onBack: () => void;
 }) {
+  const t = useT();
   const [exp, setExp] = useState<Exp | null>(null),
     [days, setDays] = useState<Day[]>([]),
     [urls, setUrls] = useState<Record<string, string>>({}),
@@ -1018,10 +1020,10 @@ function ExperienceView({
                   )
                 }
               >
-                I'll write it · free
+                {t("roomPlan.readyMade")}
               </Button>
               <p className="text-xs text-muted-foreground">
-                "I'll write it" starts you with ready-made {label} cards you can edit or replace.
+                {t("roomPlan.readyMadeHint", { label })}
               </p>
             </div>
           )}
