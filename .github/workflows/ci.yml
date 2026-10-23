@@ -36,7 +36,14 @@ jobs:
       - run: npx eslint . --quiet
       - run: bun run test
       - run: bun run build
-      - run: npx playwright install --with-deps chromium
+      # The ubuntu-24.04 image already has Chrome's system libraries, so skip --with-deps (its
+      # apt-get install took ~11 of the job's 14 minutes) and cache the browser download.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: npx playwright install chromium
+        timeout-minutes: 5
       - run: npx playwright test
       - uses: actions/upload-artifact@v4
         if: failure()
