@@ -9,19 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as AboutRouteImport } from './routes/about'
-import { Route as HomeMockupsRouteImport } from './routes/home-mockups'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ShellIndexRouteImport } from './routes/_shell.index'
+import { Route as ShellHomeRouteImport } from './routes/_shell.home'
+import { Route as ShellMeRouteImport } from './routes/_shell.me'
+import { Route as ShellPlayRouteImport } from './routes/_shell.play'
+import { Route as ShellTripRouteImport } from './routes/_shell.trip'
 import { Route as BetaCodeRouteImport } from './routes/beta.$code'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
 import { Route as LegalDocumentRouteImport } from './routes/legal/$document'
 import { Route as ApiPublicPurgePhotosRouteImport } from './routes/api/public/purge-photos'
 import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ShellRoute = ShellRouteImport.update({
+  id: '/_shell',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -29,15 +32,35 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HomeMockupsRoute = HomeMockupsRouteImport.update({
-  id: '/home-mockups',
-  path: '/home-mockups',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ShellIndexRoute = ShellIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellHomeRoute = ShellHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellMeRoute = ShellMeRouteImport.update({
+  id: '/me',
+  path: '/me',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellPlayRoute = ShellPlayRouteImport.update({
+  id: '/play',
+  path: '/play',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellTripRoute = ShellTripRouteImport.update({
+  id: '/trip',
+  path: '/trip',
+  getParentRoute: () => ShellRoute,
 } as any)
 const BetaCodeRoute = BetaCodeRouteImport.update({
   id: '/beta/$code',
@@ -66,10 +89,13 @@ const ApiPublicVersionRoute = ApiPublicVersionRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof ShellIndexRoute
   '/about': typeof AboutRoute
-  '/home-mockups': typeof HomeMockupsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/home': typeof ShellHomeRoute
+  '/me': typeof ShellMeRoute
+  '/play': typeof ShellPlayRoute
+  '/trip': typeof ShellTripRoute
   '/beta/$code': typeof BetaCodeRoute
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
@@ -77,25 +103,32 @@ export interface FileRoutesByFullPath {
   '/api/public/version': typeof ApiPublicVersionRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/home-mockups': typeof HomeMockupsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/home': typeof ShellHomeRoute
+  '/me': typeof ShellMeRoute
+  '/play': typeof ShellPlayRoute
+  '/trip': typeof ShellTripRoute
   '/beta/$code': typeof BetaCodeRoute
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
+  '/': typeof ShellIndexRoute
   '/api/public/purge-photos': typeof ApiPublicPurgePhotosRoute
   '/api/public/version': typeof ApiPublicVersionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_shell': typeof ShellRouteWithChildren
   '/about': typeof AboutRoute
-  '/home-mockups': typeof HomeMockupsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_shell/home': typeof ShellHomeRoute
+  '/_shell/me': typeof ShellMeRoute
+  '/_shell/play': typeof ShellPlayRoute
+  '/_shell/trip': typeof ShellTripRoute
   '/beta/$code': typeof BetaCodeRoute
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
+  '/_shell/': typeof ShellIndexRoute
   '/api/public/purge-photos': typeof ApiPublicPurgePhotosRoute
   '/api/public/version': typeof ApiPublicVersionRoute
 }
@@ -104,8 +137,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
-    | '/home-mockups'
     | '/reset-password'
+    | '/home'
+    | '/me'
+    | '/play'
+    | '/trip'
     | '/beta/$code'
     | '/join/$code'
     | '/legal/$document'
@@ -113,32 +149,38 @@ export interface FileRouteTypes {
     | '/api/public/version'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/about'
-    | '/home-mockups'
     | '/reset-password'
+    | '/home'
+    | '/me'
+    | '/play'
+    | '/trip'
     | '/beta/$code'
     | '/join/$code'
     | '/legal/$document'
+    | '/'
     | '/api/public/purge-photos'
     | '/api/public/version'
   id:
     | '__root__'
-    | '/'
+    | '/_shell'
     | '/about'
-    | '/home-mockups'
     | '/reset-password'
+    | '/_shell/home'
+    | '/_shell/me'
+    | '/_shell/play'
+    | '/_shell/trip'
     | '/beta/$code'
     | '/join/$code'
     | '/legal/$document'
+    | '/_shell/'
     | '/api/public/purge-photos'
     | '/api/public/version'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  ShellRoute: typeof ShellRouteWithChildren
   AboutRoute: typeof AboutRoute
-  HomeMockupsRoute: typeof HomeMockupsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   BetaCodeRoute: typeof BetaCodeRoute
   JoinCodeRoute: typeof JoinCodeRoute
@@ -149,11 +191,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
+    '/_shell': {
+      id: '/_shell'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof ShellRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -163,19 +205,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/home-mockups': {
-      id: '/home-mockups'
-      path: '/home-mockups'
-      fullPath: '/home-mockups'
-      preLoaderRoute: typeof HomeMockupsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_shell/': {
+      id: '/_shell/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof ShellIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/home': {
+      id: '/_shell/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof ShellHomeRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/me': {
+      id: '/_shell/me'
+      path: '/me'
+      fullPath: '/me'
+      preLoaderRoute: typeof ShellMeRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/play': {
+      id: '/_shell/play'
+      path: '/play'
+      fullPath: '/play'
+      preLoaderRoute: typeof ShellPlayRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/trip': {
+      id: '/_shell/trip'
+      path: '/trip'
+      fullPath: '/trip'
+      preLoaderRoute: typeof ShellTripRouteImport
+      parentRoute: typeof ShellRoute
     }
     '/beta/$code': {
       id: '/beta/$code'
@@ -215,10 +285,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ShellRouteChildren {
+  ShellHomeRoute: typeof ShellHomeRoute
+  ShellMeRoute: typeof ShellMeRoute
+  ShellPlayRoute: typeof ShellPlayRoute
+  ShellTripRoute: typeof ShellTripRoute
+  ShellIndexRoute: typeof ShellIndexRoute
+}
+
+const ShellRouteChildren: ShellRouteChildren = {
+  ShellHomeRoute: ShellHomeRoute,
+  ShellMeRoute: ShellMeRoute,
+  ShellPlayRoute: ShellPlayRoute,
+  ShellTripRoute: ShellTripRoute,
+  ShellIndexRoute: ShellIndexRoute,
+}
+
+const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  ShellRoute: ShellRouteWithChildren,
   AboutRoute: AboutRoute,
-  HomeMockupsRoute: HomeMockupsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   BetaCodeRoute: BetaCodeRoute,
   JoinCodeRoute: JoinCodeRoute,

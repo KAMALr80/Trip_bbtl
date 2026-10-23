@@ -7,7 +7,9 @@ export const checkoutBeta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ tripId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: orderId, error } = await (context.supabase as any).rpc("checkout_beta", { p_trip: data.tripId });
+    const { data: orderId, error } = await (context.supabase as any).rpc("checkout_beta", {
+      p_trip: data.tripId,
+    });
     if (error) throw new Error(error.message);
     return { orderId: orderId as string };
   });

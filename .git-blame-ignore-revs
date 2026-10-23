@@ -1,0 +1,5 @@
+# Formatting-only commits. GitHub skips these in blame; locally run:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# M1-06: Prettier pass over src
+1f8087121c7694c0bbedecaaeab5db7606700163

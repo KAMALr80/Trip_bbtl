@@ -1,0 +1,213 @@
+/* TripJunkies design tokens (M1-03). One look: the deck's "Airline Look" (slide 21, R-909).
+   Brand art palette and rules: docs/BRAND.md. Light mode overrides live under .light.
+
+   Deck palette primitives, for new components (M2/M3). Existing screens still use the semantic
+   tokens below; move them onto these as each screen is rebuilt. */
+:root {
+  --tj-navy: #0e0b1f;
+  --tj-indigo: #1b1240;
+  --tj-violet: #5b2a9d;
+  --tj-cyan: #38d6ff;
+  --tj-blue: #3b6cff;
+  --tj-pink: #ff4fa0;
+  --tj-magenta: #ff3fa4;
+  --tj-orange: #ff8a3d;
+  --tj-sun: #ffc94b;
+  --tj-cream: #f7efdd;
+  --tj-sunset-glow: conic-gradient(
+    from 200deg,
+    var(--tj-sun),
+    var(--tj-orange),
+    var(--tj-pink),
+    var(--tj-violet),
+    var(--tj-sun)
+  );
+}
+
+/* Semantic tokens used by the app today. */
+:root {
+  --radius: 1.375rem;
+  --nav-height: 70px;
+  --nav-offset: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  --nav-clearance: calc(var(--nav-height) + var(--nav-offset) + 16px);
+  --bg1: #211b40;
+  --bg2: #382b60;
+  --wheel-hub: #231b43;
+  --background: #211b40;
+  --foreground: #f9f7ff;
+  --card: rgba(47, 37, 83, 0.87);
+  --card-foreground: #f4f1ff;
+  --popover: #342951;
+  --popover-foreground: #f4f1ff;
+  --primary: #ff3d9a;
+  --primary-foreground: #111021;
+  --secondary: #49376e;
+  --secondary-foreground: #f4f1ff;
+  --muted: #463762;
+  --muted-foreground: #d2cbe6;
+  --accent: #574273;
+  --accent-foreground: #f4f1ff;
+  --destructive: #ff6677;
+  --destructive-foreground: #111021;
+  --border: rgba(255, 255, 255, 0.27);
+  --input: rgba(255, 255, 255, 0.56);
+  --ring: #22d3ee;
+  --green: #a3e635;
+  --green-soft: rgba(163, 230, 53, 0.12);
+  --orange: #ff8a1f;
+  --orange-soft: rgba(255, 138, 31, 0.12);
+  --blue: #22d3ee;
+  --blue-soft: rgba(34, 211, 238, 0.12);
+  --pink-soft: rgba(255, 61, 154, 0.12);
+  --ink-soft: #e0d9f1;
+  --nav: rgba(43, 34, 74, 0.94);
+  --gold: #ffd36b;
+  --paper: #f8f1e3;
+  --paper-ink: #46395d;
+  --cabin-wall: #eeeae3;
+  --cabin-panel: #f8f6f0;
+  --cabin-ink: #242735;
+  --cabin-muted: #4d5260;
+  --cabin-seam: #b7b2ac;
+  --cabin-trim: #777e8b;
+}
+.light {
+  --bg1: #e3deef;
+  --bg2: #f8e0db;
+  --background: #f5f0f9;
+  --foreground: #251d3e;
+  --card: rgba(255, 255, 255, 0.88);
+  --card-foreground: #251d3e;
+  --popover: #ffffff;
+  --popover-foreground: #18132b;
+  --primary: #b50b60;
+  --primary-foreground: #111021;
+  --secondary: #ebe2f4;
+  --secondary-foreground: #251d3e;
+  --muted: #ebe4f1;
+  --muted-foreground: #594c6d;
+  --accent: #eee6f2;
+  --accent-foreground: #18132b;
+  --destructive: #ad223e;
+  --destructive-foreground: #ffffff;
+  --border: #beb3c8;
+  --input: #a89ab6;
+  --ring: #007f92;
+  --green: #426600;
+  --green-soft: #e9f7d7;
+  --orange: #ad4f00;
+  --orange-soft: #fff0db;
+  --blue: #006d86;
+  --blue-soft: #daf4fa;
+  --pink-soft: #fce1ee;
+  --ink-soft: #36283f;
+  --nav: rgba(255, 255, 255, 0.95);
+  --gold: #8b5900;
+  --paper: #fffaf0;
+  --paper-ink: #443657;
+  --wheel-hub: #120d26;
+}
+/* Option A: two stacked leaves inside a navy passport cover. All colors are passport-role tokens. */
+:root {
+  --passport-leather-top: #1d2f6b;
+  --passport-leather-bottom: #14214f;
+  --passport-paper-top: #eef3fb;
+  --passport-paper-bottom: #f7f2e6;
+  --passport-ink-color: #20334d;
+  --passport-gold: #b58b42;
+  --passport-field: #ffffffd9;
+  --passport-board: #bd8c62;
+  --passport-board-ink: #492c20;
+}
+.light {
+  --passport-leather-top: #263e82;
+  --passport-leather-bottom: #192b61;
+  --passport-paper-top: #eef3fb;
+  --passport-paper-bottom: #f7f2e6;
+  --passport-ink-color: #20334d;
+  --passport-gold: #98672b;
+  --passport-field: #ffffffdd;
+}
+:root:not(.light) {
+  --passport-paper-top: #d9dfee;
+  --passport-paper-bottom: #e8e2d4;
+  --passport-field: #f9f7f2c9;
+}
+/* Round AH: switchable cinematic skin. Every selector is scoped to its opt-in branch. */
+:root {
+  --cinema-navy: #151a3d;
+  --cinema-deep: #0d1028;
+  --cinema-gold-start: #ffd36b;
+  --cinema-gold-end: #f2a93b;
+  --cinema-cyan-start: #7ff3ff;
+  --cinema-cyan-end: #2bc4e0;
+  --cinema-frost: rgba(255, 255, 255, 0.08);
+  --cinema-frost-border: rgba(255, 255, 255, 0.18);
+  --cinema-paper: #f8f0db;
+  --cinema-ink: #263048;
+  --cinema-red: #bb4848;
+}
+/* Round AK: the night-sky lounge belongs only to the cinematic Home branches. */
+:root {
+  --cinema-sky: #111633;
+  --cinema-starlight: #c6d9ff;
+  --cinema-globe: #83d5df;
+}
+/* Round AN: isolated cinematic entrance; original sign-in remains unchanged. */
+:root {
+  --splash-night: #0d1028;
+  --splash-indigo: #1b1650;
+  --splash-pink: #ff6fae;
+  --splash-cyan: #7ff3ff;
+  --splash-coral: #f38777;
+  --splash-periwinkle: #9291ed;
+  --splash-ink: #14224b;
+  --splash-paper: #f9f8ff;
+  --splash-glass: color-mix(in oklab, var(--splash-paper) 11%, transparent);
+}
+/* Round AR: the glass-medallion lounge, scoped to cinematic Home only. */
+:root {
+  --home-door-gold: oklch(0.83 0.16 82);
+  --home-door-pink: oklch(0.72 0.21 355);
+  --home-door-cyan: oklch(0.82 0.14 215);
+  --home-door-violet: oklch(0.64 0.23 295);
+  --home-door-coral: oklch(0.76 0.17 40);
+}
+:root {
+  --ink-draw: #203050;
+}
+/* Round AW · Security Check / Secret Missions (cinematic Takeoff) */
+:root {
+  --sm-scan: #5ff6ff;
+  --sm-violet: #a76bff;
+  --sm-pending: #ffc857;
+  --sm-go: #3ee38b;
+}
+/* Cinematic Photo Wall: printed paper over a real corkboard photograph. */
+:root {
+  --scrap-cork: #8a5a2b;
+  --scrap-paper: #fbf8f1;
+  --scrap-ink: #172037;
+  --scrap-empty: #d7d3c9;
+  --scrap-tape: rgba(241, 223, 165, 0.85);
+  --scrap-pin: #ff4fa0;
+  --scrap-night: rgba(13, 16, 40, 0.9);
+  --scrap-route: #f1e8d1;
+  --scrap-shadow: rgba(25, 14, 10, 0.42);
+}
+/* Room experience sheets share one structure in both visual looks. */
+:root {
+  --home-table: oklch(0.39 0.072 54);
+  --home-table-grain: oklch(0.47 0.06 56);
+  --home-lamp: oklch(0.78 0.12 78);
+  --home-paper: oklch(0.967 0.019 86);
+  --home-paper-ink: oklch(0.265 0.039 56);
+  --home-paper-rule: oklch(0.72 0.048 73);
+  --postcard-rule: oklch(0.67 0.018 75);
+}
+/* Shared player Passport card: security-paper surface with inked, slightly angled collection marks. */
+:root {
+  --passport-card-paper: var(--paper);
+  --passport-card-ink: var(--paper-ink);
+  --passport-card-rule: var(--gold);
+}

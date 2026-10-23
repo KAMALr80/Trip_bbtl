@@ -7,15 +7,23 @@ is `src/routes/__root.tsx`.
 
 ## Conventions
 
-| File | URL |
-| --- | --- |
-| `index.tsx` | `/` |
-| `about.tsx` | `/about` |
-| `users/index.tsx` | `/users` |
-| `users/$id.tsx` | `/users/:id` (dynamic — bare `$`, no curly braces) |
-| `posts/{-$category}.tsx` | `/posts/:category?` (optional segment) |
-| `files/$.tsx` | `/files/*` (splat — read via `_splat` param, never `*`) |
-| `_layout.tsx` | layout route (renders children via `<Outlet />`) |
-| `__root.tsx` | app shell — wraps every page; preserve `<Outlet />` |
+| File                     | URL                                                     |
+| ------------------------ | ------------------------------------------------------- |
+| `index.tsx`              | `/`                                                     |
+| `about.tsx`              | `/about`                                                |
+| `users/index.tsx`        | `/users`                                                |
+| `users/$id.tsx`          | `/users/:id` (dynamic — bare `$`, no curly braces)      |
+| `posts/{-$category}.tsx` | `/posts/:category?` (optional segment)                  |
+| `files/$.tsx`            | `/files/*` (splat — read via `_splat` param, never `*`) |
+| `_layout.tsx`            | layout route (renders children via `<Outlet />`)        |
+| `__root.tsx`             | app shell — wraps every page; preserve `<Outlet />`     |
 
 `routeTree.gen.ts` is auto-generated. Don't edit it by hand.
+
+## This app
+
+- `_shell.tsx` is a pathless layout that renders the app shell (`src/features/app-shell`). It stays
+  mounted while its tab routes change: `_shell.index.tsx` (`/`), `_shell.home.tsx`,
+  `_shell.play.tsx`, `_shell.trip.tsx`, `_shell.me.tsx`. Sub-screens are search params, validated
+  in `src/features/app-shell/nav.ts`.
+- Route files stay thin: no business logic, no Supabase calls.

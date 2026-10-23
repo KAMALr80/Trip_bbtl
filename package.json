@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:db": "scripts/db/test.sh",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "unused": "knip --include files"
   },
   "overrides": {
     "rolldown": "1.2.1"

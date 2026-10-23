@@ -8,7 +8,12 @@ const RESERVED = /(tripjunkie|captain|admin|support|founder)/;
 export const PERSONAS = ["planner", "hype person", "photographer", "food finder"] as const;
 
 export function normalizeName(value: string) {
-  return value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s/g, "").replace(/([^\p{L}\p{N}])\1+/gu, "$1");
+  return value
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/\s/g, "")
+    .replace(/([^\p{L}\p{N}])\1+/gu, "$1");
 }
 export const charCount = (value: string) => [...value.trim()].length;
 
@@ -27,7 +32,8 @@ function common(value: string, min: number, max: number, label: string) {
 export function gameNameProblem(value: string, isFounder = false) {
   const p = common(value, 2, 15, "Game names");
   if (p) return p;
-  if (!isFounder && RESERVED.test(normalizeName(value))) return "That name is reserved. Try something else.";
+  if (!isFounder && RESERVED.test(normalizeName(value)))
+    return "That name is reserved. Try something else.";
   return null;
 }
 export const tripRoleProblem = (value: string) => common(value, 2, 24, "Trip roles");

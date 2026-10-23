@@ -36,7 +36,14 @@ jobs:
       - run: npx eslint . --quiet
       - run: bun run test
       - run: bun run build
-      - run: npx playwright install --with-deps chromium
+      # The ubuntu-24.04 image already has Chrome's system libraries, so skip --with-deps (its
+      # apt-get install took ~11 of the job's 14 minutes) and cache the browser download.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: npx playwright install chromium
+        timeout-minutes: 5
       - run: npx playwright test
       - uses: actions/upload-artifact@v4
         if: failure()
@@ -63,6 +70,18 @@ jobs:
           REPLAY_HOOK='python3 scripts/db/inventory.py' scripts/db/replay-migrations.sh
           if ! git diff --exit-code -- supabase/baseline docs/inventory; then
             echo "::error::A migration changed the schema. Run: REPLAY_HOOK='python3 scripts/db/inventory.py' scripts/db/replay-migrations.sh and commit the result."
+            exit 1
+          fi
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - name: Generated database types are up to date
+        run: |
+          scripts/db/gen-types.sh
+          if ! git diff --exit-code -- src/integrations/supabase/types.ts; then
+            echo "::error::A migration changed the database types. Run scripts/db/gen-types.sh and commit the result."
             exit 1
           fi
 

@@ -10,7 +10,11 @@ export function UpdatePrompt() {
     let shown = false;
     const check = async () => {
       if (shown || document.visibilityState !== "visible") return;
-      try { if (sessionStorage.getItem(DISMISS_KEY)) return; } catch { /* storage unavailable */ }
+      try {
+        if (sessionStorage.getItem(DISMISS_KEY)) return;
+      } catch {
+        /* storage unavailable */
+      }
       try {
         const res = await fetch("/api/public/version", { cache: "no-store" });
         if (!res.ok) return;
@@ -22,12 +26,22 @@ export function UpdatePrompt() {
           duration: Infinity,
           closeButton: true,
           action: { label: "Refresh", onClick: () => window.location.reload() },
-          onDismiss: () => { try { sessionStorage.setItem(DISMISS_KEY, "1"); } catch { /* ignore */ } },
+          onDismiss: () => {
+            try {
+              sessionStorage.setItem(DISMISS_KEY, "1");
+            } catch {
+              /* ignore */
+            }
+          },
         });
-      } catch { /* offline — try next time */ }
+      } catch {
+        /* offline — try next time */
+      }
     };
     void check();
-    const onVis = () => { void check(); };
+    const onVis = () => {
+      void check();
+    };
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
   }, []);
