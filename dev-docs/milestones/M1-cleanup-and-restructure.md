@@ -29,22 +29,24 @@ After M1 the codebase has one path per feature and is ready for the new engine.
 | M1-11 | Mine retired content into a seed file | S |
 | M1-12 | Contrast & readability fixes (beta notes) | S |
 
-## Status (Oct 22, 2026)
+## Status (Oct 23, 2026)
 
 | ID | State | What's done · what's left |
 |---|---|---|
 | M1-01 | ✅ | `trips.rules_version` (2 = current, 1 = archived), one `<table>_archive_guard` trigger on every trip table, admin-only `archive_legacy_trips` / `set_trip_archived` (logged), read-only `ArchivedTrip` view, 23 pgTAP assertions. Nothing is archived yet. **Left (founder):** tell Siam Vibes (`VRFQQM`), then run the cutover with `founder_trips()` to pick the trips to keep. |
 | M1-02 | 🟡 | L1–L5, L7, L9, L11–L14, L16, L18, L21 (readouts), L22 removed from the UI; Play hub placeholders for Daily Card, Game Night Live, Crew Check, Surprise Drops, Postcard Picks. `tsconfig` now has `noUnusedLocals`. **Deferred** (see below): L6 and old At Home pieces, L8, L15, L21 scoring engine, `GamePlanPicker`. |
 | M1-03 | 🟡 | One look: `look.tsx`, `useLook`, the Original branches (codemod), the founder Look screen and `app_settings.look` are gone (11_one_look.test.sql). `src/design/tokens.css` holds the deck palette (`--tj-*`) and all app variables; `docs/BRAND.md` updated. 432 dead selectors removed: `styles.css` 260 → 194 KB (built 360 → 299 KB); signed-out screens pixel-identical. **Left:** CSS < 80 KB comes with the M2/M3 screen rebuilds (what remains is the live look of Home, Play, Journey and Passport); `PhaseBanner`, `AvatarRing`, `FaceCard`, `ScoreStrip` get built with their first screen in M2 instead of shipping unused; the founder's signed-in screenshot check needs the local stack or staging. |
-| M1-04 | ⬜ | |
-| M1-05 | ⬜ | Types are hand-edited until then (`rules_version`, `founder_trips`, removed preview RPCs). |
-| M1-06 | 🟡 | Prettier pass done (own commit, in `.git-blame-ignore-revs`). Feature folders left. |
-| M1-07 | ⬜ | |
+| M1-04 | 🟡 | `src/routes/index.tsx` is gone; its components live in `src/features/*`. Pathless `_shell` layout: tabs are URLs (`/`, `/home`, `/play`, `/trip`, `/me`) and sub-screens are validated search params (`src/features/app-shell/nav.ts`); refresh and back/forward work. Q6 tab bar Home · Play · Trip · Me, crew list inside Trip. Signed-in e2e smoke tests run against a mocked Supabase backend (`e2e/support/mock-backend.ts`). **Left:** `/t/$tripId` trip layout with loaders (needs the M1-05 hooks); optional path URLs for `/me/captain`, `/p/$userId`, `/admin`. |
+| M1-05 | 🟡 | `types.ts` generated from the migrations (`scripts/db/gen-types.sh`, CI checks it is current). Typed `rpc()` / `rpcOn()` in `src/data` (null-tolerant args); the untyped client casts are gone (60 → 5 `as unknown as`). **Left:** lint rule banning the client outside `src/data` / `src/features/auth` (existing imports as suppressions); Query hooks for trips, members and cards, used by the app shell. |
+| M1-06 | 🟡 | Prettier pass done (own commit, in `.git-blame-ignore-revs`). Started `src/features/` (app-shell, auth, admin, trip, points). **Left:** move the rest of `src/components`. |
+| M1-07 | ⬜ | Not started. |
 | M1-08 | 🟡 | 75 public wrappers of retired features revoked from `anon`/`authenticated`, listed in `trip_private.retired_wrappers` (10_retired_wrappers.test.sql). No cron job served only a retired feature. `scripts/db/export-legacy.sh` exports the 52 retired tables to CSV. **Left:** run the export on production (needs M0-02 access) and deliver it; move the tables to `legacy_archive` one release later, after `delete_trip`, `trip_photos` and account deletion stop naming them. |
 | M1-09 | ⬜ | **Needs** a production dump (M0-02) to rehearse on staging. |
 | M1-10 | ✅ | `trips.level`, the trip feature map, preview settings RPCs and the preview row policies are gone; `feature_on` / `require_feature` / `in_slice` are constants for older callers only. `FeatureGate` deleted; `src/lib/flags.ts` holds environment flags (`VITE_FEATURE_MAP`). Test Lab had no preview-level mode (its role views stay). |
 | M1-11 | ✅ | `supabase/seed/content_candidates.csv` (2,938 rows). **Left (founder):** review and tag. |
-| M1-12 | ⬜ | |
+| M1-12 | ⬜ | Not started. |
+
+**Environment note:** the cloud sessions can't run `supabase start` (the network policy blocks the Docker registries), so signed-in flows are checked with the mocked backend; CI's `supabase` job runs the real stack.
 
 **Kept for now, on purpose** (each removed by the milestone that replaces it):
 - **L15 Inspiration / culture cards:** still the only way to create Explore a Culture and Show Your Culture rooms. Until the M2-05 setup wizard.
