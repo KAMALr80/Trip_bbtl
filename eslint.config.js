@@ -11,6 +11,9 @@ const serverOnly = {
     "TanStack Start does not use the Next.js `server-only` package. Rename the module to `*.server.ts` or mark it with `@tanstack/react-start/server-only`.",
 };
 
+const copyMessage =
+  'Put user-facing copy in src/i18n/en.json and read it with t() (`useT()` from "@/i18n").';
+
 export default tseslint.config(
   { ignores: ["dist", ".output", ".vinxi"] },
   {
@@ -47,6 +50,24 @@ export default tseslint.config(
               message: "Use the typed calls and Query hooks in src/data instead.",
             },
           ],
+        },
+      ],
+    },
+  },
+  // M1-07: user-facing copy lives in src/i18n/en.json and is read with t(). Text written straight
+  // into JSX (or into aria-label, placeholder, title, alt) fails; older copy is listed in
+  // eslint-suppressions.json and moves to the catalog as screens are rebuilt.
+  {
+    files: ["src/**/*.tsx"],
+    ignores: ["src/components/ui/**"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        { selector: "JSXText[value=/[A-Za-z]{2,}/]", message: copyMessage },
+        {
+          selector:
+            "JSXAttribute[name.name=/^(aria-label|placeholder|title|alt)$/] > Literal[value=/[A-Za-z]{2,}/]",
+          message: copyMessage,
         },
       ],
     },

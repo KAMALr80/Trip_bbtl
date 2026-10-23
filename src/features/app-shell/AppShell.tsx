@@ -34,6 +34,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
+import { useT } from "@/i18n";
 
 import { JoinRoomCard } from "@/features/trip/InvitePreview";
 import { setViewerZone, deviceZone } from "@/lib/viewer-time";
@@ -95,6 +96,7 @@ const noMembers: Member[] = [];
 const noCards: PlayerWithAvatar[] = [];
 
 export function AppShell() {
+  const t = useT();
   const { user, profile, loading, refreshProfile } = useAuth();
   const [splashReady, setSplashReady] = useState(false);
   const [splashTimedOut, setSplashTimedOut] = useState(false);
@@ -978,7 +980,7 @@ export function AppShell() {
       )}
       <nav
         className="night-nav fixed inset-x-0 mx-auto w-[calc(100%-24px)] max-w-[488px] z-20 bg-nav px-2 py-1.5 flex items-center justify-between"
-        aria-label="Main navigation"
+        aria-label={t("nav.label")}
       >
         {tabs.map(({ name, icon: Icon }) => (
           <Button
@@ -995,12 +997,12 @@ export function AppShell() {
                 setWelcomeStoryReturn(false);
                 window.scrollTo({ top: 0, behavior: "instant" });
               }}
-              aria-label={name}
+              aria-label={t(`nav.${name}`)}
               aria-current={tab === name ? "page" : undefined}
               onPointerDown={(e) => e.currentTarget.blur()}
             >
               <Icon size={20} strokeWidth={tab === name ? 2.7 : 2} className="!size-5" />
-              {name}
+              {t(`nav.${name}`)}
             </Link>
           </Button>
         ))}

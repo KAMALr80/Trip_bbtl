@@ -46,6 +46,7 @@ function retry(error: unknown, fallback: () => void) {
 
 import appCss from "../styles.css?url";
 import { reportClientError } from "../lib/error-reporting";
+import { i18n } from "@/i18n";
 
 function NotFoundComponent() {
   return (
@@ -219,7 +220,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang={i18n.language}>
       <head>
         <script
           dangerouslySetInnerHTML={{

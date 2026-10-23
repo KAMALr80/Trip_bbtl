@@ -1,0 +1,76 @@
+{
+  "nav": {
+    "label": "Main navigation",
+    "Home": "Home",
+    "Play": "Play",
+    "Trip": "Trip",
+    "Me": "Me"
+  },
+  "common": {
+    "back": "Back",
+    "gotIt": "Got it",
+    "oneSec": "One sec...",
+    "supportEmail": "support@tripjunkies.app"
+  },
+  "explorePrompt": {
+    "title": "Explore the app ✨",
+    "open": "See the tour"
+  },
+  "auth": {
+    "heroAlt": "Five diverse friends cheering over a tropical coastal town at sunset",
+    "hook": "Think you can out-travel your crew?",
+    "google": "Continue with Google",
+    "emailButton": "Sign in with email",
+    "lookAround": "Take a look around ›",
+    "ourStory": "Our story ›",
+    "needHand": "Need a hand?",
+    "formLabel": {
+      "reset": "Reset your password",
+      "signup": "Sign up with email",
+      "signin": "Sign in with email"
+    },
+    "title": {
+      "reset": "Reset your password",
+      "signup": "Join the squad",
+      "signin": "Welcome back"
+    },
+    "email": "Email address",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "birthday": "Birthday",
+    "birthdayHint": "Saved once. Contact support to correct it later. Ages 13 and up can sign up; 13–17 join a trip with their Captain's code and approval.",
+    "signup": "Sign up",
+    "login": "Log in",
+    "forgot": "Forgot password?",
+    "toSignup": "New here? Sign up",
+    "toSignin": "Already have an account? Log in",
+    "sendReset": "Send reset link",
+    "backToLogin": "Back to Log in",
+    "resetSent": "If an account uses that email, a reset link is on its way. Check your inbox.",
+    "error": {
+      "birthday": "Check your birthday.",
+      "tooYoung": "Family Mode is coming soon. TripJunkies accounts are for ages 13 and up.",
+      "generic": "Oops, that didn't work: {{reason}}",
+      "google": "Google sign-in didn't work: {{reason}}. You can also use email below.",
+      "googlePopup": "Google sign-in didn't work: {{reason}}. Pop-ups may be blocked — try again or use email below.",
+      "tryAgain": "please try again"
+    },
+    "revealEmail": "Reveal email",
+    "hideEmail": "Hide email"
+  },
+  "verify": {
+    "title": "Check your email",
+    "sentTo": "We sent a 6-digit code to",
+    "codeLabel": "6-digit code",
+    "digit": "Digit {{n}}",
+    "checking": "Checking… ✨",
+    "expired": "That code expired ⏰ Tap Resend for a fresh one.",
+    "mismatch": "Hmm, that code doesn't match 🙈 Double-check it and try again.",
+    "resendFailed": "Couldn't resend just yet: {{reason}}",
+    "resent": "Fresh code on its way 💌",
+    "resendIn": "Resend code in {{seconds}}s",
+    "resend": "Resend code",
+    "spam": "Can't find it? Peek in spam or promotions."
+  }
+}
