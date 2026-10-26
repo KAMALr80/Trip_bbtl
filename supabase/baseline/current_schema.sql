@@ -616,6 +616,16 @@ CREATE FUNCTION public.create_trip_play_mode_v3(p_name text, p_destination text,
 
 
 --
+-- Name: create_trip_v2(jsonb); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.create_trip_v2(p_setup jsonb) RETURNS uuid
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.create_trip_v2(p_setup) $$;
+
+
+--
 -- Name: create_window_play_mode(text, text, text, text, text, date, integer, text, text[], integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -837,6 +847,16 @@ CREATE FUNCTION public.delete_trip(p_trip uuid, p_name text) RETURNS void
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.delete_trip(p_trip,p_name) $$;
+
+
+--
+-- Name: discard_trip_draft(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.discard_trip_draft() RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.discard_trip_draft() $$;
 
 
 --
@@ -2205,6 +2225,16 @@ CREATE FUNCTION public.save_teams(p_trip uuid, p_teams jsonb) RETURNS void
 
 
 --
+-- Name: save_trip_draft(jsonb); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.save_trip_draft(p_data jsonb) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.save_trip_draft(p_data) $$;
+
+
+--
 -- Name: sealed_proof_feed(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2397,6 +2427,16 @@ CREATE FUNCTION public.set_boarding_tile(p_tile text) RETURNS void
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.set_boarding_tile(p_tile) $$;
+
+
+--
+-- Name: set_call_nights(uuid, jsonb); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_call_nights(p_trip uuid, p_nights jsonb) RETURNS integer
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.set_call_nights(p_trip, p_nights) $$;
 
 
 --
@@ -4810,6 +4850,102 @@ END $_$;
 
 
 --
+-- Name: create_trip_v2(jsonb); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.create_trip_v2(p_setup jsonb) RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE
+  s jsonb := coalesce(p_setup, '{}');
+  v_room text := s->>'room';
+  r jsonb := trip_private.room_rules(s->>'room');
+  v_mode text := coalesce(s->>'playMode', 'crew');
+  v_home text := btrim(coalesce(s->>'homeTz', ''));
+  v_trip_tz text;
+  v_start date;
+  v_end date;
+  v_today date;
+  v_crowning timestamptz;
+  v_vibe text := coalesce(s->>'vibe', 'chill');
+  v_minors boolean := coalesce((s->>'hasMinors')::boolean, false);
+  v_id uuid;
+  v_season record;
+  v_zone text;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  IF coalesce(trip_private.age_of(auth.uid()), 0) < 21 THEN RAISE EXCEPTION 'Captains are 21+. Ask your crew''s Captain to invite you.'; END IF;
+  IF NOT trip_private.has_beta_access() THEN RAISE EXCEPTION 'TripJunkies is invite-only during the private beta'; END IF;
+  IF r IS NULL THEN RAISE EXCEPTION 'Choose a room'; END IF;
+  IF NOT (r->'modes') ? v_mode THEN RAISE EXCEPTION 'Choose who''s playing'; END IF;
+  IF length(btrim(coalesce(s->>'name', ''))) NOT BETWEEN 1 AND 100 THEN RAISE EXCEPTION 'Give your trip a name'; END IF;
+  IF length(btrim(coalesce(s->>'destination', ''))) NOT BETWEEN 1 AND 120 THEN RAISE EXCEPTION 'Choose where you''re going'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_timezone_names WHERE name = v_home) THEN RAISE EXCEPTION 'Check your home time zone'; END IF;
+  v_trip_tz := CASE WHEN (r->>'atHome')::boolean THEN v_home ELSE coalesce(nullif(btrim(s->>'tripTz'), ''), v_home) END;
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_timezone_names WHERE name = v_trip_tz) THEN RAISE EXCEPTION 'Check the trip time zone'; END IF;
+  BEGIN
+    v_start := (s->>'startDate')::date;
+    v_end := (s->>'endDate')::date;
+    v_crowning := (s->>'crowningAt')::timestamptz;
+  EXCEPTION WHEN others THEN RAISE EXCEPTION 'Check your dates';
+  END;
+  IF v_start IS NULL OR v_end IS NULL OR v_end < v_start THEN RAISE EXCEPTION 'Tap your first and last day'; END IF;
+  v_today := (now() AT TIME ZONE v_home)::date;
+  IF v_end < v_today OR v_start > v_today + 365 THEN RAISE EXCEPTION 'Choose dates that are still ahead of you (within a year)'; END IF;
+  -- At home, Home Missions are the day before, so the room is made at least a day ahead; same-day
+  -- plans use the one-night Game Night (R-110).
+  IF (r->>'takeoff') = 'home_missions' AND v_start <= v_today THEN
+    RAISE EXCEPTION 'At-home experiences start tomorrow at the earliest. For tonight, start a Game Night.';
+  END IF;
+  IF v_vibe NOT IN ('family', 'chill', 'party') THEN RAISE EXCEPTION 'Choose a vibe'; END IF;
+  IF v_minors AND v_vibe = 'party' THEN RAISE EXCEPTION 'Trips with players under 18 can''t use the party vibe'; END IF;
+  IF (r->>'pointsEnabled')::boolean AND v_crowning IS NULL THEN
+    RAISE EXCEPTION 'Pick the % (date and time)', lower(r->>'crowningLabel');
+  END IF;
+
+  INSERT INTO public.trips (
+    name, destination, start_date, end_date, home_timezone, trip_timezone, join_code,
+    room, play_mode, preflight_days, preflight_skipped, cultures, focuses,
+    passport_country, passport_state, passport_city, dest_lat, dest_lng, dest_place_id,
+    vibe, has_minors, crowning_at, crowning_place, crowning_call_link, max_squad,
+    join_code_enabled, setup_completed_at,
+    -- read by the screens that predate the engine (replaced in M2-09 / M3)
+    kind, play_arrangement, season_rule)
+  VALUES (
+    btrim(s->>'name'), btrim(s->>'destination'), v_start, v_end, v_home, v_trip_tz, public.new_trip_code(),
+    v_room, v_mode, coalesce((s->>'preflightDays')::int, 0), coalesce((s->>'preflightSkipped')::boolean, false),
+    coalesce(ARRAY(SELECT jsonb_array_elements_text(s->'cultures')), '{}'),
+    coalesce(ARRAY(SELECT jsonb_array_elements_text(s->'focuses')), '{}'),
+    nullif(upper(btrim(s->>'country')), ''), nullif(btrim(s->>'state'), ''), nullif(btrim(s->>'city'), ''),
+    (s->>'lat')::double precision, (s->>'lng')::double precision, nullif(btrim(s->>'placeId'), ''),
+    v_vibe, v_minors, v_crowning, nullif(btrim(s->>'crowningPlace'), ''), nullif(btrim(s->>'crowningCallLink'), ''),
+    greatest(2, (r->>'maxCrew')::int), v_mode = 'crew', NULL,
+    CASE WHEN (r->>'atHome')::boolean THEN 'at_home' ELSE 'trip' END,
+    CASE v_mode WHEN 'crew' THEN 'online' ELSE v_mode END, 'a2c')
+  RETURNING id INTO v_id;
+  INSERT INTO public.trip_members (trip_id, user_id, role, status, approved_at)
+  VALUES (v_id, auth.uid(), 'captain', 'approved', now());
+
+  -- The crowning / finale night falls inside Trip Season's days (R-205).
+  IF v_crowning IS NOT NULL THEN
+    SELECT * INTO v_season FROM trip_private.trip_phase_windows(v_id) x WHERE x.phase = 'trip_season';
+    v_zone := v_season.tz;
+    IF (v_crowning AT TIME ZONE v_zone)::date NOT BETWEEN v_start AND v_end THEN
+      RAISE EXCEPTION 'The % has to be on one of the trip days', lower(r->>'crowningLabel');
+    END IF;
+  END IF;
+
+  IF jsonb_array_length(coalesce(s->'callNights', '[]')) > 0 THEN
+    PERFORM trip_private.set_call_nights(v_id, s->'callNights');
+  END IF;
+  UPDATE public.trips SET setup_completed_at = now() WHERE id = v_id;  -- plans the schedule
+  DELETE FROM public.trip_drafts WHERE user_id = auth.uid();
+  RETURN v_id;
+END $$;
+
+
+--
 -- Name: create_window_play_mode(text, text, text, text, text, date, integer, text, text[], integer); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -5418,6 +5554,44 @@ CREATE FUNCTION trip_private.delete_trip(p_trip uuid, p_name text) RETURNS void
  INSERT INTO public.trip_deletion_log(trip_id,trip_name,captain_id,member_count) VALUES(p_trip,t.name,auth.uid(),n);
  DELETE FROM public.trips WHERE id=p_trip;
 END $$;
+
+
+--
+-- Name: desired_schedule(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.desired_schedule(p_trip uuid) RETURNS TABLE(kind text, slot text, day date, opens_at timestamp with time zone, closes_at timestamp with time zone, ref_id uuid)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT 'phase', w.phase, (w.starts_at AT TIME ZONE w.tz)::date, w.starts_at, w.ends_at, NULL::uuid
+  FROM trip_private.trip_phase_windows(p_trip) w
+  WHERE w.ends_at > w.starts_at
+  UNION ALL
+  SELECT 'call_night', c.id::text, (c.starts_at AT TIME ZONE t.home_timezone)::date, c.starts_at,
+         c.starts_at + interval '3 hours', c.id
+  FROM public.call_nights c JOIN public.trips t ON t.id = c.trip_id
+  WHERE c.trip_id = p_trip
+  UNION ALL
+  SELECT 'crowning', '', (t.crowning_at AT TIME ZONE
+           CASE WHEN (trip_private.room_rules(t.room)->>'atHome')::boolean THEN t.home_timezone
+                ELSE coalesce(t.trip_timezone, t.home_timezone) END)::date,
+         t.crowning_at, t.crowning_at + interval '4 hours', NULL::uuid
+  FROM public.trips t
+  WHERE t.id = p_trip AND t.crowning_at IS NOT NULL
+$$;
+
+
+--
+-- Name: discard_trip_draft(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.discard_trip_draft() RETURNS void
+    LANGUAGE sql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  DELETE FROM public.trip_drafts WHERE user_id = auth.uid();
+$$;
 
 
 --
@@ -8176,9 +8350,47 @@ CREATE FUNCTION trip_private.phase_at(p_room text, p_start date, p_end date, p_p
     LANGUAGE plpgsql STABLE
     SET search_path TO ''
     AS $$
+DECLARE w record; v_first timestamptz; v_last timestamptz;
+BEGIN
+  IF trip_private.room_rules(p_room) IS NULL THEN RAISE EXCEPTION 'Unknown room %', p_room; END IF;
+  IF NOT p_setup_complete THEN
+    RETURN QUERY SELECT 'setup'::text, NULL::timestamptz, NULL::timestamptz, p_home_tz, NULL::int;
+    RETURN;
+  END IF;
+  FOR w IN SELECT * FROM trip_private.phase_windows(p_room, p_start, p_end, p_preflight_days,
+                                                    p_preflight_skipped, p_home_tz, p_trip_tz, p_arrived_at) LOOP
+    v_last := w.ends_at;
+    CONTINUE WHEN w.ends_at <= w.starts_at;  -- empty phase (Skip, 0 days, a one-day trip)
+    IF v_first IS NULL THEN
+      v_first := w.starts_at;
+      IF p_at < v_first THEN
+        RETURN QUERY SELECT 'upcoming'::text, NULL::timestamptz, v_first, p_home_tz, NULL::int;
+        RETURN;
+      END IF;
+    END IF;
+    IF p_at >= w.starts_at AND p_at < w.ends_at THEN
+      RETURN QUERY SELECT w.phase, w.starts_at, w.ends_at, w.tz,
+        CASE WHEN w.phase = 'baggage_claim'  -- counted from the day after the trip, home time
+          THEN greatest(1, (p_at AT TIME ZONE p_home_tz)::date - p_end)
+          ELSE (p_at AT TIME ZONE w.tz)::date - (w.starts_at AT TIME ZONE w.tz)::date + 1 END;
+      RETURN;
+    END IF;
+  END LOOP;
+  RETURN QUERY SELECT 'archived'::text, v_last, NULL::timestamptz, p_home_tz, NULL::int;
+END
+$$;
+
+
+--
+-- Name: phase_windows(text, date, date, integer, boolean, text, text, timestamp with time zone); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.phase_windows(p_room text, p_start date, p_end date, p_preflight_days integer, p_preflight_skipped boolean, p_home_tz text, p_trip_tz text, p_arrived_at timestamp with time zone) RETURNS TABLE(phase text, starts_at timestamp with time zone, ends_at timestamp with time zone, tz text)
+    LANGUAGE plpgsql STABLE
+    SET search_path TO ''
+    AS $$
 DECLARE
   r jsonb := trip_private.room_rules(p_room);
-  v_at_home boolean;
   v_away text;
   v_pre int := CASE WHEN p_preflight_skipped THEN 0 ELSE greatest(0, coalesce(p_preflight_days, 0)) END;
   v_takeoff_day date;
@@ -8186,62 +8398,34 @@ DECLARE
   v_season_start timestamptz;
   v_season_end timestamptz;
   v_backup timestamptz;
-  s timestamptz[];
-  e timestamptz[];
-  zones text[];
-  names text[] := ARRAY['preflight', 'takeoff', 'trip_season', 'baggage_claim'];
-  i int;
 BEGIN
   IF r IS NULL THEN RAISE EXCEPTION 'Unknown room %', p_room; END IF;
-  IF NOT p_setup_complete THEN
-    RETURN QUERY SELECT 'setup'::text, NULL::timestamptz, NULL::timestamptz, p_home_tz, NULL::int;
-    RETURN;
-  END IF;
-  v_at_home := (r->>'atHome')::boolean;
-  v_away := CASE WHEN v_at_home THEN p_home_tz ELSE coalesce(p_trip_tz, p_home_tz) END;
-
-  IF v_at_home THEN
+  IF (r->>'atHome')::boolean THEN
     -- Home time only; Takeoff = Home Missions the day before; Trip Season = experience days.
     v_takeoff_day := CASE WHEN r->>'takeoff' = 'none' THEN p_start ELSE p_start - 1 END;
     v_takeoff_start := v_takeoff_day::timestamp AT TIME ZONE p_home_tz;
     v_season_start := p_start::timestamp AT TIME ZONE p_home_tz;
     v_season_end := (p_end + 1)::timestamp AT TIME ZONE p_home_tz;
-    s := ARRAY[(v_takeoff_day - v_pre)::timestamp AT TIME ZONE p_home_tz, v_takeoff_start, v_season_start, v_season_end];
-    e := ARRAY[v_takeoff_start, v_season_start, v_season_end, (p_end + 8)::timestamp AT TIME ZONE p_home_tz];
-    zones := ARRAY[p_home_tz, p_home_tz, p_home_tz, p_home_tz];
-  ELSE
-    -- Home time until arrival; Trip Season from the tap or the backup (23:59 trip time, next night).
-    v_takeoff_start := p_start::timestamp AT TIME ZONE p_home_tz;
-    v_season_end := (p_end + 1)::timestamp AT TIME ZONE v_away;
-    v_backup := ((p_start + 1) + time '23:59') AT TIME ZONE v_away;
-    v_season_start := CASE WHEN p_arrived_at IS NULL THEN v_backup ELSE least(p_arrived_at, v_backup) END;
-    v_season_start := least(greatest(v_season_start, v_takeoff_start), greatest(v_season_end, v_takeoff_start));
-    s := ARRAY[(p_start - v_pre)::timestamp AT TIME ZONE p_home_tz, v_takeoff_start, v_season_start,
-               greatest(v_season_end, v_season_start)];
-    e := ARRAY[v_takeoff_start, v_season_start, greatest(v_season_end, v_season_start),
-               greatest((p_end + 8)::timestamp AT TIME ZONE p_home_tz, v_season_end)];
-    zones := ARRAY[p_home_tz, p_home_tz, v_away, p_home_tz];
+    RETURN QUERY VALUES
+      ('preflight', (v_takeoff_day - v_pre)::timestamp AT TIME ZONE p_home_tz, v_takeoff_start, p_home_tz),
+      ('takeoff', v_takeoff_start, v_season_start, p_home_tz),
+      ('trip_season', v_season_start, v_season_end, p_home_tz),
+      ('baggage_claim', v_season_end, (p_end + 8)::timestamp AT TIME ZONE p_home_tz, p_home_tz);
+    RETURN;
   END IF;
-
-  FOR i IN 1..4 LOOP
-    IF e[i] > s[i] THEN
-      IF p_at < s[i] THEN
-        RETURN QUERY SELECT 'upcoming'::text, NULL::timestamptz, s[i], p_home_tz, NULL::int;
-        RETURN;
-      END IF;
-      EXIT;
-    END IF;
-  END LOOP;
-  FOR i IN 1..4 LOOP
-    IF e[i] > s[i] AND p_at >= s[i] AND p_at < e[i] THEN
-      RETURN QUERY SELECT names[i], s[i], e[i], zones[i],
-        CASE WHEN i = 4  -- Baggage Claim days count from the day after the trip, in home time
-          THEN greatest(1, (p_at AT TIME ZONE p_home_tz)::date - p_end)
-          ELSE (p_at AT TIME ZONE zones[i])::date - (s[i] AT TIME ZONE zones[i])::date + 1 END;
-      RETURN;
-    END IF;
-  END LOOP;
-  RETURN QUERY SELECT 'archived'::text, e[4], NULL::timestamptz, p_home_tz, NULL::int;
+  -- Home time until arrival; Trip Season from the tap or the backup (23:59 trip time, next night).
+  v_away := coalesce(p_trip_tz, p_home_tz);
+  v_takeoff_start := p_start::timestamp AT TIME ZONE p_home_tz;
+  v_season_end := (p_end + 1)::timestamp AT TIME ZONE v_away;
+  v_backup := ((p_start + 1) + time '23:59') AT TIME ZONE v_away;
+  v_season_start := CASE WHEN p_arrived_at IS NULL THEN v_backup ELSE least(p_arrived_at, v_backup) END;
+  v_season_start := least(greatest(v_season_start, v_takeoff_start), greatest(v_season_end, v_takeoff_start));
+  RETURN QUERY VALUES
+    ('preflight', (p_start - v_pre)::timestamp AT TIME ZONE p_home_tz, v_takeoff_start, p_home_tz),
+    ('takeoff', v_takeoff_start, v_season_start, p_home_tz),
+    ('trip_season', v_season_start, greatest(v_season_end, v_season_start), v_away),
+    ('baggage_claim', greatest(v_season_end, v_season_start),
+      greatest((p_end + 8)::timestamp AT TIME ZONE p_home_tz, v_season_end), p_home_tz);
 END
 $$;
 
@@ -8444,6 +8628,36 @@ IF p_count IS NOT NULL THEN v_max := greatest(0, least(v_max, p_count)); END IF;
 WHILE i < v_max AND v_local::date < t.start_date LOOP
   i := i+1; n := i; starts_at := v_local AT TIME ZONE t.home_timezone; RETURN NEXT; v_local := v_local + v_gap;
 END LOOP; END $$;
+
+
+--
+-- Name: plan_trip(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.plan_trip(p_trip uuid) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_now timestamptz := now();
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.trips WHERE id = p_trip AND rules_version = 2 AND setup_completed_at IS NOT NULL) THEN
+    RETURN;
+  END IF;
+  -- Items that no longer exist and haven't opened yet go; anything that has opened stays.
+  DELETE FROM public.trip_schedule s
+  WHERE s.trip_id = p_trip AND s.kind IN ('phase', 'call_night', 'crowning') AND s.user_id IS NULL
+    AND s.opens_at > v_now
+    AND NOT EXISTS (SELECT 1 FROM trip_private.desired_schedule(p_trip) d WHERE d.kind = s.kind AND d.slot = s.slot);
+  -- Add new items; move items that haven't finished yet.
+  INSERT INTO public.trip_schedule AS s (trip_id, kind, slot, day, opens_at, closes_at, ref_id)
+  SELECT p_trip, d.kind, d.slot, d.day, d.opens_at, d.closes_at, d.ref_id FROM trip_private.desired_schedule(p_trip) d
+  ON CONFLICT (trip_id, kind, slot, user_id) DO UPDATE
+    SET day = excluded.day, opens_at = excluded.opens_at, closes_at = excluded.closes_at,
+        ref_id = excluded.ref_id, updated_at = v_now
+    WHERE (s.closes_at IS NULL OR s.closes_at > v_now)
+      AND (s.day, s.opens_at, s.closes_at, s.ref_id) IS DISTINCT FROM (excluded.day, excluded.opens_at, excluded.closes_at, excluded.ref_id);
+END
+$$;
 
 
 --
@@ -9181,6 +9395,26 @@ END $$;
 
 
 --
+-- Name: replan_trip(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.replan_trip() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF TG_TABLE_NAME = 'trips' THEN
+    PERFORM trip_private.plan_trip(NEW.id);
+  ELSIF TG_OP = 'DELETE' THEN
+    PERFORM trip_private.plan_trip(OLD.trip_id);
+  ELSE
+    PERFORM trip_private.plan_trip(NEW.trip_id);
+  END IF;
+  RETURN NULL;
+END $$;
+
+
+--
 -- Name: report_cost_payment(uuid, bigint, text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -9672,6 +9906,21 @@ FOR t IN SELECT * FROM jsonb_array_elements(coalesce(p_teams,'[]'::jsonb)) LOOP
     IF EXISTS (SELECT 1 FROM public.trip_members WHERE trip_id=p_trip AND user_id=u::uuid) THEN
       INSERT INTO public.trip_team_members(trip_id, user_id, team_id) VALUES (p_trip, u::uuid, tid) ON CONFLICT (trip_id, user_id) DO UPDATE SET team_id=EXCLUDED.team_id; END IF;
   END LOOP; END LOOP; END $$;
+
+
+--
+-- Name: save_trip_draft(jsonb); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.save_trip_draft(p_data jsonb) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  INSERT INTO public.trip_drafts (user_id, data) VALUES (auth.uid(), p_data)
+  ON CONFLICT (user_id) DO UPDATE SET data = excluded.data, updated_at = now();
+END $$;
 
 
 --
@@ -10254,6 +10503,39 @@ CREATE FUNCTION trip_private.set_boarding_tile(p_tile text) RETURNS void
   IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Founder only'; END IF;
   IF p_tile NOT IN ('current','a','b') THEN RAISE EXCEPTION 'Pick A, B or current'; END IF;
   UPDATE public.app_settings SET boarding_tile=p_tile WHERE id;
+END $$;
+
+
+--
+-- Name: set_call_nights(uuid, jsonb); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_call_nights(p_trip uuid, p_nights jsonb) RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE n jsonb; v_at timestamptz; w record; v_count int := 0;
+BEGIN
+  IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can set call nights'; END IF;
+  IF jsonb_typeof(coalesce(p_nights, '[]')) <> 'array' THEN RAISE EXCEPTION 'Check the call nights'; END IF;
+  SELECT * INTO w FROM trip_private.trip_phase_windows(p_trip) x WHERE x.phase = 'preflight';
+  DELETE FROM public.call_nights WHERE trip_id = p_trip AND starts_at > now();
+  FOR n IN SELECT * FROM jsonb_array_elements(coalesce(p_nights, '[]')) LOOP
+    BEGIN
+      v_at := (n->>'startsAt')::timestamptz;
+    EXCEPTION WHEN others THEN RAISE EXCEPTION 'Pick a date and time for each call night';
+    END;
+    IF v_at IS NULL THEN RAISE EXCEPTION 'Pick a date and time for each call night'; END IF;
+    CONTINUE WHEN v_at <= now() AND EXISTS (SELECT 1 FROM public.call_nights WHERE trip_id = p_trip AND starts_at = v_at);
+    IF v_at <= now() THEN RAISE EXCEPTION 'Call nights need to be in the future'; END IF;
+    IF w.ends_at <= w.starts_at OR v_at < w.starts_at OR v_at >= w.ends_at THEN
+      RAISE EXCEPTION 'Call nights happen during Pre-Flight, before takeoff day' USING ERRCODE = '22023';
+    END IF;
+    INSERT INTO public.call_nights (trip_id, starts_at, call_link, second_link, created_by)
+    VALUES (p_trip, v_at, nullif(btrim(n->>'callLink'), ''), nullif(btrim(n->>'secondLink'), ''), auth.uid());
+    v_count := v_count + 1;
+  END LOOP;
+  RETURN v_count;
 END $$;
 
 
@@ -11599,6 +11881,21 @@ CREATE FUNCTION trip_private.trip_phase(p_trip uuid, p_at timestamp with time zo
   CROSS JOIN LATERAL trip_private.phase_at(t.room, t.start_date, t.end_date, t.preflight_days,
     t.preflight_skipped, t.home_timezone, t.trip_timezone, t.arrived_at,
     t.setup_completed_at IS NOT NULL, p_at) p
+  WHERE t.id = p_trip
+$$;
+
+
+--
+-- Name: trip_phase_windows(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.trip_phase_windows(p_trip uuid) RETURNS TABLE(phase text, starts_at timestamp with time zone, ends_at timestamp with time zone, tz text)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT w.* FROM public.trips t
+  CROSS JOIN LATERAL trip_private.phase_windows(t.room, t.start_date, t.end_date, t.preflight_days,
+    t.preflight_skipped, t.home_timezone, t.trip_timezone, t.arrived_at) w
   WHERE t.id = p_trip
 $$;
 
@@ -13902,6 +14199,18 @@ CREATE TABLE public.trip_deletion_notes (
 
 
 --
+-- Name: trip_drafts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.trip_drafts (
+    user_id uuid NOT NULL,
+    data jsonb NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT trip_drafts_data_check CHECK (((jsonb_typeof(data) = 'object'::text) AND (pg_column_size(data) <= 20000) AND (NOT (data ? 'offlineNames'::text))))
+);
+
+
+--
 -- Name: trip_feedback; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -14068,6 +14377,30 @@ CREATE TABLE public.trip_role_changes (
     reason text NOT NULL,
     actor uuid,
     created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: trip_schedule; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.trip_schedule (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    trip_id uuid NOT NULL,
+    kind text NOT NULL,
+    slot text DEFAULT ''::text NOT NULL,
+    user_id uuid,
+    day date,
+    opens_at timestamp with time zone NOT NULL,
+    closes_at timestamp with time zone,
+    ref_id uuid,
+    content_item_id uuid,
+    tailored_text text,
+    points integer,
+    revealed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT trip_schedule_kind_check CHECK ((kind = ANY (ARRAY['phase'::text, 'call_night'::text, 'crowning'::text])))
 );
 
 
@@ -15734,6 +16067,14 @@ ALTER TABLE ONLY public.trip_deletion_notes
 
 
 --
+-- Name: trip_drafts trip_drafts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trip_drafts
+    ADD CONSTRAINT trip_drafts_pkey PRIMARY KEY (user_id);
+
+
+--
 -- Name: trip_feedback trip_feedback_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -15803,6 +16144,22 @@ ALTER TABLE ONLY public.trip_player_cards
 
 ALTER TABLE ONLY public.trip_role_changes
     ADD CONSTRAINT trip_role_changes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: trip_schedule trip_schedule_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trip_schedule
+    ADD CONSTRAINT trip_schedule_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: trip_schedule trip_schedule_trip_id_kind_slot_user_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trip_schedule
+    ADD CONSTRAINT trip_schedule_trip_id_kind_slot_user_id_key UNIQUE NULLS NOT DISTINCT (trip_id, kind, slot, user_id);
 
 
 --
@@ -16238,6 +16595,13 @@ CREATE INDEX trip_role_changes_trip_id_created_at_idx ON public.trip_role_change
 
 
 --
+-- Name: trip_schedule_trip_opens_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX trip_schedule_trip_opens_idx ON public.trip_schedule USING btree (trip_id, opens_at);
+
+
+--
 -- Name: window_guide_items_trip; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -16340,6 +16704,13 @@ CREATE TRIGGER call_nights_archive_guard BEFORE INSERT OR UPDATE ON public.call_
 --
 
 CREATE TRIGGER call_nights_limit BEFORE INSERT ON public.call_nights FOR EACH ROW EXECUTE FUNCTION trip_private.check_call_nights();
+
+
+--
+-- Name: call_nights call_nights_replan; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER call_nights_replan AFTER INSERT OR DELETE OR UPDATE ON public.call_nights FOR EACH ROW EXECUTE FUNCTION trip_private.replan_trip();
 
 
 --
@@ -17435,6 +17806,13 @@ CREATE TRIGGER trip_player_cards_archive_guard BEFORE INSERT OR UPDATE ON public
 
 
 --
+-- Name: trip_schedule trip_schedule_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_schedule_archive_guard BEFORE INSERT OR UPDATE ON public.trip_schedule FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: trip_season_finds trip_season_finds_archive_guard; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -17477,13 +17855,6 @@ CREATE TRIGGER trips_archive_guard BEFORE UPDATE ON public.trips FOR EACH ROW EX
 
 
 --
--- Name: trips trips_check_length; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER trips_check_length BEFORE INSERT OR UPDATE OF start_date, end_date ON public.trips FOR EACH ROW EXECUTE FUNCTION trip_private.check_trip_length();
-
-
---
 -- Name: trips trips_default_game_season; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -17502,6 +17873,13 @@ CREATE TRIGGER trips_minor_guard BEFORE INSERT OR UPDATE OF vibe, has_minors ON 
 --
 
 CREATE TRIGGER trips_opt_in_no_quick_start BEFORE INSERT OR UPDATE OF game_plan, play_arrangement ON public.trips FOR EACH ROW EXECUTE FUNCTION trip_private.prevent_opt_in_quick_start();
+
+
+--
+-- Name: trips trips_replan; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trips_replan AFTER UPDATE OF start_date, end_date, preflight_days, preflight_skipped, home_timezone, trip_timezone, arrived_at, crowning_at, room, setup_completed_at ON public.trips FOR EACH ROW EXECUTE FUNCTION trip_private.replan_trip();
 
 
 --
@@ -18535,6 +18913,14 @@ ALTER TABLE ONLY public.trip_player_cards
 
 ALTER TABLE ONLY public.trip_role_changes
     ADD CONSTRAINT trip_role_changes_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
+-- Name: trip_schedule trip_schedule_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trip_schedule
+    ADD CONSTRAINT trip_schedule_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
 
 
 --
@@ -20192,6 +20578,13 @@ CREATE POLICY "members read call nights" ON public.call_nights FOR SELECT TO aut
 
 
 --
+-- Name: trip_schedule members read the schedule; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "members read the schedule" ON public.trip_schedule FOR SELECT TO authenticated USING ((trip_private.is_trip_member(trip_id, auth.uid()) AND ((user_id IS NULL) OR (user_id = auth.uid()))));
+
+
+--
 -- Name: mission_claims; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -20270,6 +20663,13 @@ ALTER TABLE public.player_private ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.player_profiles ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: trip_drafts players read their own draft; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own draft" ON public.trip_drafts FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
 
 --
 -- Name: postcard_stickers; Type: ROW SECURITY; Schema: public; Owner: -
@@ -20538,6 +20938,12 @@ ALTER TABLE public.trip_deletion_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.trip_deletion_notes ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: trip_drafts; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.trip_drafts ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: trip_feedback; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -20584,6 +20990,12 @@ ALTER TABLE public.trip_player_cards ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.trip_role_changes ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: trip_schedule; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.trip_schedule ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: trip_season_finds; Type: ROW SECURITY; Schema: public; Owner: -
@@ -21198,6 +21610,15 @@ GRANT ALL ON FUNCTION public.create_trip_play_mode_v3(p_name text, p_destination
 
 
 --
+-- Name: FUNCTION create_trip_v2(p_setup jsonb); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.create_trip_v2(p_setup jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.create_trip_v2(p_setup jsonb) TO authenticated;
+GRANT ALL ON FUNCTION public.create_trip_v2(p_setup jsonb) TO service_role;
+
+
+--
 -- Name: FUNCTION create_window_play_mode(p_mode text, p_title text, p_country text, p_region text, p_city text, p_start date, p_days integer, p_vibe text, p_types text[], p_prep integer); Type: ACL; Schema: public; Owner: -
 --
 
@@ -21363,6 +21784,15 @@ GRANT ALL ON FUNCTION public.delete_cost_item(p_item uuid) TO service_role;
 REVOKE ALL ON FUNCTION public.delete_trip(p_trip uuid, p_name text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.delete_trip(p_trip uuid, p_name text) TO authenticated;
 GRANT ALL ON FUNCTION public.delete_trip(p_trip uuid, p_name text) TO service_role;
+
+
+--
+-- Name: FUNCTION discard_trip_draft(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.discard_trip_draft() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.discard_trip_draft() TO authenticated;
+GRANT ALL ON FUNCTION public.discard_trip_draft() TO service_role;
 
 
 --
@@ -22508,6 +22938,15 @@ GRANT ALL ON FUNCTION public.save_teams(p_trip uuid, p_teams jsonb) TO service_r
 
 
 --
+-- Name: FUNCTION save_trip_draft(p_data jsonb); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.save_trip_draft(p_data jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.save_trip_draft(p_data jsonb) TO authenticated;
+GRANT ALL ON FUNCTION public.save_trip_draft(p_data jsonb) TO service_role;
+
+
+--
 -- Name: FUNCTION sealed_proof_feed(p_trip uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -22668,6 +23107,15 @@ GRANT ALL ON FUNCTION public.set_bingo_needs_photo(p_trip uuid, p_required boole
 REVOKE ALL ON FUNCTION public.set_boarding_tile(p_tile text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.set_boarding_tile(p_tile text) TO authenticated;
 GRANT ALL ON FUNCTION public.set_boarding_tile(p_tile text) TO service_role;
+
+
+--
+-- Name: FUNCTION set_call_nights(p_trip uuid, p_nights jsonb); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_call_nights(p_trip uuid, p_nights jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_call_nights(p_trip uuid, p_nights jsonb) TO authenticated;
+GRANT ALL ON FUNCTION public.set_call_nights(p_trip uuid, p_nights jsonb) TO service_role;
 
 
 --
@@ -24119,6 +24567,15 @@ GRANT ALL ON FUNCTION trip_private.create_trip_play_mode_v2(p_name text, p_desti
 
 
 --
+-- Name: FUNCTION create_trip_v2(p_setup jsonb); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.create_trip_v2(p_setup jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.create_trip_v2(p_setup jsonb) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.create_trip_v2(p_setup jsonb) TO service_role;
+
+
+--
 -- Name: FUNCTION create_window_play_mode(p_mode text, p_title text, p_country text, p_region text, p_city text, p_start date, p_days integer, p_vibe text, p_types text[], p_prep integer); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -24354,6 +24811,22 @@ GRANT ALL ON FUNCTION trip_private.delete_cost_item(p_item uuid) TO service_role
 
 REVOKE ALL ON FUNCTION trip_private.delete_trip(p_trip uuid, p_name text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.delete_trip(p_trip uuid, p_name text) TO authenticated;
+
+
+--
+-- Name: FUNCTION desired_schedule(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.desired_schedule(p_trip uuid) FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION discard_trip_draft(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.discard_trip_draft() FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.discard_trip_draft() TO authenticated;
+GRANT ALL ON FUNCTION trip_private.discard_trip_draft() TO service_role;
 
 
 --
@@ -25415,6 +25888,15 @@ GRANT ALL ON FUNCTION trip_private.phase_at(p_room text, p_start date, p_end dat
 
 
 --
+-- Name: FUNCTION phase_windows(p_room text, p_start date, p_end date, p_preflight_days integer, p_preflight_skipped boolean, p_home_tz text, p_trip_tz text, p_arrived_at timestamp with time zone); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.phase_windows(p_room text, p_start date, p_end date, p_preflight_days integer, p_preflight_skipped boolean, p_home_tz text, p_trip_tz text, p_arrived_at timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.phase_windows(p_room text, p_start date, p_end date, p_preflight_days integer, p_preflight_skipped boolean, p_home_tz text, p_trip_tz text, p_arrived_at timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.phase_windows(p_room text, p_start date, p_end date, p_preflight_days integer, p_preflight_skipped boolean, p_home_tz text, p_trip_tz text, p_arrived_at timestamp with time zone) TO service_role;
+
+
+--
 -- Name: FUNCTION photo_quota_ok(p_name text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -25479,6 +25961,14 @@ GRANT ALL ON FUNCTION trip_private.plan_game_nights(p_trip uuid, p_plan text, p_
 
 REVOKE ALL ON FUNCTION trip_private.plan_nights(p_trip uuid, p_first timestamp with time zone, p_every integer, p_count integer) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.plan_nights(p_trip uuid, p_first timestamp with time zone, p_every integer, p_count integer) TO service_role;
+
+
+--
+-- Name: FUNCTION plan_trip(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.plan_trip(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.plan_trip(p_trip uuid) TO service_role;
 
 
 --
@@ -25783,6 +26273,13 @@ REVOKE ALL ON FUNCTION trip_private.render_card(p_trip uuid, p_prompt text) FROM
 
 
 --
+-- Name: FUNCTION replan_trip(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.replan_trip() FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION report_cost_payment(p_item uuid, p_amount_cents bigint, p_note text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -26009,6 +26506,15 @@ GRANT ALL ON FUNCTION trip_private.save_game_scores(p_trip uuid, p_week integer,
 REVOKE ALL ON FUNCTION trip_private.save_teams(p_trip uuid, p_teams jsonb) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.save_teams(p_trip uuid, p_teams jsonb) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.save_teams(p_trip uuid, p_teams jsonb) TO service_role;
+
+
+--
+-- Name: FUNCTION save_trip_draft(p_data jsonb); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.save_trip_draft(p_data jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.save_trip_draft(p_data jsonb) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.save_trip_draft(p_data jsonb) TO service_role;
 
 
 --
@@ -26249,6 +26755,15 @@ GRANT ALL ON FUNCTION trip_private.set_bingo_needs_photo(p_trip uuid, p_required
 REVOKE ALL ON FUNCTION trip_private.set_boarding_tile(p_tile text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.set_boarding_tile(p_tile text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.set_boarding_tile(p_tile text) TO service_role;
+
+
+--
+-- Name: FUNCTION set_call_nights(p_trip uuid, p_nights jsonb); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_call_nights(p_trip uuid, p_nights jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_call_nights(p_trip uuid, p_nights jsonb) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.set_call_nights(p_trip uuid, p_nights jsonb) TO service_role;
 
 
 --
@@ -26828,6 +27343,14 @@ GRANT ALL ON FUNCTION trip_private.trip_peek(p_trip uuid) TO service_role;
 
 REVOKE ALL ON FUNCTION trip_private.trip_phase(p_trip uuid, p_at timestamp with time zone) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.trip_phase(p_trip uuid, p_at timestamp with time zone) TO service_role;
+
+
+--
+-- Name: FUNCTION trip_phase_windows(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.trip_phase_windows(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.trip_phase_windows(p_trip uuid) TO service_role;
 
 
 --
@@ -28204,6 +28727,14 @@ GRANT ALL ON TABLE public.trip_deletion_notes TO service_role;
 
 
 --
+-- Name: TABLE trip_drafts; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.trip_drafts TO service_role;
+GRANT SELECT ON TABLE public.trip_drafts TO authenticated;
+
+
+--
 -- Name: TABLE trip_feedback; Type: ACL; Schema: public; Owner: -
 --
 
@@ -28350,6 +28881,14 @@ GRANT UPDATE(next_year_goal) ON TABLE public.trip_player_cards TO authenticated;
 GRANT ALL ON TABLE public.trip_role_changes TO anon;
 GRANT ALL ON TABLE public.trip_role_changes TO authenticated;
 GRANT ALL ON TABLE public.trip_role_changes TO service_role;
+
+
+--
+-- Name: TABLE trip_schedule; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.trip_schedule TO service_role;
+GRANT SELECT ON TABLE public.trip_schedule TO authenticated;
 
 
 --

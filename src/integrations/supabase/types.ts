@@ -4545,6 +4545,25 @@ export type Database = {
         };
         Relationships: [];
       };
+      trip_drafts: {
+        Row: {
+          data: NonNullable<Json>;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          data: NonNullable<Json>;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          data?: NonNullable<Json>;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       trip_feedback: {
         Row: {
           change_text: string | null;
@@ -4942,6 +4961,69 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "trip_role_changes_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      trip_schedule: {
+        Row: {
+          closes_at: string | null;
+          content_item_id: string | null;
+          created_at: string;
+          day: string | null;
+          id: string;
+          kind: string;
+          opens_at: string;
+          points: number | null;
+          ref_id: string | null;
+          revealed_at: string | null;
+          slot: string;
+          tailored_text: string | null;
+          trip_id: string;
+          updated_at: string;
+          user_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          closes_at?: string | null;
+          content_item_id?: string | null;
+          created_at?: string;
+          day?: string | null;
+          id?: string;
+          kind: string;
+          opens_at: string;
+          points?: number | null;
+          ref_id?: string | null;
+          revealed_at?: string | null;
+          slot?: string;
+          tailored_text?: string | null;
+          trip_id: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          closes_at?: string | null;
+          content_item_id?: string | null;
+          created_at?: string;
+          day?: string | null;
+          id?: string;
+          kind?: string;
+          opens_at?: string;
+          points?: number | null;
+          ref_id?: string | null;
+          revealed_at?: string | null;
+          slot?: string;
+          tailored_text?: string | null;
+          trip_id?: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "trip_schedule_trip_id_fkey";
             columns: ["trip_id"];
             isOneToOne: false;
             referencedRelation: "trips";
@@ -5976,6 +6058,7 @@ export type Database = {
         };
         Returns: string;
       };
+      create_trip_v2: { Args: { p_setup: Json }; Returns: string };
       create_window_play_mode: {
         Args: {
           p_city: string;
@@ -6110,6 +6193,7 @@ export type Database = {
       };
       delete_cost_item: { Args: { p_item: string }; Returns: undefined };
       delete_trip: { Args: { p_name: string; p_trip: string }; Returns: undefined };
+      discard_trip_draft: { Args: Record<PropertyKey, never>; Returns: undefined };
       dismiss_bug_update: { Args: { p_report: string }; Returns: undefined };
       dismiss_cost_note: { Args: { p_note: string }; Returns: undefined };
       draw_game_card: { Args: { p_category: string; p_trip: string }; Returns: number };
@@ -6688,6 +6772,7 @@ export type Database = {
         Returns: undefined;
       };
       save_teams: { Args: { p_teams: Json; p_trip: string }; Returns: undefined };
+      save_trip_draft: { Args: { p_data: Json }; Returns: undefined };
       sealed_proof_feed: {
         Args: { p_trip: string };
         Returns: {
@@ -6836,6 +6921,7 @@ export type Database = {
       };
       set_bingo_needs_photo: { Args: { p_required: boolean; p_trip: string }; Returns: undefined };
       set_boarding_tile: { Args: { p_tile: string }; Returns: undefined };
+      set_call_nights: { Args: { p_nights: Json; p_trip: string }; Returns: number };
       set_carry_on_meetup: {
         Args: { p_at: string; p_place: string; p_trip: string };
         Returns: undefined;
