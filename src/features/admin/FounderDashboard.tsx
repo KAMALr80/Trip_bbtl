@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { type TripWithRole } from "@/lib/trips";
 
-import { LaunchSwitch } from "@/components/BetaAccess";
+import { LaunchSwitch } from "@/features/onboarding/BetaAccess";
 
 export function FounderDashboard({
   trips,

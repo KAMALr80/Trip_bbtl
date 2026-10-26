@@ -1,5 +1,5 @@
 import { rpc } from "@/data/rpc";
-import { tabPath, useShellNav } from "@/features/app-shell/nav";
+import { tabHref, useShellNav } from "@/features/app-shell/nav";
 import { Link } from "@tanstack/react-router";
 import { TabContent } from "@/features/app-shell/TabContent";
 import { tabs } from "@/features/app-shell/tabs";
@@ -11,10 +11,10 @@ import { friendlyError } from "@/lib/friendly-error";
 
 import { BrandLockup } from "@/components/BrandLockup";
 import { CaptainCrown } from "@/components/CaptainCrown";
-import { CinematicSplash } from "@/components/CinematicSplash";
-import { CrownCelebration } from "@/components/CrownCelebration";
+import { CinematicSplash } from "@/features/onboarding/CinematicSplash";
+import { CrownCelebration } from "@/features/points/CrownCelebration";
 
-import { GameArcade } from "@/components/GameArcade";
+import { GameArcade } from "@/features/play/GameArcade";
 
 import iconSuitcase from "@/assets/icon-suitcase.webp";
 import iconPassport from "@/assets/icon-passport.webp";
@@ -24,44 +24,56 @@ import iconBoarding from "@/assets/icon-boarding-pass.webp";
 
 import iconHome from "@/assets/icon-at-home.webp";
 
-import { OutOfCreditsHost } from "@/components/AiCredits";
-import { CaptainNudge } from "@/components/CaptainChecklist";
+import { OutOfCreditsHost } from "@/features/ai-credits/AiCredits";
+import { CaptainNudge } from "@/features/captain-tools/CaptainChecklist";
 
-import { ShowcaseGuest } from "@/components/CultureShowcase";
+import { ShowcaseGuest } from "@/features/culture/CultureShowcase";
 import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useT } from "@/i18n";
 
-import { JoinRoomCard } from "@/components/InvitePreview";
+import { JoinRoomCard } from "@/features/trip/InvitePreview";
 import { setViewerZone, deviceZone } from "@/lib/viewer-time";
 import { nudgeTopUp } from "@/lib/content.functions";
-import { CaptainTools } from "@/components/CaptainTools";
+import { CaptainTools } from "@/features/captain-tools/CaptainTools";
 
-import { FounderReports, QuickCheckIn } from "@/components/BugInbox";
-import { FeedbackAdmin } from "@/components/TripFeedback";
+import { FounderReports, QuickCheckIn } from "@/features/admin/BugInbox";
+import { FeedbackAdmin } from "@/features/me/TripFeedback";
 
-import { RoleTips } from "@/components/RoleTips";
-import { loadTrips, loadMembers, type TripWithRole, type Member } from "@/lib/trips";
+import { RoleTips } from "@/features/captain-tools/RoleTips";
+import type { Member, TripWithRole } from "@/lib/trips";
+import { queryKeys, useCards, useMembers, useTrips } from "@/data/queries";
+import { loadMembershipSignature } from "@/data/trips";
+import {
+  completeOnboarding,
+  isAppAdmin,
+  isPublicLaunch,
+  loadPlayerProfile,
+  loadTimeZoneSetting,
+  saveDeviceTimeZone,
+  touchLastSeen,
+} from "@/data/account";
 import {
   PlayerCardEditor,
   PlayerCardView,
   QuickJoinCard,
   type AccountProfile,
-} from "@/components/PlayerCards";
-import { loadCards, dicebearUrl, type PlayerWithAvatar } from "@/lib/player-cards";
-import { HelpPage, BugReport, DeleteAccount } from "@/components/MeExtras";
+} from "@/features/players/PlayerCards";
+import { dicebearUrl, type PlayerWithAvatar } from "@/lib/player-cards";
+import { HelpPage, BugReport, DeleteAccount } from "@/features/me/MeExtras";
 
-import { ExploreTour } from "@/components/ExploreTour";
+import { ExploreTour } from "@/features/onboarding/ExploreTour";
 
-import { HomeDashboard } from "@/components/HomeDashboard";
-import { FirstRunWelcome } from "@/components/FirstRunWelcome";
-import { JourneyMap, type JourneyStop } from "@/components/JourneyMap";
+import { HomeDashboard } from "@/features/home/HomeDashboard";
+import { FirstRunWelcome } from "@/features/onboarding/FirstRunWelcome";
+import { JourneyMap, type JourneyStop } from "@/features/trip/JourneyMap";
 
-import { AboutContent } from "@/components/AboutStory";
-import { TestLab, SandboxBanner, LabViewBanner } from "@/components/TestLab";
+import { AboutContent } from "@/features/onboarding/AboutStory";
+import { TestLab, SandboxBanner, LabViewBanner } from "@/features/admin/TestLab";
 import { setFounder } from "@/lib/lab-mode";
 import { readPendingCode, clearPendingCode } from "@/lib/pending-code";
 import {
@@ -72,14 +84,19 @@ import {
   TeenJoinGate,
   WaitingTrips,
   vibeOf,
-} from "@/components/BetaAccess";
+} from "@/features/onboarding/BetaAccess";
 import { readPendingBeta, clearPendingBeta } from "@/lib/pending-beta";
 
-import { DeletedTripNotes } from "@/components/DeletedTripNotes";
+import { DeletedTripNotes } from "@/features/trip/DeletedTripNotes";
 
-import { LegalConsent, useLegalStatus } from "@/components/LegalConsent";
+import { LegalConsent, useLegalStatus } from "@/features/onboarding/LegalConsent";
+
+const noTrips: TripWithRole[] = [];
+const noMembers: Member[] = [];
+const noCards: PlayerWithAvatar[] = [];
 
 export function AppShell() {
+  const t = useT();
   const { user, profile, loading, refreshProfile } = useAuth();
   const [splashReady, setSplashReady] = useState(false);
   const [splashTimedOut, setSplashTimedOut] = useState(false);
@@ -93,8 +110,11 @@ export function AppShell() {
     };
   }, []);
   const legal = useLegalStatus(user?.id);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const {
     tab,
+    urlTripId,
+    syncTripUrl,
     setTab,
     homeScreen,
     setHomeScreen,
@@ -107,7 +127,7 @@ export function AppShell() {
     tools,
     setTools,
     clearParam,
-  } = useShellNav();
+  } = useShellNav(activeId);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [welcomeStoryReturn, setWelcomeStoryReturn] = useState(false);
   const closeWelcome = () => setWelcomeOpen(false);
@@ -127,12 +147,14 @@ export function AppShell() {
   const [sheet, setSheet] = useState<string | null>(null);
   const [exploreTour, setExploreTour] = useState(false);
   const [tourDismissed, setTourDismissed] = useState(false);
-  const tripsRequest = useRef(0);
-  const [trips, setTrips] = useState<TripWithRole[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [cards, setCards] = useState<PlayerWithAvatar[]>([]);
-  const [cardsLoading, setCardsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const tripsQuery = useTrips(user?.id);
+  const trips = (user && tripsQuery.data) || noTrips;
+  const membersQuery = useMembers(activeId);
+  const cardsQuery = useCards(activeId);
+  const members = membersQuery.data ?? noMembers;
+  const cards = cardsQuery.data ?? noCards;
+  const cardsLoading = !!activeId && (membersQuery.isPending || cardsQuery.isPending);
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [editCard, setEditCard] = useState(false);
   const [viewAsPlayer, setViewAsPlayer] = useState(false);
@@ -162,20 +184,16 @@ export function AppShell() {
   const [publicView, setPublicView] = useState<"overview" | "story" | "games" | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
-    void supabase.rpc("is_app_admin").then((r) => {
-      setIsAdmin(!!r.data);
-      setFounder(!!r.data);
+    void isAppAdmin().then((admin) => {
+      setIsAdmin(admin);
+      setFounder(admin);
     });
-    if (user) void supabase.rpc("touch_last_seen" as never);
+    if (user) void touchLastSeen();
   }, [user?.id]);
   const [myProfile, setMyProfile] = useState<AccountProfile | null | undefined>(undefined);
   const loadMyProfile = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("player_profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const data = await loadPlayerProfile(user.id);
     setMyProfile((data as AccountProfile | null) ?? null);
   };
   useEffect(() => {
@@ -194,23 +212,15 @@ export function AppShell() {
   // Personal time zone: follow the device unless the person picked one in Settings. Display only.
   useEffect(() => {
     if (!user) return;
-    void supabase
-      .from("profiles")
-      .select("time_zone,time_zone_manual")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(
-        ({ data }: { data: { time_zone: string | null; time_zone_manual: boolean } | null }) => {
-          const device = deviceZone();
-          if (data?.time_zone_manual && data.time_zone) {
-            setViewerZone(data.time_zone);
-            return;
-          }
-          setViewerZone(device);
-          if (data && data.time_zone !== device)
-            void supabase.from("profiles").update({ time_zone: device }).eq("id", user.id);
-        },
-      );
+    void loadTimeZoneSetting(user.id).then((data) => {
+      const device = deviceZone();
+      if (data?.time_zone_manual && data.time_zone) {
+        setViewerZone(data.time_zone);
+        return;
+      }
+      setViewerZone(device);
+      if (data && data.time_zone !== device) void saveDeviceTimeZone(user.id, device);
+    });
   }, [user?.id]);
   const [launch, setLaunch] = useState<boolean | null>(null);
   const [betaNotice, setBetaNotice] = useState("");
@@ -222,7 +232,7 @@ export function AppShell() {
     age_range: string;
   } | null>(null);
   useEffect(() => {
-    void supabase.rpc("public_launch" as never).then((r: { data: unknown }) => setLaunch(!!r.data));
+    void isPublicLaunch().then(setLaunch);
     setAnonCode(readPendingCode() ?? readPendingBeta());
   }, []);
   const loadAccess = async () => {
@@ -295,21 +305,34 @@ export function AppShell() {
   const displayedMembers = viewAsPlayer
     ? members.map((m) => (m.user_id === user?.id ? { ...m, role: "player" } : m))
     : members;
+  // Keep the open trip if it is still in the list; otherwise the one opened last on this device,
+  // else the first.
+  const pickActive = (list: TripWithRole[], preferredId?: string) => {
+    if (!user) return;
+    setActiveId((previous) => {
+      const preferred =
+        preferredId ?? previous ?? window.localStorage.getItem(`tripjunkie-active-${user.id}`);
+      return list.find((t) => t.id === preferred)?.id ?? list[0]?.id ?? null;
+    });
+  };
+  useEffect(() => {
+    if (tripsQuery.data) pickActive(tripsQuery.data);
+  }, [tripsQuery.data]);
+  useEffect(() => {
+    const error = tripsQuery.error ?? membersQuery.error ?? cardsQuery.error;
+    if (error) setTripError(friendlyError(error));
+  }, [tripsQuery.error, membersQuery.error, cardsQuery.error]);
+  // Reload the trip list (and the open trip's roster and cards); open `preferredId` if given.
   const refreshTrips = async (preferredId?: string, requirePreferred = false) => {
     if (!user) return;
-    const request = ++tripsRequest.current;
+    const key = queryKeys.trips(user.id);
     try {
-      const next = await loadTrips(user.id);
-      if (request !== tripsRequest.current) return;
+      await queryClient.refetchQueries({ queryKey: key, exact: true }, { throwOnError: true });
+      const next = queryClient.getQueryData<TripWithRole[]>(key) ?? [];
       if (requirePreferred && !next.some((t) => t.id === preferredId))
         throw new Error("Your trip hasn't loaded yet. Please try again.");
-      setTrips(next);
-      setCardsLoading(true);
-      setActiveId((previous) => {
-        const preferred =
-          preferredId ?? previous ?? window.localStorage.getItem(`tripjunkie-active-${user.id}`);
-        return next.find((t) => t.id === preferred)?.id ?? next[0]?.id ?? null;
-      });
+      pickActive(next, preferredId);
+      void queryClient.invalidateQueries({ queryKey: ["trip"] });
       setTripError("");
     } catch (error) {
       setTripError(friendlyError(error));
@@ -318,13 +341,10 @@ export function AppShell() {
   };
   useEffect(() => {
     if (!user) {
-      tripsRequest.current++;
-      setTrips([]);
       setActiveId(null);
       return;
     }
     setTourDismissed(false);
-    void refreshTrips();
     setPendingCode(readPendingCode());
   }, [user?.id]);
   // Removed/left/approved: watch my own memberships and refresh right away so no stale trip stays open.
@@ -332,14 +352,7 @@ export function AppShell() {
     if (!user) return;
     let sig = "";
     const check = async () => {
-      const { data } = await supabase
-        .from("trip_members")
-        .select("trip_id,status")
-        .eq("user_id", user.id);
-      const next = (data ?? [])
-        .map((m) => `${m.trip_id}:${m.status}`)
-        .sort()
-        .join(",");
+      const next = await loadMembershipSignature(user.id);
       if (sig && next !== sig) void refreshTrips();
       sig = next;
     };
@@ -357,37 +370,27 @@ export function AppShell() {
     };
   }, [user?.id]);
   useEffect(() => {
-    if (!user || !activeId) {
-      setMembers([]);
-      setCards([]);
-      setCardsLoading(false);
+    if (user && activeId) safeSetItem(`tripjunkie-active-${user.id}`, activeId);
+  }, [user?.id, activeId]);
+  // Play and Trip URLs name the trip (/t/$tripId/…). Opening such a URL (a link, refresh, Back)
+  // opens that trip if it is one of mine; otherwise the URL follows the open trip.
+  const lastUrlTrip = useRef<string | null>(null);
+  useEffect(() => {
+    if (!user || !tripsQuery.data) return;
+    const fromUrl = urlTripId !== lastUrlTrip.current;
+    lastUrlTrip.current = urlTripId;
+    if (fromUrl && urlTripId && urlTripId !== activeId && trips.some((t) => t.id === urlTripId)) {
+      setActiveId(urlTripId);
       return;
     }
-    setCardsLoading(true);
-    safeSetItem(`tripjunkie-active-${user.id}`, activeId);
-    void Promise.all([loadMembers(activeId), loadCards(activeId)])
-      .then(([nextMembers, nextCards]) => {
-        setMembers(nextMembers);
-        setCards(nextCards);
-        setCardsLoading(false);
-      })
-      .catch((error) => {
-        setTripError(friendlyError(error));
-        setCardsLoading(false);
-      });
-  }, [user?.id, activeId, trips]);
+    if ((tab === "Play" || tab === "Trip") && urlTripId !== activeId) syncTripUrl(activeId);
+  }, [user?.id, tripsQuery.data, urlTripId, activeId, tab]);
   async function refreshCards() {
     if (!activeId) return;
-    const [nextMembers, nextCards] = await Promise.all([
-      loadMembers(activeId),
-      loadCards(activeId),
-    ]);
-    setMembers(nextMembers);
-    setCards(nextCards);
+    await queryClient.refetchQueries({ queryKey: ["trip", activeId] }, { throwOnError: true });
   }
   function selectTrip(id: string) {
     setActiveId(id);
-    setCardsLoading(true);
     setTools(false);
     setViewAsPlayer(false);
     setTab("Home");
@@ -407,10 +410,7 @@ export function AppShell() {
     setExploreTour(false);
     setTourDismissed(true);
     if (!profile?.onboarding_completed) {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ onboarding_completed: true })
-        .eq("id", user.id);
+      const { error } = await completeOnboarding(user.id);
       if (error) {
         console.error("Tour completion couldn't be saved", error);
         setTourDismissed(false);
@@ -980,7 +980,7 @@ export function AppShell() {
       )}
       <nav
         className="night-nav fixed inset-x-0 mx-auto w-[calc(100%-24px)] max-w-[488px] z-20 bg-nav px-2 py-1.5 flex items-center justify-between"
-        aria-label="Main navigation"
+        aria-label={t("nav.label")}
       >
         {tabs.map(({ name, icon: Icon }) => (
           <Button
@@ -991,18 +991,18 @@ export function AppShell() {
             className={`h-14 min-w-0 flex-1 flex-col gap-0.5 rounded-full px-1 text-[10px] ${tab === name ? "text-blue" : "text-muted-foreground"}`}
           >
             <Link
-              to={tabPath[name]}
+              to={tabHref(name, activeId)}
               onClick={() => {
                 if (welcomeOpen) closeWelcome();
                 setWelcomeStoryReturn(false);
                 window.scrollTo({ top: 0, behavior: "instant" });
               }}
-              aria-label={name}
+              aria-label={t(`nav.${name}`)}
               aria-current={tab === name ? "page" : undefined}
               onPointerDown={(e) => e.currentTarget.blur()}
             >
               <Icon size={20} strokeWidth={tab === name ? 2.7 : 2} className="!size-5" />
-              {name}
+              {t(`nav.${name}`)}
             </Link>
           </Button>
         ))}

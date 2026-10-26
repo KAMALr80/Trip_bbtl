@@ -1,6 +1,7 @@
 # Supabase CLI config for local development (`supabase start`, `supabase db reset`, `supabase test db`).
 # The hosted projects are selected with `supabase link --project-ref <ref>`; this file only shapes
-# the local stack. Production ref today: kymflipjxxpyxksdfgdw (Lovable Cloud, see dev-docs/07 §3.2).
+# the local stack. Staging and production are new projects (no data from Lovable Cloud carried over);
+# scripts/deploy.sh links and pushes them.
 project_id = "tripjunkies"
 
 [api]
@@ -10,7 +11,7 @@ extra_search_path = ["public", "extensions"]
 
 [db]
 port = 54322
-# Match the hosted project's major version once confirmed (M0-02).
+# New Supabase projects run Postgres 17.
 major_version = 17
 
 [db.seed]

@@ -18,3 +18,5 @@
 - Captain crown badges follow server-authoritative roles.
 - Source boarding passes from shared GameScene mapping so practice and live play use the same art without duplicating game logic.
 - Keep game display titles presentation-only; catalog names and stored timer labels must remain compatible with private timer validation.
+- User-facing copy lives in `src/i18n/en.json` and is read with `t()` (`useT()` from `@/i18n`) (M1-07, Q15). A lint rule fails new JSX text and string aria-label/placeholder/title/alt; older copy is listed in eslint-suppressions.json and moves to the catalog as screens are rebuilt.
+- Screens read data through `src/data` (typed `rpc()` and Query hooks in `queries.ts`), never `@/integrations/supabase/client` (M1-05 lint rule).

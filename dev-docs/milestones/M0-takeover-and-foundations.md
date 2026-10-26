@@ -10,20 +10,20 @@
 | ID | Task | Size |
 |---|---|---|
 | M0-01 | Repo & access takeover | S |
-| M0-02 | Supabase access audit (and migration plan if needed) | S–M |
-| M0-03 | Staging + production environments | M |
+| M0-02 | ✅ | **Not needed:** start fresh (Oct 23), no production database to audit or migrate. The Lovable Cloud project is not used by any environment. |
+| M0-03 | 🟡 | `wrangler.jsonc` (staging and production Workers) and `scripts/deploy.sh <env> [check\|db\|auth\|web\|all]`: pushes migrations, sets auth URLs / Google / SMTP, builds with the project's keys, deploys, sets Worker secrets and the cron URL. Checked with `wrangler deploy --dry-run`. **Left (accounts):** the Supabase projects, Cloudflare account and token, domain DNS, then the first real deploy (README, "Environments and deploys"). |
 | M0-04 | Local development database + seed | M |
 | M0-05 | CI pipeline | S |
 | M0-06 | Schema snapshot & function inventory | S |
-| M0-07 | Replace Lovable auth (Google) | S |
-| M0-08 | Replace Lovable AI gateway | S–M |
+| M0-07 | 🟡 | Google sign-in uses `supabase.auth.signInWithOAuth`; preview auth storage removed. `scripts/deploy.sh <env> auth` sets the Google client and SMTP sender once their settings exist. **Left (accounts):** Google OAuth client, email provider + DNS. |
+| M0-08 | ✅ | `src/integrations/ai/index.server.ts`; all 12 call sites moved; the Lovable gateway fallback is removed (AI runs only with `AI_API_KEY` + `AI_MODEL`); cost estimates read `AI_PRICE_IN` / `AI_PRICE_OUT`. **Left:** the key and model per environment. |
 | M0-09 | Rescue Lovable-hosted images | S |
 | M0-10 | Replace Lovable build config, error reporting, cron secret, preview auth | M |
 | M0-11 | Characterisation tests for kept rules | L |
 | M0-12 | Sentry + basic analytics | S |
 | M0-13 | Founder sign-off on rules & open questions | S (PM) |
 
-## Status (Oct 21, 2026)
+## Status (Oct 23, 2026)
 
 | ID | State | What's done · what's left |
 |---|---|---|

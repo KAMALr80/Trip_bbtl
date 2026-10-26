@@ -14,10 +14,11 @@ import cinematicLoginCoast from "@/assets/cinematic-login-coast-tall-768.jpg";
 import cinematicLoginCoastLarge from "@/assets/cinematic-login-coast.jpg";
 
 import { readPendingCode } from "@/lib/pending-code";
-import { BetaCodeField } from "@/components/BetaCodes";
+import { BetaCodeField } from "@/features/admin/BetaCodes";
 
-import { LegalCheckbox } from "@/components/LegalConsent";
+import { LegalCheckbox } from "@/features/onboarding/LegalConsent";
 import { LEGAL_VERSION } from "@/lib/legal";
+import { useT } from "@/i18n";
 
 export function AuthScreen({
   allowSignup = true,
@@ -30,6 +31,7 @@ export function AuthScreen({
   onExplore: () => void;
   onStory: () => void;
 }) {
+  const t = useT();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [legalChecked, setLegalChecked] = useState(false);
   const [email, setEmail] = useState("");
@@ -49,12 +51,12 @@ export function AuthScreen({
     const teenInvite = readPendingCode();
     if (mode === "signup" && !Number.isFinite(new Date(signupDob).getTime())) {
       e.preventDefault();
-      setMessage("Check your birthday.");
+      setMessage(t("auth.error.birthday"));
       return;
     }
     if (mode === "signup" && !ageAt(13)) {
       e.preventDefault();
-      setMessage("Family Mode is coming soon. TripJunkies accounts are for ages 13 and up.");
+      setMessage(t("auth.error.tooYoung"));
       return;
     }
     const isTeen = mode === "signup" && !ageAt(18);
@@ -79,7 +81,7 @@ export function AuthScreen({
     if (error && /not confirmed/i.test(error.message)) {
       await supabase.auth.resend({ type: "signup", email });
       setVerifying(email);
-    } else if (error) setMessage(`Oops, that didn't work: ${friendlyError(error)}`);
+    } else if (error) setMessage(t("auth.error.generic", { reason: friendlyError(error) }));
     else if (mode === "signup" && !data.session) setVerifying(email);
     else if (mode === "signup" && data.session) {
       await supabase.rpc("accept_legal", { p_version: LEGAL_VERSION });
@@ -104,13 +106,13 @@ export function AuthScreen({
       });
       if (error) {
         setMessage(
-          `Google sign-in didn't work: ${friendlyError(error) || "please try again"}. You can also use email below.`,
+          t("auth.error.google", { reason: friendlyError(error) || t("auth.error.tryAgain") }),
         );
         setBusy(false);
       }
     } catch (error) {
       setMessage(
-        `Google sign-in didn't work: ${friendlyError(error) || "please try again"}. Pop-ups may be blocked — try again or use email below.`,
+        t("auth.error.googlePopup", { reason: friendlyError(error) || t("auth.error.tryAgain") }),
       );
       setBusy(false);
     }
@@ -132,7 +134,7 @@ export function AuthScreen({
         src={cinematicLoginCoast}
         srcSet={`${cinematicLoginCoast} 768w, ${cinematicLoginCoastLarge} 1024w`}
         sizes="(max-width: 520px) 100vw, 520px"
-        alt="Five diverse friends cheering over a tropical coastal town at sunset"
+        alt={t("auth.heroAlt")}
         width={768}
         height={1366}
         fetchPriority="high"
@@ -140,18 +142,12 @@ export function AuthScreen({
       <div className="cinematic-auth-content">
         <BrandLockup className="cinematic-auth-brand" />
         <div className="cinematic-auth-spacer">
-          {!emailOpen && <p className="login-hook">Think you can out-travel your crew?</p>}
+          {!emailOpen && <p className="login-hook">{t("auth.hook")}</p>}
         </div>
         {emailOpen ? (
           <section
             className="cinematic-auth-form"
-            aria-label={
-              forgot
-                ? "Reset your password"
-                : mode === "signup"
-                  ? "Sign up with email"
-                  : "Sign in with email"
-            }
+            aria-label={t(`auth.formLabel.${forgot ? "reset" : mode}`)}
           >
             <Button
               variant="ghost"
@@ -162,15 +158,9 @@ export function AuthScreen({
                 setMessage("");
               }}
             >
-              <ArrowLeft size={17} /> Back
+              <ArrowLeft size={17} /> {t("common.back")}
             </Button>
-            <h1>
-              {forgot
-                ? "Reset your password"
-                : mode === "signup"
-                  ? "Join the squad"
-                  : "Welcome back"}
-            </h1>
+            <h1>{t(`auth.title.${forgot ? "reset" : mode}`)}</h1>
             {forgot ? (
               <form
                 onSubmit={async (e) => {
@@ -181,9 +171,7 @@ export function AuthScreen({
                       redirectTo: `${window.location.origin}/reset-password`,
                     });
                   } finally {
-                    setMessage(
-                      "If an account uses that email, a reset link is on its way. Check your inbox.",
-                    );
+                    setMessage(t("auth.resetSent"));
                     setBusy(false);
                   }
                 }}
@@ -194,14 +182,14 @@ export function AuthScreen({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
-                  placeholder="Email address"
-                  aria-label="Email address"
+                  placeholder={t("auth.email")}
+                  aria-label={t("auth.email")}
                 />
                 <Button type="submit" className="cinematic-auth-submit" disabled={busy}>
-                  Send reset link
+                  {t("auth.sendReset")}
                 </Button>
                 <Button type="button" variant="link" onClick={() => setForgot(false)}>
-                  Back to Log in
+                  {t("auth.backToLogin")}
                 </Button>
               </form>
             ) : (
@@ -213,8 +201,8 @@ export function AuthScreen({
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Email address"
-                    aria-label="Email address"
+                    placeholder={t("auth.email")}
+                    aria-label={t("auth.email")}
                   />
                   <div className="cinematic-auth-password">
                     <input
@@ -224,15 +212,15 @@ export function AuthScreen({
                       autoComplete={mode === "signup" ? "new-password" : "current-password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Password"
-                      aria-label="Password"
+                      placeholder={t("auth.password")}
+                      aria-label={t("auth.password")}
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       onClick={() => setShowPassword(!showPassword)}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-label={t(showPassword ? "auth.hidePassword" : "auth.showPassword")}
                     >
                       {showPassword ? <EyeOff /> : <Eye />}
                     </Button>
@@ -240,7 +228,7 @@ export function AuthScreen({
                   {mode === "signup" && (
                     <>
                       <label className="cinematic-auth-birthday">
-                        Birthday
+                        {t("auth.birthday")}
                         <input
                           type="date"
                           required
@@ -248,16 +236,15 @@ export function AuthScreen({
                           value={signupDob}
                           onChange={(e) => setSignupDob(e.target.value)}
                         />
-                        <small>
-                          Saved once. Contact support to correct it later. Ages 13 and up can sign
-                          up; 13–17 join a trip with their Captain's code and approval.
-                        </small>
+                        <small>{t("auth.birthdayHint")}</small>
                       </label>
                       <LegalCheckbox checked={legalChecked} onChange={setLegalChecked} />
                     </>
                   )}
                   <Button type="submit" className="cinematic-auth-submit" disabled={busy}>
-                    {busy ? "One sec..." : mode === "signup" ? "Sign up" : "Log in"}
+                    {busy
+                      ? t("common.oneSec")
+                      : t(mode === "signup" ? "auth.signup" : "auth.login")}
                   </Button>
                 </form>
                 <div className="cinematic-auth-links">
@@ -269,7 +256,7 @@ export function AuthScreen({
                         setMessage("");
                       }}
                     >
-                      Forgot password?
+                      {t("auth.forgot")}
                     </Button>
                   )}
                   {!allowSignup && onBetaSaved && (
@@ -285,7 +272,7 @@ export function AuthScreen({
                         setMessage("");
                       }}
                     >
-                      {mode === "signin" ? "New here? Sign up" : "Already have an account? Log in"}
+                      {t(mode === "signin" ? "auth.toSignup" : "auth.toSignin")}
                     </Button>
                   )}
                 </div>
@@ -302,7 +289,7 @@ export function AuthScreen({
               <span className="cinematic-google-g" aria-hidden="true">
                 G
               </span>
-              Continue with Google
+              {t("auth.google")}
             </Button>
             <Button
               className="cinematic-auth-email-button"
@@ -311,22 +298,22 @@ export function AuthScreen({
                 setForgot(false);
               }}
             >
-              Sign in with email
+              {t("auth.emailButton")}
             </Button>
             <div className="cinematic-auth-chips">
               <Button variant="outline" onClick={onExplore}>
                 <Eye size={17} />
-                Take a look around ›
+                {t("auth.lookAround")}
               </Button>
               <Button variant="outline" onClick={onStory}>
                 <BookOpen size={17} />
-                Our story ›
+                {t("auth.ourStory")}
               </Button>
             </div>
             <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
-              Need a hand?{" "}
-              <a href="mailto:support@tripjunkies.app" className="underline">
-                support@tripjunkies.app
+              {t("auth.needHand")}{" "}
+              <a href={`mailto:${t("common.supportEmail")}`} className="underline">
+                {t("common.supportEmail")}
               </a>
             </p>
           </div>
@@ -342,6 +329,7 @@ export function AuthScreen({
 }
 
 export function MaskedEmail({ email }: { email: string }) {
+  const t = useT();
   const [revealed, setRevealed] = useState(false);
   const [local, domain] = email.split("@");
   const masked = local && domain ? `${local[0]}•••@${domain}` : "";
@@ -349,16 +337,18 @@ export function MaskedEmail({ email }: { email: string }) {
     <Button
       variant="ghost"
       className="h-auto max-w-full min-w-0 p-0 justify-start text-sm text-muted-foreground font-normal"
-      aria-label={revealed ? "Hide email" : "Reveal email"}
+      aria-pressed={revealed}
       onClick={() => setRevealed((v) => !v)}
     >
       <span className="truncate">{revealed ? email : masked}</span>
+      <span className="sr-only">{t(revealed ? "auth.hideEmail" : "auth.revealEmail")}</span>
       {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
     </Button>
   );
 }
 
 export function VerifyCode({ email, onBack }: { email: string; onBack: () => void }) {
+  const t = useT();
   const [digits, setDigits] = useState<string[]>(Array(6).fill(""));
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -380,11 +370,7 @@ export function VerifyCode({ email, onBack }: { email: string; onBack: () => voi
     const { error } = await supabase.auth.verifyOtp({ email, token: code, type: "signup" });
     setBusy(false);
     if (error) {
-      setError(
-        /expired/i.test(error.message)
-          ? "That code expired ⏰ Tap Resend for a fresh one."
-          : "Hmm, that code doesn't match 🙈 Double-check it and try again.",
-      );
+      setError(t(/expired/i.test(error.message) ? "verify.expired" : "verify.mismatch"));
       setDigits(Array(6).fill(""));
       refs.current[0]?.focus();
     }
@@ -408,9 +394,9 @@ export function VerifyCode({ email, onBack }: { email: string; onBack: () => voi
   async function resend() {
     setError("");
     const { error } = await supabase.auth.resend({ type: "signup", email });
-    if (error) setError(`Couldn't resend just yet: ${friendlyError(error)}`);
+    if (error) setError(t("verify.resendFailed", { reason: friendlyError(error) }));
     else {
-      setNote("Fresh code on its way 💌");
+      setNote(t("verify.resent"));
       setCooldown(60);
     }
   }
@@ -427,7 +413,7 @@ export function VerifyCode({ email, onBack }: { email: string; onBack: () => voi
       />
       <div className="flex items-center justify-between">
         <Button variant="ghost" className="-ml-3" onClick={onBack}>
-          <ArrowLeft /> Back
+          <ArrowLeft /> {t("common.back")}
         </Button>
         <Brand />
       </div>
@@ -435,14 +421,18 @@ export function VerifyCode({ email, onBack }: { email: string; onBack: () => voi
         <div className="mx-auto grid place-items-center h-28 w-28 rounded-[2rem] bg-orange-soft text-6xl float-sticker">
           💌
         </div>
-        <h1 className="font-display text-4xl font-extrabold mt-6">Check your email</h1>
+        <h1 className="font-display text-4xl font-extrabold mt-6">{t("verify.title")}</h1>
         <p className="text-muted-foreground mt-3 leading-relaxed">
-          We sent a 6-digit code to
+          {t("verify.sentTo")}
           <br />
           <span className="font-bold text-foreground break-all">{`${email.charAt(0)}•••@${email.split("@")[1] ?? ""}`}</span>
         </p>
       </div>
-      <div className="mt-8 flex justify-center gap-2" role="group" aria-label="6-digit code">
+      <div
+        className="mt-8 flex justify-center gap-2"
+        role="group"
+        aria-label={t("verify.codeLabel")}
+      >
         {digits.map((d, i) => (
           <input
             key={i}
@@ -453,7 +443,7 @@ export function VerifyCode({ email, onBack }: { email: string; onBack: () => voi
             inputMode="numeric"
             autoComplete={i === 0 ? "one-time-code" : "off"}
             maxLength={i === 0 ? 6 : 1}
-            aria-label={`Digit ${i + 1}`}
+            aria-label={t("verify.digit", { n: i + 1 })}
             disabled={busy}
             onChange={(e) => put(i, e.target.value)}
             onKeyDown={(e) => {
@@ -465,7 +455,7 @@ export function VerifyCode({ email, onBack }: { email: string; onBack: () => voi
       </div>
       {busy && (
         <p role="status" className="mt-4 text-center text-sm font-bold text-blue">
-          Checking… ✨
+          {t("verify.checking")}
         </p>
       )}
       {error && (
@@ -485,11 +475,9 @@ export function VerifyCode({ email, onBack }: { email: string; onBack: () => voi
         disabled={cooldown > 0}
         onClick={() => void resend()}
       >
-        {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
+        {cooldown > 0 ? t("verify.resendIn", { seconds: cooldown }) : t("verify.resend")}
       </Button>
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        Can't find it? Peek in spam or promotions.
-      </p>
+      <p className="mt-4 text-center text-xs text-muted-foreground">{t("verify.spam")}</p>
     </main>
   );
 }

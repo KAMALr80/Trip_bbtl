@@ -86,3 +86,10 @@ CREATE POLICY "quest proofs read owner leader shared" ON storage.objects AS PERM
   USING (((bucket_id = 'quest-proofs'::text) AND trip_private.proof_read_ok(name)));
 CREATE POLICY "quest proofs upload own open quest" ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK (((bucket_id = 'quest-proofs'::text) AND trip_private.proof_upload_ok(name)));
+-- bucket bug-screenshots (public=f, file_size_limit=none, allowed_mime_types=any)
+-- bucket culture-photos (public=f, file_size_limit=none, allowed_mime_types=any)
+-- bucket inspiration-photos (public=f, file_size_limit=none, allowed_mime_types=any)
+-- bucket player-avatars (public=f, file_size_limit=none, allowed_mime_types=any)
+-- bucket quest-proofs (public=f, file_size_limit=none, allowed_mime_types=any)
+-- bucket trip-photos (public=f, file_size_limit=none, allowed_mime_types=any)
+-- bucket window-guide (public=f, file_size_limit=none, allowed_mime_types=any)

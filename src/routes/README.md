@@ -26,4 +26,7 @@ is `src/routes/__root.tsx`.
   mounted while its tab routes change: `_shell.index.tsx` (`/`), `_shell.home.tsx`,
   `_shell.play.tsx`, `_shell.trip.tsx`, `_shell.me.tsx`. Sub-screens are search params, validated
   in `src/features/app-shell/nav.ts`.
+- `_shell.t.$tripId.tsx` is the trip layout: `/t/$tripId/play` and `/t/$tripId/trip` (and
+  `/t/$tripId`, which redirects to Play). Its loader prefetches the trip's roster and cards; the
+  shell opens the trip named in the URL. Plain `/play` and `/trip` open the current trip.
 - Route files stay thin: no business logic, no Supabase calls.

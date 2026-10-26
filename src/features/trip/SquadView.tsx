@@ -4,12 +4,12 @@ import { ShortList } from "@/components/ShortList";
 
 import { Button } from "@/components/ui/button";
 
-import { SquadSeasons, useBadges } from "@/components/Seasons";
+import { SquadSeasons, useBadges } from "@/features/points/Seasons";
 import { type TripWithRole, type Member } from "@/lib/trips";
-import { Avatar, AvatarButton, RoleStamp } from "@/components/PlayerCards";
+import { Avatar, AvatarButton, RoleStamp } from "@/features/players/PlayerCards";
 import { type PlayerWithAvatar } from "@/lib/player-cards";
 
-import { WaitingToJoin } from "@/components/BetaCodes";
+import { WaitingToJoin } from "@/features/admin/BetaCodes";
 import { dicebearUrl as betaAvatarUrl } from "@/lib/player-cards";
 
 export function SquadView({

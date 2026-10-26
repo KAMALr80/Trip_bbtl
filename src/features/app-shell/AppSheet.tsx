@@ -2,16 +2,16 @@ import { useState } from "react";
 
 import { ChevronRight, Plus, X, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { loadTrip } from "@/data/account";
 
-import { TripSheets } from "@/components/TripSheets";
-import { SeatCap } from "@/components/SeatCap";
-import { InviteCode } from "@/components/InviteCode";
+import { TripSheets } from "@/features/setup/TripSheets";
+import { SeatCap } from "@/features/trip/SeatCap";
+import { InviteCode } from "@/features/trip/InviteCode";
 
 import { inviteUrl, shareInvite, type TripWithRole } from "@/lib/trips";
 import { Clipboard, Share2 } from "lucide-react";
 
-import { AtHomeSetup } from "@/components/AtHome";
+import { AtHomeSetup } from "@/features/at-home/AtHome";
 
 export function AppSheet({
   title,
@@ -43,7 +43,7 @@ export function AppSheet({
         onClose={onClose}
         onDone={onDone}
         loadTrip={async (id) => {
-          const { data } = await supabase.from("trips").select("*").eq("id", id).maybeSingle();
+          const data = await loadTrip(id);
           return data ? ({ ...data, myRole: "captain" } as TripWithRole) : null;
         }}
       />

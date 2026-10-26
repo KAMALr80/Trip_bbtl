@@ -12466,7 +12466,7 @@ CREATE TABLE public.culture_quest_sessions (
     expires_at timestamp with time zone DEFAULT (now() + '24:00:00'::interval) NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT culture_quest_sessions_team_count_check CHECK ((((team_count >= '-1'::integer) AND (team_count <= 3)) AND (team_count <> 1)))
+    CONSTRAINT culture_quest_sessions_team_count_check CHECK (((team_count >= '-1'::integer) AND (team_count <= 3) AND (team_count <> 1)))
 );
 
 
@@ -23847,8 +23847,8 @@ GRANT ALL ON FUNCTION trip_private.culture_days(p_exp uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION trip_private.culture_quest(p_action text, p_session uuid, p_card uuid, p_code text, p_item uuid, p_choice integer, p_teams integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION trip_private.culture_quest(p_action text, p_session uuid, p_card uuid, p_code text, p_item uuid, p_choice integer, p_teams integer) TO service_role;
 GRANT ALL ON FUNCTION trip_private.culture_quest(p_action text, p_session uuid, p_card uuid, p_code text, p_item uuid, p_choice integer, p_teams integer) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.culture_quest(p_action text, p_session uuid, p_card uuid, p_code text, p_item uuid, p_choice integer, p_teams integer) TO service_role;
 
 
 --
@@ -23856,8 +23856,8 @@ GRANT ALL ON FUNCTION trip_private.culture_quest(p_action text, p_session uuid, 
 --
 
 REVOKE ALL ON FUNCTION trip_private.culture_quest_card(p_session uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION trip_private.culture_quest_card(p_session uuid) TO service_role;
 GRANT ALL ON FUNCTION trip_private.culture_quest_card(p_session uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.culture_quest_card(p_session uuid) TO service_role;
 
 
 --
@@ -24199,8 +24199,8 @@ GRANT ALL ON FUNCTION trip_private.game_day_status(p_trip uuid, p_date date) TO 
 --
 
 REVOKE ALL ON FUNCTION trip_private.game_name_problem(p_name text, p_user uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION trip_private.game_name_problem(p_name text, p_user uuid) TO service_role;
 GRANT ALL ON FUNCTION trip_private.game_name_problem(p_name text, p_user uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.game_name_problem(p_name text, p_user uuid) TO service_role;
 
 
 --
@@ -27268,8 +27268,8 @@ GRANT ALL ON TABLE public.game_night_moments TO service_role;
 --
 
 GRANT ALL ON TABLE public.game_night_polls TO anon;
-GRANT ALL ON TABLE public.game_night_polls TO service_role;
 GRANT SELECT ON TABLE public.game_night_polls TO authenticated;
+GRANT ALL ON TABLE public.game_night_polls TO service_role;
 
 
 --
@@ -27304,8 +27304,8 @@ GRANT ALL ON TABLE public.game_night_votes TO service_role;
 --
 
 GRANT ALL ON TABLE public.game_nights TO anon;
-GRANT ALL ON TABLE public.game_nights TO service_role;
 GRANT SELECT ON TABLE public.game_nights TO authenticated;
+GRANT ALL ON TABLE public.game_nights TO service_role;
 
 
 --
@@ -27973,8 +27973,8 @@ GRANT ALL ON TABLE public.trivia_answers TO service_role;
 -- Name: TABLE user_credits; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.user_credits TO service_role;
 GRANT SELECT ON TABLE public.user_credits TO authenticated;
+GRANT ALL ON TABLE public.user_credits TO service_role;
 
 
 --

@@ -1,4 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 const portraits = import.meta.glob("../assets/avatars/traveler-*.webp", {
   eager: true,
@@ -55,38 +54,4 @@ export function dicebearUrl(style: string, seed: string) {
 }
 export function makeSeed() {
   return crypto.randomUUID().slice(0, 12);
-}
-export async function avatarUrl(card: PlayerCard) {
-  if (card.avatar_style === "photo" && card.avatar_path) {
-    const { data } = await supabase.storage
-      .from("player-avatars")
-      .createSignedUrl(card.avatar_path, 3600);
-    if (data?.signedUrl) return data.signedUrl;
-  }
-  return dicebearUrl(card.avatar_style, card.avatar_seed || card.user_id);
-}
-export async function loadCards(tripId: string): Promise<PlayerWithAvatar[]> {
-  const [{ data, error }, { data: auth }] = await Promise.all([
-    supabase
-      .from("trip_player_cards")
-      .select("trip_id,user_id,game_name,avatar_style,avatar_seed,avatar_path")
-      .eq("trip_id", tripId),
-    supabase.auth.getUser(),
-  ]);
-  if (error) throw error;
-  const ownId = auth.user?.id;
-  const own = ownId
-    ? await supabase
-        .from("trip_player_cards")
-        .select("*")
-        .eq("trip_id", tripId)
-        .eq("user_id", ownId)
-        .maybeSingle()
-    : { data: null };
-  return Promise.all(
-    (data ?? []).map(async (card) => {
-      const merged = own.data?.user_id === card.user_id ? { ...card, ...own.data } : card;
-      return { ...merged, avatarUrl: await avatarUrl(merged) };
-    }),
-  );
 }

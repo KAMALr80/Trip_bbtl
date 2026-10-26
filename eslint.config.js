@@ -5,6 +5,15 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
+const serverOnly = {
+  name: "server-only",
+  message:
+    "TanStack Start does not use the Next.js `server-only` package. Rename the module to `*.server.ts` or mark it with `@tanstack/react-start/server-only`.",
+};
+
+const copyMessage =
+  'Put user-facing copy in src/i18n/en.json and read it with t() (`useT()` from "@/i18n").';
+
 export default tseslint.config(
   { ignores: ["dist", ".output", ".vinxi"] },
   {
@@ -20,20 +29,47 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      "no-restricted-imports": ["error", { paths: [serverOnly] }],
+      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+  // M1-05: only the data layer and sign-in talk to Supabase directly. Screens use the typed calls
+  // and Query hooks in src/data. Older files are listed in eslint-suppressions.json until moved.
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/data/**", "src/features/auth/**", "src/integrations/**"],
+    rules: {
       "no-restricted-imports": [
         "error",
         {
-          paths: [
+          paths: [serverOnly],
+          patterns: [
             {
-              name: "server-only",
-              message:
-                "TanStack Start does not use the Next.js `server-only` package. Rename the module to `*.server.ts` or mark it with `@tanstack/react-start/server-only`.",
+              group: ["**/integrations/supabase/client"],
+              message: "Use the typed calls and Query hooks in src/data instead.",
             },
           ],
         },
       ],
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
-      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+  // M1-07: user-facing copy lives in src/i18n/en.json and is read with t(). Text written straight
+  // into JSX (or into aria-label, placeholder, title, alt) fails; older copy is listed in
+  // eslint-suppressions.json and moves to the catalog as screens are rebuilt.
+  {
+    files: ["src/**/*.tsx"],
+    ignores: ["src/components/ui/**"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        { selector: "JSXText[value=/[A-Za-z]{2,}/]", message: copyMessage },
+        {
+          selector:
+            "JSXAttribute[name.name=/^(aria-label|placeholder|title|alt)$/] > Literal[value=/[A-Za-z]{2,}/]",
+          message: copyMessage,
+        },
+      ],
     },
   },
   eslintPluginPrettier,

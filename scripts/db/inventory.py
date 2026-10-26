@@ -81,7 +81,12 @@ def last_migration_index() -> tuple[dict[str, str], dict[str, int]]:
         r"(?:\"?(public|trip_private)\"?\.)?\"?([a-z_0-9]+)\"?",
         re.IGNORECASE,
     )
-    for f in sorted((ROOT / "supabase" / "migrations").glob("*.sql")):
+    # The pre-baseline history first, then newer migrations. The baseline itself is a snapshot of
+    # that history (M1-09), not another definition, so it isn't counted.
+    files = sorted((ROOT / "supabase" / "migrations_archive").glob("*.sql")) + sorted(
+        f for f in (ROOT / "supabase" / "migrations").glob("*.sql") if not f.name.startswith("00000000000000_")
+    )
+    for f in files:
         seen: set[str] = set()
         for m in pat.finditer(f.read_text(encoding="utf-8", errors="replace")):
             key = f"{(m.group(2) or 'public').lower()}.{m.group(3).lower()}"

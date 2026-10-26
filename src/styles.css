@@ -1788,7 +1788,7 @@
   border: 1px solid var(--primary);
   border-radius: 5px 12px 12px 5px;
   background: var(--card);
-  color: var(--primary);
+  color: var(--primary-text, var(--primary));
   font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 800;
@@ -2864,7 +2864,8 @@ html:root button[class*="border-input"] {
   padding: 14px 4px !important;
   border: 1px solid #f6c65b88 !important;
   border-radius: 20px !important;
-  background: linear-gradient(160deg, #7a5935, #dfaf53 45%, #442d55) !important;
+  /* Darker gold mid-stop so the white names stay AA-readable (M1-12). */
+  background: linear-gradient(160deg, #7a5935, #8f6420 45%, #442d55) !important;
   color: #fff !important;
   box-shadow: 0 10px 28px #0005;
 }
@@ -7381,7 +7382,7 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   height: 28px;
   margin: 4px 0 0;
   padding: 0;
-  color: var(--primary);
+  color: var(--primary-text, var(--primary));
   font-size: 11px;
 }
 .play-place {
@@ -7493,13 +7494,17 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   padding: 2px 5px;
   border-radius: 999px;
   background: var(--gold);
-  color: var(--foreground);
+  color: var(--tj-navy);
 }
 .play-phase-segment.is-done {
   color: var(--green);
 }
+/* Upcoming phases stay readable (beta note: faint until tapped); only the lock icon is muted. */
 .play-phase-segment.is-locked {
-  opacity: 0.52;
+  color: var(--paper-ink);
+}
+.play-phase-segment.is-locked > span {
+  opacity: 0.6;
 }
 .play-phase-stamp {
   width: 24px;

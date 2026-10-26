@@ -6,13 +6,14 @@ type Rpc = {
   ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
 };
 
-/** Estimated USD per 1M tokens, used only for the founder's cost report. Tune when real prices are known. */
-const RATES: Record<string, { in: number; out: number }> = {
-  "openai/gpt-6-astra": { in: 1.25, out: 10 },
-};
-export function estimateCost(model: string, input: number, output: number) {
-  const r = RATES[model] ?? { in: 1.25, out: 10 };
-  return (input * r.in + output * r.out) / 1_000_000;
+/** Estimated USD per 1M tokens, used only for the founder's cost report: the provider's prices for
+ * AI_MODEL, set as AI_PRICE_IN / AI_PRICE_OUT per environment, else a rough default. */
+function rate(name: string, fallback: number) {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+export function estimateCost(_model: string, input: number, output: number) {
+  return (input * rate("AI_PRICE_IN", 1.25) + output * rate("AI_PRICE_OUT", 10)) / 1_000_000;
 }
 
 export type UsageLog = (

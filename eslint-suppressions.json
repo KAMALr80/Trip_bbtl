@@ -1,21 +1,578 @@
 {
-  "src/components/BetaAccess.tsx": {
-    "@typescript-eslint/no-explicit-any": {
+  "src/components/BrandLockup.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "src/components/PlaceBrowser.tsx": {
+    "no-restricted-syntax": {
       "count": 2
     }
   },
-  "src/components/DeletedTripNotes.tsx": {
-    "@typescript-eslint/no-explicit-any": {
+  "src/components/PlacePicker.tsx": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "src/components/ReportSheet.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "src/components/ShortList.tsx": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },
-  "src/components/TestLab.tsx": {
+  "src/features/admin/AiGuard.tsx": {
+    "no-restricted-syntax": {
+      "count": 22
+    }
+  },
+  "src/features/admin/BetaCodes.tsx": {
+    "no-restricted-syntax": {
+      "count": 21
+    }
+  },
+  "src/features/admin/BugInbox.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 54
+    }
+  },
+  "src/features/admin/FounderDashboard.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "src/features/admin/TestLab.tsx": {
     "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 81
+    }
+  },
+  "src/features/ai-credits/AiCredits.tsx": {
+    "no-restricted-syntax": {
+      "count": 26
+    }
+  },
+  "src/features/app-shell/AppSheet.tsx": {
+    "no-restricted-syntax": {
+      "count": 10
+    }
+  },
+  "src/features/app-shell/AppShell.tsx": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "src/features/app-shell/ConfirmHost.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "src/features/app-shell/TabContent.tsx": {
+    "no-restricted-syntax": {
+      "count": 59
+    }
+  },
+  "src/features/at-home/AtHome.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 95
+    }
+  },
+  "src/features/at-home/CinematicMonthCalendar.tsx": {
+    "no-restricted-syntax": {
+      "count": 11
+    }
+  },
+  "src/features/at-home/GameExtrasC2.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 24
+    }
+  },
+  "src/features/at-home/HostSwaps.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 21
+    }
+  },
+  "src/features/at-home/NightGamePicker.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/features/at-home/TripCosts.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 69
+    }
+  },
+  "src/features/captain-tools/CaptainChecklist.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 13
+    }
+  },
+  "src/features/captain-tools/CaptainExtras.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 20
+    }
+  },
+  "src/features/captain-tools/CaptainTools.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 64
+    }
+  },
+  "src/features/captain-tools/RoleTips.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "src/features/captain-tools/TripTimezoneField.tsx": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "src/features/culture/CultureBadgeRow.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
       "count": 1
     }
   },
-  "src/components/WelcomeCopy.tsx": {
+  "src/features/culture/CultureExperiences.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 94
+    }
+  },
+  "src/features/culture/CultureQuest.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 36
+    }
+  },
+  "src/features/culture/CultureShowcase.tsx": {
+    "no-restricted-syntax": {
+      "count": 22
+    }
+  },
+  "src/features/culture/ExperiencePreviews.tsx": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "src/features/culture/Inspiration.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 52
+    }
+  },
+  "src/features/culture/RoomExperienceCard.tsx": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "src/features/culture/SampleExperience.tsx": {
+    "no-restricted-syntax": {
+      "count": 25
+    }
+  },
+  "src/features/home/HomeDashboard.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 52
+    }
+  },
+  "src/features/me/ContentVote.tsx": {
+    "no-restricted-syntax": {
+      "count": 8
+    }
+  },
+  "src/features/me/MeExtras.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 66
+    }
+  },
+  "src/features/me/TripFeedback.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 24
+    }
+  },
+  "src/features/missions/AirportMissions.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 33
+    }
+  },
+  "src/features/offline/OfflineTripCards.tsx": {
+    "no-restricted-syntax": {
+      "count": 9
+    }
+  },
+  "src/features/onboarding/AboutStory.tsx": {
+    "no-restricted-syntax": {
+      "count": 23
+    }
+  },
+  "src/features/onboarding/BetaAccess.tsx": {
     "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 58
+    }
+  },
+  "src/features/onboarding/CinematicSplash.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "src/features/onboarding/ExploreTour.tsx": {
+    "no-restricted-syntax": {
+      "count": 9
+    }
+  },
+  "src/features/onboarding/FirstRunWelcome.tsx": {
+    "no-restricted-syntax": {
+      "count": 8
+    }
+  },
+  "src/features/onboarding/LegalConsent.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "src/features/onboarding/WelcomeCopy.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 21
+    }
+  },
+  "src/features/onboarding/WelcomeLockup.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/passport/PassportBook.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 64
+    }
+  },
+  "src/features/passport/StampBadge.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "src/features/play/ArcadeBadge.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/play/GameArcade.tsx": {
+    "no-restricted-syntax": {
+      "count": 64
+    }
+  },
+  "src/features/play/GameScene.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/features/play/HomeDayFlow.tsx": {
+    "no-restricted-syntax": {
+      "count": 25
+    }
+  },
+  "src/features/play/OnePhoneNight.tsx": {
+    "no-restricted-syntax": {
+      "count": 27
+    }
+  },
+  "src/features/play/PhaseCountdown.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/play/PhaseNotice.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/features/play/PlayHub.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 46
+    }
+  },
+  "src/features/players/PlayerCards.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 52
+    }
+  },
+  "src/features/points/CrownCelebration.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "src/features/points/HomeSeasons.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/points/Season.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 13
+    }
+  },
+  "src/features/points/Seasons.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 53
+    }
+  },
+  "src/features/points/TieWheel.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/points/TripSeasonBoard.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "src/features/quests/SealedQuests.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 32
+    }
+  },
+  "src/features/setup/CultureA2eSetup.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 28
+    }
+  },
+  "src/features/setup/GamePlanPicker.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 21
+    }
+  },
+  "src/features/setup/MottoField.tsx": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "src/features/setup/TripSheets.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 52
+    }
+  },
+  "src/features/trip/ArchivedTrip.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "src/features/trip/Checkout.tsx": {
+    "no-restricted-syntax": {
+      "count": 9
+    }
+  },
+  "src/features/trip/DeletedTripNotes.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/features/trip/InvitePreview.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 8
+    }
+  },
+  "src/features/trip/Itinerary.tsx": {
+    "no-restricted-syntax": {
+      "count": 49
+    }
+  },
+  "src/features/trip/JourneyMap.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 16
+    }
+  },
+  "src/features/trip/JourneyPhases.tsx": {
+    "no-restricted-syntax": {
+      "count": 17
+    }
+  },
+  "src/features/trip/SeatCap.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "src/features/trip/SquadView.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "src/features/trip/TripActions.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 12
+    }
+  },
+  "src/features/trip/TripList.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 8
+    }
+  },
+  "src/features/trip/TripOverview.tsx": {
+    "no-restricted-syntax": {
+      "count": 13
+    }
+  },
+  "src/features/trip/TripUnlock.tsx": {
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "src/features/window-seat/CrewGuide.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "src/features/window-seat/SoloGuide.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 32
+    }
+  },
+  "src/features/window-seat/WindowSeatView.tsx": {
+    "no-restricted-syntax": {
       "count": 2
     }
   },
@@ -29,9 +586,55 @@
       "count": 3
     }
   },
+  "src/lib/itinerary.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
   "src/lib/lab.functions.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
+    }
+  },
+  "src/lib/pending-bingo.ts": {
+    "no-restricted-imports": {
+      "count": 1
+    }
+  },
+  "src/lib/prices.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/routes/__root.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 14
+    }
+  },
+  "src/routes/beta.$code.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/routes/join.$code.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/routes/legal/$document.tsx": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "src/routes/reset-password.tsx": {
+    "no-restricted-imports": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 8
     }
   }
 }

@@ -16,20 +16,20 @@ After M1 the codebase has one path per feature and is ready for the new engine.
 
 | ID | Task | Size |
 |---|---|---|
-| M1-01 | Archive mode for existing trips (`rules_version`) | M |
+| M1-01 | ✅ | `trips.rules_version` (2 = current, 1 = archived), one `<table>_archive_guard` trigger on every trip table, admin-only `archive_legacy_trips` / `set_trip_archived` (logged), read-only `ArchivedTrip` view, 23 pgTAP assertions. **Start fresh (Oct 23):** no old trips exist, so there is no cutover; the mechanism stays for future rule changes. |
 | M1-02 | Remove retired features from the UI | L |
 | M1-03 | One look: remove "Original", set Airline Look tokens | L |
-| M1-04 | Split `index.tsx` into real routes + new tab bar | L |
-| M1-05 | Data layer (`src/data`) + regenerated types | L |
-| M1-06 | Feature folders + Prettier pass | M |
-| M1-07 | i18n scaffolding (English catalog) | M |
-| M1-08 | Revoke + archive retired DB objects | M |
-| M1-09 | Migration baseline for new environments | M |
+| M1-04 | ✅ | `src/routes/index.tsx` is gone; its components live in `src/features/*`. Pathless `_shell` layout: tabs are URLs (`/`, `/home`, `/me`) and sub-screens are validated search params (`src/features/app-shell/nav.ts`); refresh and back/forward work. Q6 tab bar Home · Play · Trip · Me, crew list inside Trip. **Trip layout** `/t/$tripId` (redirects to Play) with `/t/$tripId/play` and `/t/$tripId/trip`: the URL opens that trip, its loader prefetches roster and cards; plain `/play` and `/trip` move to the open trip; an id that isn't mine falls back to the current trip. Signed-in e2e tests run against a mocked Supabase backend (`e2e/support/mock-backend.ts`). **Later:** phase and room config join the trip loader with the M2 phase engine; optional path URLs for `/me/captain`, `/p/$userId`, `/admin`. |
+| M1-05 | ✅ | `types.ts` generated from the migrations (`scripts/db/gen-types.sh`, CI checks it is current). Typed `rpc()` / `rpcOn()` in `src/data`; 60 → 5 `as unknown as`. Query hooks `useTrips` / `useMembers` / `useCards` (`src/data/queries.ts`) drive the app shell, which no longer imports the client (`src/data/account.ts` holds its other calls). **Lint rule:** importing `@/integrations/supabase/client` outside `src/data`, `src/features/auth` and `src/integrations` fails; the 50 older importers are listed in `eslint-suppressions.json` and come off as each screen moves to hooks (M2/M3 rebuilds). |
+| M1-06 | ✅ | Prettier pass done (own commit, in `.git-blame-ignore-revs`). 81 files moved from `src/components` into 19 feature folders (`src/features/README.md`); `src/components` holds `ui/` and 8 shared pieces. The component rules file is now `src/features/AGENTS.md`. 155 lines are still over 160 chars: shadcn `ui/` class strings and long copy/class literals Prettier can't break; they go as screens are rebuilt. |
+| M1-07 | 🟡 | i18next + react-i18next in `src/i18n` with typed keys from `src/i18n/en.json`; device language detected, English only (Q15). Sign-in, email code, tab bar, Explore prompt and the M1-12 copy read from the catalog. **Lint rule:** new JSX text and string `aria-label` / `placeholder` / `title` / `alt` fail. **Left:** 1,950 existing strings in 91 files (listed in `eslint-suppressions.json`); they move to the catalog as M2/M3 rebuild each screen, rather than extracting copy from screens about to be replaced. |
+| M1-08 | 🟡 | 75 public wrappers of retired features revoked from `anon`/`authenticated`, listed in `trip_private.retired_wrappers` (10_retired_wrappers.test.sql); the baseline keeps them revoked. No cron job served only a retired feature. No production export is needed (start fresh). **Left:** move the 52 retired tables to `legacy_archive` (or drop them, since they are empty everywhere) after `delete_trip`, `trip_photos` and account deletion stop naming them. |
+| M1-09 | ✅ | `supabase/migrations/00000000000000_baseline.sql` (from `scripts/db/make-baseline.sh`); the 304 old files are in `supabase/migrations_archive/`. Replaying the baseline alone gives the same schema, privileges, cron jobs, inventory and seeded rows as the full history; it also creates the 7 storage buckets and a per-database cron key. 12_baseline.test.sql. No `migration repair` needed: every environment is new. **Left:** CI's `supabase` job is the first run on the real Supabase stack. |
 | M1-10 | Remove FULL/PREVIEW levels and per-trip feature switches | M |
 | M1-11 | Mine retired content into a seed file | S |
-| M1-12 | Contrast & readability fixes (beta notes) | S |
+| M1-12 | 🟡 | Place suggestions are opaque (form no longer shows through); small pink text, destructive red, podium names and the Play phase track (upcoming steps were at half opacity) meet AA; NOW badge and accessible names fixed. Copy: "I'll write it" → "Start from ready-made cards"; "Optional preparation before travel" → "Pre-Flight warm-up days before you go (optional)". `e2e/a11y.spec.ts`: axe WCAG 2.1 A/AA plus a painted-contrast check (`e2e/support/contrast.ts`) on sign-in, Home, Play, Trip, Captain Tools, Me, Help and trip setup, all passing. **Left:** light appearance and screens the mock backend can't reach (live rooms, culture setup) need the local stack or staging; founder phone check. |
 
-## Status (Oct 23, 2026)
+## Status (Oct 23, 2026, end of day)
 
 | ID | State | What's done · what's left |
 |---|---|---|
