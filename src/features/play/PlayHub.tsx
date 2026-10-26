@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import { rpc } from "@/data/rpc";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
@@ -379,7 +380,55 @@ function PhaseRail({
   );
 }
 
+const nightGames = [
+  "Card flip",
+  "Spin the wheel",
+  "30-sec Draw",
+  "Guess the song",
+  "Vote showdown",
+  "Two truths & lie",
+].map((title, index) => ({
+  index: [0, 1, 2, 3, 5, 6][index] ?? index,
+  title,
+  art: gameSceneArt(title),
+  icon: "",
+}));
+
+/** One-night Game Night room (M2-14, R-008): straight to the games, free, no points or crowns.
+ * Friends off the app pass one phone; a crew on the app plays the arcade until Game Night Live
+ * (M3-07) gives everyone their own screen. */
+function GameNightRoom({ trip }: { trip: TripWithRole }) {
+  const t = useT();
+  const navigate = useNavigate();
+  const onExit = () => void navigate({ to: "/home" });
+  return (
+    <div className="play-hub">
+      <header className="play-hub-heading">
+        <div className="min-w-0">
+          <h1>{tripDisplayName(trip.name)}</h1>
+          <p>{t("gameNight.line")}</p>
+        </div>
+      </header>
+      {trip.play_mode === "offline" ? (
+        <OnePhoneNight
+          tripId={trip.id}
+          destination={trip.destination}
+          games={nightGames}
+          onExit={onExit}
+        />
+      ) : (
+        <GameArcade trips={[trip]} practiceMode onBack={onExit} />
+      )}
+    </div>
+  );
+}
+
 export function PlayHub(props: Props) {
+  if (props.trip.room === "game_night") return <GameNightRoom trip={props.trip} />;
+  return <EnginePlayHub {...props} />;
+}
+
+function EnginePlayHub(props: Props) {
   const { trip, members, cards, userId, onMember } = props;
   const [phase, setPhase] = useState<Phase | null>(null),
     [detail, setDetail] = useState<Detail>(null),
@@ -1328,19 +1377,7 @@ function PlayDetail(
         <OnePhoneNight
           tripId={trip.id}
           destination={trip.destination}
-          games={[
-            "Card flip",
-            "Spin the wheel",
-            "30-sec Draw",
-            "Guess the song",
-            "Vote showdown",
-            "Two truths & lie",
-          ].map((title, index) => ({
-            index: [0, 1, 2, 3, 5, 6][index] ?? index,
-            title,
-            art: gameSceneArt(title),
-            icon: "",
-          }))}
+          games={nightGames}
           onExit={onBack}
         />
       </div>

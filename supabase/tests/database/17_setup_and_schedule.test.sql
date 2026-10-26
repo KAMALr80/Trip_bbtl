@@ -1,7 +1,7 @@
 -- M2-05 create_trip_v2 + drafts, M2-06 call nights, M2-12 plan_trip.
 BEGIN;
 \ir ../_helpers.psql
-SELECT plan(36);
+SELECT plan(37);
 
 SELECT tests.create_user('cap', 30);
 SELECT tests.create_user('young', 20);
@@ -90,6 +90,8 @@ SELECT is((SELECT opens_at FROM public.trip_schedule WHERE trip_id = (SELECT id 
 UPDATE public.trips SET preflight_skipped = true WHERE id = (SELECT id FROM ids WHERE k = 'trip');
 SELECT is((SELECT count(*)::int FROM public.trip_schedule WHERE trip_id = (SELECT id FROM ids WHERE k = 'trip') AND slot = 'preflight'), 0,
           'skipping Pre-Flight removes its marker');
+SELECT is((SELECT season_scoring FROM public.trips WHERE id = (SELECT id FROM ids WHERE k = 'night')), false,
+          'a Game Night never counts for boards or crowns (R-008)');
 SELECT is((SELECT count(*)::int FROM public.trip_schedule WHERE trip_id = (SELECT id FROM ids WHERE k = 'night') AND kind = 'phase'), 2,
           'a Game Night has the night and Baggage Claim only');
 

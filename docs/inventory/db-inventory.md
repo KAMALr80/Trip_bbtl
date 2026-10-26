@@ -82,7 +82,7 @@ revoke `anon` (09 §2).
 
 ## Client usage
 
-### Public functions callable by clients but not referenced in `src/`: 35
+### Public functions callable by clients but not referenced in `src/`: 33
 
 Candidates to revoke (M1-08). Some may be called from SQL, cron or the Test Lab only: check
 before removing. Reference matching is by quoted name, so dynamic names built from strings
@@ -113,9 +113,7 @@ are still found.
 - `season_timing(p_trip uuid)`
 - `set_boarding_tile(p_tile text)`
 - `set_carry_on_meetup(p_trip uuid, p_at timestamp with time zone, p_place text)`
-- `set_crowning_night(p_trip uuid, p_at timestamp with time zone, p_place text, p_call_link text)`
 - `set_home_ready_start(p_trip uuid, p_start date)`
-- `set_preflight(p_trip uuid, p_days integer, p_skipped boolean)`
 - `set_price_rule(p_key text, p_cents integer)`
 - `set_trip_archived(p_trip uuid, p_archived boolean, p_note text)`
 - `set_wheels_up(p_trip uuid, p_date date, p_time text)`
@@ -255,7 +253,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `trip_season_reveals` | table | ✅ | 1 | — | 0 |
 | public | `trip_team_members` | table | ✅ | 1 | — | 0 |
 | public | `trip_teams` | table | ✅ | 1 | — | 0 |
-| public | `trips` | table | ✅ | 1 | — | 17 |
+| public | `trips` | table | ✅ | 1 | — | 18 |
 | public | `trivia_answers` | table | ✅ | 1 | — | 0 |
 | public | `user_credits` | table | ✅ | 1 | — | 0 |
 | public | `waitlist` | table | ✅ | 1 | — | 0 |

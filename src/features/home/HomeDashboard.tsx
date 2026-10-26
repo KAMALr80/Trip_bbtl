@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import { rpc } from "@/data/rpc";
 import { useEffect, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, LockKeyhole, Plane, Search, Share2 } from "lucide-react";
@@ -168,6 +169,7 @@ export function HomeDashboard({
   onMember,
 }: Props) {
   const t = useT();
+  const navigate = useNavigate();
   const flightReminder = useFlightReminders(active, userId);
   const homeLayout = useHomeLayout(userId);
   const [tile, setTile] = useState("a");
@@ -411,7 +413,8 @@ export function HomeDashboard({
         label: "Game Night",
         subline: "Play right now",
         img: gameOptionA,
-        action: () => setScreen("arcade"),
+        // A one-night Game Night room: "Who's playing?", then play (M2-14).
+        action: () => void navigate({ to: "/trips/new", search: { room: "game_night" } }),
       },
       {
         label: "Passport",

@@ -292,5 +292,8 @@
     "save": "Save",
     "saved": "Saved",
     "close": "Close"
+  },
+  "gameNight": {
+    "line": "Game Night · free, just for fun · no points or crowns"
   }
 }

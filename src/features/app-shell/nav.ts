@@ -68,9 +68,11 @@ export function tabHref(tab: Tab, tripId: string | null | undefined): string {
 }
 export function tabOf(pathname: string): Tab {
   const scoped = tripPath.exec(pathname)?.[2];
-  if (scoped === "play" || pathname.startsWith("/play")) return "Play";
-  if (scoped === "trip" || pathname.startsWith("/trip")) return "Trip";
-  if (pathname.startsWith("/me")) return "Me";
+  // Whole path segments only: /trips/new is the setup wizard, not the Trip tab.
+  const first = /^\/([^/?#]*)/.exec(pathname)?.[1];
+  if (scoped === "play" || first === "play") return "Play";
+  if (scoped === "trip" || first === "trip") return "Trip";
+  if (first === "me") return "Me";
   return "Home";
 }
 /** The trip in a /t/$tripId/… URL, or null. */

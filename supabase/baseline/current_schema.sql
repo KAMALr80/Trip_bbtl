@@ -4408,6 +4408,7 @@ BEGIN
   IF cardinality(NEW.focuses) > (r->>'maxFocuses')::int THEN
     RAISE EXCEPTION 'Pick up to % focuses', r->>'maxFocuses' USING ERRCODE = '22023';
   END IF;
+  IF NOT (r->>'pointsEnabled')::boolean THEN NEW.season_scoring := false; END IF;
   RETURN NEW;
 END $$;
 
