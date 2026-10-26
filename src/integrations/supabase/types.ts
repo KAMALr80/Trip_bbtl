@@ -6926,6 +6926,10 @@ export type Database = {
         Args: { p_at: string; p_place: string; p_trip: string };
         Returns: undefined;
       };
+      set_crowning_night: {
+        Args: { p_at: string; p_call_link: string; p_place: string; p_trip: string };
+        Returns: undefined;
+      };
       set_culture_finale: { Args: { p_exp: string; p_format: string }; Returns: undefined };
       set_culture_mode: {
         Args: { p_exp: string; p_mode: string; p_types: string[]; p_vibe: string };
@@ -6965,6 +6969,10 @@ export type Database = {
         Returns: undefined;
       };
       set_pay_note: { Args: { p_note: string; p_trip: string }; Returns: undefined };
+      set_preflight: {
+        Args: { p_days: number; p_skipped: boolean; p_trip: string };
+        Returns: undefined;
+      };
       set_preflight_a2c: {
         Args: { p_start: string; p_time: string; p_trip: string; p_weekday: number };
         Returns: number;

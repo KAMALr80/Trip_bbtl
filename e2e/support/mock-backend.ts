@@ -63,6 +63,7 @@ type Options = {
   rpc?: Record<string, unknown>;
   noCard?: boolean;
   tables?: Record<string, object[]>;
+  role?: "captain" | "co_captain" | "player";
 };
 export type RpcCall = { fn: string; body: unknown };
 
@@ -99,7 +100,14 @@ export async function signInWithMockBackend(page: Page, options: Options = {}): 
     ],
     trips: options.trip ? [options.trip] : [],
     trip_members: options.trip
-      ? [{ trip_id: options.trip.id, user_id: userId, role: "captain", status: "approved" }]
+      ? [
+          {
+            trip_id: options.trip.id,
+            user_id: userId,
+            role: options.role ?? "captain",
+            status: "approved",
+          },
+        ]
       : [],
     trip_player_cards:
       options.trip && !options.noCard

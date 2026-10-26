@@ -238,3 +238,58 @@ export function toSetupPayload(draft: SetupDraft, ctx: Context & { destination: 
     tripTz,
   };
 }
+
+const localTime = (at: number, tz: string) =>
+  new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date(at));
+const localDay = (at: number, tz: string) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(at));
+
+/** A live trip as a draft, so Captain tools edit it with the wizard's own screens and checks. */
+export function tripToDraft(
+  trip: {
+    room: string;
+    play_mode: string;
+    start_date: string;
+    end_date: string;
+    preflight_days: number;
+    preflight_skipped: boolean;
+    trip_timezone: string | null;
+    home_timezone: string;
+    crowning_at: string | null;
+    crowning_place: string | null;
+    crowning_call_link: string | null;
+  },
+  nights: { starts_at: string; call_link: string | null; second_link: string | null }[],
+): SetupDraft {
+  const room = (rooms[trip.room as RoomId] ? trip.room : "trip") as RoomId;
+  const crownTz = rooms[room].atHome
+    ? trip.home_timezone
+    : (trip.trip_timezone ?? trip.home_timezone);
+  const crown = trip.crowning_at ? Date.parse(trip.crowning_at) : null;
+  return {
+    room,
+    playMode: trip.play_mode as PlayMode,
+    startDate: trip.start_date,
+    endDate: trip.end_date,
+    preflightDays: trip.preflight_days,
+    preflightSkipped: trip.preflight_skipped,
+    tripTz: trip.trip_timezone,
+    callNights: nights
+      .filter((n) => Date.parse(n.starts_at) > Date.now())
+      .map((n) => ({
+        date: localDay(Date.parse(n.starts_at), trip.home_timezone),
+        time: localTime(Date.parse(n.starts_at), trip.home_timezone),
+        callLink: n.call_link ?? "",
+        secondLink: n.second_link ?? "",
+      })),
+    crowningDate: crown === null ? undefined : localDay(crown, crownTz),
+    crowningTime: crown === null ? undefined : localTime(crown, crownTz),
+    crowningPlace: trip.crowning_place ?? "",
+    crowningCallLink: trip.crowning_call_link ?? "",
+  };
+}

@@ -2450,6 +2450,16 @@ CREATE FUNCTION public.set_carry_on_meetup(p_trip uuid, p_at timestamp with time
 
 
 --
+-- Name: set_crowning_night(uuid, timestamp with time zone, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_crowning_night(p_trip uuid, p_at timestamp with time zone, p_place text, p_call_link text) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.set_crowning_night(p_trip, p_at, p_place, p_call_link) $$;
+
+
+--
 -- Name: set_culture_finale(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2597,6 +2607,16 @@ CREATE FUNCTION public.set_pay_note(p_trip uuid, p_note text) RETURNS void
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.set_pay_note(p_trip,p_note) $$;
+
+
+--
+-- Name: set_preflight(uuid, integer, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_preflight(p_trip uuid, p_days integer, p_skipped boolean) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.set_preflight(p_trip, p_days, p_skipped) $$;
 
 
 --
@@ -10550,6 +10570,30 @@ CREATE FUNCTION trip_private.set_carry_on_meetup(p_trip uuid, p_at timestamp wit
 
 
 --
+-- Name: set_crowning_night(uuid, timestamp with time zone, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_crowning_night(p_trip uuid, p_at timestamp with time zone, p_place text, p_call_link text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE t public.trips; v_zone text; r jsonb;
+BEGIN
+  IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can set the crowning night'; END IF;
+  SELECT * INTO t FROM public.trips WHERE id = p_trip FOR UPDATE;
+  r := trip_private.room_rules(t.room);
+  IF p_at IS NULL THEN RAISE EXCEPTION 'Pick the date and time'; END IF;
+  v_zone := CASE WHEN (r->>'atHome')::boolean THEN t.home_timezone ELSE coalesce(t.trip_timezone, t.home_timezone) END;
+  IF (p_at AT TIME ZONE v_zone)::date NOT BETWEEN t.start_date AND t.end_date THEN
+    RAISE EXCEPTION 'The % has to be on one of the trip days', lower(r->>'crowningLabel');
+  END IF;
+  UPDATE public.trips SET crowning_at = p_at, crowning_place = nullif(btrim(p_place), ''),
+    crowning_call_link = nullif(btrim(p_call_link), '')
+  WHERE id = p_trip;
+END $$;
+
+
+--
 -- Name: set_culture_finale(uuid, text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -10784,6 +10828,27 @@ BEGIN
   IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can change this'; END IF;
   UPDATE public.trips SET pay_note=nullif(left(trim(coalesce(p_note,'')),200),'') WHERE id=p_trip;
   PERFORM trip_private.log_cost(p_trip, NULL, NULL, 'updated how to pay', NULL, left(trim(coalesce(p_note,'')),200));
+END $$;
+
+
+--
+-- Name: set_preflight(uuid, integer, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_preflight(p_trip uuid, p_days integer, p_skipped boolean) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE t public.trips; w record;
+BEGIN
+  IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can change Pre-Flight'; END IF;
+  UPDATE public.trips SET preflight_days = coalesce(p_days, 0), preflight_skipped = coalesce(p_skipped, false)
+  WHERE id = p_trip RETURNING * INTO t;
+  SELECT * INTO w FROM trip_private.trip_phase_windows(p_trip) x WHERE x.phase = 'preflight';
+  IF EXISTS (SELECT 1 FROM public.call_nights c WHERE c.trip_id = p_trip AND c.starts_at > now()
+             AND (w.ends_at <= w.starts_at OR c.starts_at < w.starts_at OR c.starts_at >= w.ends_at)) THEN
+    RAISE EXCEPTION 'Some call nights would fall outside Pre-Flight. Move or remove them first.' USING ERRCODE = '22023';
+  END IF;
 END $$;
 
 
@@ -23128,6 +23193,15 @@ GRANT ALL ON FUNCTION public.set_carry_on_meetup(p_trip uuid, p_at timestamp wit
 
 
 --
+-- Name: FUNCTION set_crowning_night(p_trip uuid, p_at timestamp with time zone, p_place text, p_call_link text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_crowning_night(p_trip uuid, p_at timestamp with time zone, p_place text, p_call_link text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_crowning_night(p_trip uuid, p_at timestamp with time zone, p_place text, p_call_link text) TO authenticated;
+GRANT ALL ON FUNCTION public.set_crowning_night(p_trip uuid, p_at timestamp with time zone, p_place text, p_call_link text) TO service_role;
+
+
+--
 -- Name: FUNCTION set_culture_finale(p_exp uuid, p_format text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -23257,6 +23331,15 @@ GRANT ALL ON FUNCTION public.set_passport_destination(p_trip uuid, p_country tex
 REVOKE ALL ON FUNCTION public.set_pay_note(p_trip uuid, p_note text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.set_pay_note(p_trip uuid, p_note text) TO authenticated;
 GRANT ALL ON FUNCTION public.set_pay_note(p_trip uuid, p_note text) TO service_role;
+
+
+--
+-- Name: FUNCTION set_preflight(p_trip uuid, p_days integer, p_skipped boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_preflight(p_trip uuid, p_days integer, p_skipped boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_preflight(p_trip uuid, p_days integer, p_skipped boolean) TO authenticated;
+GRANT ALL ON FUNCTION public.set_preflight(p_trip uuid, p_days integer, p_skipped boolean) TO service_role;
 
 
 --
@@ -26776,6 +26859,15 @@ GRANT ALL ON FUNCTION trip_private.set_carry_on_meetup(p_trip uuid, p_at timesta
 
 
 --
+-- Name: FUNCTION set_crowning_night(p_trip uuid, p_at timestamp with time zone, p_place text, p_call_link text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_crowning_night(p_trip uuid, p_at timestamp with time zone, p_place text, p_call_link text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_crowning_night(p_trip uuid, p_at timestamp with time zone, p_place text, p_call_link text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.set_crowning_night(p_trip uuid, p_at timestamp with time zone, p_place text, p_call_link text) TO service_role;
+
+
+--
 -- Name: FUNCTION set_culture_finale(p_exp uuid, p_format text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -26878,6 +26970,15 @@ GRANT ALL ON FUNCTION trip_private.set_passport_destination(p_trip uuid, p_count
 REVOKE ALL ON FUNCTION trip_private.set_pay_note(p_trip uuid, p_note text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.set_pay_note(p_trip uuid, p_note text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.set_pay_note(p_trip uuid, p_note text) TO service_role;
+
+
+--
+-- Name: FUNCTION set_preflight(p_trip uuid, p_days integer, p_skipped boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_preflight(p_trip uuid, p_days integer, p_skipped boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_preflight(p_trip uuid, p_days integer, p_skipped boolean) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.set_preflight(p_trip uuid, p_days integer, p_skipped boolean) TO service_role;
 
 
 --

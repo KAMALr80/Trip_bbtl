@@ -123,3 +123,33 @@ describe("setup wizard model (M2-05, M2-07)", () => {
     expect(suggestedName({ room: "explore_culture" }, "Japan")).toBe("Exploring Japan");
   });
 });
+
+describe("tripToDraft (Captain tools reuse the wizard screens)", () => {
+  it("round-trips the zones", async () => {
+    const { tripToDraft } = await import("./wizard-model");
+    const d = tripToDraft(
+      {
+        room: "trip",
+        play_mode: "crew",
+        start_date: "2026-06-10",
+        end_date: "2026-06-14",
+        preflight_days: 5,
+        preflight_skipped: false,
+        trip_timezone: "Asia/Makassar",
+        home_timezone: "America/New_York",
+        crowning_at: "2026-06-13T12:00:00.000Z",
+        crowning_place: "The villa",
+        crowning_call_link: null,
+      },
+      [
+        {
+          starts_at: "2099-06-07T23:00:00.000Z",
+          call_link: "https://meet.example/x",
+          second_link: null,
+        },
+      ],
+    );
+    expect([d.crowningDate, d.crowningTime]).toEqual(["2026-06-13", "20:00"]);
+    expect(d.callNights?.[0]).toMatchObject({ date: "2099-06-07", time: "19:00" });
+  });
+});

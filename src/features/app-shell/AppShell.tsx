@@ -727,7 +727,7 @@ export function AppShell() {
             }}
           />
         </div>
-      ) : tools && active ? (
+      ) : tools && active && ["captain", "co_captain"].includes(active.myRole) ? (
         <CaptainTools
           key={active.id}
           trip={active}

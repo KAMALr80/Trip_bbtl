@@ -275,5 +275,22 @@
     "finaleTitle": "Finale night",
     "crowningPending": "The Captain picks the date, time and place.",
     "crowningEvent": "Crowning night"
+  },
+  "tiles": {
+    "title": "By phase",
+    "now": "Now",
+    "done": "Done",
+    "opens": "Opens {{date}}",
+    "preflight": "Call nights, links and Pre-Flight days",
+    "takeoff": "Tap \"We've arrived\" when you land",
+    "trip_season": "Crowning night: date, time, place",
+    "baggage_claim": "Break photo ties or swap one photo",
+    "baggageSoon": "Coming with Postcard Picks.",
+    "arrivedAt": "Arrived {{when}}",
+    "arrivalLater": "Opens on takeoff day.",
+    "arrivalAuto": "Trip Season has started.",
+    "save": "Save",
+    "saved": "Saved",
+    "close": "Close"
   }
 }

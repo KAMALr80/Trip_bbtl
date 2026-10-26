@@ -1,7 +1,7 @@
 -- M2-05 create_trip_v2 + drafts, M2-06 call nights, M2-12 plan_trip.
 BEGIN;
 \ir ../_helpers.psql
-SELECT plan(30);
+SELECT plan(36);
 
 SELECT tests.create_user('cap', 30);
 SELECT tests.create_user('young', 20);
@@ -92,6 +92,24 @@ SELECT is((SELECT count(*)::int FROM public.trip_schedule WHERE trip_id = (SELEC
           'skipping Pre-Flight removes its marker');
 SELECT is((SELECT count(*)::int FROM public.trip_schedule WHERE trip_id = (SELECT id FROM ids WHERE k = 'night') AND kind = 'phase'), 2,
           'a Game Night has the night and Baggage Claim only');
+
+-- ---------------------------------------------------------------- Captain tiles (M2-11)
+SELECT tests.add_member((SELECT id FROM ids WHERE k = 'trip'), tests.user_id('co'), 'co_captain');
+SELECT tests.authenticate_as(tests.user_id('co'));
+SELECT lives_ok($$SELECT public.set_crowning_night((SELECT id FROM ids WHERE k = 'trip'),
+                   ((current_date + 22) + time '20:00') AT TIME ZONE 'Asia/Makassar', 'Beach club', NULL)$$,
+                'the Co-Captain moves the crowning night');
+SELECT is((SELECT opens_at FROM public.trip_schedule WHERE trip_id = (SELECT id FROM ids WHERE k = 'trip') AND kind = 'crowning'),
+          ((current_date + 22) + time '20:00') AT TIME ZONE 'Asia/Makassar', 'and the schedule follows');
+SELECT throws_like($$SELECT public.set_crowning_night((SELECT id FROM ids WHERE k = 'trip'), now(), 'x', NULL)$$,
+                   'The crowning night has to be on one of the trip days', 'only on a trip day');
+SELECT throws_like($$SELECT public.set_preflight((SELECT id FROM ids WHERE k = 'trip'), 3, false)$$,
+                   'Some call nights would fall outside Pre-Flight%', 'Pre-Flight can''t shrink past a call night');
+SELECT lives_ok($$SELECT public.set_preflight((SELECT id FROM ids WHERE k = 'trip'), 5, false)$$, 'the Co-Captain sets Pre-Flight days');
+SELECT tests.authenticate_as(tests.user_id('p1'));
+SELECT throws_like($$SELECT public.set_preflight((SELECT id FROM ids WHERE k = 'trip'), 0, true)$$,
+                   'Only the Captain or Co-Captain%', 'players cannot change Pre-Flight');
+SELECT tests.clear_authentication();
 
 -- ---------------------------------------------------------------- drafts
 SELECT tests.authenticate_as(tests.user_id('co'));
