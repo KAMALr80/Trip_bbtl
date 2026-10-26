@@ -26,6 +26,29 @@
 | M2-13 | Server-side limits (group size, days, ages for Captain) | S |
 | M2-14 | One-night Game Night room | M |
 
+## Status (Oct 26, 2026)
+
+Built with the Q2, Q8, Q14, Q19, Q21 and Q26 defaults (06).
+
+| ID | State | What's done · what's left |
+|---|---|---|
+| M2-01 | ✅ | `src/features/trip/rooms.ts` = `trip_private.room_rules(room)`, both tested against `supabase/tests/fixtures/rooms.json`. |
+| M2-02 | ✅ | New `trips` columns (`room`, `play_mode`, Pre-Flight, cultures/focuses, destination lat/lng, `arrived_at` (renamed) + `arrived_by`, crowning, `locked_at`, `setup_completed_at`), `call_nights`. Nothing to backfill (fresh start). The older columns stay for the screens that still read them. |
+| M2-03 | ✅ | `phase_windows` / `phase_at` / `trip_phase` + `src/features/trip/phase.ts`; 60 shared cases (DST, date line, Skip, late start, backup, at home, Game Night) in pgTAP and Vitest. **Left:** older server rules (Airport Missions' `mission_window`, sealed quests) still use their own dates; they move onto `trip_phase` as M3 rebuilds them. |
+| M2-04 | 🟡 | City and region suggestions everywhere PlacePicker is used; trip zone from city → region → country, asking for multi-zone places (Bali → Asia/Makassar). Data: 7,270 cities bundled from Natural Earth (no API key, no cost). **Left:** a paid places API for small towns if the founder wants one (swap behind `src/lib/place-zones.ts`); the lookup runs on the client and the server checks the zone name. |
+| M2-05 | ✅ | `/trips/new`: Who's playing · Where to? · Basics · Pre-Flight · Trip Season · Invite, saved after each screen, every room. **Left:** remove the old create code (`TripSheets` create mode, `CultureA2eSetup`, `GamePlanPicker`), unreachable now; Basics scrolls at 390×844 (calendar + vibe list). |
+| M2-06 | ✅ | `set_call_nights` (≤ 4, inside Pre-Flight, links); Play card with Join call / 2nd link / .ics. |
+| M2-07 | ✅ | Every room × allowed mode (solo Explore included); off-app names stay on the phone (1+ names, e2e-checked). |
+| M2-08 | 🟡 | Join card asks role (pre-filled) + most excited for, then opens Play. **Left:** the invite preview → join tap path itself is unchanged; "3 taps" not measured end to end. |
+| M2-09 | 🟡 | Banners (R-107) on Home and Play; hub, phase rail and pages on the engine for every room; Home Missions / Baggage Claim names; call nights and crowning cards. **Left:** `BoardingPass` header art (with the Airline Look screens); Test Lab time travel doesn't move the client banner. |
+| M2-10 | ✅ | 21 functions + member removal open to the Co-Captain; `mark_arrived` (Takeoff only). Captain-only list in AGENTS.md. |
+| M2-11 | ✅ | Captain tools tiles per phase, editors reuse the wizard screens; leaders only. Lives at `?tools=true`, not a `/me/captain/$tripId` path. |
+| M2-12 | ✅ | `trip_schedule` + `plan_trip` (phases, call nights, crowning), re-run by triggers, idempotent. |
+| M2-13 | ✅ | Triggers check days, modes, Pre-Flight, focuses, crew size (pending counted), call nights; Captain 21+ on create. The old 6-seat price tier and 2–30 day check are retired. |
+| M2-14 | ✅ | Game Night from Home in three taps; one phone, or the arcade for a crew until Game Night Live (M3-07); no points, crowns or stamps. |
+
+**Exit criteria:** create for every room × mode is covered by pgTAP (`17_setup_and_schedule`), and the e2e tests walk a crew trip to Bali and an off-app Game Night; the remaining 10 room × mode combinations aren't walked in the browser. Bali shows Bali time ✅. Beta notes: city suggestions ✅, zone lookup ✅, answers show on Play ✅ (on the Trip tab: not checked), Play for at-home and Window Seat ✅, at-home finale picker ✅, off-app roster from 1 name ✅, contrast and copy (M1-12) ✅.
+
 ---
 
 ### M2-01 · Room config
