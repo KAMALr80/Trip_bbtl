@@ -38,6 +38,18 @@ export const sampleTrip = {
   home_timezone: "UTC",
   trip_timezone: "Europe/Lisbon",
   rules_version: 2,
+  room: "trip",
+  play_mode: "crew",
+  preflight_days: 5,
+  preflight_skipped: false,
+  arrived_at: null as string | null,
+  setup_completed_at: "2026-10-01T00:00:00Z",
+  crowning_at: null as string | null,
+  crowning_place: null as string | null,
+  crowning_call_link: null as string | null,
+  cultures: [] as string[],
+  passport_country: "PT",
+  passport_city: "Lisbon",
   season_rule: "a2c",
   season_scoring: true,
   is_sandbox: false,
@@ -46,7 +58,12 @@ export const sampleTrip = {
   created_at: "2026-10-01T00:00:00Z",
 };
 
-type Options = { trip?: typeof sampleTrip; rpc?: Record<string, unknown>; noCard?: boolean };
+type Options = {
+  trip?: typeof sampleTrip;
+  rpc?: Record<string, unknown>;
+  noCard?: boolean;
+  tables?: Record<string, object[]>;
+};
 export type RpcCall = { fn: string; body: unknown };
 
 export async function signInWithMockBackend(page: Page, options: Options = {}): Promise<RpcCall[]> {
@@ -98,6 +115,7 @@ export async function signInWithMockBackend(page: Page, options: Options = {}): 
           ]
         : [],
   };
+  Object.assign(rows, options.tables);
   const rpc: Record<string, unknown> = {
     account_status: [{ legal_version: "2026-10-03" }],
     my_access: [{ beta: true, has_dob: true, age_range: "21+" }],

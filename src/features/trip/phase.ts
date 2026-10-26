@@ -171,3 +171,33 @@ export function phaseAt(input: PhaseInput, at: Date | string | number): PhaseWin
   const end = b.baggage_claim[1];
   return { phase: "archived", startsAt: iso(end), endsAt: null, tz: home, dayIndex: null };
 }
+
+type TripRow = {
+  room: string;
+  start_date: string;
+  end_date: string;
+  preflight_days: number;
+  preflight_skipped: boolean;
+  home_timezone: string;
+  trip_timezone: string | null;
+  arrived_at: string | null;
+  setup_completed_at: string | null;
+};
+/** A trips row as engine input. */
+export function tripPhaseInput(trip: TripRow): PhaseInput {
+  return {
+    room: (rooms[trip.room as RoomId] ? trip.room : "trip") as RoomId,
+    startDate: trip.start_date,
+    endDate: trip.end_date,
+    preflightDays: trip.preflight_days,
+    preflightSkipped: trip.preflight_skipped,
+    homeTz: trip.home_timezone,
+    tripTz: trip.trip_timezone,
+    arrivedAt: trip.arrived_at,
+    setupComplete: trip.setup_completed_at !== null,
+  };
+}
+/** The trip's phase now (or at `at`), for display. The server's trip_phase decides. */
+export function tripPhase(trip: TripRow, at: number = Date.now()): PhaseWindow {
+  return phaseAt(tripPhaseInput(trip), at);
+}

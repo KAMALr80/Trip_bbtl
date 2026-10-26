@@ -1,74 +1,88 @@
-import { useCallback, useEffect, useState } from "react";
+// Phase banner (M2-09, R-106 / R-107): the phase's line at the top of Home and Play, never a pop-up.
+// Trip Season names the city, or the culture for at-home rooms. During Takeoff the Captain and
+// Co-Captain also get "We've arrived" (R-103, R-111). The phase is display-only; the server's
+// trip_phase decides (mark_arrived checks it again).
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { datePhase, phaseBanner, noFlight } from "@/lib/play-arrangement";
+import { rpc } from "@/data/rpc";
+import { tripPhase } from "@/features/trip/phase";
+import { roomOf } from "@/features/trip/rooms";
+import { useT } from "@/i18n";
+import { friendlyError } from "@/lib/friendly-error";
+import { countryName } from "@/lib/places";
 import type { TripWithRole } from "@/lib/trips";
-import { tripToday, tripTz } from "@/lib/itinerary";
+
+/** Re-renders every minute so banners and countdowns move on their own. */
+export function useMinute() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+  return now;
+}
+
+export function bannerPlace(trip: TripWithRole): string {
+  if (roomOf(trip.room).atHome) {
+    const culture = trip.cultures?.[0] ?? trip.passport_country;
+    return culture ? countryName(culture) : trip.destination;
+  }
+  return trip.passport_city || trip.destination.split(",")[0]?.trim() || trip.destination;
+}
 
 export function PhaseNotice({
   trip,
   viewOnly,
-  started,
 }: {
   trip: TripWithRole;
   viewOnly?: boolean;
   started?: boolean;
 }) {
-  const [serverStarted, setServerStarted] = useState(started ?? false),
-    [error, setError] = useState("");
-  const load = useCallback(async () => {
-    const { data, error: issue } = await supabase.rpc(
-      "trip_season_started" as never,
-      { p_trip: trip.id } as never,
-    );
-    if (issue) setError(issue.message);
-    else setServerStarted(data === true);
-  }, [trip.id]);
-  useEffect(() => {
-    if (started === undefined) void load();
-    else setServerStarted(started);
-  }, [load, started]);
-  const banner = phaseBanner(trip, serverStarted);
-  if (!banner) return null;
+  const t = useT();
+  const now = useMinute();
+  const queryClient = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const { phase } = tripPhase(trip, now);
+  if (
+    phase !== "preflight" &&
+    phase !== "takeoff" &&
+    phase !== "trip_season" &&
+    phase !== "baggage_claim"
+  )
+    return null;
   const leader = trip.myRole === "captain" || trip.myRole === "co_captain";
-  const canConfirm =
-    !serverStarted &&
-    !trip.arrived_at &&
-    datePhase(trip, serverStarted) === "airport" &&
-    trip.start_date <= tripToday(tripTz(trip)) &&
+  const canArrive =
+    phase === "takeoff" &&
     leader &&
-    !viewOnly;
+    !viewOnly &&
+    !trip.arrived_at &&
+    roomOf(trip.room).tripSeasonStart === "arrival_button";
   return (
-    <div className="mt-3 border-l-4 border-primary bg-muted p-3 text-sm" role="status">
-      <p className="font-bold">{banner}</p>
-      {canConfirm && (
+    <div className="phase-banner mt-3 border-l-4 border-primary bg-muted p-3 text-sm" role="status">
+      <p className="font-bold">{t(`phases.banner.${phase}`, { place: bannerPlace(trip) })}</p>
+      {canArrive && (
         <>
           <Button
             variant="outline"
-            className="min-h-11 mt-2"
+            className="mt-2 min-h-11"
+            disabled={busy}
             onClick={async () => {
-              const { error: issue } = await supabase.rpc(
-                "confirm_departure" as never,
-                { p_trip: trip.id } as never,
-              );
-              if (issue) setError(issue.message);
-              else {
-                setServerStarted(true);
-                window.location.reload();
-              }
+              setBusy(true);
+              const { error: issue } = await rpc("mark_arrived", { p_trip: trip.id });
+              setBusy(false);
+              if (issue) setError(friendlyError(issue));
+              else await queryClient.invalidateQueries({ queryKey: ["trips"] });
             }}
           >
-            {noFlight(trip) ? "Start Trip Season" : "We’ve arrived"}
+            {busy ? t("phases.arrivedSaving") : t("phases.arrived")}
           </Button>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {noFlight(trip)
-              ? "Tap when your experience begins, or Trip Season opens on its own."
-              : "Tap when you land, or Trip Season opens on its own."}
-          </p>
+          <p className="mt-2 text-xs text-muted-foreground">{t("phases.arrivedHint")}</p>
         </>
       )}
       {error && (
-        <p role="alert" className="text-destructive mt-2">
+        <p role="alert" className="mt-2 text-destructive">
           {error}
         </p>
       )}

@@ -366,11 +366,6 @@
       "count": 1
     }
   },
-  "src/features/play/PhaseNotice.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "src/features/play/PlayHub.tsx": {
     "no-restricted-imports": {
       "count": 1

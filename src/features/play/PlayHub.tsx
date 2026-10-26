@@ -35,6 +35,11 @@ import { HomeDayFlow } from "@/features/play/HomeDayFlow";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { datePhase, noFlight, readOfflineRoster } from "@/lib/play-arrangement";
+import { phaseBoundaries, tripPhase, tripPhaseInput } from "@/features/trip/phase";
+import { roomOf } from "@/features/trip/rooms";
+import { useT } from "@/i18n";
+import { CallNightsCard, CrowningCard } from "@/features/play/TripNights";
+import { useQueryClient } from "@tanstack/react-query";
 import { tripToday, tripTz } from "@/lib/itinerary";
 import { friendlyRange } from "@/lib/trip-dates";
 import { tripDisplayName } from "@/lib/trip-display-name";
@@ -119,11 +124,6 @@ const PHASES: { id: Phase; label: string; art: string; tagline: string }[] = [
   },
 ];
 const indexOf = (phase: Phase) => PHASES.findIndex((p) => p.id === phase);
-const addDays = (value: string, count: number) => {
-  const d = new Date(`${value}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + count);
-  return d.toISOString().slice(0, 10);
-};
 const daysBetween = (a: string, b: string) =>
   Math.max(0, Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86400000));
 const shortDate = (value: string) =>
@@ -139,31 +139,32 @@ const stampLabel = (value: string) => {
   return label || words[0] || "TRIP";
 };
 
-function currentPhase(trip: TripWithRole, tripSeasonStarted: boolean): Phase {
-  const date = datePhase(trip, tripSeasonStarted);
-  if (date === "preflight") return "preflight";
-  if (date === "airport") return "takeoff";
-  if (date === "trip")
-    return tripToday(tripTz(trip)) > trip.end_date || !!trip.ended_at ? "wrapped" : "trip";
-  const today = tripToday(tripTz(trip));
-  if (trip.ended_at || today > trip.end_date) return "wrapped";
-  if (today >= trip.start_date) return "trip";
-  if (today >= addDays(trip.start_date, -1)) return "takeoff";
-  return "preflight";
+/** The hub's phase page for the engine phase (M2-09): before the trip shows Pre-Flight, after
+ * Baggage Claim stays on the last page. */
+function currentPhase(trip: TripWithRole, _tripSeasonStarted?: boolean): Phase {
+  const p = tripPhase(trip).phase;
+  return p === "takeoff"
+    ? "takeoff"
+    : p === "trip_season"
+      ? "trip"
+      : p === "baggage_claim" || p === "archived"
+        ? "wrapped"
+        : "preflight";
 }
 
+const engineId = {
+  preflight: "preflight",
+  takeoff: "takeoff",
+  trip: "trip_season",
+  wrapped: "baggage_claim",
+} as const;
 function phaseProgress(trip: TripWithRole, phase: Phase) {
-  const today = tripToday(tripTz(trip));
-  if (phase === "trip") {
-    const total = daysBetween(trip.start_date, trip.end_date) + 1;
-    const day = Math.min(total, Math.max(1, daysBetween(trip.start_date, today) + 1));
-    return { day, total };
-  }
-  const start =
-    (trip as TripWithRole & { game_start?: string | null }).game_start ??
-    addDays(trip.start_date, -7);
-  const total = Math.max(1, daysBetween(start, addDays(trip.start_date, -1)) + 1);
-  const day = Math.min(total, Math.max(1, daysBetween(start, today) + 1));
+  const b = phaseBoundaries(tripPhaseInput(trip));
+  const id = engineId[phase];
+  const [start, end] = b[id];
+  const total = Math.max(1, Math.round((end - start) / 86_400_000));
+  const now = tripPhase(trip);
+  const day = now.phase === id && now.dayIndex ? Math.min(total, now.dayIndex) : 1;
   return { day, total };
 }
 
@@ -325,20 +326,23 @@ function PhaseRail({
   current: Phase;
   onOpen: (p: Phase) => void;
 }) {
+  const t = useT();
   const now = indexOf(current);
+  const b = phaseBoundaries(tripPhaseInput(trip));
+  const day = (at: number, tz: string) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(at));
+  // Phase names per room (R-107, R-110): Home Missions at home; the last phase is Baggage Claim.
+  const name = (id: Phase) =>
+    id === "takeoff"
+      ? t(roomOf(trip.room).atHome ? "phases.homeMissions" : "phases.takeoff")
+      : t(`phases.${engineId[id]}`);
   return (
     <div className="play-phase-ticket" role="navigation" aria-label="Trip phases">
       {PHASES.map((p, i) => {
         const done = i < now,
           active = i === now;
-        const date =
-          p.id === "takeoff"
-            ? trip.start_date
-            : p.id === "wrapped"
-              ? trip.end_date
-              : p.id === "preflight"
-                ? (trip as TripWithRole & { game_start?: string | null }).game_start
-                : null;
+        const [opens] = b[engineId[p.id]];
+        const date = b[engineId[p.id]][1] > opens ? day(opens, b.tz[engineId[p.id]]) : null;
         const activeLine =
           p.id === "takeoff"
             ? "Until arrival"
@@ -356,7 +360,7 @@ function PhaseRail({
             <span className={done ? "play-phase-stamp" : ""}>
               {done ? <Check size={15} /> : active ? "NOW" : <LockKeyhole size={13} />}
             </span>
-            <strong>{p.label}</strong>
+            <strong>{name(p.id)}</strong>
             <small>
               {active
                 ? activeLine
@@ -644,6 +648,7 @@ export function PlayHub(props: Props) {
         </div>
         <SquadAvatars members={members} cards={cards} onMember={onMember} />
       </header>
+      <PhaseNotice trip={trip} viewOnly={props.viewOnly} />
       <section className="play-score-card" aria-label="Your score">
         <AvatarButton
           userId={userId}
@@ -799,11 +804,12 @@ function PhasePage(
     fullBoard,
     onFullBoard,
   } = props;
+  const queryClient = useQueryClient();
   const meta = PHASES[indexOf(phase)] ?? PHASES[0]!;
   const p = phaseProgress(trip, phase);
   const local = trip.play_arrangement === "solo" || trip.play_arrangement === "offline";
-  const culture = noFlight(trip);
-  const windowSeat = props.cultureKind === "inspire";
+  const culture = noFlight(trip) || roomOf(trip.room).atHome;
+  const windowSeat = props.cultureKind === "inspire" || trip.room === "window_seat";
   const noCrown = local || trip.season_scoring === false || windowSeat;
   const groupRows =
     phase === "trip" || phase === "wrapped"
@@ -851,6 +857,7 @@ function PhasePage(
       <Button variant="ghost" className="min-h-11 -ml-2" onClick={onBack}>
         <ArrowLeft /> Play
       </Button>
+      {phase === props.current && <PhaseNotice trip={trip} viewOnly={props.viewOnly} />}
       <header className="play-phase-art">
         <img src={meta.art} width={1536} height={768} loading="lazy" alt="" />
         <div>
@@ -960,6 +967,9 @@ function PhasePage(
       <div className="play-face-stack">
         {phase === "preflight" && (
           <>
+            {trip.play_mode === "crew" && roomOf(trip.room).maxCallNights > 0 && (
+              <CallNightsCard trip={trip} />
+            )}
             {windowSeat && (
               <FaceCard
                 icon={<BookOpen />}
@@ -1099,13 +1109,10 @@ function PhasePage(
                   (trip.myRole === "captain" || trip.myRole === "co_captain") &&
                   !trip.arrived_at &&
                   !preview &&
-                  trip.start_date <= tripToday(tripTz(trip))
+                  tripPhase(trip).phase === "takeoff"
                     ? async () => {
-                        const r = await supabase.rpc(
-                          "confirm_departure" as never,
-                          { p_trip: trip.id } as never,
-                        );
-                        if (!r.error) window.location.reload();
+                        const r = await rpc("mark_arrived", { p_trip: trip.id });
+                        if (!r.error) await queryClient.invalidateQueries({ queryKey: ["trips"] });
                       }
                     : undefined
                 }
@@ -1115,6 +1122,7 @@ function PhasePage(
         )}
         {phase === "trip" && (
           <>
+            {roomOf(trip.room).pointsEnabled && <CrowningCard trip={trip} />}
             {windowSeat && (
               <FaceCard
                 icon={<BookOpen />}
@@ -1189,9 +1197,6 @@ function PhasePage(
           />
         )}
       </div>
-      {phase === "takeoff" && (
-        <PhaseNotice trip={trip} viewOnly={props.viewOnly} started={tripStarted} />
-      )}
       {phase === "takeoff" && !noCrown && (
         <CrownBoard
           rows={groupRows}

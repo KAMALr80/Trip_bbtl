@@ -246,5 +246,34 @@
   "join": {
     "role": "Your role this trip",
     "noRole": "Pick later"
+  },
+  "phases": {
+    "preflight": "Pre-Flight",
+    "takeoff": "Takeoff",
+    "homeMissions": "Home Missions",
+    "trip_season": "Trip Season",
+    "baggage_claim": "Baggage Claim",
+    "banner": {
+      "preflight": "Now boarding. Your trip starts here.",
+      "takeoff": "Get ready for takeoff. Seatbelts on.",
+      "trip_season": "You've arrived. Welcome to {{place}}.",
+      "baggage_claim": "Thank you for flying with us. Collect your memories."
+    },
+    "arrived": "We've arrived",
+    "arrivedHint": "Tap when you land. Trip Season also starts on its own at 11:59 PM tomorrow, trip time.",
+    "arrivedSaving": "Saving…"
+  },
+  "nights": {
+    "title": "Call nights",
+    "none": "No call nights yet. The Captain or Co-Captain can add up to 4.",
+    "join": "Join call",
+    "joinSecond": "Join the 2nd call",
+    "calendar": "Add to calendar",
+    "event": "Call night",
+    "past": "Done",
+    "crowningTitle": "Crowning night",
+    "finaleTitle": "Finale night",
+    "crowningPending": "The Captain picks the date, time and place.",
+    "crowningEvent": "Crowning night"
   }
 }
