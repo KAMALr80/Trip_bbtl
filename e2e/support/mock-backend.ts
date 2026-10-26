@@ -46,9 +46,11 @@ export const sampleTrip = {
   created_at: "2026-10-01T00:00:00Z",
 };
 
-type Options = { trip?: typeof sampleTrip };
+type Options = { trip?: typeof sampleTrip; rpc?: Record<string, unknown> };
+export type RpcCall = { fn: string; body: unknown };
 
-export async function signInWithMockBackend(page: Page, options: Options = {}) {
+export async function signInWithMockBackend(page: Page, options: Options = {}): Promise<RpcCall[]> {
+  const calls: RpcCall[] = [];
   const session = {
     access_token: accessToken,
     refresh_token: "refresh",
@@ -111,6 +113,7 @@ export async function signInWithMockBackend(page: Page, options: Options = {}) {
           },
         ]
       : [],
+    ...options.rpc,
   };
 
   await page.route(`${SUPABASE}/**`, async (route: Route) => {
@@ -121,7 +124,10 @@ export async function signInWithMockBackend(page: Page, options: Options = {}) {
     if (url.pathname === "/auth/v1/user") return json(user);
     if (url.pathname.startsWith("/auth/v1/")) return json({});
     const fn = url.pathname.match(/^\/rest\/v1\/rpc\/(\w+)/)?.[1];
-    if (fn) return json(fn in rpc ? rpc[fn] : null);
+    if (fn) {
+      calls.push({ fn, body: route.request().postDataJSON() as unknown });
+      return json(fn in rpc ? rpc[fn] : null);
+    }
     const table = url.pathname.match(/^\/rest\/v1\/(\w+)/)?.[1];
     if (table) {
       const data = rows[table] ?? [];
@@ -133,4 +139,5 @@ export async function signInWithMockBackend(page: Page, options: Options = {}) {
     }
     return json({});
   });
+  return calls;
 }

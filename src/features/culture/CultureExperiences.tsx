@@ -23,7 +23,8 @@ import { poolCards, PLAN_QUESTIONS, type CultureCard } from "@/lib/culture-pool"
 import { planCultureExperience, summarizeCultureTrip } from "@/lib/culture-exp.functions";
 import type { TripWithRole } from "@/lib/trips";
 import { SoloGuide } from "@/features/window-seat/SoloGuide";
-import { CultureA2eSetup, type A2eKind } from "@/features/setup/CultureA2eSetup";
+import type { A2eKind } from "@/features/setup/CultureA2eSetup";
+import { Navigate } from "@tanstack/react-router";
 import { CULTURE_LAYERS } from "@/lib/culture-pool";
 import { ShowcaseInvite } from "@/features/culture/CultureShowcase";
 import { useT } from "@/i18n";
@@ -182,16 +183,15 @@ export function CultureExperiences({
   }, [userId, trips.map((t) => t.id).join("|")]);
   if (creating)
     return creationKind ? (
-      <CultureA2eSetup
-        kind={creationKind}
-        onDone={(id) => {
-          setCreating(null);
-          setOpen(id);
-          void load();
-        }}
-        onBack={() => {
-          setCreating(null);
-          onExitCreate?.();
+      <Navigate
+        to="/trips/new"
+        search={{
+          room:
+            creationKind === "inspire"
+              ? "window_seat"
+              : creationKind === "show"
+                ? "show_culture"
+                : "explore_culture",
         }}
       />
     ) : (

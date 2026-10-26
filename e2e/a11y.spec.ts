@@ -36,13 +36,17 @@ for (const path of ["/home", "/play", "/trip", "/trip?tools=true", "/me", "/me?v
   });
 }
 
-test("trip setup and place suggestions", async ({ page }) => {
+test("setup wizard", async ({ page }) => {
   await signInWithMockBackend(page);
-  await page.goto("/home");
-  await page.getByRole("button", { name: /GOING ON A TRIP/ }).click();
-  await page.getByRole("button", { name: "Plan a Trip" }).last().click();
+  await page.goto("/trips/new?room=trip");
+  await page.getByRole("radio", { name: /My crew/ }).click();
   await check(page);
+  await page.getByRole("button", { name: "Next" }).click();
   await page.getByRole("combobox").first().fill("Po");
   await expect(page.getByRole("option", { name: "Portugal" })).toBeVisible();
+  await check(page); // place suggestions open
+  await page.getByRole("option", { name: "Portugal" }).click();
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByRole("heading", { name: "Trip basics" })).toBeVisible();
   await check(page);
 });

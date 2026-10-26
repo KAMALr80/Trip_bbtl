@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import type { RoomId } from "@/features/trip/rooms";
 
 import { ChevronRight, Plus, X, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { loadTrip } from "@/data/account";
 
 import { TripSheets } from "@/features/setup/TripSheets";
 import { SeatCap } from "@/features/trip/SeatCap";
@@ -10,8 +11,6 @@ import { InviteCode } from "@/features/trip/InviteCode";
 
 import { inviteUrl, shareInvite, type TripWithRole } from "@/lib/trips";
 import { Clipboard, Share2 } from "lucide-react";
-
-import { AtHomeSetup } from "@/features/at-home/AtHome";
 
 export function AppSheet({
   title,
@@ -27,25 +26,17 @@ export function AppSheet({
   active: TripWithRole | null;
 }) {
   const [copied, setCopied] = useState(false);
-  if (title === "Start a trip" || title === "Join a trip" || title === "celebrate")
+  // Creating a trip in any room goes through the setup wizard (M2-05).
+  if (title === "Start a trip") return <OpenWizard room="trip" onClose={onClose} />;
+  if (title === "At Home") return <OpenWizard room="explore_culture" onClose={onClose} />;
+  if (title === "Join a trip" || title === "celebrate")
     return (
       <TripSheets
         key={title}
-        mode={title === "Start a trip" ? "create" : title === "Join a trip" ? "join" : "celebrate"}
+        mode={title === "Join a trip" ? "join" : "celebrate"}
         trip={active}
         onClose={onClose}
         onDone={onDone}
-      />
-    );
-  if (title === "At Home")
-    return (
-      <AtHomeSetup
-        onClose={onClose}
-        onDone={onDone}
-        loadTrip={async (id) => {
-          const data = await loadTrip(id);
-          return data ? ({ ...data, myRole: "captain" } as TripWithRole) : null;
-        }}
       />
     );
   if (!title) return null;
@@ -160,4 +151,13 @@ export function AppSheet({
       </section>
     </div>
   );
+}
+
+function OpenWizard({ room, onClose }: { room: RoomId; onClose: () => void }) {
+  const navigate = useNavigate();
+  useEffect(() => {
+    onClose();
+    void navigate({ to: "/trips/new", search: { room } });
+  }, []);
+  return null;
 }
