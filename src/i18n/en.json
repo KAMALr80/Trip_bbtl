@@ -242,5 +242,9 @@
       "crowningPlace": "Add where it happens.",
       "link": "Links start with https://"
     }
+  },
+  "join": {
+    "role": "Your role this trip",
+    "noRole": "Pick later"
   }
 }

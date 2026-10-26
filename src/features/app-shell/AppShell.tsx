@@ -1081,7 +1081,10 @@ export function AppShell() {
                     ? ""
                     : dicebearUrl(myProfile.avatar_style, myProfile.avatar_seed)
                 }
-                onSaved={refreshCards}
+                onSaved={async () => {
+                  await refreshCards();
+                  setTab("Play"); // straight to Play after the two questions (M2-08)
+                }}
               />
             );
           if (editCard || (needsCard && !myProfile))

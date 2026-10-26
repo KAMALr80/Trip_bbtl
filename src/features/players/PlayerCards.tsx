@@ -1,4 +1,5 @@
 import { rpc } from "@/data/rpc";
+import { useT } from "@/i18n";
 import { useEffect, useState, type FormEvent } from "react";
 import { BookOpen, Check, ChevronDown, Crown, Stamp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -416,17 +417,19 @@ async function saveTripAnswer(
   userId: string,
   mostExcited: string,
   hasCard: boolean,
+  persona?: string,
 ) {
   const value = mostExcited.trim() || null;
+  const role = persona === undefined ? {} : { trip_persona: persona.trim() || null };
   const result = hasCard
     ? await supabase
         .from("trip_player_cards")
-        .update({ most_excited: value })
+        .update({ most_excited: value, ...role })
         .eq("trip_id", tripId)
         .eq("user_id", userId)
     : await supabase
         .from("trip_player_cards")
-        .insert({ trip_id: tripId, user_id: userId, ...blankCard, most_excited: value });
+        .insert({ trip_id: tripId, user_id: userId, ...blankCard, most_excited: value, ...role });
   if (result.error) throw result.error;
 }
 
@@ -481,14 +484,19 @@ export function QuickJoinCard({
   avatar: string;
   onSaved: () => Promise<void>;
 }) {
+  const t = useT();
   const [excited, setExcited] = useState(""),
+    [persona, setPersona] = useState(profile.trip_persona ?? ""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const roles = [
+    ...new Set([...PERSONAS, ...(profile.trip_persona ? [profile.trip_persona] : [])]),
+  ];
   async function go() {
     setBusy(true);
     setError("");
     try {
-      await saveTripAnswer(tripId, userId, excited, false);
+      await saveTripAnswer(tripId, userId, excited, false, persona);
       await onSaved();
     } catch (e) {
       console.error("Card save failed", e);
@@ -513,6 +521,18 @@ export function QuickJoinCard({
           </p>
         </div>
       </div>
+      {/* Joining asks two things only: role this trip (pre-filled) and most excited for (R-212). */}
+      <label className="mt-5 block text-sm font-bold">
+        {t("join.role")}
+        <select className={input} value={persona} onChange={(e) => setPersona(e.target.value)}>
+          <option value="">{t("join.noRole")}</option>
+          {roles.map((r) => (
+            <option key={r} value={r}>
+              {r.charAt(0).toUpperCase() + r.slice(1)}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="mt-5 block text-sm font-bold">
         Most excited for on this trip?{" "}
         <span className="font-normal text-muted-foreground">(optional)</span>

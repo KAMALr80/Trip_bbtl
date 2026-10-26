@@ -46,7 +46,7 @@ export const sampleTrip = {
   created_at: "2026-10-01T00:00:00Z",
 };
 
-type Options = { trip?: typeof sampleTrip; rpc?: Record<string, unknown> };
+type Options = { trip?: typeof sampleTrip; rpc?: Record<string, unknown>; noCard?: boolean };
 export type RpcCall = { fn: string; body: unknown };
 
 export async function signInWithMockBackend(page: Page, options: Options = {}): Promise<RpcCall[]> {
@@ -84,18 +84,19 @@ export async function signInWithMockBackend(page: Page, options: Options = {}): 
     trip_members: options.trip
       ? [{ trip_id: options.trip.id, user_id: userId, role: "captain", status: "approved" }]
       : [],
-    trip_player_cards: options.trip
-      ? [
-          {
-            trip_id: options.trip.id,
-            user_id: userId,
-            game_name: "Tester",
-            avatar_style: "traveler",
-            avatar_seed: "1",
-            avatar_path: null,
-          },
-        ]
-      : [],
+    trip_player_cards:
+      options.trip && !options.noCard
+        ? [
+            {
+              trip_id: options.trip.id,
+              user_id: userId,
+              game_name: "Tester",
+              avatar_style: "traveler",
+              avatar_seed: "1",
+              avatar_path: null,
+            },
+          ]
+        : [],
   };
   const rpc: Record<string, unknown> = {
     account_status: [{ legal_version: "2026-10-03" }],
