@@ -92,12 +92,12 @@ SELECT is((SELECT proof_due_at FROM public.mission_window((SELECT today_trip FRO
           'proof for a revealed mission is due when Trip Season starts (R-332)');
 SELECT tests.clear_authentication();
 UPDATE public.mission_claims SET revealed_at = now() - interval '3 days' WHERE id = (SELECT id FROM claims WHERE slot = 5);
-UPDATE public.trips SET departure_confirmed_at = now() - interval '1 hour' WHERE id = (SELECT today_trip FROM f);
+UPDATE public.trips SET arrived_at = now() - interval '1 hour' WHERE id = (SELECT today_trip FROM f);
 SELECT tests.authenticate_as(tests.user_id('p1'));
 SELECT throws_like($$SELECT public.mission_action((SELECT today_trip FROM f), 'complete', NULL, (SELECT id FROM claims WHERE slot = 5))$$,
                    'This mission proof deadline has passed', 'no proof after Trip Season has started and 24h have passed');
 SELECT tests.clear_authentication();
-UPDATE public.trips SET departure_confirmed_at = NULL WHERE id = (SELECT today_trip FROM f);
+UPDATE public.trips SET arrived_at = NULL WHERE id = (SELECT today_trip FROM f);
 
 -- ---------------------------------------------------------------- "We've arrived"
 SELECT is(trip_private.trip_season_start_at((SELECT bali_trip FROM f)),
@@ -117,7 +117,7 @@ SELECT throws_like($$SELECT public.confirm_departure((SELECT today_trip FROM f))
                    'Arrival can only be confirmed once%', 'arrival is confirmed only once');
 SELECT tests.clear_authentication();
 SELECT is(trip_private.trip_season_start_at((SELECT today_trip FROM f)),
-          (SELECT departure_confirmed_at FROM public.trips WHERE id = (SELECT today_trip FROM f)),
+          (SELECT arrived_at FROM public.trips WHERE id = (SELECT today_trip FROM f)),
           'after the tap, Trip Season starts at the tap time');
 
 SELECT * FROM finish();

@@ -33,7 +33,7 @@ export function PhaseNotice({
   const leader = trip.myRole === "captain" || trip.myRole === "co_captain";
   const canConfirm =
     !serverStarted &&
-    !trip.departure_confirmed_at &&
+    !trip.arrived_at &&
     datePhase(trip, serverStarted) === "airport" &&
     trip.start_date <= tripToday(tripTz(trip)) &&
     leader &&

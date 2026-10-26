@@ -1097,7 +1097,7 @@ function PhasePage(
                 }
                 onClick={
                   (trip.myRole === "captain" || trip.myRole === "co_captain") &&
-                  !trip.departure_confirmed_at &&
+                  !trip.arrived_at &&
                   !preview &&
                   trip.start_date <= tripToday(tripTz(trip))
                     ? async () => {

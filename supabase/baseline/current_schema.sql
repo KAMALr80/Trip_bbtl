@@ -2989,6 +2989,16 @@ CREATE FUNCTION public.trip_peek(p_trip uuid) RETURNS jsonb
 
 
 --
+-- Name: trip_phase(uuid, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.trip_phase(p_trip uuid, p_at timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE(phase text, phase_starts_at timestamp with time zone, phase_ends_at timestamp with time zone, tz text, day_index integer)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.my_trip_phase(p_trip, p_at) $$;
+
+
+--
 -- Name: trip_photos(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -4368,7 +4378,7 @@ CREATE FUNCTION trip_private.confirm_departure(p_trip uuid) RETURNS void
     AS $$
 BEGIN
  IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can confirm arrival'; END IF;
- UPDATE public.trips SET departure_confirmed_at=now() WHERE id=p_trip AND play_arrangement IS NOT NULL AND is_sandbox=false AND departure_confirmed_at IS NULL AND start_date <= trip_private.trip_today(p_trip);
+ UPDATE public.trips SET arrived_at=now(), arrived_by=auth.uid() WHERE id=p_trip AND play_arrangement IS NOT NULL AND is_sandbox=false AND arrived_at IS NULL AND start_date <= trip_private.trip_today(p_trip);
  IF NOT FOUND THEN RAISE EXCEPTION 'Arrival can only be confirmed once, on or after your first trip day'; END IF;
 END $$;
 
@@ -7683,6 +7693,21 @@ CREATE FUNCTION trip_private.my_trip_feedback_done(p_trip uuid) RETURNS boolean
 
 
 --
+-- Name: my_trip_phase(uuid, timestamp with time zone); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.my_trip_phase(p_trip uuid, p_at timestamp with time zone) RETURNS TABLE(phase text, phase_starts_at timestamp with time zone, phase_ends_at timestamp with time zone, tz text, day_index integer)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  RETURN QUERY SELECT * FROM trip_private.trip_phase(p_trip, coalesce(p_at, now()));
+END
+$$;
+
+
+--
 -- Name: my_unlocked_trips(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -8034,6 +8059,84 @@ BEGIN IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Not allowed'; 
  RETURN QUERY SELECT m.user_id, coalesce(c.game_name, p.game_name, 'New traveler'), coalesce(c.avatar_style, p.avatar_style, 'street'), coalesce(c.avatar_seed, p.avatar_seed, m.user_id::text), trip_private.age_range(trip_private.age_of(m.user_id)), m.joined_at
   FROM public.trip_members m LEFT JOIN public.trip_player_cards c ON c.trip_id=m.trip_id AND c.user_id=m.user_id LEFT JOIN public.player_profiles p ON p.user_id=m.user_id
   WHERE m.trip_id=p_trip AND m.status='pending' ORDER BY m.joined_at; END $$;
+
+
+--
+-- Name: phase_at(text, date, date, integer, boolean, text, text, timestamp with time zone, boolean, timestamp with time zone); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.phase_at(p_room text, p_start date, p_end date, p_preflight_days integer, p_preflight_skipped boolean, p_home_tz text, p_trip_tz text, p_arrived_at timestamp with time zone, p_setup_complete boolean, p_at timestamp with time zone) RETURNS TABLE(phase text, phase_starts_at timestamp with time zone, phase_ends_at timestamp with time zone, tz text, day_index integer)
+    LANGUAGE plpgsql STABLE
+    SET search_path TO ''
+    AS $$
+DECLARE
+  r jsonb := trip_private.room_rules(p_room);
+  v_at_home boolean;
+  v_away text;
+  v_pre int := CASE WHEN p_preflight_skipped THEN 0 ELSE greatest(0, coalesce(p_preflight_days, 0)) END;
+  v_takeoff_day date;
+  v_takeoff_start timestamptz;
+  v_season_start timestamptz;
+  v_season_end timestamptz;
+  v_backup timestamptz;
+  s timestamptz[];
+  e timestamptz[];
+  zones text[];
+  names text[] := ARRAY['preflight', 'takeoff', 'trip_season', 'baggage_claim'];
+  i int;
+BEGIN
+  IF r IS NULL THEN RAISE EXCEPTION 'Unknown room %', p_room; END IF;
+  IF NOT p_setup_complete THEN
+    RETURN QUERY SELECT 'setup'::text, NULL::timestamptz, NULL::timestamptz, p_home_tz, NULL::int;
+    RETURN;
+  END IF;
+  v_at_home := (r->>'atHome')::boolean;
+  v_away := CASE WHEN v_at_home THEN p_home_tz ELSE coalesce(p_trip_tz, p_home_tz) END;
+
+  IF v_at_home THEN
+    -- Home time only; Takeoff = Home Missions the day before; Trip Season = experience days.
+    v_takeoff_day := CASE WHEN r->>'takeoff' = 'none' THEN p_start ELSE p_start - 1 END;
+    v_takeoff_start := v_takeoff_day::timestamp AT TIME ZONE p_home_tz;
+    v_season_start := p_start::timestamp AT TIME ZONE p_home_tz;
+    v_season_end := (p_end + 1)::timestamp AT TIME ZONE p_home_tz;
+    s := ARRAY[(v_takeoff_day - v_pre)::timestamp AT TIME ZONE p_home_tz, v_takeoff_start, v_season_start, v_season_end];
+    e := ARRAY[v_takeoff_start, v_season_start, v_season_end, (p_end + 8)::timestamp AT TIME ZONE p_home_tz];
+    zones := ARRAY[p_home_tz, p_home_tz, p_home_tz, p_home_tz];
+  ELSE
+    -- Home time until arrival; Trip Season from the tap or the backup (23:59 trip time, next night).
+    v_takeoff_start := p_start::timestamp AT TIME ZONE p_home_tz;
+    v_season_end := (p_end + 1)::timestamp AT TIME ZONE v_away;
+    v_backup := ((p_start + 1) + time '23:59') AT TIME ZONE v_away;
+    v_season_start := CASE WHEN p_arrived_at IS NULL THEN v_backup ELSE least(p_arrived_at, v_backup) END;
+    v_season_start := least(greatest(v_season_start, v_takeoff_start), greatest(v_season_end, v_takeoff_start));
+    s := ARRAY[(p_start - v_pre)::timestamp AT TIME ZONE p_home_tz, v_takeoff_start, v_season_start,
+               greatest(v_season_end, v_season_start)];
+    e := ARRAY[v_takeoff_start, v_season_start, greatest(v_season_end, v_season_start),
+               greatest((p_end + 8)::timestamp AT TIME ZONE p_home_tz, v_season_end)];
+    zones := ARRAY[p_home_tz, p_home_tz, v_away, p_home_tz];
+  END IF;
+
+  FOR i IN 1..4 LOOP
+    IF e[i] > s[i] THEN
+      IF p_at < s[i] THEN
+        RETURN QUERY SELECT 'upcoming'::text, NULL::timestamptz, s[i], p_home_tz, NULL::int;
+        RETURN;
+      END IF;
+      EXIT;
+    END IF;
+  END LOOP;
+  FOR i IN 1..4 LOOP
+    IF e[i] > s[i] AND p_at >= s[i] AND p_at < e[i] THEN
+      RETURN QUERY SELECT names[i], s[i], e[i], zones[i],
+        CASE WHEN i = 4  -- Baggage Claim days count from the day after the trip, in home time
+          THEN greatest(1, (p_at AT TIME ZONE p_home_tz)::date - p_end)
+          ELSE (p_at AT TIME ZONE zones[i])::date - (s[i] AT TIME ZONE zones[i])::date + 1 END;
+      RETURN;
+    END IF;
+  END LOOP;
+  RETURN QUERY SELECT 'archived'::text, e[4], NULL::timestamptz, p_home_tz, NULL::int;
+END
+$$;
 
 
 --
@@ -9333,6 +9436,24 @@ CREATE FUNCTION trip_private.room_rounds(p_trip uuid) RETURNS integer
     SET search_path TO 'public'
     AS $$
 SELECT CASE WHEN ceil((SELECT count(*) FROM public.trip_members WHERE status='approved' AND trip_id=p_trip)::numeric / greatest(1,(SELECT count(*) FROM public.trip_teams WHERE trip_id=p_trip AND (SELECT count(*) FROM public.trip_members WHERE status='approved' AND trip_id=p_trip) > 12))) <= 6 THEN 2 ELSE 1 END $$;
+
+
+--
+-- Name: room_rules(text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.room_rules(p_room text) RETURNS jsonb
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO ''
+    AS $$
+  SELECT CASE p_room
+    WHEN 'trip' THEN '{"atHome":false,"contentTags":["trip"],"crowningLabel":"Crowning night","dailyQuest":false,"id":"trip","journal":false,"mainDays":{"max":14,"min":1},"maxCallNights":4,"maxCrew":12,"maxFocuses":0,"modes":["solo","crew","offline"],"photosKept":{"group":6,"solo":10},"pointsEnabled":true,"postcardPicksPerPlayer":2,"preFlightDays":{"max":10,"min":0,"skippable":true},"takeoff":"airport_missions","tripSeasonStart":"arrival_button"}'::jsonb
+    WHEN 'window_seat' THEN '{"atHome":false,"contentTags":["trip","solo"],"crowningLabel":"Crowning night","dailyQuest":true,"id":"window_seat","journal":true,"mainDays":{"max":14,"min":1},"maxCallNights":4,"maxCrew":4,"maxFocuses":0,"modes":["solo","crew"],"photosKept":{"group":6,"solo":10},"pointsEnabled":true,"postcardPicksPerPlayer":5,"preFlightDays":{"max":10,"min":0,"skippable":true},"takeoff":"airport_missions","tripSeasonStart":"arrival_button"}'::jsonb
+    WHEN 'explore_culture' THEN '{"atHome":true,"contentTags":["at_home"],"crowningLabel":"Finale night","dailyQuest":false,"id":"explore_culture","journal":false,"mainDays":{"max":7,"min":1},"maxCallNights":4,"maxCrew":12,"maxFocuses":2,"modes":["solo","crew","offline"],"photosKept":{"group":6,"solo":10},"pointsEnabled":true,"postcardPicksPerPlayer":2,"preFlightDays":{"max":10,"min":0,"skippable":true},"takeoff":"home_missions","tripSeasonStart":"first_experience_day"}'::jsonb
+    WHEN 'show_culture' THEN '{"atHome":true,"contentTags":["at_home"],"crowningLabel":"Finale night","dailyQuest":false,"id":"show_culture","journal":false,"mainDays":{"max":7,"min":1},"maxCallNights":4,"maxCrew":12,"maxFocuses":0,"modes":["solo","crew","offline"],"photosKept":{"group":6,"solo":10},"pointsEnabled":true,"postcardPicksPerPlayer":2,"preFlightDays":{"max":10,"min":0,"skippable":true},"takeoff":"home_missions","tripSeasonStart":"first_experience_day"}'::jsonb
+    WHEN 'game_night' THEN '{"atHome":true,"contentTags":["at_home","trip"],"crowningLabel":"Game night","dailyQuest":false,"id":"game_night","journal":false,"mainDays":{"max":1,"min":1},"maxCallNights":0,"maxCrew":12,"maxFocuses":0,"modes":["crew","offline"],"photosKept":{"group":0,"solo":0},"pointsEnabled":false,"postcardPicksPerPlayer":0,"preFlightDays":{"max":0,"min":0,"skippable":false},"takeoff":"none","tripSeasonStart":"first_experience_day"}'::jsonb
+  END
+$$;
 
 
 --
@@ -11357,6 +11478,23 @@ END $$;
 
 
 --
+-- Name: trip_phase(uuid, timestamp with time zone); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.trip_phase(p_trip uuid, p_at timestamp with time zone DEFAULT now()) RETURNS TABLE(phase text, phase_starts_at timestamp with time zone, phase_ends_at timestamp with time zone, tz text, day_index integer)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT p.*
+  FROM public.trips t
+  CROSS JOIN LATERAL trip_private.phase_at(t.room, t.start_date, t.end_date, t.preflight_days,
+    t.preflight_skipped, t.home_timezone, t.trip_timezone, t.arrived_at,
+    t.setup_completed_at IS NOT NULL, p_at) p
+  WHERE t.id = p_trip
+$$;
+
+
+--
 -- Name: trip_photos(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -11481,7 +11619,7 @@ CREATE FUNCTION trip_private.trip_season_start_at(p_trip uuid) RETURNS timestamp
     SET search_path TO 'public'
     AS $$
   SELECT coalesce(
-    t.departure_confirmed_at,
+    t.arrived_at,
     (t.start_date + 1 + time '23:59') AT TIME ZONE coalesce(t.trip_timezone, t.home_timezone)
   )
   FROM public.trips t
@@ -12112,6 +12250,24 @@ CREATE TABLE public.bug_reports (
     CONSTRAINT bug_reports_screenshot_path_check CHECK ((length(screenshot_path) <= 300)),
     CONSTRAINT bug_reports_status_check CHECK ((status = ANY (ARRAY['new'::text, 'looking'::text, 'fixed'::text, 'wont_fix'::text, 'need_info'::text]))),
     CONSTRAINT bug_reports_user_agent_check CHECK ((length(user_agent) <= 400))
+);
+
+
+--
+-- Name: call_nights; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.call_nights (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    trip_id uuid NOT NULL,
+    starts_at timestamp with time zone NOT NULL,
+    call_link text,
+    second_link text,
+    created_by uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT call_nights_call_link_check CHECK (((call_link IS NULL) OR ((length(call_link) <= 500) AND (call_link ~* '^https://'::text)))),
+    CONSTRAINT call_nights_second_link_check CHECK (((second_link IS NULL) OR ((length(second_link) <= 500) AND (second_link ~* '^https://'::text))))
 );
 
 
@@ -13943,17 +14099,39 @@ CREATE TABLE public.trips (
     has_minors boolean DEFAULT false NOT NULL,
     a2e_room boolean DEFAULT false NOT NULL,
     play_arrangement text,
-    departure_confirmed_at timestamp with time zone,
+    arrived_at timestamp with time zone,
     solo_experience_id uuid,
     extra_seats boolean DEFAULT false NOT NULL,
     guide_published_at timestamp with time zone,
     rules_version smallint DEFAULT 2 NOT NULL,
+    room text DEFAULT 'trip'::text NOT NULL,
+    play_mode text DEFAULT 'crew'::text NOT NULL,
+    preflight_days smallint DEFAULT 0 NOT NULL,
+    preflight_skipped boolean DEFAULT false NOT NULL,
+    cultures text[] DEFAULT '{}'::text[] NOT NULL,
+    focuses text[] DEFAULT '{}'::text[] NOT NULL,
+    dest_lat double precision,
+    dest_lng double precision,
+    dest_place_id text,
+    arrived_by uuid,
+    crowning_at timestamp with time zone,
+    crowning_place text,
+    crowning_call_link text,
+    locked_at timestamp with time zone,
+    setup_completed_at timestamp with time zone DEFAULT now(),
     CONSTRAINT trips_a2e_length_check CHECK (((NOT a2e_room) OR ((season_rule = 'a2c'::text) AND (end_date >= start_date) AND ((end_date - start_date) < 3650)))),
     CONSTRAINT trips_at_home_length_check CHECK (((at_home_length IS NULL) OR (at_home_length = ANY (ARRAY['weekend'::text, 'week'::text, 'two_weeks'::text])) OR (at_home_length ~ '^d([1-9]|1[0-2])$'::text))),
     CONSTRAINT trips_backup_call_link_check CHECK (((backup_call_link IS NULL) OR ((length(backup_call_link) <= 500) AND (backup_call_link ~* '^https://'::text)))),
     CONSTRAINT trips_call_link_check CHECK (((call_link IS NULL) OR ((length(call_link) <= 500) AND (call_link ~* '^https://'::text)))),
     CONSTRAINT trips_check CHECK ((end_date >= start_date)),
+    CONSTRAINT trips_crowning_call_link_check CHECK (((crowning_call_link IS NULL) OR ((length(crowning_call_link) <= 500) AND (crowning_call_link ~* '^https://'::text)))),
+    CONSTRAINT trips_crowning_place_check CHECK ((length(crowning_place) <= 120)),
+    CONSTRAINT trips_cultures_check CHECK ((cardinality(cultures) <= 2)),
+    CONSTRAINT trips_dest_lat_check CHECK (((dest_lat >= ('-90'::integer)::double precision) AND (dest_lat <= (90)::double precision))),
+    CONSTRAINT trips_dest_lng_check CHECK (((dest_lng >= ('-180'::integer)::double precision) AND (dest_lng <= (180)::double precision))),
+    CONSTRAINT trips_dest_place_id_check CHECK ((length(dest_place_id) <= 200)),
     CONSTRAINT trips_destination_check CHECK (((length(TRIM(BOTH FROM destination)) >= 1) AND (length(TRIM(BOTH FROM destination)) <= 120))),
+    CONSTRAINT trips_focuses_check CHECK ((cardinality(focuses) <= 2)),
     CONSTRAINT trips_game_days_every_check CHECK (((game_days_every >= 1) AND (game_days_every <= 2))),
     CONSTRAINT trips_game_plan_check CHECK ((game_plan = ANY (ARRAY['recommended'::text, 'short'::text, 'custom'::text, 'date_driven'::text]))),
     CONSTRAINT trips_home_timezone_check CHECK (((length(home_timezone) >= 1) AND (length(home_timezone) <= 100))),
@@ -13964,6 +14142,9 @@ CREATE TABLE public.trips (
     CONSTRAINT trips_name_check CHECK (((length(TRIM(BOTH FROM name)) >= 1) AND (length(TRIM(BOTH FROM name)) <= 100))),
     CONSTRAINT trips_pay_note_check CHECK (((pay_note IS NULL) OR (char_length(pay_note) <= 200))),
     CONSTRAINT trips_play_arrangement_check CHECK (((play_arrangement IS NULL) OR (play_arrangement = ANY (ARRAY['solo'::text, 'online'::text, 'offline'::text])))),
+    CONSTRAINT trips_play_mode_check CHECK ((play_mode = ANY (ARRAY['solo'::text, 'crew'::text, 'offline'::text]))),
+    CONSTRAINT trips_preflight_days_check CHECK (((preflight_days >= 0) AND (preflight_days <= 10))),
+    CONSTRAINT trips_room_check CHECK ((room = ANY (ARRAY['trip'::text, 'window_seat'::text, 'explore_culture'::text, 'show_culture'::text, 'game_night'::text]))),
     CONSTRAINT trips_rules_version_check CHECK ((rules_version = ANY (ARRAY[1, 2]))),
     CONSTRAINT trips_schedule_every_check CHECK (((schedule_every >= 1) AND (schedule_every <= 2))),
     CONSTRAINT trips_team_mode_check CHECK ((team_mode = ANY (ARRAY['assign'::text, 'pick'::text]))),
@@ -14601,6 +14782,22 @@ ALTER TABLE ONLY public.bug_issues
 
 ALTER TABLE ONLY public.bug_reports
     ADD CONSTRAINT bug_reports_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: call_nights call_nights_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.call_nights
+    ADD CONSTRAINT call_nights_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: call_nights call_nights_trip_id_starts_at_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.call_nights
+    ADD CONSTRAINT call_nights_trip_id_starts_at_key UNIQUE (trip_id, starts_at);
 
 
 --
@@ -15806,6 +16003,13 @@ CREATE UNIQUE INDEX beta_codes_one_per_user ON public.beta_codes USING btree (us
 
 
 --
+-- Name: call_nights_trip_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX call_nights_trip_idx ON public.call_nights USING btree (trip_id, starts_at);
+
+
+--
 -- Name: cost_items_trip_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -16013,6 +16217,13 @@ CREATE TRIGGER birthday_change_revokes_adult_approval AFTER DELETE OR UPDATE ON 
 --
 
 CREATE TRIGGER bug_report_defaults BEFORE INSERT ON public.bug_reports FOR EACH ROW EXECUTE FUNCTION trip_private.bug_report_defaults();
+
+
+--
+-- Name: call_nights call_nights_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER call_nights_archive_guard BEFORE INSERT OR UPDATE ON public.call_nights FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -17353,6 +17564,14 @@ ALTER TABLE ONLY public.bug_reports
 
 ALTER TABLE ONLY public.bug_reports
     ADD CONSTRAINT bug_reports_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE SET NULL;
+
+
+--
+-- Name: call_nights call_nights_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.call_nights
+    ADD CONSTRAINT call_nights_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
 
 
 --
@@ -19461,6 +19680,12 @@ ALTER TABLE public.bug_issues ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bug_reports ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: call_nights; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.call_nights ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: checkin_responses; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -19835,6 +20060,13 @@ ALTER TABLE public.live_vote_ballots ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.live_votes ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: call_nights members read call nights; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "members read call nights" ON public.call_nights FOR SELECT TO authenticated USING (trip_private.is_trip_member(trip_id, auth.uid()));
+
 
 --
 -- Name: mission_claims; Type: ROW SECURITY; Schema: public; Owner: -
@@ -22825,6 +23057,15 @@ GRANT ALL ON FUNCTION public.trip_peek(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION trip_phase(p_trip uuid, p_at timestamp with time zone); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.trip_phase(p_trip uuid, p_at timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.trip_phase(p_trip uuid, p_at timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION public.trip_phase(p_trip uuid, p_at timestamp with time zone) TO service_role;
+
+
+--
 -- Name: FUNCTION trip_photos(p_trip uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -24840,6 +25081,15 @@ GRANT ALL ON FUNCTION trip_private.my_trip_feedback_done(p_trip uuid) TO service
 
 
 --
+-- Name: FUNCTION my_trip_phase(p_trip uuid, p_at timestamp with time zone); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.my_trip_phase(p_trip uuid, p_at timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.my_trip_phase(p_trip uuid, p_at timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.my_trip_phase(p_trip uuid, p_at timestamp with time zone) TO service_role;
+
+
+--
 -- Name: FUNCTION my_unlocked_trips(); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -24991,6 +25241,15 @@ GRANT ALL ON FUNCTION trip_private.pending_count(p_trip uuid) TO service_role;
 REVOKE ALL ON FUNCTION trip_private.pending_members(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.pending_members(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.pending_members(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION phase_at(p_room text, p_start date, p_end date, p_preflight_days integer, p_preflight_skipped boolean, p_home_tz text, p_trip_tz text, p_arrived_at timestamp with time zone, p_setup_complete boolean, p_at timestamp with time zone); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.phase_at(p_room text, p_start date, p_end date, p_preflight_days integer, p_preflight_skipped boolean, p_home_tz text, p_trip_tz text, p_arrived_at timestamp with time zone, p_setup_complete boolean, p_at timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.phase_at(p_room text, p_start date, p_end date, p_preflight_days integer, p_preflight_skipped boolean, p_home_tz text, p_trip_tz text, p_arrived_at timestamp with time zone, p_setup_complete boolean, p_at timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.phase_at(p_room text, p_start date, p_end date, p_preflight_days integer, p_preflight_skipped boolean, p_home_tz text, p_trip_tz text, p_arrived_at timestamp with time zone, p_setup_complete boolean, p_at timestamp with time zone) TO service_role;
 
 
 --
@@ -25534,6 +25793,15 @@ GRANT ALL ON FUNCTION trip_private.room_requests_for(p_trip uuid) TO service_rol
 
 REVOKE ALL ON FUNCTION trip_private.room_rounds(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.room_rounds(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION room_rules(p_room text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.room_rules(p_room text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.room_rules(p_room text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.room_rules(p_room text) TO service_role;
 
 
 --
@@ -26393,6 +26661,14 @@ GRANT ALL ON FUNCTION trip_private.trip_peek(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION trip_phase(p_trip uuid, p_at timestamp with time zone); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.trip_phase(p_trip uuid, p_at timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.trip_phase(p_trip uuid, p_at timestamp with time zone) TO service_role;
+
+
+--
 -- Name: FUNCTION trip_photos(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -26771,6 +27047,14 @@ GRANT ALL ON TABLE public.bug_issues TO service_role;
 GRANT ALL ON TABLE public.bug_reports TO anon;
 GRANT ALL ON TABLE public.bug_reports TO authenticated;
 GRANT ALL ON TABLE public.bug_reports TO service_role;
+
+
+--
+-- Name: TABLE call_nights; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.call_nights TO service_role;
+GRANT SELECT ON TABLE public.call_nights TO authenticated;
 
 
 --

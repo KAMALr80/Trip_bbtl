@@ -1,0 +1,177 @@
+{
+  "trip": {
+    "atHome": false,
+    "maxCrew": 12,
+    "mainDays": {
+      "min": 1,
+      "max": 14
+    },
+    "preFlightDays": {
+      "min": 0,
+      "max": 10,
+      "skippable": true
+    },
+    "maxCallNights": 4,
+    "takeoff": "airport_missions",
+    "tripSeasonStart": "arrival_button",
+    "crowningLabel": "Crowning night",
+    "photosKept": {
+      "group": 6,
+      "solo": 10
+    },
+    "postcardPicksPerPlayer": 2,
+    "dailyQuest": false,
+    "journal": false,
+    "maxFocuses": 0,
+    "pointsEnabled": true,
+    "id": "trip",
+    "modes": [
+      "solo",
+      "crew",
+      "offline"
+    ],
+    "contentTags": [
+      "trip"
+    ]
+  },
+  "window_seat": {
+    "atHome": false,
+    "maxCrew": 4,
+    "mainDays": {
+      "min": 1,
+      "max": 14
+    },
+    "preFlightDays": {
+      "min": 0,
+      "max": 10,
+      "skippable": true
+    },
+    "maxCallNights": 4,
+    "takeoff": "airport_missions",
+    "tripSeasonStart": "arrival_button",
+    "crowningLabel": "Crowning night",
+    "photosKept": {
+      "group": 6,
+      "solo": 10
+    },
+    "postcardPicksPerPlayer": 5,
+    "dailyQuest": true,
+    "journal": true,
+    "maxFocuses": 0,
+    "pointsEnabled": true,
+    "id": "window_seat",
+    "modes": [
+      "solo",
+      "crew"
+    ],
+    "contentTags": [
+      "trip",
+      "solo"
+    ]
+  },
+  "explore_culture": {
+    "atHome": true,
+    "maxCrew": 12,
+    "mainDays": {
+      "min": 1,
+      "max": 7
+    },
+    "preFlightDays": {
+      "min": 0,
+      "max": 10,
+      "skippable": true
+    },
+    "maxCallNights": 4,
+    "takeoff": "home_missions",
+    "tripSeasonStart": "first_experience_day",
+    "crowningLabel": "Finale night",
+    "photosKept": {
+      "group": 6,
+      "solo": 10
+    },
+    "postcardPicksPerPlayer": 2,
+    "dailyQuest": false,
+    "journal": false,
+    "maxFocuses": 2,
+    "pointsEnabled": true,
+    "id": "explore_culture",
+    "modes": [
+      "solo",
+      "crew",
+      "offline"
+    ],
+    "contentTags": [
+      "at_home"
+    ]
+  },
+  "show_culture": {
+    "atHome": true,
+    "maxCrew": 12,
+    "mainDays": {
+      "min": 1,
+      "max": 7
+    },
+    "preFlightDays": {
+      "min": 0,
+      "max": 10,
+      "skippable": true
+    },
+    "maxCallNights": 4,
+    "takeoff": "home_missions",
+    "tripSeasonStart": "first_experience_day",
+    "crowningLabel": "Finale night",
+    "photosKept": {
+      "group": 6,
+      "solo": 10
+    },
+    "postcardPicksPerPlayer": 2,
+    "dailyQuest": false,
+    "journal": false,
+    "maxFocuses": 0,
+    "pointsEnabled": true,
+    "id": "show_culture",
+    "modes": [
+      "solo",
+      "crew",
+      "offline"
+    ],
+    "contentTags": [
+      "at_home"
+    ]
+  },
+  "game_night": {
+    "atHome": true,
+    "maxCrew": 12,
+    "mainDays": {
+      "min": 1,
+      "max": 1
+    },
+    "preFlightDays": {
+      "min": 0,
+      "max": 0,
+      "skippable": false
+    },
+    "maxCallNights": 0,
+    "takeoff": "none",
+    "tripSeasonStart": "first_experience_day",
+    "crowningLabel": "Game night",
+    "photosKept": {
+      "group": 0,
+      "solo": 0
+    },
+    "postcardPicksPerPlayer": 0,
+    "dailyQuest": false,
+    "journal": false,
+    "maxFocuses": 0,
+    "pointsEnabled": false,
+    "id": "game_night",
+    "modes": [
+      "crew",
+      "offline"
+    ],
+    "contentTags": [
+      "at_home",
+      "trip"
+    ]
+  }
+}
