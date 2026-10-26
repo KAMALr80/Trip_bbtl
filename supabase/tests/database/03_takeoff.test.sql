@@ -106,15 +106,15 @@ SELECT is(trip_private.trip_season_start_at((SELECT bali_trip FROM f)),
 
 SELECT tests.authenticate_as(tests.user_id('p1'));
 SELECT throws_like($$SELECT public.confirm_departure((SELECT today_trip FROM f))$$,
-                   'Only the Captain or Co-Captain can confirm arrival', 'players cannot tap "We''ve arrived"');
+                   'Only the Captain or Co-Captain can tap%', 'players cannot tap "We''ve arrived"');
 SELECT tests.authenticate_as(tests.user_id('cap'));
 SELECT throws_like($$SELECT public.confirm_departure((SELECT future_trip FROM f))$$,
-                   'Arrival can only be confirmed once, on or after your first trip day', 'arrival cannot be confirmed before the first trip day');
+                   '"We''ve arrived" opens on takeoff day%', 'arrival cannot be confirmed before the first trip day');
 SELECT tests.authenticate_as(tests.user_id('co'));
 SELECT lives_ok($$SELECT public.confirm_departure((SELECT today_trip FROM f))$$,
                 'the Co-Captain can tap "We''ve arrived" (already matches R-103)');
 SELECT throws_like($$SELECT public.confirm_departure((SELECT today_trip FROM f))$$,
-                   'Arrival can only be confirmed once%', 'arrival is confirmed only once');
+                   'Arrival was already confirmed', 'arrival is confirmed only once');
 SELECT tests.clear_authentication();
 SELECT is(trip_private.trip_season_start_at((SELECT today_trip FROM f)),
           (SELECT arrived_at FROM public.trips WHERE id = (SELECT today_trip FROM f)),

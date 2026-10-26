@@ -1114,7 +1114,7 @@ BEGIN
   IF p_photo IS NOT NULL AND p_photo NOT LIKE p_trip::text || '/' || auth.uid()::text || '/%' THEN RAISE EXCEPTION 'Upload the photo again'; END IF;
   IF p_kind='photo' AND p_photo IS NULL THEN RAISE EXCEPTION 'Choose a photo'; END IF;
   IF (SELECT count(*) FROM public.window_guide_items WHERE trip_id=p_trip AND author_id=auth.uid() AND created_at>now()-interval '1 day')>=30 THEN RAISE EXCEPTION 'Daily limit reached'; END IF;
-  v_cap := trip_private.is_captain(p_trip);
+  v_cap := trip_private.is_leader(p_trip);
   INSERT INTO public.window_guide_items(trip_id,author_id,kind,body,photo_path,status,position)
   VALUES (p_trip,auth.uid(),p_kind,trim(p_body),p_photo,CASE WHEN v_cap THEN 'approved' ELSE 'proposed' END,
     coalesce((SELECT max(position)+1 FROM public.window_guide_items WHERE trip_id=p_trip),0)) RETURNING id INTO v_id;
@@ -1131,7 +1131,7 @@ CREATE FUNCTION public.guide_publish(p_trip uuid, p_on boolean) RETURNS void
     SET search_path TO 'public'
     AS $$
 BEGIN
-  IF NOT trip_private.is_captain(p_trip) OR NOT trip_private.is_window_room(p_trip) THEN RAISE EXCEPTION 'Only the Captain can publish the guide'; END IF;
+  IF NOT trip_private.is_leader(p_trip) OR NOT trip_private.is_window_room(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can publish the guide'; END IF;
   UPDATE public.trips SET guide_published_at=CASE WHEN p_on THEN now() ELSE NULL END WHERE id=p_trip AND play_arrangement IS NOT NULL;
 END $$;
 
@@ -1147,7 +1147,7 @@ CREATE FUNCTION public.guide_review(p_item uuid, p_action text) RETURNS void
 DECLARE it public.window_guide_items%ROWTYPE; other public.window_guide_items%ROWTYPE;
 BEGIN
   SELECT * INTO it FROM public.window_guide_items WHERE id=p_item FOR UPDATE;
-  IF NOT FOUND OR NOT trip_private.is_captain(it.trip_id) THEN RAISE EXCEPTION 'Only the Captain can edit the guide'; END IF;
+  IF NOT FOUND OR NOT trip_private.is_leader(it.trip_id) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can edit the guide'; END IF;
   IF p_action='approve' THEN UPDATE public.window_guide_items SET status='approved' WHERE id=it.id AND trip_id=it.trip_id;
   ELSIF p_action='remove' THEN UPDATE public.window_guide_items SET status='removed' WHERE id=it.id AND trip_id=it.trip_id;
   ELSIF p_action IN ('up','down') THEN
@@ -1420,6 +1420,16 @@ CREATE FUNCTION public.manage_trip_member(p_trip uuid, p_user uuid, p_action tex
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.manage_trip_member(p_trip,p_user,p_action) $$;
+
+
+--
+-- Name: mark_arrived(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.mark_arrived(p_trip uuid) RETURNS timestamp with time zone
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.mark_arrived(p_trip) $$;
 
 
 --
@@ -3752,11 +3762,12 @@ CREATE FUNCTION trip_private.approve_member(p_trip uuid, p_user uuid, p_approve 
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
-BEGIN IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Only the Captain can approve members'; END IF;
+BEGIN IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can approve members'; END IF;
  IF p_user=auth.uid() THEN RAISE EXCEPTION 'You can''t approve yourself'; END IF;
  IF NOT EXISTS (SELECT 1 FROM public.trip_members WHERE trip_id=p_trip AND user_id=p_user AND status='pending') THEN RAISE EXCEPTION 'That request is no longer waiting'; END IF;
  IF p_approve THEN
   IF coalesce(trip_private.age_of(p_user),0) < 18 AND NOT EXISTS (SELECT 1 FROM public.sandbox_bots WHERE user_id=p_user) THEN
+    IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Only the Captain can approve players under 18'; END IF;
     IF EXISTS (SELECT 1 FROM public.trips WHERE id=p_trip AND vibe='party') THEN RAISE EXCEPTION 'Party trips aren''t open to players under 18'; END IF;
     IF EXISTS (SELECT 1 FROM public.trips WHERE id=p_trip AND season_rule='a2c') THEN
       UPDATE public.trips SET vibe='family', has_minors=true WHERE id=p_trip;
@@ -3874,7 +3885,7 @@ CREATE FUNCTION trip_private.at_home_move_call(p_activity uuid, p_at timestamp w
     AS $$
 DECLARE a public.at_home_activities; t public.trips; BEGIN
   SELECT * INTO a FROM public.at_home_activities WHERE id=p_activity;
-  IF NOT FOUND OR NOT trip_private.is_captain(a.trip_id) THEN RAISE EXCEPTION 'Only the Captain can move a call'; END IF;
+  IF NOT FOUND OR NOT trip_private.is_leader(a.trip_id) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can move a call'; END IF;
   IF a.starts_at IS NULL THEN RAISE EXCEPTION 'This activity has no call time'; END IF;
   SELECT * INTO t FROM public.trips WHERE id=a.trip_id;
   IF (p_at AT TIME ZONE t.home_timezone)::date NOT BETWEEN t.start_date AND t.end_date THEN RAISE EXCEPTION 'Keep it inside the experience dates'; END IF;
@@ -4157,7 +4168,7 @@ CREATE FUNCTION trip_private.cancel_trip_invite(p_invite uuid) RETURNS void
     SET search_path TO 'public'
     AS $$
 DECLARE v uuid; BEGIN SELECT trip_id INTO v FROM public.trip_invites WHERE id=p_invite;
- IF v IS NULL OR NOT trip_private.is_captain(v) THEN RAISE EXCEPTION 'Not allowed'; END IF;
+ IF v IS NULL OR NOT trip_private.is_leader(v) THEN RAISE EXCEPTION 'Not allowed'; END IF;
  UPDATE public.trip_invites SET cancelled_at=now() WHERE id=p_invite AND used_at IS NULL AND cancelled_at IS NULL; END $$;
 
 
@@ -4256,6 +4267,49 @@ UPDATE public.live_votes SET ballot_count=(SELECT count(*) FROM public.live_vote
 
 
 --
+-- Name: check_call_nights(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.check_call_nights() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_max int; v_count int;
+BEGIN
+  SELECT (trip_private.room_rules(room)->>'maxCallNights')::int INTO v_max FROM public.trips WHERE id = NEW.trip_id FOR UPDATE;
+  SELECT count(*) INTO v_count FROM public.call_nights WHERE trip_id = NEW.trip_id AND id <> NEW.id;
+  IF v_count >= coalesce(v_max, 0) THEN
+    RAISE EXCEPTION 'Up to % call nights per trip', coalesce(v_max, 0) USING ERRCODE = '22023';
+  END IF;
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: check_crew_size(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.check_crew_size() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE t record; v_limit int; v_count int;
+BEGIN
+  IF TG_OP = 'UPDATE' AND OLD.trip_id = NEW.trip_id THEN RETURN NEW; END IF;  -- pending -> approved adds no one
+  SELECT room, play_mode, rules_version INTO t FROM public.trips WHERE id = NEW.trip_id FOR UPDATE;
+  IF NOT FOUND OR t.rules_version = 1 THEN RETURN NEW; END IF;
+  v_limit := CASE t.play_mode WHEN 'crew' THEN (trip_private.room_rules(t.room)->>'maxCrew')::int ELSE 1 END;
+  SELECT count(*) INTO v_count FROM public.trip_members
+  WHERE trip_id = NEW.trip_id AND user_id <> NEW.user_id AND status IN ('approved', 'pending');
+  IF v_count >= v_limit THEN
+    RAISE EXCEPTION '%', CASE WHEN v_limit = 1 THEN 'This room is played by its Captain only'
+                         ELSE format('This crew is full (%s players max)', v_limit) END USING ERRCODE = '22023';
+  END IF;
+  RETURN NEW;
+END $$;
+
+
+--
 -- Name: check_trip_length(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -4263,6 +4317,39 @@ CREATE FUNCTION trip_private.check_trip_length() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$ BEGIN IF NEW.end_date - NEW.start_date + 1 NOT BETWEEN 2 AND 30 AND NOT (NEW.a2e_room AND NEW.season_rule='a2c' AND NEW.kind='trip' AND NEW.end_date-NEW.start_date+1 BETWEEN 1 AND 3650) THEN RAISE EXCEPTION 'Trips can be 2 to 30 days long'; END IF; RETURN NEW; END $$;
+
+
+--
+-- Name: check_trip_rules(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.check_trip_rules() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO ''
+    AS $$
+DECLARE r jsonb := trip_private.room_rules(NEW.room); v_days int := NEW.end_date - NEW.start_date + 1;
+BEGIN
+  IF NEW.rules_version = 1 THEN RETURN NEW; END IF;
+  IF v_days > (r#>>'{mainDays,max}')::int AND (r#>>'{mainDays,max}')::int = 14 THEN
+    RAISE EXCEPTION 'Trips can be up to 14 days. For a longer trip, start a second one.' USING ERRCODE = '22023';
+  END IF;
+  IF v_days < (r#>>'{mainDays,min}')::int OR v_days > (r#>>'{mainDays,max}')::int THEN
+    RAISE EXCEPTION 'This room runs % to % days', r#>>'{mainDays,min}', r#>>'{mainDays,max}' USING ERRCODE = '22023';
+  END IF;
+  IF NOT (r->'modes') ? NEW.play_mode THEN
+    RAISE EXCEPTION 'That way of playing isn''t available in this room' USING ERRCODE = '22023';
+  END IF;
+  IF NEW.preflight_days > (r#>>'{preFlightDays,max}')::int THEN
+    RAISE EXCEPTION 'Pre-Flight can be up to % days', r#>>'{preFlightDays,max}' USING ERRCODE = '22023';
+  END IF;
+  IF NEW.preflight_skipped AND NOT (r#>>'{preFlightDays,skippable}')::boolean THEN
+    RAISE EXCEPTION 'This room has no Pre-Flight to skip' USING ERRCODE = '22023';
+  END IF;
+  IF cardinality(NEW.focuses) > (r->>'maxFocuses')::int THEN
+    RAISE EXCEPTION 'Pick up to % focuses', r->>'maxFocuses' USING ERRCODE = '22023';
+  END IF;
+  RETURN NEW;
+END $$;
 
 
 --
@@ -4373,14 +4460,9 @@ END $$;
 --
 
 CREATE FUNCTION trip_private.confirm_departure(p_trip uuid) RETURNS void
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-BEGIN
- IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can confirm arrival'; END IF;
- UPDATE public.trips SET arrived_at=now(), arrived_by=auth.uid() WHERE id=p_trip AND play_arrangement IS NOT NULL AND is_sandbox=false AND arrived_at IS NULL AND start_date <= trip_private.trip_today(p_trip);
- IF NOT FOUND THEN RAISE EXCEPTION 'Arrival can only be confirmed once, on or after your first trip day'; END IF;
-END $$;
+    LANGUAGE sql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$ SELECT trip_private.mark_arrived(p_trip); $$;
 
 
 --
@@ -4658,7 +4740,7 @@ CREATE FUNCTION trip_private.create_trip_invite(p_trip uuid) RETURNS text
     SET search_path TO 'public'
     AS $$
 DECLARE tok text := ''; bytes bytea := extensions.gen_random_bytes(10); i int; BEGIN
- IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Only trip leaders can invite'; END IF;
+ IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only trip leaders can invite'; END IF;
  IF (SELECT count(*) FROM public.trip_invites WHERE trip_id=p_trip AND used_at IS NULL AND cancelled_at IS NULL AND expires_at > now()) >= 50 THEN RAISE EXCEPTION 'That''s 50 open invites — cancel some first'; END IF;
  FOR i IN 0..9 LOOP tok := tok || substr('ABCDEFGHJKLMNPQRSTUVWXYZ', get_byte(bytes,i) % 24 + 1, 1); END LOOP;
  INSERT INTO public.trip_invites(token,trip_id,created_by) VALUES (tok,p_trip,auth.uid());
@@ -5206,8 +5288,8 @@ BEGIN
    RAISE EXCEPTION 'This experience has already started, so it can''t switch to playing with others';
  END IF;
  IF p_trip IS NULL OR NOT EXISTS (SELECT 1 FROM public.trips t WHERE t.id=p_trip AND NOT coalesce(t.is_sandbox,false))
-    OR NOT trip_private.is_captain(p_trip) THEN
-   RAISE EXCEPTION 'Pick a trip where you are the Captain';
+    OR NOT trip_private.is_leader(p_trip) THEN
+   RAISE EXCEPTION 'Pick a trip where you are the Captain or Co-Captain';
  END IF;
  IF e.track='home' THEN
    IF p_format NOT IN ('two_nights','finale_only') THEN RAISE EXCEPTION 'Pick a finale format'; END IF;
@@ -5404,7 +5486,7 @@ CREATE FUNCTION trip_private.edit_trip(p_trip uuid, p_name text, p_destination t
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$ BEGIN
- IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Only the Captain can edit trip details'; END IF;
+ IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can edit trip details'; END IF;
  IF length(trim(coalesce(p_name,''))) NOT BETWEEN 1 AND 100 OR length(trim(coalesce(p_destination,''))) NOT BETWEEN 1 AND 120 OR p_start_date IS NULL OR p_end_date IS NULL OR p_end_date < p_start_date THEN RAISE EXCEPTION 'Check your trip details'; END IF;
  UPDATE public.trips SET name=trim(p_name),destination=trim(p_destination),start_date=p_start_date,end_date=p_end_date WHERE id=p_trip;
 END $$;
@@ -6221,7 +6303,7 @@ CREATE FUNCTION trip_private.home_day_schedule(p_trip uuid, p_day date, p_time t
     SET search_path TO 'public'
     AS $$
 DECLARE t public.trips; BEGIN
- IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Only the Captain can set session times'; END IF;
+ IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can set session times'; END IF;
  SELECT * INTO t FROM public.trips WHERE id=p_trip;
  IF t.kind NOT IN ('at_home','cultural_inspiration') OR p_day NOT BETWEEN t.start_date AND t.end_date OR p_time IS NULL THEN RAISE EXCEPTION 'Choose an experience day and time'; END IF;
  IF p_all THEN
@@ -7284,7 +7366,9 @@ CREATE FUNCTION trip_private.manage_trip_member(p_trip uuid, p_user uuid, p_acti
  PERFORM 1 FROM public.trips WHERE id=p_trip FOR UPDATE;
  SELECT role INTO actor_role FROM public.trip_members WHERE trip_id=p_trip AND user_id=auth.uid() AND status='approved';
  SELECT role INTO target_role FROM public.trip_members WHERE trip_id=p_trip AND user_id=p_user AND status='approved';
- IF actor_role IS DISTINCT FROM 'captain' OR target_role IS NULL OR p_user=auth.uid() THEN RAISE EXCEPTION 'Only the Captain can manage members'; END IF;
+ IF actor_role IS NULL OR actor_role='player' OR target_role IS NULL OR p_user=auth.uid() THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can manage members'; END IF;
+ -- The Co-Captain can remove players (R-210); naming the Co-Captain and passing the crown stay with the Captain (R-208).
+ IF actor_role='co_captain' AND (p_action<>'remove' OR target_role<>'player') THEN RAISE EXCEPTION 'Only the Captain can do that'; END IF;
  is_bot := EXISTS (SELECT 1 FROM public.sandbox_bots WHERE user_id=p_user);
  v_age := coalesce(trip_private.age_of(p_user),0);
  IF p_action IN ('promote','promote_under21') THEN
@@ -7309,6 +7393,29 @@ CREATE FUNCTION trip_private.manage_trip_member(p_trip uuid, p_user uuid, p_acti
   UPDATE public.trip_members SET role='captain' WHERE trip_id=p_trip AND user_id=p_user;
   PERFORM trip_private.log_role(p_trip, auth.uid(), p_user, 'captain', 'handed off');
  ELSE RAISE EXCEPTION 'Not allowed'; END IF;
+END $$;
+
+
+--
+-- Name: mark_arrived(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.mark_arrived(p_trip uuid) RETURNS timestamp with time zone
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_phase text; v_at timestamptz := now();
+BEGIN
+  IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can tap "We''ve arrived"'; END IF;
+  IF (SELECT trip_private.room_rules(room)->>'tripSeasonStart' FROM public.trips WHERE id = p_trip) <> 'arrival_button' THEN
+    RAISE EXCEPTION 'This room starts on its first experience day';
+  END IF;
+  IF (SELECT arrived_at FROM public.trips WHERE id = p_trip) IS NOT NULL THEN RAISE EXCEPTION 'Arrival was already confirmed'; END IF;
+  SELECT phase INTO v_phase FROM trip_private.trip_phase(p_trip, v_at);
+  IF v_phase IS DISTINCT FROM 'takeoff' THEN RAISE EXCEPTION '"We''ve arrived" opens on takeoff day, until Trip Season starts'; END IF;
+  UPDATE public.trips SET arrived_at = v_at, arrived_by = auth.uid() WHERE id = p_trip AND arrived_at IS NULL;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Arrival was already confirmed'; END IF;
+  RETURN v_at;
 END $$;
 
 
@@ -9191,7 +9298,7 @@ CREATE FUNCTION trip_private.reset_trip_code(p_trip uuid) RETURNS text
     AS $$
 DECLARE new_code text; attempt int; BEGIN
  PERFORM 1 FROM public.trips WHERE id=p_trip FOR UPDATE;
- IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Only the Captain can reset the join code'; END IF;
+ IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can reset the join code'; END IF;
  FOR attempt IN 1..15 LOOP
   BEGIN
    new_code := public.new_trip_code();
@@ -10056,9 +10163,11 @@ END $$;
 
 CREATE FUNCTION trip_private.seat_cap(p_trip uuid) RETURNS integer
     LANGUAGE sql STABLE SECURITY DEFINER
-    SET search_path TO 'public'
+    SET search_path TO ''
     AS $$
-  SELECT CASE WHEN t.play_arrangement IS NULL THEN NULL WHEN trip_private.is_window_room(t.id) THEN 4 WHEN t.extra_seats THEN 12 ELSE 6 END FROM public.trips t WHERE t.id=p_trip $$;
+  SELECT CASE t.play_mode WHEN 'crew' THEN (trip_private.room_rules(t.room)->>'maxCrew')::int ELSE 1 END
+  FROM public.trips t WHERE t.id = p_trip
+$$;
 
 
 --
@@ -10155,7 +10264,7 @@ END $$;
 CREATE FUNCTION trip_private.set_carry_on_meetup(p_trip uuid, p_at timestamp with time zone, p_place text) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
-    AS $$ DECLARE t public.trips; BEGIN IF NOT trip_private.is_captain(p_trip) OR NOT trip_private.is_trip_member(p_trip,auth.uid()) THEN RAISE EXCEPTION 'Only the Captain can schedule the meet-up'; END IF; SELECT * INTO t FROM public.trips WHERE id=p_trip; IF t.kind='at_home' OR p_at IS NULL OR p_place IS NULL OR length(trim(p_place)) NOT BETWEEN 2 AND 160 OR (p_at AT TIME ZONE t.trip_timezone)::date NOT BETWEEN t.start_date AND t.end_date THEN RAISE EXCEPTION 'Choose a time and place during the Trip'; END IF; IF NOT EXISTS(SELECT 1 FROM public.game_nights n WHERE n.trip_id=p_trip AND NOT n.skipped HAVING p_at>max(n.starts_at)+interval '3 hours 30 minutes') THEN RAISE EXCEPTION 'Schedule the meet-up after Final Call Night'; END IF; INSERT INTO public.season_settings(trip_id,season,carry_on_meetup_at,carry_on_meetup_place) VALUES(p_trip,'trip',p_at,trim(p_place)) ON CONFLICT(trip_id,season) DO UPDATE SET carry_on_meetup_at=excluded.carry_on_meetup_at,carry_on_meetup_place=excluded.carry_on_meetup_place WHERE season_settings.trip_id=p_trip AND season_settings.season='trip'; END $$;
+    AS $$ DECLARE t public.trips; BEGIN IF NOT trip_private.is_leader(p_trip) OR NOT trip_private.is_trip_member(p_trip,auth.uid()) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can schedule the meet-up'; END IF; SELECT * INTO t FROM public.trips WHERE id=p_trip; IF t.kind='at_home' OR p_at IS NULL OR p_place IS NULL OR length(trim(p_place)) NOT BETWEEN 2 AND 160 OR (p_at AT TIME ZONE t.trip_timezone)::date NOT BETWEEN t.start_date AND t.end_date THEN RAISE EXCEPTION 'Choose a time and place during the Trip'; END IF; IF NOT EXISTS(SELECT 1 FROM public.game_nights n WHERE n.trip_id=p_trip AND NOT n.skipped HAVING p_at>max(n.starts_at)+interval '3 hours 30 minutes') THEN RAISE EXCEPTION 'Schedule the meet-up after Final Call Night'; END IF; INSERT INTO public.season_settings(trip_id,season,carry_on_meetup_at,carry_on_meetup_place) VALUES(p_trip,'trip',p_at,trim(p_place)) ON CONFLICT(trip_id,season) DO UPDATE SET carry_on_meetup_at=excluded.carry_on_meetup_at,carry_on_meetup_place=excluded.carry_on_meetup_place WHERE season_settings.trip_id=p_trip AND season_settings.season='trip'; END $$;
 
 
 --
@@ -10276,7 +10385,7 @@ CREATE FUNCTION trip_private.set_home_day_place(p_trip uuid, p_day date, p_place
     SET search_path TO 'public'
     AS $$
 BEGIN
- IF auth.uid() IS NULL OR NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Only the Captain can set the meeting place'; END IF;
+ IF auth.uid() IS NULL OR NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can set the meeting place'; END IF;
  IF char_length(coalesce(p_place,'')) > 80 THEN RAISE EXCEPTION 'Place must be 80 characters or less'; END IF;
  UPDATE public.home_day_sessions SET place=nullif(trim(p_place),'') WHERE trip_id=p_trip AND day_date=p_day AND starts_at>now() AND step='card';
  IF NOT FOUND THEN RAISE EXCEPTION 'This Game Day can no longer be changed'; END IF;
@@ -10292,7 +10401,7 @@ CREATE FUNCTION trip_private.set_home_ready_start(p_trip uuid, p_start date) RET
     SET search_path TO 'public'
     AS $$
 DECLARE t public.trips; BEGIN
- IF auth.uid() IS NULL OR NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Only the Captain can set Get Ready'; END IF;
+ IF auth.uid() IS NULL OR NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can set Get Ready'; END IF;
  SELECT * INTO t FROM public.trips WHERE id=p_trip FOR UPDATE;
  IF NOT FOUND OR t.kind NOT IN ('at_home','cultural_inspiration') OR p_start IS NULL OR p_start < (now() AT TIME ZONE t.home_timezone)::date OR p_start > t.start_date-1 THEN RAISE EXCEPTION 'Choose a Get Ready date before Day 1'; END IF;
  UPDATE public.trips SET game_start=p_start WHERE id=p_trip;
@@ -10308,7 +10417,7 @@ CREATE FUNCTION trip_private.set_join_controls(p_trip uuid, p_locked boolean, p_
     SET search_path TO 'public'
     AS $$
 DECLARE o public.trips%ROWTYPE; BEGIN
-  IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Captain only'; END IF;
+  IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Captain or Co-Captain only'; END IF;
   IF p_max IS NOT NULL AND (p_max < 2 OR p_max > 40) THEN RAISE EXCEPTION 'Max squad size must be 2 to 40'; END IF;
   SELECT * INTO o FROM public.trips WHERE id=p_trip FOR UPDATE;
   UPDATE public.trips SET join_locked=coalesce(p_locked,join_locked), max_squad=coalesce(p_max,max_squad) WHERE id=p_trip;
@@ -10406,7 +10515,7 @@ CREATE FUNCTION trip_private.set_preflight_a2c(p_trip uuid, p_start date, p_week
     AS $$
 DECLARE t public.trips; today_local date; final_day date; first_day date; first_at timestamptz; call_at timestamptz; total integer:=0;
 BEGIN
- IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Only the Captain can set Pre-Flight'; END IF;
+ IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can set Pre-Flight'; END IF;
  SELECT * INTO t FROM public.trips WHERE id=p_trip FOR UPDATE;
  IF NOT FOUND OR t.season_rule<>'a2c' OR t.kind<>'trip' THEN RAISE EXCEPTION 'This room uses its original plan'; END IF;
  today_local:=(now() AT TIME ZONE t.home_timezone)::date;
@@ -10450,7 +10559,7 @@ CREATE FUNCTION trip_private.set_preflight_start(p_trip uuid, p_start date, p_pl
     AS $$
 DECLARE t public.trips; v_today date; v_count int;
 BEGIN
- IF auth.uid() IS NULL OR NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Only the Captain can set Pre-Flight'; END IF;
+ IF auth.uid() IS NULL OR NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can set Pre-Flight'; END IF;
  SELECT * INTO t FROM public.trips WHERE id=p_trip FOR UPDATE;
  IF NOT FOUND OR t.kind='at_home' THEN RAISE EXCEPTION 'Choose a real trip'; END IF;
  v_today := (now() AT TIME ZONE t.home_timezone)::date;
@@ -10615,7 +10724,7 @@ CREATE FUNCTION trip_private.set_trip_access(p_trip uuid, p_code_enabled boolean
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
-BEGIN IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Captain only'; END IF;
+BEGIN IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Captain or Co-Captain only'; END IF;
  UPDATE public.trips SET join_code_enabled=coalesce(p_code_enabled,join_code_enabled), require_approval=coalesce(p_require_approval,require_approval) WHERE id=p_trip; END $$;
 
 
@@ -10665,7 +10774,7 @@ CREATE FUNCTION trip_private.set_trip_minors(p_trip uuid, p_has boolean) RETURNS
     AS $$
 DECLARE t public.trips;
 BEGIN
- IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Captain only'; END IF;
+ IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Captain or Co-Captain only'; END IF;
  SELECT * INTO t FROM public.trips WHERE id=p_trip FOR UPDATE;
  IF t.season_rule IS DISTINCT FROM 'a2c' THEN RAISE EXCEPTION 'This setting is for new trips'; END IF;
  IF coalesce(p_has,false) THEN
@@ -10686,7 +10795,7 @@ CREATE FUNCTION trip_private.set_trip_timezone(p_trip uuid, p_tz text) RETURNS v
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$ BEGIN
- IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Only the Captain can change the trip time zone'; END IF;
+ IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain can change the trip time zone'; END IF;
  IF NOT EXISTS (SELECT 1 FROM pg_timezone_names WHERE name = p_tz) THEN RAISE EXCEPTION 'Pick a valid time zone'; END IF;
  UPDATE public.trips SET trip_timezone = p_tz WHERE id = p_trip; END $$;
 
@@ -10699,7 +10808,7 @@ CREATE FUNCTION trip_private.set_trip_vibe(p_trip uuid, p_vibe text) RETURNS voi
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
-BEGIN IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Captain only'; END IF;
+BEGIN IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Captain or Co-Captain only'; END IF;
  IF p_vibe NOT IN ('family','chill','party') THEN RAISE EXCEPTION 'Pick Family, Chill or Party'; END IF;
  IF p_vibe<>'family' AND EXISTS (SELECT 1 FROM public.trips WHERE id=p_trip AND has_minors) THEN RAISE EXCEPTION 'MINORS_FAMILY: Trips with players under 18 use Family content only'; END IF;
  UPDATE public.trips SET vibe=p_vibe WHERE id=p_trip;
@@ -16227,6 +16336,13 @@ CREATE TRIGGER call_nights_archive_guard BEFORE INSERT OR UPDATE ON public.call_
 
 
 --
+-- Name: call_nights call_nights_limit; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER call_nights_limit BEFORE INSERT ON public.call_nights FOR EACH ROW EXECUTE FUNCTION trip_private.check_call_nights();
+
+
+--
 -- Name: cost_items cost_items_archive_guard; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -17284,6 +17400,13 @@ CREATE TRIGGER trip_members_auto_team AFTER INSERT OR UPDATE OF status ON public
 
 
 --
+-- Name: trip_members trip_members_crew_size; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_members_crew_size BEFORE INSERT OR UPDATE OF trip_id ON public.trip_members FOR EACH ROW EXECUTE FUNCTION trip_private.check_crew_size();
+
+
+--
 -- Name: trip_members trip_members_resplit_costs; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -17295,13 +17418,6 @@ CREATE TRIGGER trip_members_resplit_costs AFTER INSERT ON public.trip_members FO
 --
 
 CREATE TRIGGER trip_members_resplit_on_change AFTER DELETE OR UPDATE OF status ON public.trip_members FOR EACH ROW EXECUTE FUNCTION trip_private.on_member_changed();
-
-
---
--- Name: trip_members trip_members_seat_cap; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER trip_members_seat_cap BEFORE INSERT OR UPDATE OF status ON public.trip_members FOR EACH ROW EXECUTE FUNCTION trip_private.enforce_seat_cap();
 
 
 --
@@ -17386,6 +17502,13 @@ CREATE TRIGGER trips_minor_guard BEFORE INSERT OR UPDATE OF vibe, has_minors ON 
 --
 
 CREATE TRIGGER trips_opt_in_no_quick_start BEFORE INSERT OR UPDATE OF game_plan, play_arrangement ON public.trips FOR EACH ROW EXECUTE FUNCTION trip_private.prevent_opt_in_quick_start();
+
+
+--
+-- Name: trips trips_room_rules; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trips_room_rules BEFORE INSERT OR UPDATE OF room, play_mode, start_date, end_date, preflight_days, preflight_skipped, focuses ON public.trips FOR EACH ROW EXECUTE FUNCTION trip_private.check_trip_rules();
 
 
 --
@@ -21717,6 +21840,15 @@ GRANT ALL ON FUNCTION public.manage_trip_member(p_trip uuid, p_user uuid, p_acti
 
 
 --
+-- Name: FUNCTION mark_arrived(p_trip uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.mark_arrived(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.mark_arrived(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.mark_arrived(p_trip uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION mark_bingo(p_trip uuid, p_date date, p_square integer, p_photo text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -23780,11 +23912,32 @@ GRANT ALL ON FUNCTION trip_private.cast_live_vote(p_vote uuid, p_option integer)
 
 
 --
+-- Name: FUNCTION check_call_nights(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.check_call_nights() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION check_crew_size(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.check_crew_size() FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION check_trip_length(); Type: ACL; Schema: trip_private; Owner: -
 --
 
 REVOKE ALL ON FUNCTION trip_private.check_trip_length() FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.check_trip_length() TO service_role;
+
+
+--
+-- Name: FUNCTION check_trip_rules(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.check_trip_rules() FROM PUBLIC;
 
 
 --
@@ -24936,6 +25089,15 @@ GRANT ALL ON FUNCTION trip_private.log_role(p_trip uuid, p_from uuid, p_to uuid,
 REVOKE ALL ON FUNCTION trip_private.manage_trip_member(p_trip uuid, p_user uuid, p_action text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.manage_trip_member(p_trip uuid, p_user uuid, p_action text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.manage_trip_member(p_trip uuid, p_user uuid, p_action text) TO service_role;
+
+
+--
+-- Name: FUNCTION mark_arrived(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.mark_arrived(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.mark_arrived(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.mark_arrived(p_trip uuid) TO service_role;
 
 
 --

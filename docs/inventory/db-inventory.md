@@ -14,10 +14,10 @@
 |---|---|---|
 | Tables | 128 | 14 |
 | Views | 0 | 0 |
-| Functions | 300 | 393 |
-| Triggers | 5 | 43 |
+| Functions | 301 | 394 |
+| Triggers | 5 | 46 |
 
-Objects (re)defined in 5 or more migrations: **18**. This is why the snapshot, not the migration history, is the reference (gotcha G5).
+Objects (re)defined in 5 or more migrations: **19**. This is why the snapshot, not the migration history, is the reference (gotcha G5).
 
 ## Security checks
 
@@ -82,7 +82,7 @@ revoke `anon` (09 §2).
 
 ## Client usage
 
-### Public functions callable by clients but not referenced in `src/`: 32
+### Public functions callable by clients but not referenced in `src/`: 33
 
 Candidates to revoke (M1-08). Some may be called from SQL, cron or the Test Lab only: check
 before removing. Reference matching is by quoted name, so dynamic names built from strings
@@ -100,6 +100,7 @@ are still found.
 - `culture_quest_card(p_session uuid)`
 - `hide_inspiration(p_card uuid)`
 - `is_trip_member(p_trip uuid, p_user uuid)`
+- `mark_arrived(p_trip uuid)`
 - `member_age_ranges(p_trip uuid)`
 - `mix_ai_quota(p_trip uuid)`
 - `my_passport()`
@@ -285,6 +286,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | `trip_private.night_flow_action` | 7 | `20261002104152_3d89b803-5e0f-4b61-83ee-36c93a8a0e03.sql` |
 | `trip_private.mission_action` | 6 | `20261006024714_82adb54f-0d8b-4207-84a6-7b7909b4eb72.sql` |
 | `trip_private.game_stamps` | 6 | `20261002064146_d6694141-2653-428c-9c3f-fa6bbc1b46bc.sql` |
+| `trip_private.approve_member` | 6 | `20261026110000_m2_limits_co_captain.sql` |
 | `trip_private.trip_invite_preview` | 5 | `20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql` |
 | `trip_private.sealed_drops` | 5 | `20261005051223_126b0dc0-19db-447a-a42b-6e05eeffdb3d.sql` |
 | `trip_private.pick_weekly_prompt` | 5 | `20261002063117_eaae2e6d-3393-4eb4-9b62-ed96ebf9864f.sql` |
@@ -293,7 +295,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | `trip_private.inspiration_validate` | 5 | `20261002164624_dddf5a7b-6d37-4e0e-aeee-3a6b1fa2c8c8.sql` |
 | `trip_private.game_rooms` | 5 | `20261003073655_1047ce89-63b5-46bc-a963-8fd5e56bf189.sql` |
 | `trip_private.end_trip` | 5 | `20261002104152_3d89b803-5e0f-4b61-83ee-36c93a8a0e03.sql` |
-| `trip_private.approve_member` | 5 | `20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql` |
+| `trip_private.confirm_departure` | 5 | `20261026110000_m2_limits_co_captain.sql` |
 | `trip_private.a2c_quest_card` | 5 | `20261005154608_2f973bc7-77b7-40da-9899-bca1c775affe.sql` |
 | `public.player_card_read` | 5 | `20261005165113_f9cb8cc5-69d9-4f50-9a90-bb16cf47df57.sql` |
 

@@ -6324,6 +6324,7 @@ export type Database = {
         Args: { p_action: string; p_trip: string; p_user: string };
         Returns: undefined;
       };
+      mark_arrived: { Args: { p_trip: string }; Returns: string };
       mark_bingo: {
         Args: { p_date: string; p_photo: string; p_square: number; p_trip: string };
         Returns: undefined;

@@ -26,7 +26,9 @@ the deck wins and this list is updated. More rules: `src/AGENTS.md`, `src/featur
 - Game-night turns and alternatives use private functions and member-scoped reads.
 - Call `spendAiQuota` (`use_ai_quota`) before AI calls to enforce access and daily limits.
 
-- Captain-only setup (dates, plan, vibe, time zone, costs, unlock, invites/approval, members, hand-off) checks trip_private.is_captain; game-night actions use is_leader; Co-Captain team edits only while a night is live; every role change is logged in trip_role_changes so support can trace them.
+- Trip setup and management (dates, vibe, time zone, invites/approval, removing players, call nights, "We've arrived") check trip_private.is_leader: the Co-Captain has every Captain power except deleting the trip and handing over the Captaincy (R-208, M2-10, 16_limits_and_leaders.test.sql). Still Captain-only: delete_trip, step_down / pass_crown, naming the Co-Captain, birthday and age data, teen invites and approving players under 18, and the dormant payment/cost functions. Every role change is logged in trip_role_changes so support can trace them.
+- Room limits live in one table: src/features/trip/rooms.ts = trip_private.room_rules(room), both tested against supabase/tests/fixtures/rooms.json. Triggers check every trips / trip_members / call_nights write against it (days, modes, Pre-Flight, focuses, crew size counting pending, call nights), so no create or edit path can skip them.
+- The phase comes only from trip_private.trip_phase(trip, at) (pure core phase_at; src/features/trip/phase.ts mirrors it for display). Server rules that depend on the phase call it; the client never decides a phase. Change both copies together and add cases to supabase/tests/fixtures/phases.json (then `bun scripts/db/fixture-tests.ts`).
 - Display viewer time zone (`profiles.time_zone`) with trip zone second; server rules ignore viewer zone.
 
 - Preserve invite codes across auth (24h); pin Join room on Home and call `join_trip` only on tap.

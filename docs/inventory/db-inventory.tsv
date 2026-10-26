@@ -239,9 +239,9 @@ function	public	game_name_available	p_name text	f	true				EXECUTE		2026100304530
 function	public	game_rooms		f	true						20261002213413_8874cf4a-9ca1-4902-b6c5-ff3879ee5b18.sql	1	0	
 function	public	games_live	p_trip uuid	f	true				EXECUTE		20261005031128_e385e871-ecf2-484d-93d3-f31b7c53416d.sql	1	1	src/lib/flight-reminders.ts
 trigger	public	guard_player_profile		t	true						20261003045308_98ce25d2-e1b7-46b1-b131-6526bea9bd65.sql	2	0	
-function	public	guide_propose	p_trip uuid, p_kind text, p_body text, p_photo text	t	true				EXECUTE		20261005091250_b590b1f5-aee7-4936-8a83-94a070ff743f.sql	1	1	src/features/window-seat/CrewGuide.tsx
-function	public	guide_publish	p_trip uuid, p_on boolean	t	true				EXECUTE		20261005091250_b590b1f5-aee7-4936-8a83-94a070ff743f.sql	1	1	src/features/window-seat/CrewGuide.tsx
-function	public	guide_review	p_item uuid, p_action text	t	true				EXECUTE		20261005091250_b590b1f5-aee7-4936-8a83-94a070ff743f.sql	1	1	src/features/window-seat/CrewGuide.tsx
+function	public	guide_propose	p_trip uuid, p_kind text, p_body text, p_photo text	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	2	1	src/features/window-seat/CrewGuide.tsx
+function	public	guide_publish	p_trip uuid, p_on boolean	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	2	1	src/features/window-seat/CrewGuide.tsx
+function	public	guide_review	p_item uuid, p_action text	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	2	1	src/features/window-seat/CrewGuide.tsx
 function	public	hide_inspiration	p_card uuid	f	true				EXECUTE		20261002164043_e73ff953-ca29-4bbf-a978-64f78a1dada8.sql	2	0	
 function	public	home_day_action	p_session uuid, p_action text, p_choice integer	f	true				EXECUTE		20261003220646_e56bbc04-8634-4977-aa11-8a9baf1caed2.sql	1	1	src/features/play/HomeDayFlow.tsx
 function	public	home_day_schedule	p_trip uuid, p_day date, p_time time without time zone, p_all boolean	f	true				EXECUTE		20261003220646_e56bbc04-8634-4977-aa11-8a9baf1caed2.sql	1	2	src/features/at-home/CinematicMonthCalendar.tsx src/features/play/HomeDayFlow.tsx
@@ -268,6 +268,7 @@ function	public	list_beta_codes		f	true				EXECUTE		20261004085445_83e7b819-adbc
 function	public	list_waitlist		f	true				EXECUTE		20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql	1	1	src/features/admin/BetaCodes.tsx
 function	public	log_ai_call	p_usage uuid, p_model text, p_in integer, p_out integer, p_cost numeric	f	true				EXECUTE		20261002070906_8ff32319-0fd9-4971-bf7d-15961bfe9af5.sql	1	1	src/lib/ai-quota.server.ts
 function	public	manage_trip_member	p_trip uuid, p_user uuid, p_action text	f	true			EXECUTE	EXECUTE		20261001043440_510aebe2-d821-49ad-8452-42b8fd98758f.sql	2	3	src/features/captain-tools/CaptainChecklist.tsx src/features/captain-tools/CaptainExtras.tsx src/features/captain-tools/CaptainTools.tsx
+function	public	mark_arrived	p_trip uuid	f	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	1	0	
 function	public	mark_bingo	p_trip uuid, p_date date, p_square integer, p_photo text	f	true				EXECUTE		20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	1	src/lib/pending-bingo.ts
 function	public	member_age_ranges	p_trip uuid	f	true				EXECUTE		20261002043610_9eabc32b-fd16-4956-8d60-1156bbc68115.sql	1	0	
 function	public	member_stamp_badges	p_trip uuid	f	true				EXECUTE		20261003060739_d825bd33-4e9a-454b-89c6-9e7210c9f95d.sql	1	1	src/features/passport/StampBadge.tsx
@@ -475,13 +476,13 @@ function	trip_private	apply_join_baseline	p_trip uuid, p_user uuid	t	true						2
 function	trip_private	apply_reschedule	p_trip uuid, p_every integer, p_count integer	t	true				EXECUTE		20261004100500_safeupdate_where_clauses.sql	2	0	
 function	trip_private	approve_adult_player	p_trip uuid, p_user uuid, p_approve boolean	t	true				EXECUTE		20261002220316_71751d6d-e509-445a-858f-f578f9b5de9b.sql	3	0	
 function	trip_private	approve_inspiration	p_card uuid, p_approve boolean	t	true				EXECUTE		20261002223245_4c843674-2dcd-4d21-9017-b3732a0fda52.sql	1	0	
-function	trip_private	approve_member	p_trip uuid, p_user uuid, p_approve boolean	t	true				EXECUTE		20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql	5	0	
+function	trip_private	approve_member	p_trip uuid, p_user uuid, p_approve boolean	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	6	0	
 function	trip_private	archive_legacy_trips	p_created_before timestamp with time zone, p_keep uuid[], p_note text	t	true				EXECUTE		20261021130000_trip_archive_mode.sql	1	0	
 function	trip_private	at_home_add	p_trip uuid, p_day date, p_kind text, p_cat text, p_extra text, p_call boolean	t	true						20261002085632_da6294f9-5d94-462c-a613-3e11979ee426.sql	1	0	
 function	trip_private	at_home_answer	p_activity uuid, p_answer text	t	true				EXECUTE		20261002085632_da6294f9-5d94-462c-a613-3e11979ee426.sql	1	0	
 trigger	trip_private	at_home_cap		t	true						20261002085632_da6294f9-5d94-462c-a613-3e11979ee426.sql	1	0	
 function	trip_private	at_home_mark_winner	p_activity uuid, p_user uuid	t	true				EXECUTE		20261002085632_da6294f9-5d94-462c-a613-3e11979ee426.sql	1	0	
-function	trip_private	at_home_move_call	p_activity uuid, p_at timestamp with time zone	t	true				EXECUTE		20261002085632_da6294f9-5d94-462c-a613-3e11979ee426.sql	1	0	
+function	trip_private	at_home_move_call	p_activity uuid, p_at timestamp with time zone	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	2	0	
 function	trip_private	at_home_mvp	p_trip uuid	t	true				EXECUTE		20261005024938_64b7bea2-bfed-40ea-93ea-3e169bd7dabe.sql	2	0	
 function	trip_private	at_home_pick	p_trip uuid, p_cat text	t	true						20261002085632_da6294f9-5d94-462c-a613-3e11979ee426.sql	1	0	
 function	trip_private	at_home_plan	p_trip uuid	t	true				EXECUTE		20261002111230_103a7690-3b6f-49f7-8fba-610c330d5549.sql	2	0	
@@ -499,7 +500,7 @@ function	trip_private	can_manage_teams	p_trip uuid	t	true				EXECUTE		2026100206
 function	trip_private	can_run_night	p_trip uuid, p_week integer	t	true				EXECUTE		20261001051932_1ec70493-12c1-4833-9cb2-59f4868b7d89.sql	1	0	
 function	trip_private	can_run_turns	p_trip uuid, p_week integer	t	true						20261002033304_2ae6f19b-aef9-4246-a62d-9f1a5e21c7c3.sql	2	0	
 function	trip_private	can_view_culture	p_exp uuid	t	true				EXECUTE		20261005065509_07a6a7b3-4295-45d0-88db-564a9f411d02.sql	2	0	
-function	trip_private	cancel_trip_invite	p_invite uuid	t	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	0	
+function	trip_private	cancel_trip_invite	p_invite uuid	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	2	0	
 function	trip_private	captain_of	p_trip uuid	t	true				EXECUTE		20261002033304_2ae6f19b-aef9-4246-a62d-9f1a5e21c7c3.sql	1	0	
 function	trip_private	captain_pass_limit	p_trip uuid	t	true				EXECUTE		20261002064146_d6694141-2653-428c-9c3f-fa6bbc1b46bc.sql	1	0	
 function	trip_private	captain_status	p_trip uuid	t	true				EXECUTE		20261002061513_3de59ba7-2343-48e6-8af2-8210734342ef.sql	1	0	
@@ -507,14 +508,17 @@ function	trip_private	captain_trip_ids	p_trip uuid	t	true						20261002063117_ea
 function	trip_private	carry_quest_unlocked	p_trip uuid	t	true				EXECUTE		20261005025305_34d59e94-7301-4e16-b2da-01b3acddd045.sql	1	0	
 function	trip_private	cast_day_vote	p_trip uuid, p_date date, p_kind text, p_choice uuid	t	true				EXECUTE		20261003073655_1047ce89-63b5-46bc-a963-8fd5e56bf189.sql	2	0	
 function	trip_private	cast_live_vote	p_vote uuid, p_option integer	t	true				EXECUTE		20261002104152_3d89b803-5e0f-4b61-83ee-36c93a8a0e03.sql	2	0	
+trigger	trip_private	check_call_nights		t	true						20261026110000_m2_limits_co_captain.sql	1	0	
+trigger	trip_private	check_crew_size		t	true						20261026110000_m2_limits_co_captain.sql	1	0	
 trigger	trip_private	check_trip_length		f	true						20261005064855_c0a131d0-6976-423a-a9be-d82362146661.sql	3	0	
+trigger	trip_private	check_trip_rules		f	true						20261026110000_m2_limits_co_captain.sql	1	0	
 function	trip_private	checkout_beta	p_trip uuid	t	true				EXECUTE		20261005154302_ba6aa404-5943-406c-862e-1dfa2ed6565a.sql	2	0	
 function	trip_private	claim_airport	p_trip uuid, p_date date, p_mission integer, p_photo text, p_guess text	t	true				EXECUTE		20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	0	
 function	trip_private	clear_song_discs	p_trip uuid	t	true				EXECUTE		20261002111230_103a7690-3b6f-49f7-8fba-610c330d5549.sql	1	0	
 function	trip_private	close_live_vote	p_vote uuid	t	true				EXECUTE		20261003073655_1047ce89-63b5-46bc-a963-8fd5e56bf189.sql	1	0	
 function	trip_private	code_rate_check		t	true						20261002053604_c6470a40-9d7e-46d6-be84-00a03103769d.sql	1	0	
 function	trip_private	confirm_cost_payment	p_item uuid, p_user uuid, p_paid_cents bigint	t	true				EXECUTE		20261003073655_1047ce89-63b5-46bc-a963-8fd5e56bf189.sql	3	0	
-function	trip_private	confirm_departure	p_trip uuid	t	true				EXECUTE		20261026100000_m2_rooms_trips_phase_engine.sql	4	0	
+function	trip_private	confirm_departure	p_trip uuid	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	5	0	
 function	trip_private	confirm_game_nights	p_trip uuid, p_option integer	t	true				EXECUTE		20261002054820_cea4b60b-d85f-4615-8940-0dbafab48732.sql	4	0	
 function	trip_private	content_feedback_summary		t	true				EXECUTE		20261002063117_eaae2e6d-3393-4eb4-9b62-ed96ebf9864f.sql	1	0	
 function	trip_private	content_text_safe	p_text text	f	true			EXECUTE	EXECUTE		20261004055946_199a0e27-65c0-4822-9603-1ed51f69f52e.sql	1	0	
@@ -525,7 +529,7 @@ function	trip_private	create_culture_a2e	p_kind text, p_mode text, p_title text,
 function	trip_private	create_teen_invite	p_trip uuid, p_guardian boolean	t	true				EXECUTE		20261002223245_4c843674-2dcd-4d21-9017-b3732a0fda52.sql	1	0	
 function	trip_private	create_trip	p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text	t	true				EXECUTE		20261002223245_4c843674-2dcd-4d21-9017-b3732a0fda52.sql	2	0	
 function	trip_private	create_trip_a2c	p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text	t	true				EXECUTE		20261005051128_d9037ed8-7a5d-4659-bff3-1072d1d29a93.sql	2	0	
-function	trip_private	create_trip_invite	p_trip uuid	t	true				EXECUTE		20261002053604_c6470a40-9d7e-46d6-be84-00a03103769d.sql	2	0	
+function	trip_private	create_trip_invite	p_trip uuid	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	3	0	
 function	trip_private	create_trip_play_mode	p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text, p_mode text	t	true				EXECUTE		20261005073654_a11ddc55-e089-4415-8e86-71ea348c77fb.sql	1	0	
 function	trip_private	create_trip_play_mode_v2	p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text, p_mode text, p_country text	t	true				EXECUTE		20261005074955_1e8b6ec8-bc5a-4d47-b17c-3c761ee0d714.sql	4	0	
 function	trip_private	create_trip_play_mode_v2	p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text, p_mode text, p_country text, p_types text[]	t	true				EXECUTE		20261005074955_1e8b6ec8-bc5a-4d47-b17c-3c761ee0d714.sql	4	0	
@@ -549,7 +553,7 @@ function	trip_private	culture_quest_previews		t	true				EXECUTE		20261022100000_
 function	trip_private	culture_quest_stats	p_card uuid	t	true				EXECUTE		20261002171135_acd0c89e-48b3-44b4-aae4-d22440202b7f.sql	1	0	
 function	trip_private	culture_shared	p_scope text	t	true				EXECUTE		20261004013306_b18f4c90-e999-49f3-b61e-503d898301af.sql	1	0	
 function	trip_private	culture_showcase	p_action text, p_exp uuid, p_code text, p jsonb	t	true				EXECUTE		20261005070134_3f939607-99f2-460e-9bc6-d1a020d373a3.sql	3	0	
-function	trip_private	culture_switch_group	p_exp uuid, p_trip uuid, p_format text	t	true				EXECUTE		20261005062356_92bc9b73-6de4-45ec-8271-7c05dcdaf95e.sql	2	0	
+function	trip_private	culture_switch_group	p_exp uuid, p_trip uuid, p_format text	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	3	0	
 function	trip_private	current_week	p_trip uuid	t	true				EXECUTE		20261001051932_1ec70493-12c1-4833-9cb2-59f4868b7d89.sql	1	0	
 function	trip_private	day_vote_results	p_trip uuid, p_date date	t	true				EXECUTE		20261002053604_c6470a40-9d7e-46d6-be84-00a03103769d.sql	2	0	
 function	trip_private	decide_room_request	p_request uuid, p_action text, p_note text	t	true				EXECUTE		20261002220159_354d5f46-fd6e-4347-b426-a3fd88d0297d.sql	2	0	
@@ -560,7 +564,7 @@ function	trip_private	delete_trip	p_trip uuid, p_name text	t	true				EXECUTE		20
 function	trip_private	dismiss_bug_update	p_report uuid	t	true				EXECUTE			0	0	
 function	trip_private	dismiss_cost_note	p_note uuid	t	true				EXECUTE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	0	
 function	trip_private	draw_game_card	p_trip uuid, p_category text	t	true				EXECUTE		20261005031128_e385e871-ecf2-484d-93d3-f31b7c53416d.sql	9	0	
-function	trip_private	edit_trip	p_trip uuid, p_name text, p_destination text, p_start_date date, p_end_date date	t	true				EXECUTE		20261002061513_3de59ba7-2343-48e6-8af2-8210734342ef.sql	1	0	
+function	trip_private	edit_trip	p_trip uuid, p_name text, p_destination text, p_start_date date, p_end_date date	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	2	0	
 function	trip_private	edit_trip_day	p_trip uuid, p_date date, p_bingo jsonb, p_quests jsonb, p_theme text	t	true				EXECUTE		20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	0	
 function	trip_private	effective_crowning	p_trip uuid, p_season text	t	true				EXECUTE		20261005223206_337f661b-ecd0-4989-b2bf-4c27b0430077.sql	4	0	
 function	trip_private	end_trip	p_trip uuid	t	true				EXECUTE		20261002104152_3d89b803-5e0f-4b61-83ee-36c93a8a0e03.sql	5	0	
@@ -601,7 +605,7 @@ function	trip_private	has_teen_member	p_trip uuid	t	true						20261005054945_da6
 function	trip_private	hide_inspiration	p_card uuid	t	true				EXECUTE		20261002164815_79c2f862-2ca8-4a0c-951a-7c483611f936.sql	2	0	
 function	trip_private	home_day_action	p_session uuid, p_action text, p_choice integer	t	true				EXECUTE		20261004022343_f5ed27af-60f9-4933-84b7-d7bdc0729950.sql	3	0	
 trigger	trip_private	home_day_finish_postcard		t	true			EXECUTE	EXECUTE		20261003221057_eca0a37c-636b-4db3-a4eb-18f443f11443.sql	1	0	
-function	trip_private	home_day_schedule	p_trip uuid, p_day date, p_time time without time zone, p_all boolean	t	true				EXECUTE		20261003220646_e56bbc04-8634-4977-aa11-8a9baf1caed2.sql	1	0	
+function	trip_private	home_day_schedule	p_trip uuid, p_day date, p_time time without time zone, p_all boolean	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	2	0	
 function	trip_private	home_day_scores	p_trip uuid	t	true				EXECUTE		20261005024938_64b7bea2-bfed-40ea-93ea-3e169bd7dabe.sql	3	0	
 function	trip_private	home_day_view	p_trip uuid	t	true				EXECUTE		20261004003830_3b023264-9161-4557-a250-62d6d80cf8c8.sql	2	0	
 function	trip_private	host_check_in	p_trip uuid, p_week integer	t	true				EXECUTE		20261002054820_cea4b60b-d85f-4615-8940-0dbafab48732.sql	1	0	
@@ -647,7 +651,8 @@ function	trip_private	list_waitlist		t	true				EXECUTE		20261004085445_83e7b819-
 function	trip_private	log_ai_call	p_usage uuid, p_model text, p_in integer, p_out integer, p_cost numeric	t	true				EXECUTE		20261002070906_8ff32319-0fd9-4971-bf7d-15961bfe9af5.sql	1	0	
 function	trip_private	log_cost	p_trip uuid, p_item uuid, p_target uuid, p_action text, p_amount bigint, p_detail text	t	true						20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	0	
 function	trip_private	log_role	p_trip uuid, p_from uuid, p_to uuid, p_role text, p_reason text	t	true				EXECUTE		20261002061513_3de59ba7-2343-48e6-8af2-8210734342ef.sql	1	0	
-function	trip_private	manage_trip_member	p_trip uuid, p_user uuid, p_action text	t	true				EXECUTE		20261002223245_4c843674-2dcd-4d21-9017-b3732a0fda52.sql	3	0	
+function	trip_private	manage_trip_member	p_trip uuid, p_user uuid, p_action text	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	4	0	
+function	trip_private	mark_arrived	p_trip uuid	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	1	0	
 function	trip_private	mark_bingo	p_trip uuid, p_date date, p_square integer, p_photo text	t	true				EXECUTE		20261003070725_d6e28063-d815-4683-9814-ff3111365151.sql	2	0	
 function	trip_private	member_age_ranges	p_trip uuid	t	true				EXECUTE		20261002043610_9eabc32b-fd16-4956-8d60-1156bbc68115.sql	1	0	
 function	trip_private	member_stamp_badges	p_trip uuid	t	true				EXECUTE		20261003060739_d825bd33-4e9a-454b-89c6-9e7210c9f95d.sql	1	0	
@@ -733,7 +738,7 @@ function	trip_private	request_room	p_trip uuid, p_interest text	t	true				EXECUT
 function	trip_private	require_feature	p_trip uuid, p_feature text	f	true				EXECUTE		20261022100000_remove_preview_levels.sql	2	0	
 function	trip_private	require_legal		t	true				EXECUTE		20261002192159_9164a584-4c3c-4efe-b0d9-7a70862993d1.sql	1	0	
 function	trip_private	reschedule_preview	p_trip uuid, p_every integer, p_count integer	t	true				EXECUTE		20261002022825_07b81448-6efe-4855-90a0-76ffec10d339.sql	1	0	
-function	trip_private	reset_trip_code	p_trip uuid	t	true				EXECUTE		20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql	1	0	
+function	trip_private	reset_trip_code	p_trip uuid	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	2	0	
 function	trip_private	resolve_age_guesses	p_trip uuid, p_week integer, p_answer numeric	t	true				EXECUTE		20261001051932_1ec70493-12c1-4833-9cb2-59f4868b7d89.sql	1	0	
 function	trip_private	respin_game	p_trip uuid	t	true				EXECUTE		20261001060850_b3af93df-09e3-4d10-8aa6-a1c6c3c2025c.sql	1	0	
 function	trip_private	resplit_even_costs	p_trip uuid	t	true						20261002054820_cea4b60b-d85f-4615-8940-0dbafab48732.sql	2	0	
@@ -773,14 +778,14 @@ function	trip_private	season_quest_current	p_trip uuid	t	true				EXECUTE		202610
 function	trip_private	season_quest_review	p_trip uuid	t	true				EXECUTE		20261005024938_64b7bea2-bfed-40ea-93ea-3e169bd7dabe.sql	1	0	
 function	trip_private	season_start	p_trip uuid	t	true						20261002033304_2ae6f19b-aef9-4246-a62d-9f1a5e21c7c3.sql	1	0	
 function	trip_private	season_timing	p_trip uuid	t	true				EXECUTE		20261005223206_337f661b-ecd0-4989-b2bf-4c27b0430077.sql	4	0	
-function	trip_private	seat_cap	p_trip uuid	t	true				EXECUTE		20261005091250_b590b1f5-aee7-4936-8a83-94a070ff743f.sql	1	0	
+function	trip_private	seat_cap	p_trip uuid	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	2	0	
 trigger	trip_private	seed_adult_activities		t	true						20261001085456_016768e4-6649-4451-a0da-2c642d22ff93.sql	1	0	
 function	trip_private	set_activity_timer	p_trip uuid, p_secs integer, p_label text	t	true				EXECUTE		20261002111230_103a7690-3b6f-49f7-8fba-610c330d5549.sql	1	0	
 function	trip_private	set_adult_cards	p_trip uuid, p_enabled boolean	t	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	2	0	
 function	trip_private	set_ai_guard	p_enabled boolean, p_global_cap integer, p_user_cap integer	t	true				EXECUTE		20261004100500_safeupdate_where_clauses.sql	2	0	
 function	trip_private	set_bingo_needs_photo	p_trip uuid, p_required boolean	t	true				EXECUTE		20261004073135_5673bbf8-06bb-4a8f-bfd7-27bee65059c4.sql	2	0	
 function	trip_private	set_boarding_tile	p_tile text	t	true				EXECUTE		20261004100500_safeupdate_where_clauses.sql	2	0	
-function	trip_private	set_carry_on_meetup	p_trip uuid, p_at timestamp with time zone, p_place text	t	true				EXECUTE		20261005024938_64b7bea2-bfed-40ea-93ea-3e169bd7dabe.sql	1	0	
+function	trip_private	set_carry_on_meetup	p_trip uuid, p_at timestamp with time zone, p_place text	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	2	0	
 function	trip_private	set_culture_finale	p_exp uuid, p_format text	t	true				EXECUTE		20261005060926_8e279b24-510f-4f86-8962-90c66345b55c.sql	1	0	
 function	trip_private	set_culture_mode	p_exp uuid, p_mode text, p_types text[], p_vibe text	t	true				EXECUTE		20261005055943_411e244e-baf1-41b7-a2de-9416330a5fa3.sql	1	0	
 function	trip_private	set_first_game	p_trip uuid, p_game integer	t	true				EXECUTE		20261001050532_4fd0ddc9-a2de-412b-b103-ab4cbe5cb1a9.sql	1	0	
@@ -788,16 +793,16 @@ function	trip_private	set_founding_open	p_open boolean	t	true				EXECUTE		202610
 function	trip_private	set_game_days	p_trip uuid, p_every integer, p_rest date[], p_surprise boolean	t	true				EXECUTE		20261002022825_07b81448-6efe-4855-90a0-76ffec10d339.sql	1	0	
 function	trip_private	set_game_night_host	p_trip uuid, p_week integer, p_host uuid	t	true				EXECUTE			0	0	
 function	trip_private	set_game_night_place	p_trip uuid, p_week integer, p_place text	t	true			EXECUTE	EXECUTE		20261004003759_1de46629-28b0-4004-a555-d89a745b0a1d.sql	1	0	
-function	trip_private	set_home_day_place	p_trip uuid, p_day date, p_place text	t	true			EXECUTE	EXECUTE		20261004003759_1de46629-28b0-4004-a555-d89a745b0a1d.sql	1	0	
-function	trip_private	set_home_ready_start	p_trip uuid, p_start date	t	true			EXECUTE	EXECUTE		20261004003759_1de46629-28b0-4004-a555-d89a745b0a1d.sql	1	0	
-function	trip_private	set_join_controls	p_trip uuid, p_locked boolean, p_max integer	t	true				EXECUTE		20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql	1	0	
+function	trip_private	set_home_day_place	p_trip uuid, p_day date, p_place text	t	true			EXECUTE	EXECUTE		20261026110000_m2_limits_co_captain.sql	2	0	
+function	trip_private	set_home_ready_start	p_trip uuid, p_start date	t	true			EXECUTE	EXECUTE		20261026110000_m2_limits_co_captain.sql	2	0	
+function	trip_private	set_join_controls	p_trip uuid, p_locked boolean, p_max integer	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	2	0	
 function	trip_private	set_my_dob	p_dob date, p_agree boolean	t	true				EXECUTE		20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql	4	0	
 function	trip_private	set_night_skipped	p_trip uuid, p_week integer, p_skipped boolean	t	true				EXECUTE		20261002014424_c31efe62-dd16-4eeb-85d4-9e1b1f91f453.sql	1	0	
 function	trip_private	set_no_alcohol	p_on boolean	t	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	0	
 function	trip_private	set_passport_destination	p_trip uuid, p_country text, p_state text, p_city text	t	true				EXECUTE		20261002092746_20d2bed8-0e85-454e-bc0c-74b1fac49edc.sql	1	0	
 function	trip_private	set_pay_note	p_trip uuid, p_note text	t	true				EXECUTE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	0	
-function	trip_private	set_preflight_a2c	p_trip uuid, p_start date, p_weekday integer, p_time time without time zone	t	true				EXECUTE		20261005051713_5134c782-4b65-4014-a5d6-ed0021292200.sql	3	0	
-function	trip_private	set_preflight_start	p_trip uuid, p_start date, p_plan text, p_weekday integer, p_time time without time zone, p_every integer, p_count integer	t	true			EXECUTE	EXECUTE		20261004214501_575938a8-d71a-4399-ae78-10175f72f044.sql	2	0	
+function	trip_private	set_preflight_a2c	p_trip uuid, p_start date, p_weekday integer, p_time time without time zone	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	4	0	
+function	trip_private	set_preflight_start	p_trip uuid, p_start date, p_plan text, p_weekday integer, p_time time without time zone, p_every integer, p_count integer	t	true			EXECUTE	EXECUTE		20261026110000_m2_limits_co_captain.sql	3	0	
 function	trip_private	set_public_launch	p_on boolean	t	true				EXECUTE		20261004100500_safeupdate_where_clauses.sql	2	0	
 function	trip_private	set_public_leaderboard	p_public boolean	t	true				EXECUTE		20261003060330_1aeffee6-f222-4a24-8fec-1093c30fbb89.sql	1	0	
 function	trip_private	set_room_listing	p_trip uuid, p_listed boolean, p_nickname text, p_country text, p_region text, p_city text	t	true				EXECUTE		20261002213413_8874cf4a-9ca1-4902-b6c5-ff3879ee5b18.sql	1	0	
@@ -807,12 +812,12 @@ function	trip_private	set_stamp_values	p_trip uuid, p_here integer, p_win intege
 function	trip_private	set_team_mode	p_trip uuid, p_mode text, p_caps jsonb	t	true				EXECUTE		20261002061513_3de59ba7-2343-48e6-8af2-8210734342ef.sql	1	0	
 function	trip_private	set_team_room	p_trip uuid, p_team uuid, p_call text, p_host uuid	t	true				EXECUTE		20261002022825_07b81448-6efe-4855-90a0-76ffec10d339.sql	1	0	
 function	trip_private	set_teen_dob	p_dob date, p_agree boolean, p_invite text	t	true				EXECUTE		20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql	3	0	
-function	trip_private	set_trip_access	p_trip uuid, p_code_enabled boolean, p_require_approval boolean	t	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	0	
+function	trip_private	set_trip_access	p_trip uuid, p_code_enabled boolean, p_require_approval boolean	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	2	0	
 function	trip_private	set_trip_archived	p_trip uuid, p_archived boolean, p_note text	t	true				EXECUTE		20261021130000_trip_archive_mode.sql	1	0	
 function	trip_private	set_trip_extras	p_trip uuid, p_motto text, p_call text, p_backup text	t	true				EXECUTE		20261001070118_5f848051-527d-4f13-870e-af4e5d1a5440.sql	1	0	
-function	trip_private	set_trip_minors	p_trip uuid, p_has boolean	t	true				EXECUTE		20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql	1	0	
-function	trip_private	set_trip_timezone	p_trip uuid, p_tz text	t	true				EXECUTE		20261003073655_1047ce89-63b5-46bc-a963-8fd5e56bf189.sql	2	0	
-function	trip_private	set_trip_vibe	p_trip uuid, p_vibe text	t	true				EXECUTE		20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql	2	0	
+function	trip_private	set_trip_minors	p_trip uuid, p_has boolean	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	2	0	
+function	trip_private	set_trip_timezone	p_trip uuid, p_tz text	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	3	0	
+function	trip_private	set_trip_vibe	p_trip uuid, p_vibe text	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	3	0	
 function	trip_private	set_weekly_question	p_trip uuid, p_week integer, p_prompt text	t	true				EXECUTE		20261002013427_1776f1d2-a102-4732-9ae6-d7d0f72618cc.sql	1	0	
 function	trip_private	set_welcome_copy	p_intro text, p_faq jsonb	t	true				EXECUTE		20261002123519_abd823e2-3cce-495a-94a9-902ca7a0a05b.sql	1	0	
 function	trip_private	set_wheels_up	p_trip uuid, p_date date, p_time text	t	true				EXECUTE		20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	0	
