@@ -39,6 +39,7 @@ The deck is the **source of truth for product rules**. It says so itself: *"This
 | [08-testing-and-qa.md](08-testing-and-qa.md) | Test strategy, test-account matrix, time-travel testing, critical flows | Devs, QA |
 | [09-engineering-conventions.md](09-engineering-conventions.md) | Branching, migrations, PR checklist, Definition of Done, code style | Devs |
 | [10-risks-and-gotchas.md](10-risks-and-gotchas.md) | Things that will bite you if nobody tells you | Everyone |
+| [owner-go-live-steps.md](owner-go-live-steps.md) | Accounts, keys, decisions and legal steps only the owner can do | Founder |
 | [milestones/](milestones/) | One file per milestone: tasks, files touched, acceptance criteria, dependencies | Devs, PM |
 
 ### Milestones at a glance
