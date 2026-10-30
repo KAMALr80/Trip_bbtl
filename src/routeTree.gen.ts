@@ -20,6 +20,7 @@ import { Route as ShellTripRouteImport } from './routes/_shell.trip'
 import { Route as BetaCodeRouteImport } from './routes/beta.$code'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
 import { Route as LegalDocumentRouteImport } from './routes/legal/$document'
+import { Route as TripsNewRouteImport } from './routes/trips.new'
 import { Route as ShellTTripIdRouteImport } from './routes/_shell.t.$tripId'
 import { Route as ApiPublicPurgePhotosRouteImport } from './routes/api/public/purge-photos'
 import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
@@ -81,6 +82,11 @@ const LegalDocumentRoute = LegalDocumentRouteImport.update({
   path: '/legal/$document',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TripsNewRoute = TripsNewRouteImport.update({
+  id: '/trips/new',
+  path: '/trips/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShellTTripIdRoute = ShellTTripIdRouteImport.update({
   id: '/t/$tripId',
   path: '/t/$tripId',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/beta/$code': typeof BetaCodeRoute
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
+  '/trips/new': typeof TripsNewRoute
   '/t/$tripId': typeof ShellTTripIdRouteWithChildren
   '/api/public/purge-photos': typeof ApiPublicPurgePhotosRoute
   '/api/public/version': typeof ApiPublicVersionRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/beta/$code': typeof BetaCodeRoute
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
+  '/trips/new': typeof TripsNewRoute
   '/': typeof ShellIndexRoute
   '/api/public/purge-photos': typeof ApiPublicPurgePhotosRoute
   '/api/public/version': typeof ApiPublicVersionRoute
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/beta/$code': typeof BetaCodeRoute
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
+  '/trips/new': typeof TripsNewRoute
   '/_shell/': typeof ShellIndexRoute
   '/_shell/t/$tripId': typeof ShellTTripIdRouteWithChildren
   '/api/public/purge-photos': typeof ApiPublicPurgePhotosRoute
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/beta/$code'
     | '/join/$code'
     | '/legal/$document'
+    | '/trips/new'
     | '/t/$tripId'
     | '/api/public/purge-photos'
     | '/api/public/version'
@@ -197,6 +207,7 @@ export interface FileRouteTypes {
     | '/beta/$code'
     | '/join/$code'
     | '/legal/$document'
+    | '/trips/new'
     | '/'
     | '/api/public/purge-photos'
     | '/api/public/version'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/beta/$code'
     | '/join/$code'
     | '/legal/$document'
+    | '/trips/new'
     | '/_shell/'
     | '/_shell/t/$tripId'
     | '/api/public/purge-photos'
@@ -231,6 +243,7 @@ export interface RootRouteChildren {
   BetaCodeRoute: typeof BetaCodeRoute
   JoinCodeRoute: typeof JoinCodeRoute
   LegalDocumentRoute: typeof LegalDocumentRoute
+  TripsNewRoute: typeof TripsNewRoute
   ApiPublicPurgePhotosRoute: typeof ApiPublicPurgePhotosRoute
   ApiPublicVersionRoute: typeof ApiPublicVersionRoute
 }
@@ -312,6 +325,13 @@ declare module '@tanstack/react-router' {
       path: '/legal/$document'
       fullPath: '/legal/$document'
       preLoaderRoute: typeof LegalDocumentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trips/new': {
+      id: '/trips/new'
+      path: '/trips/new'
+      fullPath: '/trips/new'
+      preLoaderRoute: typeof TripsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_shell/t/$tripId': {
@@ -402,6 +422,7 @@ const rootRouteChildren: RootRouteChildren = {
   BetaCodeRoute: BetaCodeRoute,
   JoinCodeRoute: JoinCodeRoute,
   LegalDocumentRoute: LegalDocumentRoute,
+  TripsNewRoute: TripsNewRoute,
   ApiPublicPurgePhotosRoute: ApiPublicPurgePhotosRoute,
   ApiPublicVersionRoute: ApiPublicVersionRoute,
 }

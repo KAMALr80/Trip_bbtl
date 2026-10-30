@@ -12,6 +12,7 @@ import { useState, type FormEvent } from "react";
 import { CoCaptainPicker } from "@/features/captain-tools/CaptainExtras";
 import { ArrowLeft, Crown, RefreshCw, Star, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PhaseTiles } from "@/features/captain-tools/PhaseTiles";
 import { supabase } from "@/integrations/supabase/client";
 import type { Member, TripWithRole } from "@/lib/trips";
 import { EndTripTool, SeasonPrizeTools, PhotoWall } from "@/features/points/Seasons";
@@ -264,6 +265,7 @@ export function CaptainTools({
         <h1 className="font-display text-3xl font-extrabold mt-5 flex items-center gap-2">
           Captain Tools{captain && <CaptainCrown />}
         </h1>
+        <PhaseTiles trip={trip} onUpdated={onUpdated} />
         <div className="grid grid-cols-2 gap-3 mt-5">
           {[
             "Setup & access",

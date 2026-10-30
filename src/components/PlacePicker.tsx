@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { COUNTRIES, US_STATES, countryName, type Place } from "@/lib/places";
+import { loadPlaces, regionsOf, searchCities, type PlacesData } from "@/lib/place-zones";
 
 export type PlaceSuggestion = Place & { sample?: boolean };
 const empty: Place = { country: null, region: null, city: null };
@@ -22,6 +23,11 @@ export function PlacePicker({
   const [focused, setFocused] = useState<keyof Place | null>(null);
   const [query, setQuery] = useState({ country: "", region: "", city: "" });
   const [active, setActive] = useState(0);
+  // City and region suggestions come from the bundled places data, loaded on first use (M2-04).
+  const [places, setPlaces] = useState<PlacesData | null>(null);
+  const wantPlaces = () => {
+    if (!places) void loadPlaces().then(setPlaces);
+  };
   const refs = {
     country: useRef<HTMLInputElement>(null),
     region: useRef<HTMLInputElement>(null),
@@ -72,17 +78,23 @@ export function PlacePicker({
       key === "region"
         ? [
             ...(value.country === "US" ? US_STATES : []),
+            ...(places && value.country ? regionsOf(places, value.country) : []),
             ...items
               .filter((i) => i.country === value.country)
               .map((i) => i.region)
               .filter((s): s is string => !!s),
           ]
-        : items
-            .filter(
-              (i) => i.country === value.country && (!value.region || i.region === value.region),
-            )
-            .map((i) => i.city)
-            .filter((s): s is string => !!s);
+        : [
+            ...(places && value.country
+              ? searchCities(places, value.country, value.region, query.city, 8).map((c) => c.name)
+              : []),
+            ...items
+              .filter(
+                (i) => i.country === value.country && (!value.region || i.region === value.region),
+              )
+              .map((i) => i.city)
+              .filter((s): s is string => !!s),
+          ];
     return [...new Set(names)]
       .filter((s) => !typed || s.toLowerCase().includes(typed))
       .slice(0, 8)
@@ -121,6 +133,7 @@ export function PlacePicker({
                 }
                 value={query[key]}
                 onFocus={() => {
+                  if (key !== "country") wantPlaces();
                   setFocused(key);
                   setActive(0);
                 }}

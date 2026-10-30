@@ -3,7 +3,7 @@
 -- test on purpose when the rule changes (M2-10, M2-13), not by accident.
 BEGIN;
 \ir ../_helpers.psql
-SELECT plan(30);
+SELECT plan(32);
 
 SELECT tests.create_user('cap', 30);
 SELECT tests.create_user('young_cap', 20);
@@ -72,7 +72,7 @@ DELETE FROM trip_private.code_attempts WHERE user_id = tests.user_id('stranger')
 -- ---------------------------------------------------------------- approve
 SELECT tests.authenticate_as(tests.user_id('p19'));
 SELECT throws_like($$SELECT public.approve_member((SELECT id FROM t), tests.user_id('p21'), true)$$,
-                   'Only the Captain can approve members', 'a member cannot approve');
+                   'Only the Captain or Co-Captain can approve members', 'a member cannot approve');
 
 SELECT tests.authenticate_as(tests.user_id('cap'));
 SELECT lives_ok($$SELECT public.approve_member((SELECT id FROM t), tests.user_id('p21'), true)$$, 'the Captain approves');
@@ -91,13 +91,18 @@ SELECT is((SELECT role FROM public.trip_members WHERE trip_id = (SELECT id FROM 
 SELECT ok(EXISTS (SELECT 1 FROM public.trip_role_changes WHERE trip_id = (SELECT id FROM t)),
           'role changes are logged in trip_role_changes');
 
+SELECT tests.create_user('p30', 30);
+SELECT tests.add_member((SELECT id FROM t), tests.user_id('p30'));
 SELECT tests.authenticate_as(tests.user_id('p21'));
-SELECT throws_like($$SELECT public.manage_trip_member((SELECT id FROM t), tests.user_id('p19'), 'remove')$$,
-                   'Only the Captain can manage members',
-                   'the Co-Captain cannot remove players (today; deck R-210 says Co-Captain can — M2-10)');
+SELECT lives_ok($$SELECT public.manage_trip_member((SELECT id FROM t), tests.user_id('p30'), 'remove')$$,
+                'the Co-Captain removes a player (R-210)');
+SELECT throws_like($$SELECT public.manage_trip_member((SELECT id FROM t), tests.user_id('cap'), 'remove')$$,
+                   'Only the Captain can do that', 'the Co-Captain cannot remove the Captain (R-208)');
+SELECT throws_like($$SELECT public.manage_trip_member((SELECT id FROM t), tests.user_id('p19'), 'pass_crown')$$,
+                   'Only the Captain can do that', 'only the Captain hands over the Captaincy (R-208)');
 SELECT throws_like($$SELECT public.approve_member((SELECT id FROM t), tests.user_id('stranger'), true)$$,
-                   'Only the Captain can approve members',
-                   'the Co-Captain cannot approve joins (today; deck R-208 says every power but delete — M2-10)');
+                   'That request is no longer waiting',
+                   'the Co-Captain gets past the approval check (R-208: every power but delete)');
 
 SELECT tests.authenticate_as(tests.user_id('cap'));
 SELECT throws_like($$SELECT public.manage_trip_member((SELECT id FROM t), tests.user_id('p19'), 'pass_crown')$$,

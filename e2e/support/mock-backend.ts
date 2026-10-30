@@ -38,6 +38,18 @@ export const sampleTrip = {
   home_timezone: "UTC",
   trip_timezone: "Europe/Lisbon",
   rules_version: 2,
+  room: "trip",
+  play_mode: "crew",
+  preflight_days: 5,
+  preflight_skipped: false,
+  arrived_at: null as string | null,
+  setup_completed_at: "2026-10-01T00:00:00Z",
+  crowning_at: null as string | null,
+  crowning_place: null as string | null,
+  crowning_call_link: null as string | null,
+  cultures: [] as string[],
+  passport_country: "PT",
+  passport_city: "Lisbon",
   season_rule: "a2c",
   season_scoring: true,
   is_sandbox: false,
@@ -46,9 +58,17 @@ export const sampleTrip = {
   created_at: "2026-10-01T00:00:00Z",
 };
 
-type Options = { trip?: typeof sampleTrip };
+type Options = {
+  trip?: typeof sampleTrip;
+  rpc?: Record<string, unknown>;
+  noCard?: boolean;
+  tables?: Record<string, object[]>;
+  role?: "captain" | "co_captain" | "player";
+};
+export type RpcCall = { fn: string; body: unknown };
 
-export async function signInWithMockBackend(page: Page, options: Options = {}) {
+export async function signInWithMockBackend(page: Page, options: Options = {}): Promise<RpcCall[]> {
+  const calls: RpcCall[] = [];
   const session = {
     access_token: accessToken,
     refresh_token: "refresh",
@@ -80,21 +100,30 @@ export async function signInWithMockBackend(page: Page, options: Options = {}) {
     ],
     trips: options.trip ? [options.trip] : [],
     trip_members: options.trip
-      ? [{ trip_id: options.trip.id, user_id: userId, role: "captain", status: "approved" }]
-      : [],
-    trip_player_cards: options.trip
       ? [
           {
             trip_id: options.trip.id,
             user_id: userId,
-            game_name: "Tester",
-            avatar_style: "traveler",
-            avatar_seed: "1",
-            avatar_path: null,
+            role: options.role ?? "captain",
+            status: "approved",
           },
         ]
       : [],
+    trip_player_cards:
+      options.trip && !options.noCard
+        ? [
+            {
+              trip_id: options.trip.id,
+              user_id: userId,
+              game_name: "Tester",
+              avatar_style: "traveler",
+              avatar_seed: "1",
+              avatar_path: null,
+            },
+          ]
+        : [],
   };
+  Object.assign(rows, options.tables);
   const rpc: Record<string, unknown> = {
     account_status: [{ legal_version: "2026-10-03" }],
     my_access: [{ beta: true, has_dob: true, age_range: "21+" }],
@@ -111,6 +140,7 @@ export async function signInWithMockBackend(page: Page, options: Options = {}) {
           },
         ]
       : [],
+    ...options.rpc,
   };
 
   await page.route(`${SUPABASE}/**`, async (route: Route) => {
@@ -121,7 +151,10 @@ export async function signInWithMockBackend(page: Page, options: Options = {}) {
     if (url.pathname === "/auth/v1/user") return json(user);
     if (url.pathname.startsWith("/auth/v1/")) return json({});
     const fn = url.pathname.match(/^\/rest\/v1\/rpc\/(\w+)/)?.[1];
-    if (fn) return json(fn in rpc ? rpc[fn] : null);
+    if (fn) {
+      calls.push({ fn, body: route.request().postDataJSON() as unknown });
+      return json(fn in rpc ? rpc[fn] : null);
+    }
     const table = url.pathname.match(/^\/rest\/v1\/(\w+)/)?.[1];
     if (table) {
       const data = rows[table] ?? [];
@@ -133,4 +166,5 @@ export async function signInWithMockBackend(page: Page, options: Options = {}) {
     }
     return json({});
   });
+  return calls;
 }

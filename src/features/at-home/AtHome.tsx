@@ -35,7 +35,10 @@ type T = TripWithRole & {
   call_link?: string | null;
   backup_call_link?: string | null;
 };
-export const isAtHome = (t: TripWithRole | null | undefined) => (t as T | null)?.kind === "at_home";
+/** The older pack-based At Home room. New at-home rooms (Explore / Show Your Culture, made in the
+ * setup wizard) run the shared engine screens instead (M2-09). */
+export const isAtHome = (t: TripWithRole | null | undefined) =>
+  (t as T | null)?.kind === "at_home" && (t?.room ?? "trip") === "trip";
 export const PACKS = [
   { key: "thailand", name: "Thailand", code: "TH", img: thailand },
   { key: "mexico", name: "Mexico", code: "MX", img: mexico },

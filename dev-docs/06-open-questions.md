@@ -4,7 +4,9 @@ Each question has a **recommended default**. If no answer arrives by the milesto
 
 **Decisions recorded Oct 21, 2026 (founder):** Q1, Q6, Q15 and Q20 take the recommended default.
 
-**Oct 23, 2026 (founder): start fresh.** There is no production setup to keep: staging and production are new Supabase projects built from the baseline migration (M1-09), and no data comes over from the Lovable Cloud prototype. So Q1 needs no cutover; archive mode stays for future rule changes. The other questions are still open; their defaults apply if no answer arrives by the milestone that needs them.
+**Oct 23, 2026 (founder): start fresh.** There is no production setup to keep: staging and production are new Supabase projects built from the baseline migration (M1-09), and no data comes over from the Lovable Cloud prototype. So Q1 needs no cutover; archive mode stays for future rule changes.
+
+**Oct 26, 2026 (founder): build M2 with the defaults** for Q2 ("Who's playing?" asked first), Q8 (Takeoff = first trip day in home time), Q14 (one culture for now; `cultures[]` holds two), Q19 ("My crew (on the app)" and "Crew" in the new screens; older screens still say "squad"), Q21 (one phone for friends off the app; a crew on the app plays the arcade until Game Night Live, M3-07) and Q26 (today's vibe options). The other questions are still open; their defaults apply if no answer arrives by the milestone that needs them.
 
 | # | Needed by | Question | Recommended default |
 |---|---|---|---|

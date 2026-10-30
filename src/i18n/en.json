@@ -82,5 +82,218 @@
   },
   "home": {
     "gate": "gate"
+  },
+  "rooms": {
+    "trip": {
+      "name": "Going on a Trip",
+      "line": "A group trip, at home or abroad."
+    },
+    "window_seat": {
+      "name": "Window Seat",
+      "line": "Travel solo, or with a crew of up to 4."
+    },
+    "explore_culture": {
+      "name": "Explore a Culture",
+      "line": "Bring a culture home: cook it, learn it, play it."
+    },
+    "show_culture": {
+      "name": "Show Your Culture",
+      "line": "Share your own culture with your crew."
+    },
+    "game_night": {
+      "name": "Game Night",
+      "line": "One night of games, any time. Free, no points."
+    }
+  },
+  "modes": {
+    "solo": {
+      "name": "Just me",
+      "line": "Play every day on your own. Crowns come from hitting each season's goal."
+    },
+    "crew": {
+      "name": "My crew (on the app)",
+      "line": "Everyone plays on their own phone and joins with the trip code."
+    },
+    "offline": {
+      "name": "Friends off the app",
+      "line": "One phone runs the games. Names stay on this device; only you earn stamps."
+    }
+  },
+  "focuses": {
+    "food": "Food & drink",
+    "music": "Music & dance",
+    "language": "Language & slang",
+    "fashion": "Fashion & dress",
+    "holidays": "Holidays & traditions",
+    "history": "History & heroes",
+    "art": "Art & crafts",
+    "games": "Games & sports",
+    "manners": "Manners & customs",
+    "folklore": "Folklore & stories",
+    "film": "Film & pop culture"
+  },
+  "setup": {
+    "title": "Set up your trip",
+    "stepOf": "Step {{n}} of {{total}}",
+    "close": "Close setup (your answers are saved)",
+    "next": "Next",
+    "back": "Back",
+    "create": "Create",
+    "creating": "Creating…",
+    "saving": "Saving…",
+    "done": "Done · open Play",
+    "loadingDraft": "Getting your answers…",
+    "who": {
+      "title": "Who's playing?",
+      "room": "Pick a room",
+      "mode": "Who's playing in this room?"
+    },
+    "where": {
+      "title": "Where to?",
+      "cultureTitle": "Which culture?",
+      "showTitle": "Whose culture are you sharing?",
+      "culture": "Culture to explore",
+      "cultureFrom": "Pre-filled from your destination.",
+      "pickCountry": "Pick a country or culture",
+      "focuses": "Pick up to 2 focuses",
+      "focusesHint": "Cook it, learn it, wear it, play it."
+    },
+    "basics": {
+      "title": "Trip basics",
+      "dates": "Tap your first and last day",
+      "experienceDates": "Tap your first and last experience day",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "name": "Trip name",
+      "vibe": "Vibe",
+      "minors": "Anyone under 18 coming?",
+      "minorsHint": "Turns on the family-friendly setup: no party cards, photos visible to leaders and the uploader only.",
+      "tripTime": "Trip time: {{zone}} ({{offset}})",
+      "change": "Change",
+      "pickZone": "Pick the trip time zone",
+      "zoneAsk": "This place has more than one time zone. Which one is the trip in?"
+    },
+    "preflight": {
+      "title": "Pre-Flight",
+      "intro": "The run-up before takeoff: quests, daily cards and call nights with your crew.",
+      "days": "How many days before?",
+      "daysValue_one": "{{count}} day",
+      "daysValue_other": "{{count}} days",
+      "fewer": "Fewer days",
+      "more": "More days",
+      "skip": "Skip Pre-Flight",
+      "skipHint": "Skipping means no Early Bird crown.",
+      "nights": "Call nights (up to 4)",
+      "nightsHint": "Video calls with the crew before the trip. Times are in your time ({{zone}}).",
+      "addNight": "Add a call night",
+      "removeNight": "Remove this call night",
+      "nightDate": "Day",
+      "nightTime": "Time",
+      "callLink": "Call link (optional)",
+      "secondLink": "2nd link for a split call (optional)",
+      "noNights": "Pick at least one Pre-Flight day to add call nights."
+    },
+    "season": {
+      "title": "Trip Season",
+      "intro": "From arrival to the last day. It ends with the crowning night, where the Jet Setter is crowned.",
+      "introHome": "Your experience days. They end with the finale night: present, vote, crown.",
+      "crowning": "Crowning night",
+      "finale": "Finale night",
+      "date": "Day",
+      "time": "Time ({{zone}})",
+      "place": "Where",
+      "placeHint": "A restaurant, the hotel rooftop, someone's living room…",
+      "callLink": "Call link for anyone who can't be there (optional)"
+    },
+    "invite": {
+      "title": "Invite your crew",
+      "code": "Trip code",
+      "share": "Share invite",
+      "shared": "Invite shared",
+      "copied": "Invite link copied",
+      "offlineTitle": "Who's playing with you?",
+      "offlineHint": "First names only. They stay on this phone and nothing is saved for them.",
+      "offlineName": "Friend's first name",
+      "addName": "Add",
+      "removeName": "Remove {{name}}",
+      "soloTitle": "You're all set",
+      "soloLine": "Your trip is ready. Play fills in as each phase opens."
+    },
+    "problem": {
+      "room": "Pick a room.",
+      "mode": "Pick who's playing.",
+      "destination": "Pick where you're going.",
+      "culture": "Pick a culture.",
+      "focuses": "Pick up to 2 focuses.",
+      "name": "Give your trip a name.",
+      "dates": "Tap your first and last day.",
+      "datesPast": "Pick dates that are still ahead of you.",
+      "atHomeTomorrow": "At-home experiences start tomorrow at the earliest. For tonight, start a Game Night.",
+      "tooLong": "This room runs {{min}} to {{max}} days.",
+      "minorsParty": "Trips with players under 18 can't use the party vibe.",
+      "tripTz": "Pick the trip time zone.",
+      "preflight": "Pre-Flight can be 0 to 10 days.",
+      "callNightTime": "Pick a day and time for each call night.",
+      "callNightWindow": "Call nights happen during Pre-Flight, before takeoff day.",
+      "callNightPast": "Call nights need to be in the future.",
+      "tooManyCallNights": "Up to 4 call nights.",
+      "crowning": "Pick the day and time.",
+      "crowningDay": "It has to be on one of the trip days.",
+      "crowningPlace": "Add where it happens.",
+      "link": "Links start with https://"
+    }
+  },
+  "join": {
+    "role": "Your role this trip",
+    "noRole": "Pick later"
+  },
+  "phases": {
+    "preflight": "Pre-Flight",
+    "takeoff": "Takeoff",
+    "homeMissions": "Home Missions",
+    "trip_season": "Trip Season",
+    "baggage_claim": "Baggage Claim",
+    "banner": {
+      "preflight": "Now boarding. Your trip starts here.",
+      "takeoff": "Get ready for takeoff. Seatbelts on.",
+      "trip_season": "You've arrived. Welcome to {{place}}.",
+      "baggage_claim": "Thank you for flying with us. Collect your memories."
+    },
+    "arrived": "We've arrived",
+    "arrivedHint": "Tap when you land. Trip Season also starts on its own at 11:59 PM tomorrow, trip time.",
+    "arrivedSaving": "Saving…"
+  },
+  "nights": {
+    "title": "Call nights",
+    "none": "No call nights yet. The Captain or Co-Captain can add up to 4.",
+    "join": "Join call",
+    "joinSecond": "Join the 2nd call",
+    "calendar": "Add to calendar",
+    "event": "Call night",
+    "past": "Done",
+    "crowningTitle": "Crowning night",
+    "finaleTitle": "Finale night",
+    "crowningPending": "The Captain picks the date, time and place.",
+    "crowningEvent": "Crowning night"
+  },
+  "tiles": {
+    "title": "By phase",
+    "now": "Now",
+    "done": "Done",
+    "opens": "Opens {{date}}",
+    "preflight": "Call nights, links and Pre-Flight days",
+    "takeoff": "Tap \"We've arrived\" when you land",
+    "trip_season": "Crowning night: date, time, place",
+    "baggage_claim": "Break photo ties or swap one photo",
+    "baggageSoon": "Coming with Postcard Picks.",
+    "arrivedAt": "Arrived {{when}}",
+    "arrivalLater": "Opens on takeoff day.",
+    "arrivalAuto": "Trip Season has started.",
+    "save": "Save",
+    "saved": "Saved",
+    "close": "Close"
+  },
+  "gameNight": {
+    "line": "Game Night · free, just for fun · no points or crowns"
   }
 }

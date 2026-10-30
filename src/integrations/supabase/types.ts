@@ -695,6 +695,48 @@ export type Database = {
           },
         ];
       };
+      call_nights: {
+        Row: {
+          call_link: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          second_link: string | null;
+          starts_at: string;
+          trip_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          call_link?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          second_link?: string | null;
+          starts_at: string;
+          trip_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          call_link?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          second_link?: string | null;
+          starts_at?: string;
+          trip_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "call_nights_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       checkin_responses: {
         Row: {
           answers: NonNullable<Json>;
@@ -4503,6 +4545,25 @@ export type Database = {
         };
         Relationships: [];
       };
+      trip_drafts: {
+        Row: {
+          data: NonNullable<Json>;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          data: NonNullable<Json>;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          data?: NonNullable<Json>;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       trip_feedback: {
         Row: {
           change_text: string | null;
@@ -4907,6 +4968,69 @@ export type Database = {
           },
         ];
       };
+      trip_schedule: {
+        Row: {
+          closes_at: string | null;
+          content_item_id: string | null;
+          created_at: string;
+          day: string | null;
+          id: string;
+          kind: string;
+          opens_at: string;
+          points: number | null;
+          ref_id: string | null;
+          revealed_at: string | null;
+          slot: string;
+          tailored_text: string | null;
+          trip_id: string;
+          updated_at: string;
+          user_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          closes_at?: string | null;
+          content_item_id?: string | null;
+          created_at?: string;
+          day?: string | null;
+          id?: string;
+          kind: string;
+          opens_at: string;
+          points?: number | null;
+          ref_id?: string | null;
+          revealed_at?: string | null;
+          slot?: string;
+          tailored_text?: string | null;
+          trip_id: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          closes_at?: string | null;
+          content_item_id?: string | null;
+          created_at?: string;
+          day?: string | null;
+          id?: string;
+          kind?: string;
+          opens_at?: string;
+          points?: number | null;
+          ref_id?: string | null;
+          revealed_at?: string | null;
+          slot?: string;
+          tailored_text?: string | null;
+          trip_id?: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "trip_schedule_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       trip_season_finds: {
         Row: {
           day_date: string;
@@ -5113,6 +5237,8 @@ export type Database = {
       trips: {
         Row: {
           a2e_room: boolean;
+          arrived_at: string | null;
+          arrived_by: string | null;
           at_home_length: string | null;
           at_home_pack: string | null;
           backup_call_link: string | null;
@@ -5120,7 +5246,13 @@ export type Database = {
           bingo_needs_photo: boolean;
           call_link: string | null;
           created_at: string;
-          departure_confirmed_at: string | null;
+          crowning_at: string | null;
+          crowning_call_link: string | null;
+          crowning_place: string | null;
+          cultures: string[];
+          dest_lat: number | null;
+          dest_lng: number | null;
+          dest_place_id: string | null;
           destination: string;
           end_date: string;
           ended_at: string | null;
@@ -5128,6 +5260,7 @@ export type Database = {
           finale_at: string | null;
           finale_format: string | null;
           finale_place: string | null;
+          focuses: string[];
           game_days_every: number | null;
           game_plan: string | null;
           game_start: string | null;
@@ -5141,6 +5274,7 @@ export type Database = {
           join_locked: boolean;
           kind: string;
           leaderboard_public: boolean;
+          locked_at: string | null;
           max_squad: number;
           motto: string | null;
           name: string;
@@ -5150,8 +5284,12 @@ export type Database = {
           pay_note: string | null;
           photos_purged_at: string | null;
           play_arrangement: string | null;
+          play_mode: string;
+          preflight_days: number;
+          preflight_skipped: boolean;
           require_approval: boolean;
           rest_days: string[];
+          room: string;
           room_city: string | null;
           room_country: string | null;
           room_listed: boolean;
@@ -5161,6 +5299,7 @@ export type Database = {
           schedule_every: number;
           season_rule: string;
           season_scoring: boolean;
+          setup_completed_at: string | null;
           solo_experience_id: string | null;
           start_date: string;
           surprise_mode: boolean;
@@ -5174,6 +5313,8 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           a2e_room?: boolean;
+          arrived_at?: string | null;
+          arrived_by?: string | null;
           at_home_length?: string | null;
           at_home_pack?: string | null;
           backup_call_link?: string | null;
@@ -5181,7 +5322,13 @@ export type Database = {
           bingo_needs_photo?: boolean;
           call_link?: string | null;
           created_at?: string;
-          departure_confirmed_at?: string | null;
+          crowning_at?: string | null;
+          crowning_call_link?: string | null;
+          crowning_place?: string | null;
+          cultures?: string[];
+          dest_lat?: number | null;
+          dest_lng?: number | null;
+          dest_place_id?: string | null;
           destination: string;
           end_date: string;
           ended_at?: string | null;
@@ -5189,6 +5336,7 @@ export type Database = {
           finale_at?: string | null;
           finale_format?: string | null;
           finale_place?: string | null;
+          focuses?: string[];
           game_days_every?: number | null;
           game_plan?: string | null;
           game_start?: string | null;
@@ -5202,6 +5350,7 @@ export type Database = {
           join_locked?: boolean;
           kind?: string;
           leaderboard_public?: boolean;
+          locked_at?: string | null;
           max_squad?: number;
           motto?: string | null;
           name: string;
@@ -5211,8 +5360,12 @@ export type Database = {
           pay_note?: string | null;
           photos_purged_at?: string | null;
           play_arrangement?: string | null;
+          play_mode?: string;
+          preflight_days?: number;
+          preflight_skipped?: boolean;
           require_approval?: boolean;
           rest_days?: string[];
+          room?: string;
           room_city?: string | null;
           room_country?: string | null;
           room_listed?: boolean;
@@ -5222,6 +5375,7 @@ export type Database = {
           schedule_every?: number;
           season_rule?: string;
           season_scoring?: boolean;
+          setup_completed_at?: string | null;
           solo_experience_id?: string | null;
           start_date: string;
           surprise_mode?: boolean;
@@ -5234,6 +5388,8 @@ export type Database = {
         };
         Update: {
           a2e_room?: boolean;
+          arrived_at?: string | null;
+          arrived_by?: string | null;
           at_home_length?: string | null;
           at_home_pack?: string | null;
           backup_call_link?: string | null;
@@ -5241,7 +5397,13 @@ export type Database = {
           bingo_needs_photo?: boolean;
           call_link?: string | null;
           created_at?: string;
-          departure_confirmed_at?: string | null;
+          crowning_at?: string | null;
+          crowning_call_link?: string | null;
+          crowning_place?: string | null;
+          cultures?: string[];
+          dest_lat?: number | null;
+          dest_lng?: number | null;
+          dest_place_id?: string | null;
           destination?: string;
           end_date?: string;
           ended_at?: string | null;
@@ -5249,6 +5411,7 @@ export type Database = {
           finale_at?: string | null;
           finale_format?: string | null;
           finale_place?: string | null;
+          focuses?: string[];
           game_days_every?: number | null;
           game_plan?: string | null;
           game_start?: string | null;
@@ -5262,6 +5425,7 @@ export type Database = {
           join_locked?: boolean;
           kind?: string;
           leaderboard_public?: boolean;
+          locked_at?: string | null;
           max_squad?: number;
           motto?: string | null;
           name?: string;
@@ -5271,8 +5435,12 @@ export type Database = {
           pay_note?: string | null;
           photos_purged_at?: string | null;
           play_arrangement?: string | null;
+          play_mode?: string;
+          preflight_days?: number;
+          preflight_skipped?: boolean;
           require_approval?: boolean;
           rest_days?: string[];
+          room?: string;
           room_city?: string | null;
           room_country?: string | null;
           room_listed?: boolean;
@@ -5282,6 +5450,7 @@ export type Database = {
           schedule_every?: number;
           season_rule?: string;
           season_scoring?: boolean;
+          setup_completed_at?: string | null;
           solo_experience_id?: string | null;
           start_date?: string;
           surprise_mode?: boolean;
@@ -5889,6 +6058,7 @@ export type Database = {
         };
         Returns: string;
       };
+      create_trip_v2: { Args: { p_setup: Json }; Returns: string };
       create_window_play_mode: {
         Args: {
           p_city: string;
@@ -6023,6 +6193,7 @@ export type Database = {
       };
       delete_cost_item: { Args: { p_item: string }; Returns: undefined };
       delete_trip: { Args: { p_name: string; p_trip: string }; Returns: undefined };
+      discard_trip_draft: { Args: Record<PropertyKey, never>; Returns: undefined };
       dismiss_bug_update: { Args: { p_report: string }; Returns: undefined };
       dismiss_cost_note: { Args: { p_note: string }; Returns: undefined };
       draw_game_card: { Args: { p_category: string; p_trip: string }; Returns: number };
@@ -6237,6 +6408,7 @@ export type Database = {
         Args: { p_action: string; p_trip: string; p_user: string };
         Returns: undefined;
       };
+      mark_arrived: { Args: { p_trip: string }; Returns: string };
       mark_bingo: {
         Args: { p_date: string; p_photo: string; p_square: number; p_trip: string };
         Returns: undefined;
@@ -6600,6 +6772,7 @@ export type Database = {
         Returns: undefined;
       };
       save_teams: { Args: { p_teams: Json; p_trip: string }; Returns: undefined };
+      save_trip_draft: { Args: { p_data: Json }; Returns: undefined };
       sealed_proof_feed: {
         Args: { p_trip: string };
         Returns: {
@@ -6748,8 +6921,13 @@ export type Database = {
       };
       set_bingo_needs_photo: { Args: { p_required: boolean; p_trip: string }; Returns: undefined };
       set_boarding_tile: { Args: { p_tile: string }; Returns: undefined };
+      set_call_nights: { Args: { p_nights: Json; p_trip: string }; Returns: number };
       set_carry_on_meetup: {
         Args: { p_at: string; p_place: string; p_trip: string };
+        Returns: undefined;
+      };
+      set_crowning_night: {
+        Args: { p_at: string; p_call_link: string; p_place: string; p_trip: string };
         Returns: undefined;
       };
       set_culture_finale: { Args: { p_exp: string; p_format: string }; Returns: undefined };
@@ -6791,6 +6969,10 @@ export type Database = {
         Returns: undefined;
       };
       set_pay_note: { Args: { p_note: string; p_trip: string }; Returns: undefined };
+      set_preflight: {
+        Args: { p_days: number; p_skipped: boolean; p_trip: string };
+        Returns: undefined;
+      };
       set_preflight_a2c: {
         Args: { p_start: string; p_time: string; p_trip: string; p_weekday: number };
         Returns: number;
@@ -6949,6 +7131,16 @@ export type Database = {
         }[];
       };
       trip_peek: { Args: { p_trip: string }; Returns: Json };
+      trip_phase: {
+        Args: { p_at?: string; p_trip: string };
+        Returns: {
+          day_index: number;
+          phase: string;
+          phase_ends_at: string;
+          phase_starts_at: string;
+          tz: string;
+        }[];
+      };
       trip_photos: {
         Args: { p_trip: string };
         Returns: {
