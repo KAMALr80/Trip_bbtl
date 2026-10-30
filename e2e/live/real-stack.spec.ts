@@ -21,10 +21,10 @@ async function signIn(page: Page, handle: string) {
 
 test("a seeded Captain signs in and opens their trip's Play", async ({ page }) => {
   await signIn(page, "cap");
-  await expect(page.getByText("Lisbon Crew").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Where to/ })).toBeVisible();
   await page.goto("/play");
   await expect(page).toHaveURL(/\/t\/[0-9a-f-]+\/play$/);
-  await expect(page.getByRole("heading").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Lisbon Crew|Departure Day/ })).toBeVisible();
 });
 
 test("an invite link survives sign-in, and Join room adds the player", async ({ page }) => {

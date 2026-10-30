@@ -435,6 +435,8 @@ export function HomeDashboard({
           </p>
         )}
         {trip && <DailyDiscovery trip={trip} />}
+        {/* A saved invite is pinned at the top until joined or dismissed (AGENTS.md: pin Join room on Home). */}
+        {invite && <div className="mt-3">{invite}</div>}
         <p className="eyebrow text-blue">
           YOUR DEPARTURE LOUNGE{" "}
           {flightReminder && <span className="flight-reminder-dot" aria-label="Flight reminder" />}
