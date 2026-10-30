@@ -3,7 +3,8 @@
 #   database  replays every migration onto the runner's Postgres and runs the pgTAP tests; checks the
 #             committed schema snapshot is current (no Docker, see supabase/tests/README.md)
 #   supabase  the same pgTAP tests on the real Supabase local stack (`supabase start` + real pgTAP),
-#             which catches differences from the local stand-ins in scripts/db/
+#             which catches differences from the local stand-ins in scripts/db/, then the signed-in
+#             browser tests in e2e/live against that stack
 name: CI
 
 on:
@@ -96,5 +97,29 @@ jobs:
           version: 2.121.0
       - run: supabase start
       - run: supabase test db
+      # Signed-in browser tests against this stack and its seed (e2e/live).
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: npx playwright install chromium
+        timeout-minutes: 5
+      - name: Signed-in end-to-end tests (real stack)
+        run: |
+          supabase status -o env \
+            --override-name api.url=VITE_SUPABASE_URL \
+            --override-name auth.anon_key=VITE_SUPABASE_PUBLISHABLE_KEY \
+            | grep -E '^VITE_SUPABASE_(URL|PUBLISHABLE_KEY)=' | tr -d '"' >> "$GITHUB_ENV"
+      - run: npx playwright test -c playwright.live.config.ts
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-live-traces
+          path: test-results/
+          retention-days: 7
       - if: always()
         run: supabase stop --no-backup

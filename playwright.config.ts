@@ -5,6 +5,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "e2e",
+  // e2e/live needs the real local stack: playwright.live.config.ts
+  testIgnore: "live/**",
   timeout: 60_000,
   // The dev server compiles the 3,000-line index route on first visit; give it time.
   expect: { timeout: 20_000 },

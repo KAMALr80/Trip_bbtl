@@ -1,0 +1,34 @@
+// Signed-in smoke tests against the real local Supabase stack (`supabase start` applies the
+// migrations and supabase/seed.sql). CI runs them in the `supabase` job with
+// `npx playwright test -c playwright.live.config.ts`; the mocked-backend specs in e2e/ cover layout.
+import { expect, test, type Page } from "@playwright/test";
+
+const PASSWORD = "tripjunkies-local";
+
+async function signIn(page: Page, handle: string) {
+  await page.goto("/");
+  const emailButton = page.getByRole("button", { name: "Sign in with email" });
+  if (await emailButton.isVisible()) await emailButton.click();
+  await page.getByLabel("Email address").fill(`${handle}@tripjunkies.local`);
+  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+  await page.getByRole("button", { name: "Log in" }).click();
+}
+
+test("a seeded Captain signs in and opens their trip's Play", async ({ page }) => {
+  await signIn(page, "cap");
+  await expect(page.getByText("Lisbon Crew").first()).toBeVisible();
+  await page.goto("/play");
+  await expect(page).toHaveURL(/\/t\/[0-9a-f-]+\/play$/);
+  await expect(page.getByRole("heading").first()).toBeVisible();
+});
+
+test("a player with no trip joins Lisbon Crew with its code and waits for approval", async ({
+  page,
+}) => {
+  await signIn(page, "solo");
+  await page.goto("/join/LISBONXX");
+  const join = page.getByRole("button", { name: /join/i }).first();
+  await expect(join).toBeVisible();
+  await join.click();
+  await expect(page.getByText(/approv|waiting|pending/i).first()).toBeVisible();
+});
