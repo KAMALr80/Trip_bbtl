@@ -82,7 +82,7 @@ revoke `anon` (09 §2).
 
 ## Client usage
 
-### Public functions callable by clients but not referenced in `src/`: 36
+### Public functions callable by clients but not referenced in `src/`: 33
 
 Candidates to revoke (M1-08). Some may be called from SQL, cron or the Test Lab only: check
 before removing. Reference matching is by quoted name, so dynamic names built from strings
@@ -106,7 +106,6 @@ are still found.
 - `my_passport()`
 - `new_trip_code()`
 - `normalize_game_name(p text)`
-- `open_item(p_item uuid)`
 - `post_photo(p_trip uuid, p_date date, p_photo text)`
 - `preview_culture_link(p_preview uuid)`
 - `preview_ten_day_drops(p_trip uuid)`
@@ -118,8 +117,6 @@ are still found.
 - `set_price_rule(p_key text, p_cents integer)`
 - `set_trip_archived(p_trip uuid, p_archived boolean, p_note text)`
 - `set_wheels_up(p_trip uuid, p_date date, p_time text)`
-- `share_trip_quest(p_item uuid, p_shared boolean)`
-- `submit_drop_proof(p_item uuid, p_part integer, p_photo_path text, p_body text)`
 - `trip_phase(p_trip uuid, p_at timestamp with time zone)`
 - `trip_squad_messages(p_trip uuid)`
 - `unlock_big_group(p_trip uuid)`
