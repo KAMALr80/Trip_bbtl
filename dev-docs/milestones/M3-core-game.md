@@ -28,6 +28,31 @@
 | M3-15 | Standings UI + score strip + tappable avatars | M |
 | M3-16 | Retire old scoring functions | S |
 
+## Status (Oct 30, 2026)
+
+Built with the founder's defaults for Q3, Q4, Q5, Q7, Q9, Q10, Q22, Q25 and Q27 (06). Database
+tests: `18_points_ledger` – `23_reveal_and_drops`; browser tests: `daily-play`, `crew-check`,
+`game-night-live`, `surprise-drop`, `invite-pin`, and `e2e/live` against the real local stack in CI.
+
+| ID | State | What's done · what's left |
+|---|---|---|
+| M3-01 | ✅ | `points_ledger`, `points_rules` (Q4 values, tunable), `award_points` (missions cap 12, one daily item a day, idempotent), `set_points_status`, `standings` / `trip_standings` with the R-506 tie-break. |
+| M3-02 | 🟡 | `content_items` with room/mode/focus/culture/age tags; 453 items seeded by `scripts/content/build-seed.py` (the M1-11 candidates, untagged, plus hand-written starters for Showcase, drops, journal and question days). `{destination}` / `{country}` / `{culture}` filled at plan time. **Left:** AI tailoring at plan time (needs `AI_API_KEY`; templates are used meanwhile), the admin list/edit screen, and the founder's review: most kinds have fewer than the 30 items per mode the launch target asks for. |
+| M3-03 | ✅ | `plan_trip` lays out every kind; drops ≈ 0.45 × trip days on random stored days, 9–11 AM for 24h; stable per trip; text hidden until open (`my_schedule`); late joiners get their items; content re-dealt when the trip's room, mode, culture or minors change. |
+| M3-04 | ✅ | `answer_daily`; Daily Discovery on Home (both layouts), Daily Card on Play. |
+| M3-05 | 🟡 | Sealed quests from the schedule (3 days before each call night), "Open it" with +5 within 3h (`sealed_speed`), difficulty 5/10/15 (untagged = 10), presented at Game Night Live or proved via Crew Check. **Left:** the older `sealed_quests` cards still show on Play next to the new ones (removed with M3-16); ticket-stub design. |
+| M3-06 | ✅ | `proofs`, `proof_votes`, `submit_proof`, `approve_proof`, Crew Check card, 24h expiry (cron), solo self-honor, teen photo privacy. **Left:** telling the owner when a proof expires (M4 notifications). |
+| M3-07 | ✅ | `live_sessions`, Show & Tell (first 👍 = 20 + the night's quest), secret awards with ties, Close / Reopen, midnight auto-close. Phones refresh every 4s; Supabase Realtime can replace the polling later. |
+| M3-08 | 🟡 | Missions from the schedule, opened 1 → 2 → 3, 4 points each into Trip Season (cap 12), proof until Trip Season starts via Crew Check. **Left:** the older `mission_claims` screen is still what the Takeoff card opens. |
+| M3-09 | 🟡 | Drop proofs per square / find, AI check queued for Bingo / Scavenger / Photo, `drop_points` + `settle_drops` (Q4 formula). **Left:** "present live" as drop proof (R-343), the ticket-stub card, a reminder before a drop ends (M4). |
+| M3-10 | ✅ | Trip quest per player at Trip Season start, share or keep a surprise, presented at the crowning night. |
+| M3-11 | ✅ | `trip_crowns` / `trip_crownings`; Early Bird at Pre-Flight close (none if skipped), Jet Setter at the crowning night's Close or the Q10 fallback, solo goal (60%). **Left:** the luggage-tag celebration; crowns on the trip stamp (M5). |
+| M3-12 | 🟡 | Window Seat quest (5) and journal prompt (2) scheduled per player per day. **Left:** journal entries table and screen, the shared guide and its public page. |
+| M3-13 | 🟡 | At-home rooms get Home Missions and Daily Discovery from the engine, content filtered by culture and focuses; finale = crowning night on Game Night Live. **Left:** the solo showcase page (R-365); retiring `CultureExperiences`. |
+| M3-14 | ✅ | `checkProofPhoto` stub (`unsure`), `checkProof` server function, `record_proof_check` (service role); a pass approves, unsure/fail only flag. |
+| M3-15 | 🟡 | Play's score, place, R-303 race line, solo goal and breakdown read the ledger. **Left:** tappable avatars in standings; the full standings sheet. |
+| M3-16 | ⬜ | Not started: `season_points`, `trip_season*`, `game_board`, `finalize_season` and the older Play cards still exist alongside the ledger. |
+
 ---
 
 ### M3-01 · Points ledger

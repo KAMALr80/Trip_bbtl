@@ -8,6 +8,8 @@ Each question has a **recommended default**. If no answer arrives by the milesto
 
 **Oct 26, 2026 (founder): build M2 with the defaults** for Q2 ("Who's playing?" asked first), Q8 (Takeoff = first trip day in home time), Q14 (one culture for now; `cultures[]` holds two), Q19 ("My crew (on the app)" and "Crew" in the new screens; older screens still say "squad"), Q21 (one phone for friends off the app; a crew on the app plays the arcade until Game Night Live, M3-07) and Q26 (today's vibe options). The other questions are still open; their defaults apply if no answer arrives by the milestone that needs them.
 
+**Oct 30, 2026 (founder): build M3 with the defaults** for Q3, Q4, Q5, Q7, Q9, Q10, Q22, Q25 and Q27. The points live in `public.points_rules`, so changing a value later is a data update, not a code change.
+
 | # | Needed by | Question | Recommended default |
 |---|---|---|---|
 | Q1 | M1 | **What happens to trips created before the new engine?** That includes legacy, "a2c" and "a2e" rooms, and the live **Siam Vibes (`VRFQQM`)** group. | Freeze them as **read-only archive trips** (`rules_version = 1`): overview, photos, stamps and crowns stay; no new play. Tell the Siam Vibes Captain ahead of time. If a group is mid-trip at cutover, delay the cutover for that trip only. **Answer (Oct 21, 2026): recommended default.** |
