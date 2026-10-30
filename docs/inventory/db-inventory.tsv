@@ -42,6 +42,7 @@ table	public	culture_showcase_ballots				t	1	DELETE,INSERT,REFERENCES,SELECT,TRI
 table	public	culture_showcase_rewards				t	1	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261005065044_bc3b423f-ddf6-4f00-9d77-2d9cb347b2c3.sql	1	0	
 table	public	culture_showcase_viewers				t	1	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261005065044_bc3b423f-ddf6-4f00-9d77-2d9cb347b2c3.sql	1	0	
 table	public	culture_stamps				t	1	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261002170137_fa91655f-3ad8-4e3e-908a-fbe50dcf74fe.sql	1	1	src/features/passport/PassportBook.tsx
+table	public	daily_answers				t	1		SELECT		20261030120000_m3_daily_play.sql	1	0	
 table	public	day_votes				t	1	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	0	
 table	public	experience_previews				t	1	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	DELETE,INSERT,REFERENCES,TRIGGER,TRUNCATE,UPDATE		20261004015942_273e095c-316d-468b-90eb-7704245d10cc.sql	1	0	
 table	public	game_cards				t	5	DELETE,INSERT,REFERENCES,TRIGGER,TRUNCATE,UPDATE	DELETE,INSERT,REFERENCES,TRIGGER,TRUNCATE,UPDATE	INSERT	20261001045924_d055954f-9a3d-4c8b-a974-5f2a6b0fb206.sql	1	1	src/lib/content.functions.ts
@@ -159,6 +160,7 @@ function	public	ai_credit_status	p_trip uuid	f	true				EXECUTE		20261002070906_8
 function	public	ai_daily_counts		f	true				EXECUTE		20261002191814_9aff2fe7-0d03-4812-8c7a-1e21a9eddc0e.sql	1	1	src/features/admin/BugInbox.tsx
 function	public	ai_gate_server	p_kind text, p_trip uuid, p_user uuid	t	true						20261004090455_61dd7fb0-7787-4328-9dd7-7925eb46d988.sql	1	1	src/lib/ai-quota.server.ts
 function	public	ai_guard_report		f	true				EXECUTE		20261004090455_61dd7fb0-7787-4328-9dd7-7925eb46d988.sql	1	1	src/features/admin/AiGuard.tsx
+function	public	answer_daily	p_item uuid, p_choice integer	f	true				EXECUTE		20261030120000_m3_daily_play.sql	1	0	
 function	public	answer_trivia	p_trip uuid, p_date date, p_question integer, p_choice integer	f	true						20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	0	
 function	public	answer_weekly_question	p_trip uuid, p_week integer, p_answer text, p_emoji text	f	true						20261002013427_1776f1d2-a102-4732-9ae6-d7d0f72618cc.sql	1	0	
 function	public	apply_game_plan	p_trip uuid, p_plan text, p_weekday integer, p_time time without time zone, p_start date, p_every integer, p_count integer	f	true				EXECUTE		20261004214501_575938a8-d71a-4399-ae78-10175f72f044.sql	2	0	
@@ -482,6 +484,7 @@ function	trip_private	ai_cost_summary		t	true				EXECUTE		20261002070906_8ff3231
 function	trip_private	ai_daily_counts		t	true				EXECUTE		20261002191814_9aff2fe7-0d03-4812-8c7a-1e21a9eddc0e.sql	1	0	
 function	trip_private	ai_gate	p_kind text, p_trip uuid, p_user uuid	t	true				EXECUTE		20261004090455_61dd7fb0-7787-4328-9dd7-7925eb46d988.sql	1	0	
 function	trip_private	ai_guard_report		t	true				EXECUTE		20261004090455_61dd7fb0-7787-4328-9dd7-7925eb46d988.sql	1	0	
+function	trip_private	answer_daily	p_item uuid, p_choice integer	t	true				EXECUTE		20261030120000_m3_daily_play.sql	1	0	
 function	trip_private	answer_trivia	p_trip uuid, p_date date, p_question integer, p_choice integer	t	true				EXECUTE		20261001085456_016768e4-6649-4451-a0da-2c642d22ff93.sql	2	0	
 function	trip_private	answer_weekly_question	p_trip uuid, p_week integer, p_answer text, p_emoji text	t	true				EXECUTE		20261002023938_597146df-8d17-4895-9bcc-bd2568945ad9.sql	2	0	
 function	trip_private	apply_game_plan	p_trip uuid, p_plan text, p_weekday integer, p_time time without time zone, p_start date, p_every integer, p_count integer	t	true				EXECUTE		20261004214501_575938a8-d71a-4399-ae78-10175f72f044.sql	4	0	

@@ -40,6 +40,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
 import { useT } from "@/i18n";
+import { DailyDiscovery } from "@/features/daily/DailyPlay";
 
 export type HomeScreen =
   "dashboard" | "trip" | "trips" | "passport" | "inspiration" | "window" | "journey" | "arcade";
@@ -433,6 +434,7 @@ export function HomeDashboard({
             {phaseBanner(trip)}
           </p>
         )}
+        {trip && <DailyDiscovery trip={trip} />}
         <p className="eyebrow text-blue">
           YOUR DEPARTURE LOUNGE{" "}
           {flightReminder && <span className="flight-reminder-dot" aria-label="Flight reminder" />}
@@ -604,6 +606,7 @@ export function HomeDashboard({
           {phaseBanner(trip)}
         </p>
       )}
+      {trip && <DailyDiscovery trip={trip} />}
       <p className="eyebrow text-blue">
         YOUR DEPARTURE LOUNGE{" "}
         {flightReminder && <span className="flight-reminder-dot" aria-label="Flight reminder" />}

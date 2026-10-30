@@ -1876,6 +1876,52 @@ export type Database = {
           },
         ];
       };
+      daily_answers: {
+        Row: {
+          answered_at: string;
+          choice: number | null;
+          correct: boolean | null;
+          points: number;
+          schedule_id: string;
+          trip_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          answered_at?: string;
+          choice?: number | null;
+          correct?: boolean | null;
+          points?: number;
+          schedule_id: string;
+          trip_id: string;
+          user_id: string;
+        };
+        Update: {
+          answered_at?: string;
+          choice?: number | null;
+          correct?: boolean | null;
+          points?: number;
+          schedule_id?: string;
+          trip_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "daily_answers_schedule_id_fkey";
+            columns: ["schedule_id"];
+            isOneToOne: false;
+            referencedRelation: "trip_schedule";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "daily_answers_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       day_votes: {
         Row: {
           choice_id: string;
@@ -6002,6 +6048,14 @@ export type Database = {
       };
       ai_gate_server: { Args: { p_kind: string; p_trip: string; p_user: string }; Returns: string };
       ai_guard_report: { Args: Record<PropertyKey, never>; Returns: Json };
+      answer_daily: {
+        Args: { p_choice?: number; p_item: string };
+        Returns: {
+          answer: number;
+          correct: boolean;
+          points: number;
+        }[];
+      };
       answer_trivia: {
         Args: { p_choice: number; p_date: string; p_question: number; p_trip: string };
         Returns: boolean;

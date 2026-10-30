@@ -172,6 +172,16 @@ CREATE FUNCTION public.ai_guard_report() RETURNS jsonb
 
 
 --
+-- Name: answer_daily(uuid, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.answer_daily(p_item uuid, p_choice integer DEFAULT NULL::integer) RETURNS TABLE(points integer, correct boolean, answer integer)
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.answer_daily(p_item, p_choice) $$;
+
+
+--
 -- Name: answer_trivia(uuid, date, integer, integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3676,6 +3686,55 @@ BEGIN
   ) INTO r;
   RETURN r;
 END $$;
+
+
+--
+-- Name: answer_daily(uuid, integer); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.answer_daily(p_item uuid, p_choice integer) RETURNS TABLE(points integer, correct boolean, answer integer)
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE
+  s public.trip_schedule;
+  c public.content_items;
+  v_phase text;
+  v_season text;
+  v_correct boolean;
+  v_points int := 0;
+BEGIN
+  SELECT * INTO s FROM public.trip_schedule WHERE id = p_item;
+  IF NOT FOUND OR s.kind NOT IN ('daily_discovery', 'daily_card') OR NOT trip_private.is_trip_member(s.trip_id, auth.uid()) THEN
+    RAISE EXCEPTION 'That card isn''t in your trip';
+  END IF;
+  IF now() < s.opens_at THEN RAISE EXCEPTION 'That card hasn''t opened yet'; END IF;
+  IF s.closes_at IS NOT NULL AND now() >= s.closes_at THEN RAISE EXCEPTION 'That card has closed for the day'; END IF;
+  IF EXISTS (SELECT 1 FROM public.daily_answers WHERE schedule_id = p_item AND user_id = auth.uid()) THEN
+    RAISE EXCEPTION 'You''ve already played this one';
+  END IF;
+  SELECT * INTO c FROM public.content_items WHERE id = s.content_item_id;
+  IF cardinality(c.choices) > 0 AND (p_choice IS NULL OR p_choice < 0 OR p_choice >= cardinality(c.choices)) THEN
+    RAISE EXCEPTION 'Pick one of the answers';
+  END IF;
+  v_correct := CASE WHEN c.answer IS NOT NULL THEN p_choice = c.answer END;
+
+  IF s.points IS NOT NULL THEN
+    SELECT phase INTO v_phase FROM trip_private.trip_phase(s.trip_id, now());
+    v_season := CASE v_phase WHEN 'preflight' THEN 'preflight' WHEN 'trip_season' THEN 'trip_season' END;
+    IF v_season IS NOT NULL AND (s.kind = 'daily_discovery' OR v_season = 'preflight') THEN
+      v_points := 1 + CASE WHEN v_correct THEN 1 ELSE 0 END;
+      IF trip_private.award_points(s.trip_id, auth.uid(), v_season, s.kind, s.id, v_points, 'approved', now(), auth.uid()) IS NULL THEN
+        v_points := 0;
+      END IF;
+    END IF;
+  END IF;
+
+  INSERT INTO public.daily_answers (schedule_id, trip_id, user_id, choice, correct, points)
+  VALUES (p_item, s.trip_id, auth.uid(), p_choice, v_correct, v_points);
+  RETURN QUERY SELECT v_points, v_correct, c.answer;
+END
+$$;
 
 
 --
@@ -13757,6 +13816,21 @@ CREATE TABLE public.culture_stamps (
 
 
 --
+-- Name: daily_answers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.daily_answers (
+    schedule_id uuid NOT NULL,
+    trip_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    choice integer,
+    correct boolean,
+    points integer DEFAULT 0 NOT NULL,
+    answered_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: day_votes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -16094,6 +16168,14 @@ ALTER TABLE ONLY public.culture_stamps
 
 
 --
+-- Name: daily_answers daily_answers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.daily_answers
+    ADD CONSTRAINT daily_answers_pkey PRIMARY KEY (schedule_id, user_id);
+
+
+--
 -- Name: day_votes day_votes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17176,6 +17258,13 @@ CREATE UNIQUE INDEX culture_showcase_code_unique ON public.culture_experiences U
 
 
 --
+-- Name: daily_answers_trip_user_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX daily_answers_trip_user_idx ON public.daily_answers USING btree (trip_id, user_id);
+
+
+--
 -- Name: live_votes_trip_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -17481,6 +17570,13 @@ CREATE TRIGGER culture_showcase_rewards_updated BEFORE UPDATE ON public.culture_
 --
 
 CREATE TRIGGER culture_showcase_viewers_updated BEFORE UPDATE ON public.culture_showcase_viewers FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();
+
+
+--
+-- Name: daily_answers daily_answers_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER daily_answers_archive_guard BEFORE INSERT OR UPDATE ON public.daily_answers FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -18952,6 +19048,22 @@ ALTER TABLE ONLY public.culture_showcase_viewers
 
 ALTER TABLE ONLY public.culture_stamps
     ADD CONSTRAINT culture_stamps_card_id_fkey FOREIGN KEY (card_id) REFERENCES public.cultural_inspirations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: daily_answers daily_answers_schedule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.daily_answers
+    ADD CONSTRAINT daily_answers_schedule_id_fkey FOREIGN KEY (schedule_id) REFERENCES public.trip_schedule(id) ON DELETE CASCADE;
+
+
+--
+-- Name: daily_answers daily_answers_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.daily_answers
+    ADD CONSTRAINT daily_answers_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
 
 
 --
@@ -21049,6 +21161,12 @@ CREATE POLICY culture_stamps_own ON public.culture_stamps FOR SELECT TO authenti
 
 
 --
+-- Name: daily_answers; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.daily_answers ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: day_votes; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -21379,6 +21497,13 @@ ALTER TABLE public.player_private ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.player_profiles ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: daily_answers players read their own answers; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own answers" ON public.daily_answers FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
 
 --
 -- Name: trip_drafts players read their own draft; Type: POLICY; Schema: public; Owner: -
@@ -21964,6 +22089,15 @@ GRANT ALL ON FUNCTION public.ai_gate_server(p_kind text, p_trip uuid, p_user uui
 REVOKE ALL ON FUNCTION public.ai_guard_report() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.ai_guard_report() TO authenticated;
 GRANT ALL ON FUNCTION public.ai_guard_report() TO service_role;
+
+
+--
+-- Name: FUNCTION answer_daily(p_item uuid, p_choice integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.answer_daily(p_item uuid, p_choice integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.answer_daily(p_item uuid, p_choice integer) TO authenticated;
+GRANT ALL ON FUNCTION public.answer_daily(p_item uuid, p_choice integer) TO service_role;
 
 
 --
@@ -24793,6 +24927,15 @@ GRANT ALL ON FUNCTION trip_private.ai_gate(p_kind text, p_trip uuid, p_user uuid
 
 REVOKE ALL ON FUNCTION trip_private.ai_guard_report() FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.ai_guard_report() TO authenticated;
+
+
+--
+-- Name: FUNCTION answer_daily(p_item uuid, p_choice integer); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.answer_daily(p_item uuid, p_choice integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.answer_daily(p_item uuid, p_choice integer) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.answer_daily(p_item uuid, p_choice integer) TO service_role;
 
 
 --
@@ -28868,6 +29011,14 @@ GRANT ALL ON TABLE public.culture_showcase_viewers TO service_role;
 GRANT ALL ON TABLE public.culture_stamps TO anon;
 GRANT ALL ON TABLE public.culture_stamps TO authenticated;
 GRANT ALL ON TABLE public.culture_stamps TO service_role;
+
+
+--
+-- Name: TABLE daily_answers; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.daily_answers TO service_role;
+GRANT SELECT ON TABLE public.daily_answers TO authenticated;
 
 
 --

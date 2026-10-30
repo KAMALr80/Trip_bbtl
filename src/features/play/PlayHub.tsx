@@ -33,6 +33,7 @@ import { SoloGuide } from "@/features/window-seat/SoloGuide";
 import { CrewGuide } from "@/features/window-seat/CrewGuide";
 import { AtHomePlay, isAtHome } from "@/features/at-home/AtHome";
 import { HomeDayFlow } from "@/features/play/HomeDayFlow";
+import { DailyCard } from "@/features/daily/DailyPlay";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { datePhase, noFlight, readOfflineRoster } from "@/lib/play-arrangement";
@@ -1059,12 +1060,7 @@ function PhasePage(
               pill={showcase ? (showcase.state === "approved" ? "Done" : "Set") : "Soon"}
               onClick={showcase ? () => onDetail("quests") : undefined}
             />
-            <ComingCard
-              icon={<BookOpen />}
-              tone="gold"
-              title="Daily Card"
-              line="One quick challenge a day · 1–2 pts"
-            />
+            {phase === props.current && <DailyCard trip={trip} viewOnly={props.viewOnly} />}
           </>
         )}
         {phase === "takeoff" && (
