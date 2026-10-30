@@ -804,6 +804,88 @@ export type Database = {
         };
         Relationships: [];
       };
+      content_items: {
+        Row: {
+          active: boolean;
+          alcohol: boolean;
+          answer: number | null;
+          body: string;
+          choices: string[];
+          created_at: string;
+          culture: string | null;
+          difficulty: string | null;
+          focus: string | null;
+          id: string;
+          insight: string | null;
+          items: string[];
+          kind: string;
+          locale: string;
+          min_age: number;
+          modes: string[];
+          review_note: string | null;
+          reviewed: boolean;
+          rooms: string[];
+          source: string;
+          source_ref: string;
+          title: string | null;
+          updated_at: string;
+          vibe: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          active?: boolean;
+          alcohol?: boolean;
+          answer?: number | null;
+          body: string;
+          choices?: string[];
+          created_at?: string;
+          culture?: string | null;
+          difficulty?: string | null;
+          focus?: string | null;
+          id?: string;
+          insight?: string | null;
+          items?: string[];
+          kind: string;
+          locale?: string;
+          min_age?: number;
+          modes: string[];
+          review_note?: string | null;
+          reviewed?: boolean;
+          rooms: string[];
+          source?: string;
+          source_ref?: string;
+          title?: string | null;
+          updated_at?: string;
+          vibe?: string | null;
+        };
+        Update: {
+          active?: boolean;
+          alcohol?: boolean;
+          answer?: number | null;
+          body?: string;
+          choices?: string[];
+          created_at?: string;
+          culture?: string | null;
+          difficulty?: string | null;
+          focus?: string | null;
+          id?: string;
+          insight?: string | null;
+          items?: string[];
+          kind?: string;
+          locale?: string;
+          min_age?: number;
+          modes?: string[];
+          review_note?: string | null;
+          reviewed?: boolean;
+          rooms?: string[];
+          source?: string;
+          source_ref?: string;
+          title?: string | null;
+          updated_at?: string;
+          vibe?: string | null;
+        };
+        Relationships: [];
+      };
       content_seen: {
         Row: {
           created_at: string;
@@ -5083,6 +5165,7 @@ export type Database = {
           trip_id: string;
           updated_at: string;
           user_id: string | null;
+          variant: string | null;
         };
         ComputedFields: never;
         Insert: {
@@ -5101,6 +5184,7 @@ export type Database = {
           trip_id: string;
           updated_at?: string;
           user_id?: string | null;
+          variant?: string | null;
         };
         Update: {
           closes_at?: string | null;
@@ -5118,8 +5202,16 @@ export type Database = {
           trip_id?: string;
           updated_at?: string;
           user_id?: string | null;
+          variant?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "trip_schedule_content_fk";
+            columns: ["content_item_id"];
+            isOneToOne: false;
+            referencedRelation: "content_items";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "trip_schedule_trip_id_fkey";
             columns: ["trip_id"];
@@ -6614,6 +6706,27 @@ export type Database = {
         }[];
       };
       my_preview_shared: { Args: { p_exp?: string; p_trip?: string }; Returns: boolean };
+      my_schedule: {
+        Args: { p_at?: string; p_trip: string };
+        Returns: {
+          body: string;
+          choices: string[];
+          closes_at: string;
+          day: string;
+          id: string;
+          insight: string;
+          is_open: boolean;
+          items: string[];
+          kind: string;
+          opens_at: string;
+          points: number;
+          ref_id: string;
+          slot: string;
+          title: string;
+          user_id: string;
+          variant: string;
+        }[];
+      };
       my_trip_feedback_done: { Args: { p_trip: string }; Returns: boolean };
       my_unlocked_trips: { Args: Record<PropertyKey, never>; Returns: number };
       my_waiting_trips: {
