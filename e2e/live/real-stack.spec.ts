@@ -5,6 +5,12 @@ import { expect, test, type Page } from "@playwright/test";
 
 const PASSWORD = "tripjunkies-local";
 
+// CI only keeps the trace as an artifact; print what the page showed so the log says why.
+test.afterEach(async ({ page }, info) => {
+  if (info.status !== info.expectedStatus)
+    console.log(`Page at ${page.url()}:\n${await page.locator("body").ariaSnapshot()}`);
+});
+
 async function signIn(page: Page, handle: string) {
   await page.goto("/");
   await page.getByRole("button", { name: "Sign in with email" }).click();
