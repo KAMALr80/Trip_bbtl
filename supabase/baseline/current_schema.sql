@@ -455,6 +455,16 @@ CREATE FUNCTION public.clear_song_discs(p_trip uuid) RETURNS void
 
 
 --
+-- Name: close_live(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.close_live(p_session uuid) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.close_live(p_session) $$;
+
+
+--
 -- Name: close_live_vote(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1453,6 +1463,36 @@ CREATE FUNCTION public.list_waitlist() RETURNS TABLE(email text, created_at time
 
 
 --
+-- Name: live_present(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.live_present(p_session uuid, p_presenter uuid) RETURNS boolean
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.live_present(p_session, p_presenter) $$;
+
+
+--
+-- Name: live_state(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.live_state(p_session uuid) RETURNS TABLE(user_id uuid, thumbs integer, i_tapped boolean, my_awards text[], won_awards text[])
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.live_state(p_session) $$;
+
+
+--
+-- Name: live_vote_award(uuid, text, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.live_vote_award(p_session uuid, p_award text, p_nominee uuid) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.live_vote_award(p_session, p_award, p_nominee) $$;
+
+
+--
 -- Name: log_ai_call(uuid, text, integer, integer, numeric); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1760,6 +1800,16 @@ CREATE FUNCTION public.normalize_game_name(p text) RETURNS text
     AS $$
   SELECT regexp_replace(regexp_replace(lower(extensions.unaccent('extensions.unaccent'::regdictionary, coalesce(p,''))), '\s', '', 'g'), '([^[:alnum:]])\1+', '\1', 'g')
 $$;
+
+
+--
+-- Name: open_live(uuid, uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.open_live(p_trip uuid, p_call_night uuid DEFAULT NULL::uuid, p_crowning boolean DEFAULT false) RETURNS uuid
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.open_live(p_trip, p_call_night, p_crowning) $$;
 
 
 --
@@ -2102,6 +2152,16 @@ CREATE FUNCTION public.remove_photo(p_trip uuid, p_path text) RETURNS void
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.remove_photo(p_trip,p_path) $$;
+
+
+--
+-- Name: reopen_live(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.reopen_live(p_session uuid) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.reopen_live(p_session) $$;
 
 
 --
@@ -2965,6 +3025,20 @@ CREATE FUNCTION public.solo_action(p_action text, p_exp uuid, p jsonb DEFAULT '{
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.solo_action(p_action,p_exp,p) $$;
+
+
+--
+-- Name: solo_goal(uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.solo_goal(p_trip uuid, p_season text) RETURNS integer
+    LANGUAGE plpgsql STABLE
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  RETURN trip_private.solo_goal(p_trip, p_season);
+END $$;
 
 
 --
@@ -4687,6 +4761,43 @@ END $$;
 
 
 --
+-- Name: close_live(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.close_live(p_session uuid) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE l public.live_sessions;
+BEGIN
+  SELECT * INTO l FROM public.live_sessions WHERE id = p_session;
+  IF NOT FOUND OR NOT trip_private.is_leader(l.trip_id) THEN RAISE EXCEPTION 'The Captain or Co-Captain closes Game Night'; END IF;
+  IF l.status <> 'open' THEN RAISE EXCEPTION 'This Game Night has already closed'; END IF;
+  PERFORM trip_private.close_live_session(p_session, false);
+END
+$$;
+
+
+--
+-- Name: close_live_session(uuid, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.close_live_session(p_session uuid, p_auto boolean) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE l public.live_sessions;
+BEGIN
+  UPDATE public.live_sessions SET status = 'closed', closed_at = now(), closed_by = CASE WHEN p_auto THEN NULL ELSE auth.uid() END
+  WHERE id = p_session AND status = 'open' RETURNING * INTO l;
+  IF NOT FOUND THEN RETURN; END IF;
+  PERFORM trip_private.tally_live(p_session);
+  IF l.is_crowning THEN PERFORM trip_private.crown_season(l.trip_id, 'trip_season', 'crowning_night'); END IF;
+END
+$$;
+
+
+--
 -- Name: close_live_vote(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -5536,6 +5647,38 @@ BEGIN
  END IF;
  PERFORM set_config('trip_private.crowning','',true);
 END $$;
+
+
+--
+-- Name: crown_season(uuid, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.crown_season(p_trip uuid, p_season text, p_how text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE t public.trips; v_goal int;
+BEGIN
+  SELECT * INTO t FROM public.trips WHERE id = p_trip FOR UPDATE;
+  IF EXISTS (SELECT 1 FROM public.trip_crownings WHERE trip_id = p_trip AND season = p_season) THEN RETURN; END IF;
+  INSERT INTO public.trip_crownings (trip_id, season, how)
+  VALUES (p_trip, p_season, CASE WHEN t.play_mode = 'solo' THEN 'solo_goal' ELSE p_how END);
+  IF NOT coalesce((trip_private.room_rules(t.room)->>'pointsEnabled')::boolean, false) OR t.play_mode = 'offline' OR t.is_sandbox
+     OR (p_season = 'preflight' AND (t.preflight_skipped OR t.preflight_days = 0)) THEN
+    RETURN;
+  END IF;
+  IF t.play_mode = 'solo' THEN
+    v_goal := trip_private.solo_goal(p_trip, p_season);
+    INSERT INTO public.trip_crowns (trip_id, season, user_id, points, solo_goal)
+    SELECT p_trip, p_season, s.user_id, s.points, v_goal FROM trip_private.standings(p_trip, p_season) s
+    WHERE v_goal > 0 AND s.points >= v_goal;
+  ELSE
+    INSERT INTO public.trip_crowns (trip_id, season, user_id, points)
+    SELECT p_trip, p_season, s.user_id, s.points FROM trip_private.standings(p_trip, p_season) s
+    WHERE s.rank = 1 AND s.points > 0;
+  END IF;
+END
+$$;
 
 
 --
@@ -8132,6 +8275,139 @@ BEGIN IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Founder only'; EN
 
 
 --
+-- Name: live_and_crowns_due(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.live_and_crowns_due() RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE r record; n int := 0;
+BEGIN
+  FOR r IN SELECT id FROM public.live_sessions WHERE status = 'open' AND auto_close_at <= now() LOOP
+    PERFORM trip_private.close_live_session(r.id, true); n := n + 1;
+  END LOOP;
+  FOR r IN
+    SELECT t.id FROM public.trips t
+    JOIN trip_private.trip_phase_windows(t.id) w ON w.phase = 'preflight'
+    WHERE t.rules_version = 2 AND t.setup_completed_at IS NOT NULL AND w.ends_at <= now()
+      AND t.end_date >= current_date - 30
+      AND NOT EXISTS (SELECT 1 FROM public.trip_crownings c WHERE c.trip_id = t.id AND c.season = 'preflight')
+  LOOP
+    PERFORM trip_private.crown_season(r.id, 'preflight', 'preflight_close'); n := n + 1;
+  END LOOP;
+  FOR r IN
+    SELECT t.id FROM public.trips t
+    WHERE t.rules_version = 2 AND t.setup_completed_at IS NOT NULL AND t.end_date >= current_date - 30
+      AND now() >= coalesce(t.crowning_at + interval '4 hours',
+            (t.end_date + time '21:00') AT TIME ZONE CASE WHEN (trip_private.room_rules(t.room)->>'atHome')::boolean
+              THEN t.home_timezone ELSE coalesce(t.trip_timezone, t.home_timezone) END)
+      AND NOT EXISTS (SELECT 1 FROM public.trip_crownings c WHERE c.trip_id = t.id AND c.season = 'trip_season')
+      AND NOT EXISTS (SELECT 1 FROM public.live_sessions l WHERE l.trip_id = t.id AND l.status = 'open')
+  LOOP
+    PERFORM trip_private.crown_season(r.id, 'trip_season', 'fallback'); n := n + 1;
+  END LOOP;
+  RETURN n;
+END
+$$;
+
+
+--
+-- Name: live_present(uuid, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.live_present(p_session uuid, p_presenter uuid) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE l public.live_sessions; s public.trip_schedule; v_first boolean;
+BEGIN
+  SELECT * INTO l FROM public.live_sessions WHERE id = p_session FOR UPDATE;
+  IF NOT FOUND OR NOT trip_private.is_trip_member(l.trip_id, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  IF l.status <> 'open' THEN RAISE EXCEPTION 'This Game Night has closed'; END IF;
+  IF p_presenter = auth.uid() THEN RAISE EXCEPTION 'You can''t tap your own avatar'; END IF;
+  IF NOT trip_private.is_trip_member(l.trip_id, p_presenter) THEN RAISE EXCEPTION 'They aren''t in this trip'; END IF;
+  v_first := NOT EXISTS (SELECT 1 FROM public.live_presents WHERE session_id = p_session AND presenter_id = p_presenter);
+  INSERT INTO public.live_presents (session_id, presenter_id, voter_id) VALUES (p_session, p_presenter, auth.uid())
+  ON CONFLICT DO NOTHING;
+  IF NOT v_first THEN RETURN false; END IF;
+
+  PERFORM trip_private.award_points(l.trip_id, p_presenter, l.season, 'game_night_present', l.id, 20, 'approved', now(), auth.uid());
+  SELECT * INTO s FROM public.trip_schedule
+  WHERE trip_id = l.trip_id AND user_id = p_presenter AND opens_at <= now()
+    AND ((NOT l.is_crowning AND kind = 'sealed_quest' AND ref_id = l.call_night_id) OR (l.is_crowning AND kind = 'trip_quest'))
+  LIMIT 1;
+  IF FOUND THEN
+    INSERT INTO public.proofs (trip_id, user_id, schedule_id, source, body, crew_status, approved_by, approved_at, expires_at)
+    VALUES (l.trip_id, p_presenter, s.id, CASE s.kind WHEN 'trip_quest' THEN 'trip_quest' ELSE 'sealed_quest' END,
+            'Presented live', 'approved', auth.uid(), now(), now())
+    ON CONFLICT (schedule_id, user_id, part) DO UPDATE
+      SET crew_status = 'approved', approved_by = excluded.approved_by, approved_at = now()
+      WHERE public.proofs.crew_status = 'waiting';
+    IF s.points IS NOT NULL THEN
+      IF trip_private.award_points(l.trip_id, p_presenter, CASE s.kind WHEN 'trip_quest' THEN 'trip_season' ELSE 'preflight' END,
+                                   CASE s.kind WHEN 'trip_quest' THEN 'trip_quest' ELSE 'sealed_quest' END, s.id, s.points,
+                                   'approved', now(), auth.uid()) IS NOT NULL THEN
+        PERFORM trip_private.set_points_status(l.trip_id, p_presenter, CASE s.kind WHEN 'trip_quest' THEN 'trip_quest' ELSE 'sealed_quest' END,
+                                               s.id, 'approved');
+      END IF;
+    END IF;
+  END IF;
+  RETURN true;
+END
+$$;
+
+
+--
+-- Name: live_state(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.live_state(p_session uuid) RETURNS TABLE(user_id uuid, thumbs integer, i_tapped boolean, my_awards text[], won_awards text[])
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE l public.live_sessions;
+BEGIN
+  SELECT * INTO l FROM public.live_sessions WHERE id = p_session;
+  IF NOT FOUND OR NOT trip_private.is_trip_member(l.trip_id, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  RETURN QUERY
+    SELECT m.user_id,
+           (SELECT count(*)::int FROM public.live_presents p WHERE p.session_id = l.id AND p.presenter_id = m.user_id),
+           EXISTS (SELECT 1 FROM public.live_presents p WHERE p.session_id = l.id AND p.presenter_id = m.user_id AND p.voter_id = auth.uid()),
+           coalesce((SELECT array_agg(v.award ORDER BY v.award) FROM public.live_award_votes v
+                     WHERE v.session_id = l.id AND v.voter_id = auth.uid() AND v.nominee_id = m.user_id), '{}'),
+           CASE WHEN l.status = 'closed' THEN coalesce((SELECT array_agg(substr(x.source, 7) ORDER BY x.source) FROM public.points_ledger x
+                     WHERE x.trip_id = l.trip_id AND x.source_ref = l.id AND x.user_id = m.user_id AND x.source LIKE 'award\_%'
+                       AND x.status = 'approved'), '{}') ELSE '{}' END
+    FROM public.trip_members m
+    WHERE m.trip_id = l.trip_id AND m.status = 'approved'
+    ORDER BY m.user_id;
+END
+$$;
+
+
+--
+-- Name: live_vote_award(uuid, text, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.live_vote_award(p_session uuid, p_award text, p_nominee uuid) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE l public.live_sessions;
+BEGIN
+  SELECT * INTO l FROM public.live_sessions WHERE id = p_session;
+  IF NOT FOUND OR NOT trip_private.is_trip_member(l.trip_id, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  IF l.status <> 'open' THEN RAISE EXCEPTION 'This Game Night has closed'; END IF;
+  IF p_nominee = auth.uid() THEN RAISE EXCEPTION 'Vote for someone else'; END IF;
+  IF NOT trip_private.is_trip_member(l.trip_id, p_nominee) THEN RAISE EXCEPTION 'They aren''t in this trip'; END IF;
+  INSERT INTO public.live_award_votes (session_id, award, voter_id, nominee_id) VALUES (p_session, p_award, auth.uid(), p_nominee)
+  ON CONFLICT (session_id, award, voter_id) DO UPDATE SET nominee_id = excluded.nominee_id, created_at = now();
+END
+$$;
+
+
+--
 -- Name: log_ai_call(uuid, text, integer, integer, numeric); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -8907,6 +9183,41 @@ CREATE FUNCTION trip_private.on_member_joined() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$ BEGIN PERFORM trip_private.resplit_even_costs(NEW.trip_id); RETURN NEW; END $$;
+
+
+--
+-- Name: open_live(uuid, uuid, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.open_live(p_trip uuid, p_call_night uuid, p_crowning boolean) RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_id uuid; ph record; v_season text;
+BEGIN
+  IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  SELECT id INTO v_id FROM public.live_sessions WHERE trip_id = p_trip AND status = 'open';
+  IF FOUND THEN RETURN v_id; END IF;
+  IF p_crowning AND NOT trip_private.is_leader(p_trip) THEN
+    RAISE EXCEPTION 'The Captain or Co-Captain opens the crowning night';
+  END IF;
+  IF p_call_night IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.call_nights WHERE id = p_call_night AND trip_id = p_trip) THEN
+    RAISE EXCEPTION 'That call night isn''t in this trip';
+  END IF;
+  SELECT * INTO ph FROM trip_private.trip_phase(p_trip, now());
+  v_season := CASE ph.phase WHEN 'preflight' THEN 'preflight' WHEN 'takeoff' THEN 'trip_season' WHEN 'trip_season' THEN 'trip_season' END;
+  IF v_season IS NULL THEN RAISE EXCEPTION 'Game Night Live opens during Pre-Flight and Trip Season'; END IF;
+  IF p_crowning AND v_season <> 'trip_season' THEN RAISE EXCEPTION 'The crowning night is in Trip Season'; END IF;
+  IF EXISTS (SELECT 1 FROM public.trip_crownings WHERE trip_id = p_trip AND season = v_season) THEN
+    RAISE EXCEPTION 'This season''s crown has already been decided';
+  END IF;
+  INSERT INTO public.live_sessions (trip_id, call_night_id, is_crowning, season, opened_by, auto_close_at)
+  VALUES (p_trip, p_call_night, p_crowning, v_season, auth.uid(),
+          ((now() AT TIME ZONE ph.tz)::date + 1)::timestamp AT TIME ZONE ph.tz)
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END
+$$;
 
 
 --
@@ -10135,6 +10446,35 @@ CREATE FUNCTION trip_private.render_card(p_trip uuid, p_prompt text) RETURNS tex
  SELECT nullif(btrim(split_part(t.destination,',',1)),''), (SELECT nullif(btrim(d->>'city'),'') FROM public.trip_itineraries i CROSS JOIN LATERAL jsonb_array_elements(i.days::jsonb) d WHERE i.trip_id=p_trip AND nullif(btrim(d->>'city'),'') IS NOT NULL ORDER BY CASE WHEN d->>'date'=to_char(now() AT TIME ZONE coalesce(t.trip_timezone,t.home_timezone),'YYYY-MM-DD') THEN 0 ELSE 1 END, d->>'date' LIMIT 1) INTO v_destination,v_city FROM public.trips t WHERE t.id=p_trip;
  RETURN replace(replace(p_prompt,'{destination}',coalesce(v_destination,v_city,'your destination')),'{city}',coalesce(v_city,v_destination,'your city'));
 END $$;
+
+
+--
+-- Name: reopen_live(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.reopen_live(p_session uuid) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE l public.live_sessions; ph record;
+BEGIN
+  SELECT * INTO l FROM public.live_sessions WHERE id = p_session FOR UPDATE;
+  IF NOT FOUND OR NOT trip_private.is_leader(l.trip_id) THEN RAISE EXCEPTION 'The Captain or Co-Captain reopens Game Night'; END IF;
+  IF l.status <> 'closed' THEN RAISE EXCEPTION 'This Game Night is still open'; END IF;
+  IF EXISTS (SELECT 1 FROM public.trip_crownings WHERE trip_id = l.trip_id AND season = l.season) THEN
+    RAISE EXCEPTION 'This season''s crown has already been decided';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.live_sessions WHERE trip_id = l.trip_id AND status = 'open') THEN
+    RAISE EXCEPTION 'Another Game Night is open';
+  END IF;
+  SELECT * INTO ph FROM trip_private.trip_phase(l.trip_id, now());
+  UPDATE public.points_ledger SET status = 'void', updated_at = now()
+  WHERE trip_id = l.trip_id AND source_ref = l.id AND source LIKE 'award\_%' AND status = 'approved';
+  UPDATE public.live_sessions SET status = 'open', closed_at = NULL, closed_by = NULL,
+    auto_close_at = greatest(auto_close_at, ((now() AT TIME ZONE coalesce(ph.tz, 'UTC'))::date + 1)::timestamp AT TIME ZONE coalesce(ph.tz, 'UTC'))
+  WHERE id = p_session;
+END
+$$;
 
 
 --
@@ -12263,6 +12603,25 @@ CREATE FUNCTION trip_private.solo_fare(p_points integer, p_available integer) RE
 
 
 --
+-- Name: solo_goal(uuid, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.solo_goal(p_trip uuid, p_season text) RETURNS integer
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT ceil(0.6 * coalesce(sum(s.points), 0))::int
+  FROM public.trip_schedule s
+  JOIN trip_private.trip_phase_windows(p_trip) w ON w.phase = CASE p_season WHEN 'preflight' THEN 'preflight' ELSE 'trip_season' END
+  WHERE s.trip_id = p_trip AND s.points IS NOT NULL
+    AND (s.user_id IS NULL OR s.user_id = (SELECT m.user_id FROM public.trip_members m WHERE m.trip_id = p_trip AND m.role = 'captain'))
+    AND CASE WHEN s.kind IN ('airport_mission', 'home_mission') THEN p_season = 'trip_season'
+             WHEN s.kind IN ('sealed_quest', 'showcase', 'daily_card') THEN p_season = 'preflight'
+             ELSE s.opens_at >= w.starts_at AND s.opens_at < w.ends_at END
+$$;
+
+
+--
 -- Name: solo_no_trip(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -12653,6 +13012,34 @@ CREATE FUNCTION trip_private.takeoff_week(p_trip uuid) RETURNS integer
     SET search_path TO 'public'
     AS $$
 SELECT n.week_number FROM public.game_nights n JOIN public.trips t ON t.id=n.trip_id WHERE n.trip_id=p_trip AND NOT n.skipped AND (n.starts_at AT TIME ZONE t.home_timezone)::date < t.start_date ORDER BY n.starts_at DESC LIMIT 1 $$;
+
+
+--
+-- Name: tally_live(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.tally_live(p_session uuid) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE l public.live_sessions; w record; v_source text;
+BEGIN
+  SELECT * INTO l FROM public.live_sessions WHERE id = p_session;
+  FOR w IN
+    WITH counts AS (
+      SELECT award, nominee_id, count(*) AS n FROM public.live_award_votes WHERE session_id = p_session GROUP BY award, nominee_id
+    )
+    SELECT c.award, c.nominee_id FROM counts c
+    WHERE c.n = (SELECT max(n) FROM counts x WHERE x.award = c.award)
+  LOOP
+    v_source := 'award_' || w.award;
+    IF NOT trip_private.set_points_status(l.trip_id, w.nominee_id, v_source, l.id, 'approved') THEN
+      PERFORM trip_private.award_points(l.trip_id, w.nominee_id, l.season, v_source, l.id,
+        (SELECT points_max FROM public.points_rules WHERE source = v_source), 'approved', now(), l.closed_by);
+    END IF;
+  END LOOP;
+END
+$$;
 
 
 --
@@ -14481,6 +14868,55 @@ CREATE TABLE public.junkie_ranks (
 
 
 --
+-- Name: live_award_votes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.live_award_votes (
+    session_id uuid NOT NULL,
+    award text NOT NULL,
+    voter_id uuid NOT NULL,
+    nominee_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT live_award_votes_award_check CHECK ((award = ANY (ARRAY['best_overall'::text, 'most_creative'::text, 'best_story'::text]))),
+    CONSTRAINT live_award_votes_check CHECK ((nominee_id <> voter_id))
+);
+
+
+--
+-- Name: live_presents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.live_presents (
+    session_id uuid NOT NULL,
+    presenter_id uuid NOT NULL,
+    voter_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT live_presents_check CHECK ((presenter_id <> voter_id))
+);
+
+
+--
+-- Name: live_sessions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.live_sessions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    trip_id uuid NOT NULL,
+    call_night_id uuid,
+    is_crowning boolean DEFAULT false NOT NULL,
+    season text NOT NULL,
+    status text DEFAULT 'open'::text NOT NULL,
+    opened_by uuid,
+    opened_at timestamp with time zone DEFAULT now() NOT NULL,
+    closed_by uuid,
+    closed_at timestamp with time zone,
+    auto_close_at timestamp with time zone NOT NULL,
+    CONSTRAINT live_sessions_season_check CHECK ((season = ANY (ARRAY['preflight'::text, 'trip_season'::text]))),
+    CONSTRAINT live_sessions_status_check CHECK ((status = ANY (ARRAY['open'::text, 'closed'::text])))
+);
+
+
+--
 -- Name: live_vote_ballots; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -15225,6 +15661,34 @@ CREATE TABLE public.trip_adult_settings (
     enabled boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: trip_crownings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.trip_crownings (
+    trip_id uuid NOT NULL,
+    season text NOT NULL,
+    decided_at timestamp with time zone DEFAULT now() NOT NULL,
+    how text NOT NULL,
+    CONSTRAINT trip_crownings_season_check CHECK ((season = ANY (ARRAY['preflight'::text, 'trip_season'::text])))
+);
+
+
+--
+-- Name: trip_crowns; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.trip_crowns (
+    trip_id uuid NOT NULL,
+    season text NOT NULL,
+    user_id uuid NOT NULL,
+    points integer NOT NULL,
+    solo_goal integer,
+    crowned_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT trip_crowns_season_check CHECK ((season = ANY (ARRAY['preflight'::text, 'trip_season'::text])))
 );
 
 
@@ -16652,6 +17116,30 @@ ALTER TABLE ONLY public.junkie_ranks
 
 
 --
+-- Name: live_award_votes live_award_votes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.live_award_votes
+    ADD CONSTRAINT live_award_votes_pkey PRIMARY KEY (session_id, award, voter_id);
+
+
+--
+-- Name: live_presents live_presents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.live_presents
+    ADD CONSTRAINT live_presents_pkey PRIMARY KEY (session_id, presenter_id, voter_id);
+
+
+--
+-- Name: live_sessions live_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.live_sessions
+    ADD CONSTRAINT live_sessions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: live_vote_ballots live_vote_ballots_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17065,6 +17553,22 @@ ALTER TABLE ONLY public.trip_adult_approvals
 
 ALTER TABLE ONLY public.trip_adult_settings
     ADD CONSTRAINT trip_adult_settings_pkey PRIMARY KEY (trip_id);
+
+
+--
+-- Name: trip_crownings trip_crownings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trip_crownings
+    ADD CONSTRAINT trip_crownings_pkey PRIMARY KEY (trip_id, season);
+
+
+--
+-- Name: trip_crowns trip_crowns_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trip_crowns
+    ADD CONSTRAINT trip_crowns_pkey PRIMARY KEY (trip_id, season, user_id);
 
 
 --
@@ -17570,6 +18074,13 @@ CREATE UNIQUE INDEX culture_showcase_code_unique ON public.culture_experiences U
 --
 
 CREATE INDEX daily_answers_trip_user_idx ON public.daily_answers USING btree (trip_id, user_id);
+
+
+--
+-- Name: live_sessions_one_open; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX live_sessions_one_open ON public.live_sessions USING btree (trip_id) WHERE (status = 'open'::text);
 
 
 --
@@ -18343,6 +18854,13 @@ CREATE TRIGGER inspiration_vote_validate BEFORE UPDATE ON public.inspiration_vot
 
 
 --
+-- Name: live_sessions live_sessions_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER live_sessions_archive_guard BEFORE INSERT OR UPDATE ON public.live_sessions FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: live_votes live_votes_archive_guard; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -18788,6 +19306,20 @@ CREATE TRIGGER trip_adult_settings_archive_guard BEFORE INSERT OR UPDATE ON publ
 --
 
 CREATE TRIGGER trip_adult_settings_updated BEFORE UPDATE ON public.trip_adult_settings FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();
+
+
+--
+-- Name: trip_crownings trip_crownings_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_crownings_archive_guard BEFORE INSERT OR UPDATE ON public.trip_crownings FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: trip_crowns trip_crowns_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_crowns_archive_guard BEFORE INSERT OR UPDATE ON public.trip_crowns FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -19605,6 +20137,38 @@ ALTER TABLE ONLY public.inspiration_votes
 
 
 --
+-- Name: live_award_votes live_award_votes_session_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.live_award_votes
+    ADD CONSTRAINT live_award_votes_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.live_sessions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: live_presents live_presents_session_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.live_presents
+    ADD CONSTRAINT live_presents_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.live_sessions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: live_sessions live_sessions_call_night_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.live_sessions
+    ADD CONSTRAINT live_sessions_call_night_id_fkey FOREIGN KEY (call_night_id) REFERENCES public.call_nights(id) ON DELETE SET NULL;
+
+
+--
+-- Name: live_sessions live_sessions_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.live_sessions
+    ADD CONSTRAINT live_sessions_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
 -- Name: live_vote_ballots live_vote_ballots_vote_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -19970,6 +20534,22 @@ ALTER TABLE ONLY public.trip_adult_approvals
 
 ALTER TABLE ONLY public.trip_adult_settings
     ADD CONSTRAINT trip_adult_settings_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
+-- Name: trip_crownings trip_crownings_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trip_crownings
+    ADD CONSTRAINT trip_crownings_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
+-- Name: trip_crowns trip_crowns_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trip_crowns
+    ADD CONSTRAINT trip_crowns_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
 
 
 --
@@ -21747,6 +22327,24 @@ CREATE POLICY inspiration_votes_update ON public.inspiration_votes FOR UPDATE TO
 ALTER TABLE public.junkie_ranks ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: live_award_votes; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.live_award_votes ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: live_presents; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.live_presents ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: live_sessions; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.live_sessions ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: live_vote_ballots; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -21763,6 +22361,27 @@ ALTER TABLE public.live_votes ENABLE ROW LEVEL SECURITY;
 --
 
 CREATE POLICY "members read call nights" ON public.call_nights FOR SELECT TO authenticated USING (trip_private.is_trip_member(trip_id, auth.uid()));
+
+
+--
+-- Name: trip_crownings members read crownings; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "members read crownings" ON public.trip_crownings FOR SELECT TO authenticated USING (trip_private.is_trip_member(trip_id, auth.uid()));
+
+
+--
+-- Name: trip_crowns members read crowns; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "members read crowns" ON public.trip_crowns FOR SELECT TO authenticated USING (trip_private.is_trip_member(trip_id, auth.uid()));
+
+
+--
+-- Name: live_sessions members read live sessions; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "members read live sessions" ON public.live_sessions FOR SELECT TO authenticated USING (trip_private.is_trip_member(trip_id, auth.uid()));
 
 
 --
@@ -22139,6 +22758,18 @@ ALTER TABLE public.trip_adult_approvals ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.trip_adult_settings ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: trip_crownings; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.trip_crownings ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: trip_crowns; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.trip_crowns ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: trip_day_games; Type: ROW SECURITY; Schema: public; Owner: -
@@ -22706,6 +23337,15 @@ GRANT ALL ON FUNCTION public.claim_airport(p_trip uuid, p_date date, p_mission i
 REVOKE ALL ON FUNCTION public.clear_song_discs(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.clear_song_discs(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.clear_song_discs(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION close_live(p_session uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.close_live(p_session uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.close_live(p_session uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.close_live(p_session uuid) TO service_role;
 
 
 --
@@ -23511,6 +24151,33 @@ GRANT ALL ON FUNCTION public.list_waitlist() TO service_role;
 
 
 --
+-- Name: FUNCTION live_present(p_session uuid, p_presenter uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.live_present(p_session uuid, p_presenter uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.live_present(p_session uuid, p_presenter uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.live_present(p_session uuid, p_presenter uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION live_state(p_session uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.live_state(p_session uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.live_state(p_session uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.live_state(p_session uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION live_vote_award(p_session uuid, p_award text, p_nominee uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.live_vote_award(p_session uuid, p_award text, p_nominee uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.live_vote_award(p_session uuid, p_award text, p_nominee uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.live_vote_award(p_session uuid, p_award text, p_nominee uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION log_ai_call(p_usage uuid, p_model text, p_in integer, p_out integer, p_cost numeric); Type: ACL; Schema: public; Owner: -
 --
 
@@ -23775,6 +24442,15 @@ GRANT ALL ON FUNCTION public.night_format_action(p_trip uuid, p_week integer, p_
 GRANT ALL ON FUNCTION public.normalize_game_name(p text) TO anon;
 GRANT ALL ON FUNCTION public.normalize_game_name(p text) TO authenticated;
 GRANT ALL ON FUNCTION public.normalize_game_name(p text) TO service_role;
+
+
+--
+-- Name: FUNCTION open_live(p_trip uuid, p_call_night uuid, p_crowning boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.open_live(p_trip uuid, p_call_night uuid, p_crowning boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.open_live(p_trip uuid, p_call_night uuid, p_crowning boolean) TO authenticated;
+GRANT ALL ON FUNCTION public.open_live(p_trip uuid, p_call_night uuid, p_crowning boolean) TO service_role;
 
 
 --
@@ -24068,6 +24744,15 @@ GRANT ALL ON FUNCTION public.release_trip_day(p_trip uuid, p_date date) TO servi
 REVOKE ALL ON FUNCTION public.remove_photo(p_trip uuid, p_path text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.remove_photo(p_trip uuid, p_path text) TO authenticated;
 GRANT ALL ON FUNCTION public.remove_photo(p_trip uuid, p_path text) TO service_role;
+
+
+--
+-- Name: FUNCTION reopen_live(p_session uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.reopen_live(p_session uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.reopen_live(p_session uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.reopen_live(p_session uuid) TO service_role;
 
 
 --
@@ -24808,6 +25493,15 @@ GRANT ALL ON FUNCTION public.skip_limit(p_trip uuid) TO service_role;
 REVOKE ALL ON FUNCTION public.solo_action(p_action text, p_exp uuid, p jsonb) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.solo_action(p_action text, p_exp uuid, p jsonb) TO authenticated;
 GRANT ALL ON FUNCTION public.solo_action(p_action text, p_exp uuid, p jsonb) TO service_role;
+
+
+--
+-- Name: FUNCTION solo_goal(p_trip uuid, p_season text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.solo_goal(p_trip uuid, p_season text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.solo_goal(p_trip uuid, p_season text) TO authenticated;
+GRANT ALL ON FUNCTION public.solo_goal(p_trip uuid, p_season text) TO service_role;
 
 
 --
@@ -25755,6 +26449,23 @@ GRANT ALL ON FUNCTION trip_private.clear_song_discs(p_trip uuid) TO service_role
 
 
 --
+-- Name: FUNCTION close_live(p_session uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.close_live(p_session uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.close_live(p_session uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.close_live(p_session uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION close_live_session(p_session uuid, p_auto boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.close_live_session(p_session uuid, p_auto boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.close_live_session(p_session uuid, p_auto boolean) TO service_role;
+
+
+--
 -- Name: FUNCTION close_live_vote(p_vote uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -25995,6 +26706,14 @@ GRANT ALL ON FUNCTION trip_private.crown_now(p_trip uuid) TO service_role;
 
 REVOKE ALL ON FUNCTION trip_private.crown_season(p_trip uuid, p_season text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.crown_season(p_trip uuid, p_season text) TO service_role;
+
+
+--
+-- Name: FUNCTION crown_season(p_trip uuid, p_season text, p_how text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.crown_season(p_trip uuid, p_season text, p_how text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.crown_season(p_trip uuid, p_season text, p_how text) TO service_role;
 
 
 --
@@ -26911,6 +27630,41 @@ GRANT ALL ON FUNCTION trip_private.list_waitlist() TO service_role;
 
 
 --
+-- Name: FUNCTION live_and_crowns_due(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.live_and_crowns_due() FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.live_and_crowns_due() TO service_role;
+
+
+--
+-- Name: FUNCTION live_present(p_session uuid, p_presenter uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.live_present(p_session uuid, p_presenter uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.live_present(p_session uuid, p_presenter uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.live_present(p_session uuid, p_presenter uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION live_state(p_session uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.live_state(p_session uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.live_state(p_session uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.live_state(p_session uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION live_vote_award(p_session uuid, p_award text, p_nominee uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.live_vote_award(p_session uuid, p_award text, p_nominee uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.live_vote_award(p_session uuid, p_award text, p_nominee uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.live_vote_award(p_session uuid, p_award text, p_nominee uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION log_ai_call(p_usage uuid, p_model text, p_in integer, p_out integer, p_cost numeric); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -27220,6 +27974,15 @@ REVOKE ALL ON FUNCTION trip_private.on_member_changed() FROM PUBLIC;
 
 REVOKE ALL ON FUNCTION trip_private.on_member_joined() FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.on_member_joined() TO service_role;
+
+
+--
+-- Name: FUNCTION open_live(p_trip uuid, p_call_night uuid, p_crowning boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.open_live(p_trip uuid, p_call_night uuid, p_crowning boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.open_live(p_trip uuid, p_call_night uuid, p_crowning boolean) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.open_live(p_trip uuid, p_call_night uuid, p_crowning boolean) TO service_role;
 
 
 --
@@ -27674,6 +28437,15 @@ GRANT ALL ON FUNCTION trip_private.remove_photo(p_trip uuid, p_path text) TO ser
 --
 
 REVOKE ALL ON FUNCTION trip_private.render_card(p_trip uuid, p_prompt text) FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION reopen_live(p_session uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.reopen_live(p_session uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.reopen_live(p_session uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.reopen_live(p_session uuid) TO service_role;
 
 
 --
@@ -28579,6 +29351,15 @@ GRANT ALL ON FUNCTION trip_private.solo_fare(p_points integer, p_available integ
 
 
 --
+-- Name: FUNCTION solo_goal(p_trip uuid, p_season text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.solo_goal(p_trip uuid, p_season text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.solo_goal(p_trip uuid, p_season text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.solo_goal(p_trip uuid, p_season text) TO service_role;
+
+
+--
 -- Name: FUNCTION solo_score(p_exp uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -28719,6 +29500,14 @@ GRANT ALL ON FUNCTION trip_private.take_over_captain(p_trip uuid) TO service_rol
 
 REVOKE ALL ON FUNCTION trip_private.takeoff_week(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.takeoff_week(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION tally_live(p_session uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.tally_live(p_session uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.tally_live(p_session uuid) TO service_role;
 
 
 --
@@ -29831,6 +30620,28 @@ GRANT ALL ON TABLE public.junkie_ranks TO service_role;
 
 
 --
+-- Name: TABLE live_award_votes; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.live_award_votes TO service_role;
+
+
+--
+-- Name: TABLE live_presents; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.live_presents TO service_role;
+
+
+--
+-- Name: TABLE live_sessions; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.live_sessions TO service_role;
+GRANT SELECT ON TABLE public.live_sessions TO authenticated;
+
+
+--
 -- Name: TABLE live_vote_ballots; Type: ACL; Schema: public; Owner: -
 --
 
@@ -30200,6 +31011,22 @@ GRANT ALL ON TABLE public.trip_adult_approvals TO service_role;
 GRANT ALL ON TABLE public.trip_adult_settings TO anon;
 GRANT ALL ON TABLE public.trip_adult_settings TO authenticated;
 GRANT ALL ON TABLE public.trip_adult_settings TO service_role;
+
+
+--
+-- Name: TABLE trip_crownings; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.trip_crownings TO service_role;
+GRANT SELECT ON TABLE public.trip_crownings TO authenticated;
+
+
+--
+-- Name: TABLE trip_crowns; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.trip_crowns TO service_role;
+GRANT SELECT ON TABLE public.trip_crowns TO authenticated;
 
 
 --

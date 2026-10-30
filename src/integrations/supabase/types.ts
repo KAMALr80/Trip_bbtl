@@ -2849,6 +2849,127 @@ export type Database = {
         };
         Relationships: [];
       };
+      live_award_votes: {
+        Row: {
+          award: string;
+          created_at: string;
+          nominee_id: string;
+          session_id: string;
+          voter_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          award: string;
+          created_at?: string;
+          nominee_id: string;
+          session_id: string;
+          voter_id: string;
+        };
+        Update: {
+          award?: string;
+          created_at?: string;
+          nominee_id?: string;
+          session_id?: string;
+          voter_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "live_award_votes_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "live_sessions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      live_presents: {
+        Row: {
+          created_at: string;
+          presenter_id: string;
+          session_id: string;
+          voter_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          presenter_id: string;
+          session_id: string;
+          voter_id: string;
+        };
+        Update: {
+          created_at?: string;
+          presenter_id?: string;
+          session_id?: string;
+          voter_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "live_presents_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "live_sessions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      live_sessions: {
+        Row: {
+          auto_close_at: string;
+          call_night_id: string | null;
+          closed_at: string | null;
+          closed_by: string | null;
+          id: string;
+          is_crowning: boolean;
+          opened_at: string;
+          opened_by: string | null;
+          season: string;
+          status: string;
+          trip_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          auto_close_at: string;
+          call_night_id?: string | null;
+          closed_at?: string | null;
+          closed_by?: string | null;
+          id?: string;
+          is_crowning?: boolean;
+          opened_at?: string;
+          opened_by?: string | null;
+          season: string;
+          status?: string;
+          trip_id: string;
+        };
+        Update: {
+          auto_close_at?: string;
+          call_night_id?: string | null;
+          closed_at?: string | null;
+          closed_by?: string | null;
+          id?: string;
+          is_crowning?: boolean;
+          opened_at?: string;
+          opened_by?: string | null;
+          season?: string;
+          status?: string;
+          trip_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "live_sessions_call_night_id_fkey";
+            columns: ["call_night_id"];
+            isOneToOne: false;
+            referencedRelation: "call_nights";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "live_sessions_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       live_vote_ballots: {
         Row: {
           created_at: string;
@@ -4696,6 +4817,72 @@ export type Database = {
           },
         ];
       };
+      trip_crownings: {
+        Row: {
+          decided_at: string;
+          how: string;
+          season: string;
+          trip_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          decided_at?: string;
+          how: string;
+          season: string;
+          trip_id: string;
+        };
+        Update: {
+          decided_at?: string;
+          how?: string;
+          season?: string;
+          trip_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "trip_crownings_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      trip_crowns: {
+        Row: {
+          crowned_at: string;
+          points: number;
+          season: string;
+          solo_goal: number | null;
+          trip_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          crowned_at?: string;
+          points: number;
+          season: string;
+          solo_goal?: number | null;
+          trip_id: string;
+          user_id: string;
+        };
+        Update: {
+          crowned_at?: string;
+          points?: number;
+          season?: string;
+          solo_goal?: number | null;
+          trip_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "trip_crowns_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       trip_day_games: {
         Row: {
           airport: NonNullable<Json>;
@@ -6280,6 +6467,7 @@ export type Database = {
         Returns: undefined;
       };
       clear_song_discs: { Args: { p_trip: string }; Returns: undefined };
+      close_live: { Args: { p_session: string }; Returns: undefined };
       close_live_vote: { Args: { p_vote: string }; Returns: undefined };
       confirm_cost_payment: {
         Args: { p_item: string; p_paid_cents: number; p_user: string };
@@ -6767,6 +6955,21 @@ export type Database = {
           email: string;
         }[];
       };
+      live_present: { Args: { p_presenter: string; p_session: string }; Returns: boolean };
+      live_state: {
+        Args: { p_session: string };
+        Returns: {
+          i_tapped: boolean;
+          my_awards: string[];
+          thumbs: number;
+          user_id: string;
+          won_awards: string[];
+        }[];
+      };
+      live_vote_award: {
+        Args: { p_award: string; p_nominee: string; p_session: string };
+        Returns: undefined;
+      };
       log_ai_call: {
         Args: { p_cost: number; p_in: number; p_model: string; p_out: number; p_usage: string };
         Returns: undefined;
@@ -6936,6 +7139,10 @@ export type Database = {
         Returns: Json;
       };
       normalize_game_name: { Args: { p: string }; Returns: string };
+      open_live: {
+        Args: { p_call_night?: string; p_crowning?: boolean; p_trip: string };
+        Returns: string;
+      };
       order_quote: {
         Args: { p_trip: string };
         Returns: {
@@ -7094,6 +7301,7 @@ export type Database = {
         | { Args: { p_usage: string; p_user: string }; Returns: boolean };
       release_trip_day: { Args: { p_date: string; p_trip: string }; Returns: undefined };
       remove_photo: { Args: { p_path: string; p_trip: string }; Returns: undefined };
+      reopen_live: { Args: { p_session: string }; Returns: undefined };
       report_cost_payment: {
         Args: { p_amount_cents: number; p_item: string; p_note: string };
         Returns: undefined;
@@ -7458,6 +7666,7 @@ export type Database = {
       skip_card: { Args: { p_category: string; p_trip: string }; Returns: number };
       skip_limit: { Args: { p_trip: string }; Returns: number };
       solo_action: { Args: { p?: Json; p_action: string; p_exp: string }; Returns: Json };
+      solo_goal: { Args: { p_season: string; p_trip: string }; Returns: number };
       spend_ai_credits: { Args: { p_action: string; p_trip: string }; Returns: string };
       spin_next_game: {
         Args: { p_trip: string };
