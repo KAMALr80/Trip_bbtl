@@ -350,7 +350,15 @@
     "approved": "Approved",
     "expired": "Nobody checked it in time",
     "selfHonor": "Counted · solo trips self-honor",
-    "error": "That didn't work: {{reason}}"
+    "error": "That didn't work: {{reason}}",
+    "open": "Open it",
+    "opening": "Opening…",
+    "sealedNow": "Sealed · tap to open",
+    "speedHint": "Open within 3 hours of the drop for +5",
+    "share": "Share it with the crew",
+    "keepSecret": "Keep it a surprise",
+    "shared": "Shared with the crew",
+    "crewQuest": "{{name}}'s trip quest"
   },
   "live": {
     "title": "Game Night Live",
@@ -388,5 +396,23 @@
     "place": "{{race}} · #{{rank}} of {{count}}",
     "goal": "Crown goal: {{points}} of {{goal}} pts",
     "nothingYet": "No points yet this season"
+  },
+  "drops": {
+    "title": "Surprise Drop",
+    "games": {
+      "bingo": "Bingo",
+      "scavenger": "Scavenger Hunt",
+      "speed": "Speed Challenge",
+      "photo": "Photo Challenge"
+    },
+    "points": "10–33 pts · ends {{time}}",
+    "square": "Photo for: {{item}}",
+    "sent": "Sent",
+    "approved": "Approved",
+    "proof": "Your photo",
+    "speedDone": "Or say how you finished",
+    "send": "Send",
+    "scored": "Scored after the drop closes and the crew checks the photos.",
+    "error": "That didn't work: {{reason}}"
   }
 }

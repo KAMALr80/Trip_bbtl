@@ -8,6 +8,8 @@ import {
   useApproveProof,
   useCrewCheck,
   useMyProofs,
+  useOpenItem,
+  useShareTripQuest,
   useSubmitProof,
   type CrewProof,
   type Proof,
@@ -27,6 +29,13 @@ const PROOF_KINDS = [
 ] as const;
 type ProofKind = (typeof PROOF_KINDS)[number];
 const isProofKind = (k: string): k is ProofKind => (PROOF_KINDS as readonly string[]).includes(k);
+/** Cards the player taps open before they see the text (M3-05, M3-08). */
+const SEALED_KINDS: readonly string[] = [
+  "sealed_quest",
+  "airport_mission",
+  "home_mission",
+  "trip_quest",
+];
 
 const when = (iso: string) =>
   new Intl.DateTimeFormat(undefined, {
@@ -87,6 +96,8 @@ function QuestCard({
 }) {
   const t = useT();
   const submit = useSubmitProof(trip.id, userId);
+  const reveal = useOpenItem(trip.id);
+  const share = useShareTripQuest(trip.id);
   const [photo, setPhoto] = useState<File | null>(null);
   const [text, setText] = useState("");
   const kind = item.kind as ProofKind;
@@ -96,6 +107,27 @@ function QuestCard({
       <p className="text-xs font-bold uppercase text-muted-foreground">{label}</p>
       {!item.is_open ? (
         <p className="text-sm mt-1">{t("quests.sealed", { time: when(item.opens_at) })}</p>
+      ) : SEALED_KINDS.includes(item.kind) && item.body == null ? (
+        <>
+          <p className="text-sm mt-1">{t("quests.sealedNow")}</p>
+          {item.kind === "sealed_quest" && (
+            <p className="text-xs text-muted-foreground">{t("quests.speedHint")}</p>
+          )}
+          {!viewOnly && (
+            <Button
+              className="mt-3 w-full min-h-11"
+              disabled={reveal.isPending}
+              onClick={() => reveal.mutate(item.id)}
+            >
+              {reveal.isPending ? t("quests.opening") : t("quests.open")}
+            </Button>
+          )}
+          {reveal.error && (
+            <p className="text-xs text-destructive mt-2" role="alert">
+              {t("quests.error", { reason: friendlyError(reveal.error) })}
+            </p>
+          )}
+        </>
       ) : (
         <>
           {item.title && <h3 className="font-display text-lg font-extrabold mt-1">{item.title}</h3>}
@@ -103,6 +135,18 @@ function QuestCard({
           {item.insight && <p className="text-xs text-muted-foreground mt-1">{item.insight}</p>}
           {item.closes_at && (
             <p className="text-xs mt-2">{t("quests.dueBy", { time: when(item.closes_at) })}</p>
+          )}
+          {item.kind === "trip_quest" && !viewOnly && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2 min-h-11"
+              aria-pressed={share.data ?? false}
+              disabled={share.isPending}
+              onClick={() => share.mutate({ item: item.id, shared: !(share.data ?? false) })}
+            >
+              {share.data ? t("quests.keepSecret") : t("quests.share")}
+            </Button>
           )}
           {proof ? (
             <p className="text-sm font-bold mt-3" role="status">

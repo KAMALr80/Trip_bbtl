@@ -103,3 +103,71 @@ export function useApproveProof(tripId: string) {
     onSettled: () => queryClient.invalidateQueries({ queryKey: proofKeys.crew(tripId) }),
   });
 }
+
+/** Open (reveal) a sealed quest, mission or trip quest (M3-05, M3-08). */
+export function useOpenItem(tripId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (item: string) => {
+      const { data, error } = await rpc("open_item", { p_item: item });
+      if (error) throw error;
+      return data;
+    },
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: scheduleKeys.schedule(tripId) }),
+        queryClient.invalidateQueries({ queryKey: scheduleKeys.standings(tripId) }),
+      ]),
+  });
+}
+
+/** Share my trip quest with the crew, or keep it a surprise (R-344). */
+export function useShareTripQuest(tripId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ item, shared }: { item: string; shared: boolean }) => {
+      const { error } = await rpc("share_trip_quest", { p_item: item, p_shared: shared });
+      if (error) throw error;
+      return shared;
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.schedule(tripId) }),
+  });
+}
+
+/** A Surprise Drop proof: one photo per Bingo square / Scavenger find, or one for Speed / Photo. */
+export function useSubmitDropProof(tripId: string, userId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      item,
+      part,
+      photo,
+      text,
+    }: {
+      item: string;
+      part: number;
+      photo: File | null;
+      text: string;
+    }) => {
+      let path: string | null = null;
+      if (photo) {
+        const small = await compressImage(photo, 1280, 300_000);
+        path = `${tripId}/${userId}/${item}/${part}-${Date.now()}.jpg`;
+        const up = await supabase.storage
+          .from("quest-proofs")
+          .upload(path, small, { contentType: small.type || "image/jpeg" });
+        if (up.error) throw up.error;
+      }
+      const { data, error } = await rpc("submit_drop_proof", {
+        p_item: item,
+        p_part: part,
+        p_photo_path: path,
+        p_body: text.trim() || null,
+      });
+      if (error) throw error;
+      if (data && path) await checkProof({ data: { proofId: data } }).catch(() => null);
+      return data;
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: proofKeys.mine(tripId) }),
+  });
+}

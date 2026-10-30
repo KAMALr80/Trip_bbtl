@@ -35,6 +35,7 @@ import { AtHomePlay, isAtHome } from "@/features/at-home/AtHome";
 import { HomeDayFlow } from "@/features/play/HomeDayFlow";
 import { DailyCard } from "@/features/daily/DailyPlay";
 import { CrewCheck, QuestProofs } from "@/features/quests/QuestProofs";
+import { SurpriseDrop } from "@/features/quests/SurpriseDrop";
 import { GameNightLive } from "@/features/live/GameNightLive";
 import { usePointsBreakdown, useSoloGoal, useStandings } from "@/data/live";
 import { supabase } from "@/integrations/supabase/client";
@@ -929,6 +930,7 @@ function PhasePage(
       {phase === props.current && (
         <>
           <CrewCheck trip={trip} members={members} viewOnly={props.viewOnly} />
+          <SurpriseDrop trip={trip} userId={userId} viewOnly={props.viewOnly} />
           <QuestProofs trip={trip} userId={userId} viewOnly={props.viewOnly} />
         </>
       )}
