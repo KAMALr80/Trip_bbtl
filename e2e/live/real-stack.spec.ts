@@ -7,9 +7,8 @@ const PASSWORD = "tripjunkies-local";
 
 async function signIn(page: Page, handle: string) {
   await page.goto("/");
-  const emailButton = page.getByRole("button", { name: "Sign in with email" });
-  if (await emailButton.isVisible()) await emailButton.click();
-  await page.getByLabel("Email address").fill(`${handle}@tripjunkies.local`);
+  await page.getByRole("button", { name: "Sign in with email" }).click();
+  await page.getByRole("textbox", { name: /email/i }).first().fill(`${handle}@tripjunkies.local`);
   await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "Log in" }).click();
 }
@@ -22,13 +21,12 @@ test("a seeded Captain signs in and opens their trip's Play", async ({ page }) =
   await expect(page.getByRole("heading").first()).toBeVisible();
 });
 
-test("a player with no trip joins Lisbon Crew with its code and waits for approval", async ({
-  page,
-}) => {
-  await signIn(page, "solo");
+test("an invite link survives sign-in, and Join room adds the player", async ({ page }) => {
   await page.goto("/join/LISBONXX");
-  const join = page.getByRole("button", { name: /join/i }).first();
-  await expect(join).toBeVisible();
-  await join.click();
-  await expect(page.getByText(/approv|waiting|pending/i).first()).toBeVisible();
+  await signIn(page, "solo");
+  const invite = page.getByLabel("Trip invitation");
+  await expect(invite.getByText(/Lisbon/).first()).toBeVisible();
+  await invite.getByRole("button", { name: "Join room" }).click();
+  await expect(invite).toBeHidden();
+  await expect(page.getByRole("alert")).toHaveCount(0);
 });
