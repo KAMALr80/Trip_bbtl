@@ -3635,6 +3635,113 @@ export type Database = {
         };
         Relationships: [];
       };
+      proof_votes: {
+        Row: {
+          created_at: string;
+          proof_id: string;
+          voter_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          proof_id: string;
+          voter_id: string;
+        };
+        Update: {
+          created_at?: string;
+          proof_id?: string;
+          voter_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "proof_votes_proof_id_fkey";
+            columns: ["proof_id"];
+            isOneToOne: false;
+            referencedRelation: "proofs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      proofs: {
+        Row: {
+          ai_flags: Json | null;
+          ai_reason: string | null;
+          ai_status: string;
+          approved_at: string | null;
+          approved_by: string | null;
+          body: string | null;
+          created_at: string;
+          crew_status: string;
+          expires_at: string;
+          id: string;
+          part: number;
+          photo_path: string | null;
+          schedule_id: string;
+          source: string;
+          trip_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          ai_flags?: Json | null;
+          ai_reason?: string | null;
+          ai_status?: string;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          body?: string | null;
+          created_at?: string;
+          crew_status?: string;
+          expires_at: string;
+          id?: string;
+          part?: number;
+          photo_path?: string | null;
+          schedule_id: string;
+          source: string;
+          trip_id: string;
+          user_id: string;
+        };
+        Update: {
+          ai_flags?: Json | null;
+          ai_reason?: string | null;
+          ai_status?: string;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          body?: string | null;
+          created_at?: string;
+          crew_status?: string;
+          expires_at?: string;
+          id?: string;
+          part?: number;
+          photo_path?: string | null;
+          schedule_id?: string;
+          source?: string;
+          trip_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "proofs_schedule_id_fkey";
+            columns: ["schedule_id"];
+            isOneToOne: false;
+            referencedRelation: "trip_schedule";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "proofs_source_fkey";
+            columns: ["source"];
+            isOneToOne: false;
+            referencedRelation: "points_rules";
+            referencedColumns: ["source"];
+          },
+          {
+            foreignKeyName: "proofs_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       quest_challenges: {
         Row: {
           challenged_by: string;
@@ -6089,6 +6196,7 @@ export type Database = {
         Args: { p_approve: boolean; p_trip: string; p_user: string };
         Returns: undefined;
       };
+      approve_proof: { Args: { p_proof: string }; Returns: boolean };
       archive_legacy_trips: {
         Args: { p_created_before: string; p_keep: string[]; p_note: string };
         Returns: number;
@@ -6317,6 +6425,21 @@ export type Database = {
           p_vibe: string;
         };
         Returns: string;
+      };
+      crew_check: {
+        Args: { p_trip: string };
+        Returns: {
+          ai_status: string;
+          body: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          kind: string;
+          photo_path: string;
+          schedule_id: string;
+          title: string;
+          user_id: string;
+        }[];
       };
       crown_now: { Args: { p_trip: string }; Returns: undefined };
       culture_a2e_action: {
@@ -6961,6 +7084,10 @@ export type Database = {
         Returns: undefined;
       };
       reclaim_captain: { Args: { p_trip: string }; Returns: undefined };
+      record_proof_check: {
+        Args: { p_flags?: Json; p_proof: string; p_reason: string; p_verdict: string };
+        Returns: undefined;
+      };
       redeem_beta_code: { Args: { p_code: string }; Returns: string };
       refund_failed_ai:
         | { Args: { p_usage: string }; Returns: boolean }
@@ -7348,6 +7475,10 @@ export type Database = {
       submit_checkin: {
         Args: { p_answers: Json; p_context: string; p_key: string; p_trip: string };
         Returns: undefined;
+      };
+      submit_proof: {
+        Args: { p_body?: string; p_item: string; p_photo_path?: string };
+        Returns: string;
       };
       submit_trip_feedback: {
         Args: {

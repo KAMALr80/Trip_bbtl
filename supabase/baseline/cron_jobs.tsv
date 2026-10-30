@@ -1,2 +1,3 @@
 crown-due-seasons	*/15 * * * *	SELECT trip_private.crown_due();
+expire-proofs	*/5 * * * *	SELECT trip_private.expire_proofs();
 purge-expired-trip-photos	17 4 * * *	 SELECT net.http_post( url := e.url, headers := jsonb_build_object( 'Content-Type', 'application/json', 'Authorization', 'Bearer ' || k.key ), body := '{}'::jsonb ) FROM trip_private.cron_endpoints e JOIN trip_private.cron_keys k ON k.name = e.name WHERE e.name = 'purge_photos'; 

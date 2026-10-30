@@ -34,6 +34,7 @@ import { CrewGuide } from "@/features/window-seat/CrewGuide";
 import { AtHomePlay, isAtHome } from "@/features/at-home/AtHome";
 import { HomeDayFlow } from "@/features/play/HomeDayFlow";
 import { DailyCard } from "@/features/daily/DailyPlay";
+import { CrewCheck, QuestProofs } from "@/features/quests/QuestProofs";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { datePhase, noFlight, readOfflineRoster } from "@/lib/play-arrangement";
@@ -908,6 +909,12 @@ function PhasePage(
         <ArrowLeft /> Play
       </Button>
       {phase === props.current && <PhaseNotice trip={trip} viewOnly={props.viewOnly} />}
+      {phase === props.current && (
+        <>
+          <CrewCheck trip={trip} members={members} viewOnly={props.viewOnly} />
+          <QuestProofs trip={trip} userId={userId} viewOnly={props.viewOnly} />
+        </>
+      )}
       <header className="play-phase-art">
         <img src={meta.art} width={1536} height={768} loading="lazy" alt="" />
         <div>
@@ -1205,14 +1212,6 @@ function PhasePage(
               title="Surprise Drops"
               line="Bingo, Scavenger Hunt, Speed or Photo Challenge on random days"
             />
-            {!local && (
-              <ComingCard
-                icon={<Camera />}
-                tone="blue"
-                title="Crew Check"
-                line="One 👍 from the crew approves a photo proof"
-              />
-            )}
             <ComingCard
               icon={<Image />}
               tone="pink"

@@ -252,6 +252,16 @@ CREATE FUNCTION public.approve_member(p_trip uuid, p_user uuid, p_approve boolea
 
 
 --
+-- Name: approve_proof(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.approve_proof(p_proof uuid) RETURNS boolean
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.approve_proof(p_proof) $$;
+
+
+--
 -- Name: archive_legacy_trips(timestamp with time zone, uuid[], text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -643,6 +653,16 @@ CREATE FUNCTION public.create_window_play_mode(p_mode text, p_title text, p_coun
     LANGUAGE sql
     SET search_path TO 'pg_catalog', 'public', 'trip_private'
     AS $$ SELECT trip_private.create_window_play_mode(p_mode,p_title,p_country,p_region,p_city,p_start,p_days,p_vibe,p_types,p_prep) $$;
+
+
+--
+-- Name: crew_check(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.crew_check(p_trip uuid) RETURNS TABLE(id uuid, user_id uuid, schedule_id uuid, kind text, title text, photo_path text, body text, ai_status text, expires_at timestamp with time zone, created_at timestamp with time zone)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.crew_check(p_trip) $$;
 
 
 --
@@ -2025,6 +2045,16 @@ CREATE FUNCTION public.reclaim_captain(p_trip uuid) RETURNS void
 
 
 --
+-- Name: record_proof_check(uuid, text, text, jsonb); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.record_proof_check(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb DEFAULT NULL::jsonb) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.set_proof_ai(p_proof, p_verdict, p_reason, p_flags) $$;
+
+
+--
 -- Name: redeem_beta_code(text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2988,6 +3018,16 @@ CREATE FUNCTION public.submit_checkin(p_trip uuid, p_context text, p_key text, p
 
 
 --
+-- Name: submit_proof(uuid, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.submit_proof(p_item uuid, p_photo_path text DEFAULT NULL::text, p_body text DEFAULT NULL::text) RETURNS uuid
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.submit_proof(p_item, p_photo_path, p_body) $$;
+
+
+--
 -- Name: submit_trip_feedback(uuid, boolean, integer, text, text, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3918,6 +3958,35 @@ BEGIN IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Capta
   PERFORM trip_private.apply_join_baseline(p_trip, p_user);
   INSERT INTO public.beta_access(user_id, source) VALUES (p_user, 'invite') ON CONFLICT DO NOTHING;
  ELSE DELETE FROM public.trip_members WHERE trip_id=p_trip AND user_id=p_user; END IF; END $$;
+
+
+--
+-- Name: approve_proof(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.approve_proof(p_proof uuid) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE p public.proofs; t public.trips;
+BEGIN
+  SELECT * INTO p FROM public.proofs WHERE id = p_proof FOR UPDATE;
+  IF NOT FOUND OR NOT trip_private.is_trip_member(p.trip_id, auth.uid()) THEN RAISE EXCEPTION 'That proof isn''t in your trip'; END IF;
+  IF p.user_id = auth.uid() THEN RAISE EXCEPTION 'You can''t approve your own proof'; END IF;
+  SELECT * INTO t FROM public.trips WHERE id = p.trip_id;
+  IF t.has_minors AND p.photo_path IS NOT NULL AND NOT trip_private.is_leader(p.trip_id) THEN
+    RAISE EXCEPTION 'In this trip the Captain or Co-Captain checks photos';
+  END IF;
+  IF p.crew_status = 'expired' OR (p.crew_status = 'waiting' AND now() >= p.expires_at) THEN
+    RAISE EXCEPTION 'This one ran out of time';
+  END IF;
+  INSERT INTO public.proof_votes (proof_id, voter_id) VALUES (p_proof, auth.uid()) ON CONFLICT DO NOTHING;
+  IF p.crew_status <> 'waiting' THEN RETURN false; END IF;
+  UPDATE public.proofs SET crew_status = 'approved', approved_by = auth.uid(), approved_at = now() WHERE id = p_proof;
+  PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'approved');
+  RETURN true;
+END
+$$;
 
 
 --
@@ -5377,6 +5446,31 @@ $$;
 
 
 --
+-- Name: crew_check(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.crew_check(p_trip uuid) RETURNS TABLE(id uuid, user_id uuid, schedule_id uuid, kind text, title text, photo_path text, body text, ai_status text, expires_at timestamp with time zone, created_at timestamp with time zone)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  RETURN QUERY
+    SELECT p.id, p.user_id, p.schedule_id, s.kind,
+           trip_private.tailor_text(c.title, t),
+           CASE WHEN trip_private.proof_photo_ok(p.id, auth.uid()) THEN p.photo_path END,
+           p.body, p.ai_status, p.expires_at, p.created_at
+    FROM public.proofs p
+    JOIN public.trip_schedule s ON s.id = p.schedule_id
+    JOIN public.trips t ON t.id = p.trip_id
+    LEFT JOIN public.content_items c ON c.id = s.content_item_id
+    WHERE p.trip_id = p_trip AND p.user_id <> auth.uid() AND p.crew_status = 'waiting' AND p.expires_at > now()
+    ORDER BY p.created_at;
+END
+$$;
+
+
+--
 -- Name: crown_due(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -6324,6 +6418,27 @@ IF t.start_date - v_start < 14 THEN
 END IF;
 UPDATE public.weekly_questions SET phase='revealed', revealed_at=now() WHERE trip_id=p_trip AND week_number>=1000 AND revealed_at IS NULL AND drops_at + trip_private.bonus_window(p_trip) <= now();
 END $$;
+
+
+--
+-- Name: expire_proofs(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.expire_proofs() RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE p record; n int := 0;
+BEGIN
+  FOR p IN UPDATE public.proofs SET crew_status = 'expired'
+           WHERE crew_status = 'waiting' AND expires_at <= now()
+           RETURNING trip_id, user_id, source, schedule_id LOOP
+    PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'rejected');
+    n := n + 1;
+  END LOOP;
+  RETURN n;
+END
+$$;
 
 
 --
@@ -9593,6 +9708,42 @@ CREATE FUNCTION trip_private.price(p_key text) RETURNS integer
 
 
 --
+-- Name: proof_kind(text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.proof_kind(p_kind text) RETURNS TABLE(source text, season text)
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO ''
+    AS $$
+  SELECT k.source, k.season FROM (VALUES
+    ('sealed_quest', 'sealed_quest', 'preflight'),
+    ('showcase', 'showcase', 'preflight'),
+    ('airport_mission', 'airport_mission', 'trip_season'),
+    ('home_mission', 'home_mission', 'trip_season'),
+    ('trip_quest', 'trip_quest', 'trip_season'),
+    ('ws_quest', 'ws_quest', 'phase')
+  ) k(kind, source, season) WHERE k.kind = p_kind
+$$;
+
+
+--
+-- Name: proof_photo_ok(uuid, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.proof_photo_ok(p_proof uuid, p_viewer uuid) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.proofs p JOIN public.trips t ON t.id = p.trip_id
+    WHERE p.id = p_proof AND trip_private.is_trip_member(p.trip_id, p_viewer)
+      AND (p.user_id = p_viewer OR p.approved_by = p_viewer OR NOT t.has_minors
+           OR EXISTS (SELECT 1 FROM public.trip_members m WHERE m.trip_id = p.trip_id AND m.user_id = p_viewer
+                      AND m.role IN ('captain', 'co_captain'))))
+$$;
+
+
+--
 -- Name: proof_read_ok(text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -9604,7 +9755,8 @@ CREATE FUNCTION trip_private.proof_read_ok(p_name text) RETURNS boolean
  SELECT 1 FROM public.sealed_quests q WHERE q.id::text=split_part(p_name,'/',3) AND q.trip_id::text=split_part(p_name,'/',1) AND q.user_id::text=split_part(p_name,'/',2)
  AND trip_private.is_trip_member(q.trip_id,auth.uid()) AND (q.user_id=auth.uid() OR trip_private.is_leader(q.trip_id) OR (NOT trip_private.a2c_minor_trip(q.trip_id) AND q.proof_shared AND q.proof_path=p_name)))
  OR EXISTS (SELECT 1 FROM public.trip_season_games g WHERE g.id::text=split_part(p_name,'/',3) AND g.trip_id::text=split_part(p_name,'/',1)
- AND trip_private.is_trip_member(g.trip_id,auth.uid()) AND (split_part(p_name,'/',2)=auth.uid()::text OR trip_private.is_leader(g.trip_id)))) $_$;
+ AND trip_private.is_trip_member(g.trip_id,auth.uid()) AND (split_part(p_name,'/',2)=auth.uid()::text OR trip_private.is_leader(g.trip_id)))
+ OR EXISTS (SELECT 1 FROM public.proofs p WHERE p.photo_path=p_name AND trip_private.proof_photo_ok(p.id, auth.uid()))) $_$;
 
 
 --
@@ -9623,7 +9775,12 @@ CREATE FUNCTION trip_private.proof_upload_ok(p_name text) RETURNS boolean
    AND trip_private.is_trip_member(q.trip_id, auth.uid()))
  OR EXISTS (SELECT 1 FROM public.trip_season_games g
   WHERE g.id::text=split_part(p_name,'/',3) AND g.trip_id::text=split_part(p_name,'/',1) AND split_part(p_name,'/',2)=auth.uid()::text
-   AND trip_private.is_trip_member(g.trip_id, auth.uid()) AND g.day_date=trip_private.trip_today(g.trip_id))) $_$;
+   AND trip_private.is_trip_member(g.trip_id, auth.uid()) AND g.day_date=trip_private.trip_today(g.trip_id))
+ OR EXISTS (SELECT 1 FROM public.trip_schedule s
+  WHERE s.id::text=split_part(p_name,'/',3) AND s.trip_id::text=split_part(p_name,'/',1) AND split_part(p_name,'/',2)=auth.uid()::text
+   AND (s.user_id IS NULL OR s.user_id=auth.uid()) AND (EXISTS (SELECT 1 FROM trip_private.proof_kind(s.kind)) OR s.kind='surprise_drop')
+   AND now() >= s.opens_at AND (s.closes_at IS NULL OR now() < s.closes_at)
+   AND trip_private.is_trip_member(s.trip_id, auth.uid()))) $_$;
 
 
 --
@@ -11522,6 +11679,28 @@ END $$;
 
 
 --
+-- Name: set_proof_ai(uuid, text, text, jsonb); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_proof_ai(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb DEFAULT NULL::jsonb) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE p public.proofs;
+BEGIN
+  IF p_verdict NOT IN ('pass', 'unsure', 'fail', 'error') THEN RAISE EXCEPTION 'Unknown verdict %', p_verdict; END IF;
+  UPDATE public.proofs SET ai_status = p_verdict, ai_reason = left(p_reason, 300), ai_flags = p_flags
+  WHERE id = p_proof RETURNING * INTO p;
+  IF NOT FOUND THEN RETURN; END IF;
+  IF p_verdict = 'pass' AND p.crew_status = 'waiting' THEN
+    UPDATE public.proofs SET crew_status = 'approved', approved_at = now() WHERE id = p_proof;
+    PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'approved');
+  END IF;
+END
+$$;
+
+
+--
 -- Name: set_public_launch(boolean); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -12273,6 +12452,69 @@ BEGIN
   INSERT INTO checkin_responses(user_id, trip_id, context, context_key, answers) VALUES (auth.uid(), p_trip, p_context, p_key, p_answers)
   ON CONFLICT (user_id, trip_id, context, context_key) DO NOTHING;
 END $$;
+
+
+--
+-- Name: submit_proof(uuid, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.submit_proof(p_item uuid, p_photo_path text, p_body text) RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE
+  s public.trip_schedule;
+  t public.trips;
+  k record;
+  v_season text;
+  v_solo boolean;
+  v_id uuid;
+  v_status text;
+BEGIN
+  SELECT * INTO s FROM public.trip_schedule WHERE id = p_item;
+  IF NOT FOUND OR NOT trip_private.is_trip_member(s.trip_id, auth.uid()) OR (s.user_id IS NOT NULL AND s.user_id <> auth.uid()) THEN
+    RAISE EXCEPTION 'That isn''t one of your quests';
+  END IF;
+  SELECT * INTO k FROM trip_private.proof_kind(s.kind);
+  IF NOT FOUND THEN RAISE EXCEPTION 'That card doesn''t take a proof'; END IF;
+  IF now() < s.opens_at THEN RAISE EXCEPTION 'That quest hasn''t opened yet'; END IF;
+  IF s.closes_at IS NOT NULL AND now() >= s.closes_at THEN RAISE EXCEPTION 'The time for this one has run out'; END IF;
+  p_body := nullif(btrim(p_body), '');
+  IF p_photo_path IS NULL AND p_body IS NULL THEN RAISE EXCEPTION 'Add a photo or a few words'; END IF;
+  IF p_body IS NOT NULL AND NOT trip_private.content_text_safe(p_body) THEN RAISE EXCEPTION 'Please reword that'; END IF;
+  IF p_photo_path IS NOT NULL AND (split_part(p_photo_path, '/', 1) <> s.trip_id::text OR split_part(p_photo_path, '/', 2) <> auth.uid()::text
+     OR split_part(p_photo_path, '/', 3) <> s.id::text
+     OR NOT EXISTS (SELECT 1 FROM storage.objects o WHERE o.bucket_id = 'quest-proofs' AND o.name = p_photo_path)) THEN
+    RAISE EXCEPTION 'Upload your photo first';
+  END IF;
+
+  SELECT * INTO t FROM public.trips WHERE id = s.trip_id;
+  v_season := k.season;
+  IF v_season = 'phase' THEN
+    SELECT CASE phase WHEN 'preflight' THEN 'preflight' ELSE 'trip_season' END INTO v_season
+    FROM trip_private.trip_phase(s.trip_id, now());
+  END IF;
+  -- Solo self-honors (R-414); so does a crew of one.
+  v_solo := t.play_mode = 'solo'
+    OR (SELECT count(*) FROM public.trip_members m WHERE m.trip_id = s.trip_id AND m.status = 'approved') < 2;
+
+  SELECT id, crew_status INTO v_id, v_status FROM public.proofs WHERE schedule_id = p_item AND user_id = auth.uid() AND part = 0;
+  IF v_status IN ('approved', 'not_needed') THEN RETURN v_id; END IF;
+  IF v_status = 'expired' THEN RAISE EXCEPTION 'The crew didn''t check this one in time'; END IF;
+  INSERT INTO public.proofs (trip_id, user_id, schedule_id, source, photo_path, body, crew_status, approved_at, expires_at)
+  VALUES (s.trip_id, auth.uid(), p_item, k.source, p_photo_path, p_body,
+          CASE WHEN v_solo THEN 'not_needed' ELSE 'waiting' END, CASE WHEN v_solo THEN now() END, now() + interval '24 hours')
+  ON CONFLICT (schedule_id, user_id, part) DO UPDATE
+    SET photo_path = excluded.photo_path, body = excluded.body, ai_status = 'not_needed', ai_reason = NULL, ai_flags = NULL
+  RETURNING id INTO v_id;
+
+  IF s.points IS NOT NULL THEN
+    PERFORM trip_private.award_points(s.trip_id, auth.uid(), v_season, k.source, s.id, s.points,
+                                      CASE WHEN v_solo THEN 'approved' ELSE 'pending' END, now(), auth.uid());
+  END IF;
+  RETURN v_id;
+END
+$$;
 
 
 --
@@ -14598,6 +14840,48 @@ COMMENT ON COLUMN public.profiles.home_layout IS 'Per-account Home layout prefer
 
 
 --
+-- Name: proof_votes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.proof_votes (
+    proof_id uuid NOT NULL,
+    voter_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: proofs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.proofs (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    trip_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    schedule_id uuid NOT NULL,
+    part integer DEFAULT 0 NOT NULL,
+    source text NOT NULL,
+    photo_path text,
+    body text,
+    ai_status text DEFAULT 'not_needed'::text NOT NULL,
+    ai_reason text,
+    ai_flags jsonb,
+    crew_status text DEFAULT 'waiting'::text NOT NULL,
+    approved_by uuid,
+    approved_at timestamp with time zone,
+    expires_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT proofs_ai_reason_check CHECK ((length(ai_reason) <= 300)),
+    CONSTRAINT proofs_ai_status_check CHECK ((ai_status = ANY (ARRAY['not_needed'::text, 'pending'::text, 'pass'::text, 'unsure'::text, 'fail'::text, 'error'::text]))),
+    CONSTRAINT proofs_body_check CHECK ((length(body) <= 500)),
+    CONSTRAINT proofs_check CHECK (((photo_path IS NOT NULL) OR (body IS NOT NULL))),
+    CONSTRAINT proofs_crew_status_check CHECK ((crew_status = ANY (ARRAY['not_needed'::text, 'waiting'::text, 'approved'::text, 'expired'::text]))),
+    CONSTRAINT proofs_part_check CHECK (((part >= 0) AND (part <= 15))),
+    CONSTRAINT proofs_photo_path_check CHECK (((photo_path IS NULL) OR (length(photo_path) <= 300)))
+);
+
+
+--
 -- Name: quest_challenges; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -16544,6 +16828,30 @@ ALTER TABLE ONLY public.profiles
 
 
 --
+-- Name: proof_votes proof_votes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.proof_votes
+    ADD CONSTRAINT proof_votes_pkey PRIMARY KEY (proof_id, voter_id);
+
+
+--
+-- Name: proofs proofs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.proofs
+    ADD CONSTRAINT proofs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: proofs proofs_schedule_id_user_id_part_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.proofs
+    ADD CONSTRAINT proofs_schedule_id_user_id_part_key UNIQUE (schedule_id, user_id, part);
+
+
+--
 -- Name: quest_challenges quest_challenges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17297,6 +17605,13 @@ CREATE UNIQUE INDEX player_profiles_game_name_norm_uq ON public.player_profiles 
 --
 
 CREATE INDEX points_ledger_standings_idx ON public.points_ledger USING btree (trip_id, season, user_id) WHERE (status = 'approved'::text);
+
+
+--
+-- Name: proofs_waiting_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX proofs_waiting_idx ON public.proofs USING btree (trip_id, expires_at) WHERE (crew_status = 'waiting'::text);
 
 
 --
@@ -18123,6 +18438,13 @@ CREATE TRIGGER price_rules_updated BEFORE UPDATE ON public.price_rules FOR EACH 
 --
 
 CREATE TRIGGER profiles_founding_signup AFTER INSERT ON public.profiles FOR EACH ROW EXECUTE FUNCTION trip_private.founding_signup_trg();
+
+
+--
+-- Name: proofs proofs_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER proofs_archive_guard BEFORE INSERT OR UPDATE ON public.proofs FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -19424,6 +19746,38 @@ ALTER TABLE ONLY public.preview_hidden
 
 ALTER TABLE ONLY public.profiles
     ADD CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: proof_votes proof_votes_proof_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.proof_votes
+    ADD CONSTRAINT proof_votes_proof_id_fkey FOREIGN KEY (proof_id) REFERENCES public.proofs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: proofs proofs_schedule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.proofs
+    ADD CONSTRAINT proofs_schedule_id_fkey FOREIGN KEY (schedule_id) REFERENCES public.trip_schedule(id) ON DELETE CASCADE;
+
+
+--
+-- Name: proofs proofs_source_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.proofs
+    ADD CONSTRAINT proofs_source_fkey FOREIGN KEY (source) REFERENCES public.points_rules(source);
+
+
+--
+-- Name: proofs proofs_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.proofs
+    ADD CONSTRAINT proofs_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
 
 
 --
@@ -21520,6 +21874,13 @@ CREATE POLICY "players read their own points" ON public.points_ledger FOR SELECT
 
 
 --
+-- Name: proofs players read their own proofs; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own proofs" ON public.proofs FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
 -- Name: points_ledger; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -21563,6 +21924,18 @@ CREATE POLICY "private days" ON public.culture_exp_days FOR SELECT TO authentica
 --
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: proof_votes; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.proof_votes ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: proofs; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.proofs ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: culture_quest_answers quest_answers_own; Type: POLICY; Schema: public; Owner: -
@@ -22160,6 +22533,15 @@ GRANT ALL ON FUNCTION public.approve_member(p_trip uuid, p_user uuid, p_approve 
 
 
 --
+-- Name: FUNCTION approve_proof(p_proof uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.approve_proof(p_proof uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.approve_proof(p_proof uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.approve_proof(p_proof uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -22494,6 +22876,15 @@ GRANT ALL ON FUNCTION public.create_trip_v2(p_setup jsonb) TO service_role;
 REVOKE ALL ON FUNCTION public.create_window_play_mode(p_mode text, p_title text, p_country text, p_region text, p_city text, p_start date, p_days integer, p_vibe text, p_types text[], p_prep integer) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.create_window_play_mode(p_mode text, p_title text, p_country text, p_region text, p_city text, p_start date, p_days integer, p_vibe text, p_types text[], p_prep integer) TO authenticated;
 GRANT ALL ON FUNCTION public.create_window_play_mode(p_mode text, p_title text, p_country text, p_region text, p_city text, p_start date, p_days integer, p_vibe text, p_types text[], p_prep integer) TO service_role;
+
+
+--
+-- Name: FUNCTION crew_check(p_trip uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.crew_check(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.crew_check(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.crew_check(p_trip uuid) TO service_role;
 
 
 --
@@ -23630,6 +24021,14 @@ GRANT ALL ON FUNCTION public.reclaim_captain(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION record_proof_check(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.record_proof_check(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.record_proof_check(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb) TO service_role;
+
+
+--
 -- Name: FUNCTION redeem_beta_code(p_code text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -24455,6 +24854,15 @@ GRANT ALL ON FUNCTION public.submit_checkin(p_trip uuid, p_context text, p_key t
 
 
 --
+-- Name: FUNCTION submit_proof(p_item uuid, p_photo_path text, p_body text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.submit_proof(p_item uuid, p_photo_path text, p_body text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.submit_proof(p_item uuid, p_photo_path text, p_body text) TO authenticated;
+GRANT ALL ON FUNCTION public.submit_proof(p_item uuid, p_photo_path text, p_body text) TO service_role;
+
+
+--
 -- Name: FUNCTION submit_trip_feedback(p_trip uuid, p_skipped boolean, p_score integer, p_favorite text, p_change text, p_message text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -25009,6 +25417,15 @@ GRANT ALL ON FUNCTION trip_private.approve_member(p_trip uuid, p_user uuid, p_ap
 
 
 --
+-- Name: FUNCTION approve_proof(p_proof uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.approve_proof(p_proof uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.approve_proof(p_proof uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.approve_proof(p_proof uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -25547,6 +25964,15 @@ GRANT ALL ON FUNCTION trip_private.credits_included(p_trip uuid) TO authenticate
 
 
 --
+-- Name: FUNCTION crew_check(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.crew_check(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.crew_check(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.crew_check(p_trip uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION crown_due(); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -25859,6 +26285,14 @@ GRANT ALL ON FUNCTION trip_private.ensure_season_quests(p_trip uuid, p_user uuid
 
 REVOKE ALL ON FUNCTION trip_private.ensure_weekly_questions(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.ensure_weekly_questions(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION expire_proofs(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.expire_proofs() FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.expire_proofs() TO service_role;
 
 
 --
@@ -27040,6 +27474,15 @@ GRANT ALL ON FUNCTION trip_private.price(p_key text) TO service_role;
 
 
 --
+-- Name: FUNCTION proof_photo_ok(p_proof uuid, p_viewer uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.proof_photo_ok(p_proof uuid, p_viewer uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.proof_photo_ok(p_proof uuid, p_viewer uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.proof_photo_ok(p_proof uuid, p_viewer uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION proof_read_ok(p_name text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -27877,6 +28320,14 @@ GRANT ALL ON FUNCTION trip_private.set_preflight_a2c(p_trip uuid, p_start date, 
 
 
 --
+-- Name: FUNCTION set_proof_ai(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_proof_ai(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_proof_ai(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb) TO service_role;
+
+
+--
 -- Name: FUNCTION set_public_launch(p_on boolean); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -28208,6 +28659,15 @@ GRANT ALL ON FUNCTION trip_private.step_down(p_trip uuid, p_to uuid) TO service_
 REVOKE ALL ON FUNCTION trip_private.submit_checkin(p_trip uuid, p_context text, p_key text, p_answers jsonb) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.submit_checkin(p_trip uuid, p_context text, p_key text, p_answers jsonb) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.submit_checkin(p_trip uuid, p_context text, p_key text, p_answers jsonb) TO service_role;
+
+
+--
+-- Name: FUNCTION submit_proof(p_item uuid, p_photo_path text, p_body text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.submit_proof(p_item uuid, p_photo_path text, p_body text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.submit_proof(p_item uuid, p_photo_path text, p_body text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.submit_proof(p_item uuid, p_photo_path text, p_body text) TO service_role;
 
 
 --
@@ -29546,6 +30006,21 @@ GRANT ALL ON TABLE public.price_rules TO service_role;
 GRANT ALL ON TABLE public.profiles TO anon;
 GRANT ALL ON TABLE public.profiles TO authenticated;
 GRANT ALL ON TABLE public.profiles TO service_role;
+
+
+--
+-- Name: TABLE proof_votes; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.proof_votes TO service_role;
+
+
+--
+-- Name: TABLE proofs; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.proofs TO service_role;
+GRANT SELECT ON TABLE public.proofs TO authenticated;
 
 
 --

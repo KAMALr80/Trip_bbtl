@@ -312,5 +312,44 @@
     "played": "Played today · a new one tomorrow",
     "viewOnly": "Players answer this one",
     "error": "That didn't work: {{reason}}"
+  },
+  "crewCheck": {
+    "title": "Crew Check",
+    "toCheck_one": "{{count}} to check",
+    "toCheck_other": "{{count}} to check",
+    "intro": "One 👍 from anyone else approves a proof. No 👍 in 24 hours and it doesn't count.",
+    "approve": "👍 Approve",
+    "approveLabel": "Approve {{name}}'s proof",
+    "by": "{{name}} · {{what}}",
+    "needsBy": "Needs a 👍 by {{time}}",
+    "photoHidden": "In this trip the Captain and Co-Captain check photos.",
+    "aiFlag": "Flagged for a closer look",
+    "photoAlt": "{{name}}'s proof photo",
+    "error": "That didn't work: {{reason}}",
+    "someone": "A crewmate"
+  },
+  "quests": {
+    "title": "Your quests",
+    "kinds": {
+      "sealed_quest": "Sealed quest",
+      "showcase": "Showcase",
+      "airport_mission": "Airport Mission",
+      "home_mission": "Home Mission",
+      "trip_quest": "Trip quest",
+      "ws_quest": "Today's quest"
+    },
+    "sealed": "Sealed · opens {{time}}",
+    "dueBy": "Due by {{time}}",
+    "points_one": "{{count}} pt",
+    "points_other": "{{count}} pts",
+    "photo": "Add a photo",
+    "words": "Or a few words",
+    "send": "Send proof",
+    "sending": "Sending…",
+    "waiting": "Sent · waiting for a 👍 from the crew",
+    "approved": "Approved",
+    "expired": "Nobody checked it in time",
+    "selfHonor": "Counted · solo trips self-honor",
+    "error": "That didn't work: {{reason}}"
   }
 }
