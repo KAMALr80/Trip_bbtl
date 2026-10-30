@@ -29,6 +29,8 @@ test("a seeded Captain signs in and opens their trip's Play", async ({ page }) =
 
 test("an invite link survives sign-in, and Join room adds the player", async ({ page }) => {
   await page.goto("/join/LISBONXX");
+  // The link saves the code in the browser, then moves to sign-in.
+  await expect(page).toHaveURL(/localhost:8080\/$/);
   await signIn(page, "solo");
   const invite = page.getByLabel("Trip invitation");
   await expect(invite.getByText(/Lisbon/).first()).toBeVisible();
