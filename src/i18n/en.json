@@ -395,7 +395,26 @@
     },
     "place": "{{race}} · #{{rank}} of {{count}}",
     "goal": "Crown goal: {{points}} of {{goal}} pts",
-    "nothingYet": "No points yet this season"
+    "nothingYet": "No points yet this season",
+    "title": "Standings",
+    "seasonTitle": {
+      "preflight": "Pre-Flight · Early Bird crown",
+      "trip_season": "Trip Season · Jet Setter crown"
+    },
+    "crown": {
+      "preflight": "Early Bird",
+      "trip_season": "Jet Setter"
+    },
+    "notYet": "Not crowned yet",
+    "noCrown": "No crown this season",
+    "points": "Points",
+    "placeLabel": "Place",
+    "crowns": "Crowns",
+    "pts": "{{count}} pts",
+    "empty": "Points appear here as the crew plays.",
+    "openCard": "Open {{name}}'s player card",
+    "journey": "Your journey · two crowns",
+    "journeyLine": "{{season}} · {{points}} pts · #{{rank}} of {{count}}"
   },
   "drops": {
     "title": "Surprise Drop",
@@ -414,5 +433,22 @@
     "send": "Send",
     "scored": "Scored after the drop closes and the crew checks the photos.",
     "error": "That didn't work: {{reason}}"
+  },
+  "journey": {
+    "eyebrow": "YOUR JOURNEY · TWO SEPARATE CROWNS",
+    "line": "{{emoji}} {{season}} · {{points}} pts · {{place}}",
+    "place": "#{{rank}} of {{count}}",
+    "noPlace": "no points yet",
+    "dialog": "Your Journey phases",
+    "close": "Close",
+    "title": "Two seasons, two crowns",
+    "intro": "Points only count inside this trip. Each season has its own crown, decided by the most points; ties go to more Showcase points, then whoever got there first.",
+    "earlyBird": "✈️ Early Bird · Pre-Flight",
+    "earlyBirdLine": "Daily Cards, sealed quests, Showcase and call nights before you go.",
+    "jetSetter": "🌴 Jet Setter · Trip Season",
+    "jetSetterLine": "Airport Missions, Surprise Drops, your trip quest and the crowning night.",
+    "leading": "Leading: {{name}}",
+    "nobody": "Nobody yet",
+    "go": "Let's go"
   }
 }

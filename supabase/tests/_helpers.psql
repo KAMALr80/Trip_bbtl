@@ -107,4 +107,11 @@ SECURITY DEFINER SET search_path = public AS $$
   SELECT join_code FROM public.trips WHERE id = p_trip
 $$;
 
+-- Airport Missions' older function, whose public wrapper M3-16 retired; same defaults as that wrapper.
+CREATE OR REPLACE FUNCTION tests.mission_action(p_trip uuid, p_action text, p_slot int DEFAULT NULL, p_claim uuid DEFAULT NULL,
+                                               p_layover boolean DEFAULT false, p_phase text DEFAULT 'takeoff')
+RETURNS uuid LANGUAGE sql AS $$
+  SELECT trip_private.mission_action(p_trip, p_action, p_slot, p_claim, p_layover, p_phase)
+$$;
+
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA tests TO PUBLIC;

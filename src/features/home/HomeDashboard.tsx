@@ -41,6 +41,7 @@ import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
 import { useT } from "@/i18n";
 import { DailyDiscovery } from "@/features/daily/DailyPlay";
+import { useMySchedule } from "@/data/daily";
 
 export type HomeScreen =
   "dashboard" | "trip" | "trips" | "passport" | "inspiration" | "window" | "journey" | "arcade";
@@ -121,22 +122,17 @@ function useHomeLayout(userId: string) {
   return layout;
 }
 
+/** A sealed card of mine has dropped and is waiting to be opened (M3-05, M3-08). */
 function useSealedQuestWaiting(tripId: string | undefined) {
-  const [waiting, setWaiting] = useState(false);
-  useEffect(() => {
-    if (!tripId) {
-      setWaiting(false);
-      return;
-    }
-    let live = true;
-    void rpc("sealed_quest_state", { p_trip: tripId }).then(({ data }) => {
-      if (live) setWaiting((data ?? []).some((quest) => quest.state === "sealed"));
-    });
-    return () => {
-      live = false;
-    };
-  }, [tripId]);
-  return waiting;
+  const schedule = useMySchedule(tripId).data ?? [];
+  return schedule.some(
+    (i) =>
+      ["sealed_quest", "airport_mission", "home_mission", "trip_quest"].includes(i.kind) &&
+      i.user_id != null &&
+      i.is_open &&
+      i.body == null &&
+      (!i.closes_at || Date.parse(i.closes_at) > Date.now()),
+  );
 }
 
 function boardCountdown(milliseconds: number) {

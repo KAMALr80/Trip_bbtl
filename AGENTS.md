@@ -6,7 +6,7 @@ When a rule here conflicts with the deck spec ([`dev-docs/02-game-rules-spec.md`
 the deck wins and this list is updated. More rules: `src/AGENTS.md`, `src/features/AGENTS.md`,
 `supabase/AGENTS.md`. Index: [`docs/decisions/`](docs/decisions/README.md).
 
-- Season prizes are read only through season_info (hidden until crowning); champions are locked in server-side by finalize_season so they can't be forged.
+- Season prizes are read only through season_info (hidden until crowning); crowns are decided server-side by trip_private.crown_season into trip_crowns (M3-11) so they can't be forged.
 - Photo wall unions existing game-photo tables via trip_photos; Captain deletes hide photos via photo_removed rather than deleting game rows.
 
 - The app shell is the pathless `_shell` layout route: tabs are URLs (`/home`, `/me`; `/` is Home; Home · Play · Trip · Me per Q6, crew list inside Trip) and sub-screens are search params (`src/features/app-shell/nav.ts`). Play and Trip name the trip (`/t/$tripId/play`, `/t/$tripId/trip`); plain `/play` and `/trip` open the current trip. Sign-in, onboarding and invites still start at `/`, and invite links return there.
@@ -32,7 +32,7 @@ the deck wins and this list is updated. More rules: `src/AGENTS.md`, `src/featur
 - Display viewer time zone (`profiles.time_zone`) with trip zone second; server rules ignore viewer zone.
 
 - Preserve invite codes across auth (24h); pin Join room on Home and call `join_trip` only on tap.
-- Season scores use game_board/scoreOf: clamp(round(100×stamps/max) − penalties,0,100); raw stamps stay internal. season_scoring=false excludes trips from external competitive boards, crowns and Captain badges; At Home/Travel From Home and Window Seat still earn separate server-calculated Junkie Rank points, never the Passport Junkie 👑 badge (5 international real-trip stamps).
+- Points live only in points_ledger (M3-01): raw points per season, written by trip_private.award_points, read through trip_standings; the older /100 scores (game_board, season_points, trip_season_score, finalize_season) were retired in M3-16. season_scoring=false excludes trips from external competitive boards, crowns and Captain badges; At Home/Travel From Home and Window Seat still earn separate server-calculated Junkie Rank points, never the Passport Junkie 👑 badge (5 international real-trip stamps).
 - At Home branches on trips.kind; sing-off winners are per activity, and TripSectionIcon reserves flags for places. Reuse member-scoped Trip pot components and feature gate across trip types so cost display cannot fork payment rules.
 - Trip deletion uses Captain auth, logged DB cascade and scoped storage cleanup so members receive a notice.
 - Travel From Home and Window Seat cards belong to a trip with creator/Team up writes and emoji reactions; Culture Quest keeps answer keys and scoring in identity-checked private functions, grants full stories and culture stamps only after completion, and keeps unrevealed content hidden on all reads and writes.

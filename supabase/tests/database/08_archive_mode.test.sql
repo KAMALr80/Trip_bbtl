@@ -61,9 +61,9 @@ SELECT is((SELECT rules_version FROM public.trips WHERE id = (SELECT old_trip FR
           'members can still read an archived trip and see that it is archived');
 SELECT is((SELECT count(*)::int FROM public.trip_members WHERE trip_id = (SELECT old_trip FROM f)), 3,
           'members can still see the crew');
-SELECT throws_like($$SELECT public.mission_action((SELECT old_trip FROM f), 'reveal', 1)$$, 'TRIP_ARCHIVED:%',
+SELECT throws_like($$SELECT tests.mission_action((SELECT old_trip FROM f), 'reveal', 1)$$, 'TRIP_ARCHIVED:%',
                    'no Airport Mission can be revealed on an archived trip');
-SELECT lives_ok($$SELECT public.mission_action((SELECT kept_trip FROM f), 'reveal', 1)$$,
+SELECT lives_ok($$SELECT tests.mission_action((SELECT kept_trip FROM f), 'reveal', 1)$$,
                 'the kept trip still plays');
 
 SELECT tests.authenticate_as(tests.user_id('newbie'));

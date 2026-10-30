@@ -4,7 +4,7 @@ import { ShortList } from "@/components/ShortList";
 
 import { Button } from "@/components/ui/button";
 
-import { SquadSeasons, useBadges } from "@/features/points/Seasons";
+import { CrewStandings } from "@/features/points/CrewStandings";
 import { type TripWithRole, type Member } from "@/lib/trips";
 import { Avatar, AvatarButton, RoleStamp } from "@/features/players/PlayerCards";
 import { type PlayerWithAvatar } from "@/lib/player-cards";
@@ -29,7 +29,6 @@ export function SquadView({
   open: (value: string) => void;
   viewOnly?: boolean;
 }) {
-  const { data, season } = useBadges(trip, members);
   const mine = cards.find((c) => c.user_id === userId);
   const membership = members.find((m) => m.user_id === userId);
   return (
@@ -77,13 +76,11 @@ export function SquadView({
           </p>
         </div>
       </div>
-      <SquadSeasons
+      <CrewStandings
         trip={trip}
         members={members}
         cards={cards}
         userId={userId}
-        data={data}
-        season={season}
         onMember={onMember}
       />
       <h2 className="mt-6 font-display text-xl font-extrabold">Squad players</h2>

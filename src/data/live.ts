@@ -32,6 +32,7 @@ export function useLiveSession(tripId: string) {
       return data?.[0] ?? null;
     },
     refetchInterval: 15_000,
+    enabled: !!tripId,
   });
 }
 
@@ -120,6 +121,7 @@ export function useStandings(tripId: string, season: "preflight" | "trip_season"
       return data ?? [];
     },
     staleTime: 15_000,
+    refetchInterval: 20_000,
   });
 }
 

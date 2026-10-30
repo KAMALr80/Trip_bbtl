@@ -3,7 +3,6 @@ import { tripDisplayName } from "@/lib/trip-display-name";
 import { confirmInApp } from "@/lib/confirm";
 import { friendlyError } from "@/lib/friendly-error";
 import setupIcon from "@/assets/icon-suitcase.webp";
-import nightsIcon from "@/assets/icon-boarding-pass.webp";
 import prizesIcon from "@/assets/icon-trophy.webp";
 import detailsIcon from "@/assets/icon-map.webp";
 import membersIcon from "@/assets/icon-passport.webp";
@@ -28,9 +27,6 @@ import { permanentlyDeleteTrip } from "@/lib/delete-trip.functions";
 import { ShortList } from "@/components/ShortList";
 import { AvatarButton } from "@/features/players/PlayerCards";
 import { CaptainCrown } from "@/components/CaptainCrown";
-
-import { SealedQuests } from "@/features/quests/SealedQuests";
-import { PendingMissions } from "@/features/missions/AirportMissions";
 
 type Props = {
   trip: TripWithRole;
@@ -267,39 +263,33 @@ export function CaptainTools({
         </h1>
         <PhaseTiles trip={trip} onUpdated={onUpdated} />
         <div className="grid grid-cols-2 gap-3 mt-5">
-          {[
-            "Setup & access",
-            "Sealed quests",
-            "Prizes & crowning",
-            "Trip details",
-            "Members & hand-off",
-          ].map((s) => (
-            <Button
-              key={s}
-              variant="outline"
-              className="home-bubble min-h-28 h-auto whitespace-normal font-display font-bold"
-              onClick={() => setSection(s)}
-            >
-              <img
-                src={
-                  (
-                    {
-                      "Setup & access": setupIcon,
-                      "Sealed quests": nightsIcon,
-                      "Prizes & crowning": prizesIcon,
-                      "Trip details": detailsIcon,
-                      "Members & hand-off": membersIcon,
-                    } as Record<string, string>
-                  )[s]
-                }
-                className="size-10 mb-2 object-contain"
-                alt=""
-              />
-              {s}
-            </Button>
-          ))}
+          {["Setup & access", "Prizes & crowning", "Trip details", "Members & hand-off"].map(
+            (s) => (
+              <Button
+                key={s}
+                variant="outline"
+                className="home-bubble min-h-28 h-auto whitespace-normal font-display font-bold"
+                onClick={() => setSection(s)}
+              >
+                <img
+                  src={
+                    (
+                      {
+                        "Setup & access": setupIcon,
+                        "Prizes & crowning": prizesIcon,
+                        "Trip details": detailsIcon,
+                        "Members & hand-off": membersIcon,
+                      } as Record<string, string>
+                    )[s]
+                  }
+                  className="size-10 mb-2 object-contain"
+                  alt=""
+                />
+                {s}
+              </Button>
+            ),
+          )}
         </div>
-        <PendingMissions trip={trip} members={members} cards={cards} userId={userId} />
         {captain ? (
           <Button
             variant="ghost"
@@ -384,16 +374,6 @@ export function CaptainTools({
             </RememberedSection>
           )}
         </>
-      )}
-      {show("Sealed quests") && (
-        <SealedQuests
-          trip={trip}
-          members={members}
-          cards={cards}
-          userId={userId}
-          viewOnly={false}
-          proofOnly
-        />
       )}
       {show("Prizes & crowning") && (
         <>

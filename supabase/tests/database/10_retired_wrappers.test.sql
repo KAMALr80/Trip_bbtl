@@ -28,7 +28,7 @@ SELECT throws_ok($$SELECT public.spin_next_game((SELECT trip FROM f))$$, '42501'
                  'or spin the old game wheel');
 SELECT tests.authenticate_as(tests.user_id('p1'));
 SELECT throws_ok($$SELECT * FROM public.game_rooms()$$, '42501', NULL, 'a player can''t list public Game Rooms');
-SELECT lives_ok($$SELECT public.mission_action((SELECT trip FROM f), 'reveal', 1)$$, 'Airport Missions still work');
+SELECT lives_ok($$SELECT * FROM public.trip_standings((SELECT trip FROM f), 'preflight')$$, 'the new engine still works');
 SELECT ok(public.is_trip_member((SELECT trip FROM f), tests.user_id('p1')), 'shared helpers still work');
 SELECT tests.clear_authentication();
 

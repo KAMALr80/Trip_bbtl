@@ -23229,8 +23229,7 @@ GRANT USAGE ON SCHEMA trip_private TO supabase_auth_admin;
 -- Name: FUNCTION a2c_quest_insights(p_trip uuid); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.a2c_quest_insights(p_trip uuid) TO anon;
-GRANT ALL ON FUNCTION public.a2c_quest_insights(p_trip uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.a2c_quest_insights(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.a2c_quest_insights(p_trip uuid) TO service_role;
 
 
@@ -24004,7 +24003,6 @@ GRANT ALL ON FUNCTION public.extend_draw_timer(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.finalize_season(p_trip uuid, p_season text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.finalize_season(p_trip uuid, p_season text) TO authenticated;
 GRANT ALL ON FUNCTION public.finalize_season(p_trip uuid, p_season text) TO service_role;
 
 
@@ -24085,7 +24083,6 @@ GRANT ALL ON FUNCTION public.founding_member(p_user uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.game_board(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.game_board(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.game_board(p_trip uuid) TO service_role;
 
 
@@ -24479,7 +24476,6 @@ GRANT ALL ON FUNCTION public.member_stamp_badges(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.mission_action(p_trip uuid, p_action text, p_slot integer, p_claim uuid, p_layover boolean, p_phase text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.mission_action(p_trip uuid, p_action text, p_slot integer, p_claim uuid, p_layover boolean, p_phase text) TO authenticated;
 GRANT ALL ON FUNCTION public.mission_action(p_trip uuid, p_action text, p_slot integer, p_claim uuid, p_layover boolean, p_phase text) TO service_role;
 
 
@@ -24488,7 +24484,6 @@ GRANT ALL ON FUNCTION public.mission_action(p_trip uuid, p_action text, p_slot i
 --
 
 REVOKE ALL ON FUNCTION public.mission_bonus(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.mission_bonus(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.mission_bonus(p_trip uuid) TO service_role;
 
 
@@ -24497,7 +24492,6 @@ GRANT ALL ON FUNCTION public.mission_bonus(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.mission_window(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.mission_window(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.mission_window(p_trip uuid) TO service_role;
 
 
@@ -25164,7 +25158,6 @@ GRANT ALL ON FUNCTION public.save_trip_draft(p_data jsonb) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.sealed_proof_feed(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.sealed_proof_feed(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.sealed_proof_feed(p_trip uuid) TO service_role;
 
 
@@ -25173,7 +25166,6 @@ GRANT ALL ON FUNCTION public.sealed_proof_feed(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.sealed_quest_action(p_quest uuid, p_action text, p_mode text, p_path text, p_shared boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.sealed_quest_action(p_quest uuid, p_action text, p_mode text, p_path text, p_shared boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.sealed_quest_action(p_quest uuid, p_action text, p_mode text, p_path text, p_shared boolean) TO service_role;
 
 
@@ -25182,7 +25174,6 @@ GRANT ALL ON FUNCTION public.sealed_quest_action(p_quest uuid, p_action text, p_
 --
 
 REVOKE ALL ON FUNCTION public.sealed_quest_state(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.sealed_quest_state(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.sealed_quest_state(p_trip uuid) TO service_role;
 
 
@@ -25191,7 +25182,6 @@ GRANT ALL ON FUNCTION public.sealed_quest_state(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.season_game_decline(p_find uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.season_game_decline(p_find uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.season_game_decline(p_find uuid) TO service_role;
 
 
@@ -25225,7 +25215,6 @@ GRANT ALL ON FUNCTION public.season_info(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.season_points(p_trip uuid, p_season text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.season_points(p_trip uuid, p_season text) TO authenticated;
 GRANT ALL ON FUNCTION public.season_points(p_trip uuid, p_season text) TO service_role;
 
 
@@ -25575,8 +25564,6 @@ GRANT ALL ON FUNCTION public.set_song_disc(p_trip uuid, p_title text, p_artist t
 --
 
 REVOKE ALL ON FUNCTION public.set_stamp_values(p_trip uuid, p_here integer, p_win integer, p_host integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.set_stamp_values(p_trip uuid, p_here integer, p_win integer, p_host integer) TO anon;
-GRANT ALL ON FUNCTION public.set_stamp_values(p_trip uuid, p_here integer, p_win integer, p_host integer) TO authenticated;
 GRANT ALL ON FUNCTION public.set_stamp_values(p_trip uuid, p_here integer, p_win integer, p_host integer) TO service_role;
 
 
@@ -25962,7 +25949,6 @@ GRANT ALL ON FUNCTION public.trip_season(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.trip_season_score(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.trip_season_score(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.trip_season_score(p_trip uuid) TO service_role;
 
 

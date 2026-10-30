@@ -1,51 +1,22 @@
-import { rpc } from "@/data/rpc";
-import { useEffect, useState } from "react";
-
+import { useMySchedule } from "@/data/daily";
+import { useLiveSession } from "@/data/live";
 import type { TripWithRole } from "@/lib/trips";
 
-type Quest = { state: string; kind: string; open_by: string | null; destroy_at: string | null };
+/** The Home reminder dot: Game Night Live is open, or a sealed quest has dropped and its 3-hour
+ * speed bonus (R-322) is still there to take. Reads the schedule (M3-03), not the older quests. */
 export function useFlightReminders(trip: TripWithRole | null, userId: string) {
-  const [quests, setQuests] = useState<Quest[]>([]);
-  const [live, setLive] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!trip || !userId || trip.season_rule !== "a2c") {
-      setQuests([]);
-      setLive(false);
-      return;
-    }
-    let active = true;
-    const load = async () => {
-      const [q, n] = await Promise.all([
-        rpc("sealed_quest_state", { p_trip: trip.id }),
-        rpc("games_live", { p_trip: trip.id }),
-      ]);
-      if (active) {
-        setQuests(q.error ? [] : ((q.data as Quest[]) ?? []));
-        setLive(n.data === true);
-        setNow(Date.now());
-      }
-    };
-    void load();
-    const timer = window.setInterval(() => {
-      if (!document.hidden) void load();
-    }, 30000);
-    return () => {
-      active = false;
-      window.clearInterval(timer);
-    };
-  }, [trip?.id, trip?.season_rule, userId]);
+  const schedule = useMySchedule(trip?.id).data ?? [];
+  const session = useLiveSession(trip?.id ?? "").data;
+  const now = Date.now();
   return (
-    trip?.season_rule === "a2c" &&
-    (live ||
-      quests.some(
-        (q) =>
-          q.kind === "sealed" &&
-          ((q.state === "sealed" && (!q.open_by || new Date(q.open_by).getTime() > now)) ||
-            (q.state === "open" &&
-              q.destroy_at &&
-              new Date(q.destroy_at).getTime() > now &&
-              new Date(q.destroy_at).getTime() - now < 3 * 3600000)),
-      ))
+    session?.status === "open" ||
+    schedule.some(
+      (i) =>
+        i.kind === "sealed_quest" &&
+        i.user_id === userId &&
+        i.is_open &&
+        i.body == null &&
+        now < Date.parse(i.opens_at) + 3 * 3_600_000,
+    )
   );
 }

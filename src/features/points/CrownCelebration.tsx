@@ -47,68 +47,36 @@ export function CrownCelebration({
       const already = profile.data?.seen_tips ?? [];
       setSeen(already);
       const candidates: Celebration[] = [];
+      // Crowns decided by the new engine (M3-11): Early Bird and Jet Setter.
       for (const trip of trips) {
-        const [champs, info, nights, scores, board] = await Promise.all([
+        const [crowns, info] = await Promise.all([
           supabase
-            .from("season_champions")
-            .select("season,user_id,score,created_at")
+            .from("trip_crowns")
+            .select("season,user_id,points")
             .eq("trip_id", trip.id)
-            .eq("user_id", userId)
-            .in("season", ["game", "trip"]),
+            .eq("user_id", userId),
           supabase.rpc("season_info", { p_trip: trip.id }),
-          supabase
-            .from("game_nights")
-            .select("week_number,starts_at,skipped")
-            .eq("trip_id", trip.id),
-          supabase
-            .from("game_scores")
-            .select("week_number,won,updated_at")
-            .eq("trip_id", trip.id)
-            .eq("user_id", userId)
-            .eq("won", true),
-          supabase.rpc("game_board", { p_trip: trip.id }),
         ]);
         if (!live) return;
-        if (champs.error || info.error || nights.error || scores.error || board.error) continue;
+        if (crowns.error) continue;
         const identity = cards.find((card) => card.trip_id === trip.id && card.user_id === userId);
-        const common = {
-          trip,
-          name: identity?.game_name || "Champion",
-          ...(identity?.avatarUrl ? { avatar: identity.avatarUrl } : {}),
-        };
-        const score = board.data?.find((row) => row.user_id === userId)?.score;
-        for (const champ of champs.data ?? []) {
-          const detail = (info.data ?? []).find((row) => row.season === champ.season);
-          if (!detail?.revealed) continue;
-          const id = `crown:${trip.id}:${champ.season}:${userId}`;
-          if (!already.includes(id))
-            candidates.push({
-              ...common,
-              id,
-              title: "Season Champion!",
-              label: `${champ.season === "game" ? "Pre-Flight" : "Trip Season"} season`,
-              score: champ.score,
-              prize: detail.prize,
-            });
-        }
-        for (const win of scores.data ?? []) {
-          const night = nights.data?.find((row) => row.week_number === win.week_number);
-          if (
-            !night ||
-            night.skipped ||
-            Date.now() < new Date(night.starts_at).getTime() + 3 * 60 * 60 * 1000 ||
-            score == null
-          )
-            continue;
-          const id = `crown:${trip.id}:night:${win.week_number}:${userId}`;
-          if (!already.includes(id))
-            candidates.push({
-              ...common,
-              id,
-              title: "Game Night Crown!",
-              label: `Week ${win.week_number}`,
-              score,
-            });
+        for (const crown of crowns.data ?? []) {
+          const early = crown.season === "preflight";
+          const id = `crown:${trip.id}:${early ? "game" : "trip"}:${userId}`;
+          if (already.includes(id)) continue;
+          const prize = (info.data ?? []).find(
+            (row) => row.season === (early ? "game" : "trip") && row.revealed,
+          )?.prize;
+          candidates.push({
+            trip,
+            name: identity?.game_name || "Champion",
+            ...(identity?.avatarUrl ? { avatar: identity.avatarUrl } : {}),
+            id,
+            title: early ? "Early Bird crown!" : "Jet Setter crown!",
+            label: early ? "Pre-Flight" : "Trip Season",
+            score: crown.points,
+            ...(prize ? { prize } : {}),
+          });
         }
       }
       if (live) setCrown((current) => current ?? candidates[0] ?? null);
@@ -137,7 +105,7 @@ export function CrownCelebration({
 
   async function share() {
     if (!crown) return;
-    const text = `${crown.title} ${tripDisplayName(crown.trip.name)} · ${crown.label} · ${crown.score}/100 on TripJunkies™`;
+    const text = `${crown.title} ${tripDisplayName(crown.trip.name)} · ${crown.label} · ${crown.score} points on TripJunkies™`;
     if (navigator.share) {
       try {
         await navigator.share({ title: crown.title, text });
@@ -181,7 +149,7 @@ export function CrownCelebration({
         <p className="font-display text-xl font-bold break-words">{crown.name}</p>
         <p className="font-display text-5xl font-extrabold text-gold mt-2">
           {crown.score}
-          <span className="text-xl">/100</span>
+          <span className="text-xl"> {crown.score === 1 ? "point" : "points"}</span>
         </p>
         {crown.prize && <p className="mt-3 text-sm font-bold">🎁 {crown.prize}</p>}
         <Button
