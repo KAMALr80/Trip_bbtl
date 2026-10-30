@@ -351,5 +351,42 @@
     "expired": "Nobody checked it in time",
     "selfHonor": "Counted · solo trips self-honor",
     "error": "That didn't work: {{reason}}"
+  },
+  "live": {
+    "title": "Game Night Live",
+    "lineCall": "Present on the call, tap 👍 for each other and vote the awards",
+    "lineCrowning": "Crowning night: present your trip quest and vote the awards",
+    "open": "Open Game Night Live",
+    "openCrowning": "Open the crowning night",
+    "closed": "Game Night closed · winners below",
+    "showTell": "Show & Tell",
+    "showTellHint": "When someone finishes presenting, tap their avatar. The first 👍 gives them 20 points. You can't tap your own.",
+    "thumbs_one": "{{count}} 👍",
+    "thumbs_other": "{{count}} 👍",
+    "tap": "👍 {{name}}",
+    "you": "{{name}} (you)",
+    "awards": "Awards",
+    "awardsHint": "Pick one crewmate for each award. Votes stay secret until the Captain or Co-Captain closes.",
+    "award": {
+      "best_overall": "🏆 Best Overall · +10",
+      "most_creative": "🎨 Most Creative · +5",
+      "best_story": "📖 Best Story · +5"
+    },
+    "pick": "Vote {{name}}",
+    "close": "Close Game Night",
+    "reopen": "Reopen",
+    "winners": "Winners",
+    "won": "{{name}} · {{awards}}",
+    "noWinners": "No award votes this time.",
+    "error": "That didn't work: {{reason}}"
+  },
+  "standings": {
+    "race": {
+      "preflight": "Early Bird race",
+      "trip_season": "Jet Setter race"
+    },
+    "place": "{{race}} · #{{rank}} of {{count}}",
+    "goal": "Crown goal: {{points}} of {{goal}} pts",
+    "nothingYet": "No points yet this season"
   }
 }

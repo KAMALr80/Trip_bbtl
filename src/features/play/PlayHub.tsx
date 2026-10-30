@@ -35,6 +35,8 @@ import { AtHomePlay, isAtHome } from "@/features/at-home/AtHome";
 import { HomeDayFlow } from "@/features/play/HomeDayFlow";
 import { DailyCard } from "@/features/daily/DailyPlay";
 import { CrewCheck, QuestProofs } from "@/features/quests/QuestProofs";
+import { GameNightLive } from "@/features/live/GameNightLive";
+import { usePointsBreakdown, useSoloGoal, useStandings } from "@/data/live";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { datePhase, noFlight, readOfflineRoster } from "@/lib/play-arrangement";
@@ -432,6 +434,7 @@ export function PlayHub(props: Props) {
 
 function EnginePlayHub(props: Props) {
   const { trip, members, cards, userId, onMember } = props;
+  const t = useT();
   const [phase, setPhase] = useState<Phase | null>(null),
     [detail, setDetail] = useState<Detail>(null),
     [breakdown, setBreakdown] = useState(false),
@@ -456,6 +459,12 @@ function EnginePlayHub(props: Props) {
     preview = indexOf(shownPhase) > indexOf(active);
   const local = trip.play_arrangement === "solo" || trip.play_arrangement === "offline";
   const onlineGroup = !local;
+  // Score and place come from the points ledger (M3-01, M3-15): the season being played now.
+  const ledgerSeason = active === "preflight" ? "preflight" : "trip_season";
+  const standings = useStandings(trip.id, ledgerSeason).data ?? [];
+  const myStanding = standings.find((r) => r.user_id === userId);
+  const ledgerRows = usePointsBreakdown(trip.id, ledgerSeason).data ?? [];
+  const soloGoal = useSoloGoal(trip.id, ledgerSeason, trip.play_mode === "solo").data ?? 0;
   const load = useCallback(async () => {
     const season =
       active === "trip" || active === "wrapped"
@@ -543,12 +552,10 @@ function EnginePlayHub(props: Props) {
       window.clearInterval(timer);
     };
   }, [load]);
-  const mine = scores.find((s) => s.user_id === userId);
-  const rank =
-    [...scores].sort((a, b) => b.total - a.total).findIndex((s) => s.user_id === userId) + 1;
+  const rank = myStanding?.rank ?? 0;
   const me = cards.find((c) => c.user_id === userId);
   useEffect(() => {
-    const total = mine?.total;
+    const total = myStanding?.points;
     let timer: number | undefined;
     let frame: number | undefined;
     if (typeof total === "number") {
@@ -571,7 +578,7 @@ function EnginePlayHub(props: Props) {
       if (timer !== undefined) window.clearTimeout(timer);
       if (frame !== undefined) window.cancelAnimationFrame(frame);
     };
-  }, [mine?.total]);
+  }, [myStanding?.points]);
   const openPhase = (nextPhase: Phase) => {
     scrolls.current[shownPhase] = window.scrollY;
     setDetail(null);
@@ -725,6 +732,19 @@ function EnginePlayHub(props: Props) {
                 ? shortDate(trip.end_date)
                 : `Day ${progress.day} of ${progress.total}`}
           </small>
+          {(active === "preflight" || active === "trip") && (
+            <small>
+              {trip.play_mode === "solo"
+                ? soloGoal > 0 &&
+                  t("standings.goal", { points: myStanding?.points ?? 0, goal: soloGoal })
+                : rank > 0 &&
+                  t("standings.place", {
+                    race: t(`standings.race.${ledgerSeason}`),
+                    rank,
+                    count: standings.length,
+                  })}
+            </small>
+          )}
           <Button variant="ghost" className="play-score-link" onClick={() => setPassport(true)}>
             Tap your avatar → Passport
           </Button>
@@ -738,7 +758,7 @@ function EnginePlayHub(props: Props) {
           <div className="play-place">
             <small>PLACE</small>
             <strong>
-              #{rank || "–"} <span>of {scores.length || members.length}</span>
+              #{rank || "–"} <span>of {standings.length || members.length}</span>
             </strong>
           </div>
         )}
@@ -753,20 +773,17 @@ function EnginePlayHub(props: Props) {
           </Button>
         )}
       </section>
-      {breakdown && mine && (
+      {breakdown && (
         <div className="play-breakdown-panel">
-          <span>
-            Sealed quests <b>{mine.quests}</b>
-          </span>
-          <span>
-            Showcase <b>{mine.showcase}</b>
-          </span>
-          <span>
-            Earlier quests <b>{mine.legacy}</b>
-          </span>
-          <span>
-            Phase points <b>{mine.other}</b>
-          </span>
+          {ledgerRows.length === 0 ? (
+            <span>{t("standings.nothingYet")}</span>
+          ) : (
+            ledgerRows.map((r) => (
+              <span key={r.source}>
+                {r.label} <b>{r.points}</b>
+              </span>
+            ))
+          )}
         </div>
       )}
       <PhaseRail trip={trip} current={active} onOpen={openPhase} />
@@ -1046,12 +1063,14 @@ function PhasePage(
               pill={waiting ? "New" : sealed.length ? "Done" : "Soon"}
               onClick={sealed.length ? () => onDetail("quests") : undefined}
             />
-            {!local && (
-              <ComingCard
-                icon={<CalendarClock />}
-                tone="cyan"
-                title="Game Night Live"
-                line="Present on the call, tap 👍 for each other and vote the awards"
+            {!local && phase === props.current && (
+              <GameNightLive
+                trip={trip}
+                members={members}
+                cards={cards}
+                userId={userId}
+                crowning={false}
+                viewOnly={props.viewOnly}
               />
             )}
             <FaceCard
@@ -1218,12 +1237,14 @@ function PhasePage(
               title="Postcard Picks"
               line="Pick your 2 favourite photos for the trip postcard"
             />
-            {!local && (
-              <ComingCard
-                icon={<CalendarClock />}
-                tone="cyan"
-                title="Game Night Live"
-                line="Crowning night: present your trip quest and vote the awards"
+            {!local && phase === props.current && (
+              <GameNightLive
+                trip={trip}
+                members={members}
+                cards={cards}
+                userId={userId}
+                crowning
+                viewOnly={props.viewOnly}
               />
             )}
           </>
