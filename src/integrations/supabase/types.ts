@@ -3274,6 +3274,104 @@ export type Database = {
         };
         Relationships: [];
       };
+      points_ledger: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          earned_at: string;
+          id: number;
+          points: number;
+          season: string;
+          source: string;
+          source_ref: string | null;
+          status: string;
+          trip_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          earned_at?: string;
+          id?: never;
+          points: number;
+          season: string;
+          source: string;
+          source_ref?: string | null;
+          status?: string;
+          trip_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          earned_at?: string;
+          id?: never;
+          points?: number;
+          season?: string;
+          source?: string;
+          source_ref?: string | null;
+          status?: string;
+          trip_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "points_ledger_source_fkey";
+            columns: ["source"];
+            isOneToOne: false;
+            referencedRelation: "points_rules";
+            referencedColumns: ["source"];
+          },
+          {
+            foreignKeyName: "points_ledger_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      points_rules: {
+        Row: {
+          cap_group: string | null;
+          cap_per_trip: number | null;
+          label: string;
+          per_day: number | null;
+          points_max: number;
+          points_min: number;
+          season: string;
+          source: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          cap_group?: string | null;
+          cap_per_trip?: number | null;
+          label: string;
+          per_day?: number | null;
+          points_max: number;
+          points_min: number;
+          season: string;
+          source: string;
+          updated_at?: string;
+        };
+        Update: {
+          cap_group?: string | null;
+          cap_per_trip?: number | null;
+          label?: string;
+          per_day?: number | null;
+          points_max?: number;
+          points_min?: number;
+          season?: string;
+          source?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       postcard_stickers: {
         Row: {
           created_at: string;
@@ -7198,6 +7296,16 @@ export type Database = {
         Args: { p_trip: string };
         Returns: {
           message: string;
+          user_id: string;
+        }[];
+      };
+      trip_standings: {
+        Args: { p_season: string; p_trip: string };
+        Returns: {
+          last_earned_at: string;
+          points: number;
+          rank: number;
+          showcase_points: number;
           user_id: string;
         }[];
       };

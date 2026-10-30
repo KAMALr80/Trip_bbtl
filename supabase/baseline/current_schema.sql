@@ -3149,6 +3149,16 @@ CREATE FUNCTION public.trip_squad_messages(p_trip uuid) RETURNS TABLE(user_id uu
 
 
 --
+-- Name: trip_standings(uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.trip_standings(p_trip uuid, p_season text) RETURNS TABLE(user_id uuid, points integer, rank integer, showcase_points integer, last_earned_at timestamp with time zone)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.trip_standings(p_trip, p_season) $$;
+
+
+--
 -- Name: undo_cost_payment(uuid, uuid, bigint, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -4136,6 +4146,75 @@ CREATE FUNCTION trip_private.auto_team_trg() RETURNS trigger
    IF tid IS NOT NULL THEN INSERT INTO public.trip_team_members(trip_id,user_id,team_id) VALUES (NEW.trip_id,NEW.user_id,tid) ON CONFLICT DO NOTHING; END IF;
  END IF;
  RETURN NEW; END $$;
+
+
+--
+-- Name: award_points(uuid, uuid, text, text, uuid, integer, text, timestamp with time zone, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.award_points(p_trip uuid, p_user uuid, p_season text, p_source text, p_source_ref uuid, p_points integer, p_status text DEFAULT 'approved'::text, p_earned_at timestamp with time zone DEFAULT now(), p_created_by uuid DEFAULT NULL::uuid) RETURNS bigint
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE
+  r public.points_rules;
+  t public.trips;
+  v_id bigint;
+  v_points int := p_points;
+  v_used int;
+  v_tz text;
+  v_day date;
+BEGIN
+  SELECT * INTO r FROM public.points_rules WHERE source = p_source;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Unknown points source %', p_source; END IF;
+  IF p_season NOT IN ('preflight', 'trip_season') OR (r.season <> 'any' AND r.season <> p_season) THEN
+    RAISE EXCEPTION '% points count toward %, not %', r.label, r.season, p_season;
+  END IF;
+  IF p_points IS NULL OR p_points < r.points_min OR p_points > r.points_max THEN
+    RAISE EXCEPTION '% is worth % to % points, not %', r.label, r.points_min, r.points_max, p_points;
+  END IF;
+  IF p_status NOT IN ('pending', 'approved') THEN RAISE EXCEPTION 'New points are pending or approved'; END IF;
+
+  SELECT * INTO t FROM public.trips WHERE id = p_trip;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Trip not found'; END IF;
+  IF NOT trip_private.is_trip_member(p_trip, p_user) THEN RAISE EXCEPTION 'Only players in this trip earn its points'; END IF;
+  IF NOT coalesce((trip_private.room_rules(t.room)->>'pointsEnabled')::boolean, false)
+     OR t.play_mode = 'offline' OR t.is_sandbox IS TRUE THEN
+    RETURN NULL;
+  END IF;
+
+  -- One writer per player at a time, so two awards can't both squeeze under a cap.
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_trip::text || p_user::text, 0));
+
+  SELECT id INTO v_id FROM public.points_ledger
+  WHERE trip_id = p_trip AND user_id = p_user AND source = p_source AND source_ref IS NOT DISTINCT FROM p_source_ref;
+  IF FOUND THEN RETURN v_id; END IF;
+
+  IF r.per_day IS NOT NULL THEN
+    SELECT tz INTO v_tz FROM trip_private.trip_phase(p_trip, p_earned_at);
+    v_tz := coalesce(v_tz, t.home_timezone);
+    v_day := (p_earned_at AT TIME ZONE v_tz)::date;
+    IF (SELECT count(*) FROM public.points_ledger l
+        WHERE l.trip_id = p_trip AND l.user_id = p_user AND l.source = p_source
+          AND l.status IN ('pending', 'approved') AND (l.earned_at AT TIME ZONE v_tz)::date = v_day) >= r.per_day THEN
+      RETURN NULL;
+    END IF;
+  END IF;
+
+  IF r.cap_group IS NOT NULL THEN
+    SELECT coalesce(sum(l.points), 0) INTO v_used
+    FROM public.points_ledger l JOIN public.points_rules g ON g.source = l.source
+    WHERE l.trip_id = p_trip AND l.user_id = p_user AND g.cap_group = r.cap_group AND l.status IN ('pending', 'approved');
+    v_points := least(v_points, r.cap_per_trip - v_used);
+    IF v_points <= 0 THEN RETURN NULL; END IF;
+  END IF;
+
+  INSERT INTO public.points_ledger (trip_id, user_id, season, source, source_ref, points, status, earned_at, created_by)
+  VALUES (p_trip, p_user, p_season, p_source, p_source_ref, v_points, p_status, p_earned_at, p_created_by)
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END
+$$;
 
 
 --
@@ -10833,6 +10912,32 @@ END $$;
 
 
 --
+-- Name: set_points_status(uuid, uuid, text, uuid, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_points_status(p_trip uuid, p_user uuid, p_source text, p_source_ref uuid, p_status text) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_old text;
+BEGIN
+  SELECT status INTO v_old FROM public.points_ledger
+  WHERE trip_id = p_trip AND user_id = p_user AND source = p_source AND source_ref IS NOT DISTINCT FROM p_source_ref
+  FOR UPDATE;
+  IF NOT FOUND OR v_old = p_status THEN RETURN false; END IF;
+  IF NOT ((v_old = 'pending' AND p_status IN ('approved', 'rejected'))
+          OR (v_old = 'approved' AND p_status = 'void')
+          OR (v_old = 'void' AND p_status = 'approved')) THEN
+    RAISE EXCEPTION 'Points can''t go from % to %', v_old, p_status;
+  END IF;
+  UPDATE public.points_ledger SET status = p_status, updated_at = now()
+  WHERE trip_id = p_trip AND user_id = p_user AND source = p_source AND source_ref IS NOT DISTINCT FROM p_source_ref;
+  RETURN true;
+END
+$$;
+
+
+--
 -- Name: set_preflight(uuid, integer, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -11601,6 +11706,33 @@ RETURN QUERY SELECT v_game,v_target,v_now; END $$;
 
 
 --
+-- Name: standings(uuid, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.standings(p_trip uuid, p_season text) RETURNS TABLE(user_id uuid, points integer, rank integer, showcase_points integer, last_earned_at timestamp with time zone)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  WITH totals AS (
+    SELECT m.user_id,
+           coalesce(sum(l.points), 0)::int AS points,
+           coalesce(sum(l.points) FILTER (WHERE l.source = 'showcase'), 0)::int AS showcase_points,
+           max(l.earned_at) AS last_earned_at
+    FROM public.trip_members m
+    LEFT JOIN public.points_ledger l
+      ON l.trip_id = m.trip_id AND l.user_id = m.user_id AND l.season = p_season AND l.status = 'approved'
+    WHERE m.trip_id = p_trip AND m.status = 'approved'
+    GROUP BY m.user_id
+  )
+  SELECT t.user_id, t.points,
+         (rank() OVER (ORDER BY t.points DESC, t.showcase_points DESC, t.last_earned_at ASC NULLS LAST))::int,
+         t.showcase_points, t.last_earned_at
+  FROM totals t
+  ORDER BY 3, t.user_id
+$$;
+
+
+--
 -- Name: start_game_turns(uuid, integer, integer, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -12126,6 +12258,22 @@ CREATE FUNCTION trip_private.trip_squad_messages(p_trip uuid) RETURNS TABLE(user
     AS $$ BEGIN
   IF NOT public.is_trip_member(p_trip, auth.uid()) THEN RETURN; END IF;
   RETURN QUERY SELECT f.user_id, f.squad_message FROM public.trip_feedback f WHERE f.trip_id=p_trip AND f.squad_message IS NOT NULL ORDER BY f.created_at; END $$;
+
+
+--
+-- Name: trip_standings(uuid, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.trip_standings(p_trip uuid, p_season text) RETURNS TABLE(user_id uuid, points integer, rank integer, showcase_points integer, last_earned_at timestamp with time zone)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  IF p_season NOT IN ('preflight', 'trip_season') THEN RAISE EXCEPTION 'Pick preflight or trip_season'; END IF;
+  RETURN QUERY SELECT * FROM trip_private.standings(p_trip, p_season);
+END
+$$;
 
 
 --
@@ -13793,6 +13941,66 @@ CREATE TABLE public.player_profiles (
     CONSTRAINT player_profiles_game_name_check CHECK (((length(game_name) >= 1) AND (length(game_name) <= 40))),
     CONSTRAINT player_profiles_pronouns_check CHECK ((length(pronouns) <= 60)),
     CONSTRAINT player_profiles_real_name_check CHECK (((length(real_name) >= 1) AND (length(real_name) <= 100)))
+);
+
+
+--
+-- Name: points_ledger; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.points_ledger (
+    id bigint NOT NULL,
+    trip_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    season text NOT NULL,
+    source text NOT NULL,
+    source_ref uuid,
+    points integer NOT NULL,
+    status text DEFAULT 'approved'::text NOT NULL,
+    earned_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_by uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT points_ledger_points_check CHECK ((points >= 0)),
+    CONSTRAINT points_ledger_season_check CHECK ((season = ANY (ARRAY['preflight'::text, 'trip_season'::text]))),
+    CONSTRAINT points_ledger_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text, 'void'::text])))
+);
+
+
+--
+-- Name: points_ledger_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+ALTER TABLE public.points_ledger ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.points_ledger_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: points_rules; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.points_rules (
+    source text NOT NULL,
+    season text NOT NULL,
+    points_min integer NOT NULL,
+    points_max integer NOT NULL,
+    cap_group text,
+    cap_per_trip integer,
+    per_day integer,
+    label text NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT points_rules_cap_per_trip_check CHECK ((cap_per_trip > 0)),
+    CONSTRAINT points_rules_check CHECK ((points_max >= points_min)),
+    CONSTRAINT points_rules_check1 CHECK (((cap_group IS NULL) = (cap_per_trip IS NULL))),
+    CONSTRAINT points_rules_per_day_check CHECK ((per_day > 0)),
+    CONSTRAINT points_rules_points_min_check CHECK ((points_min >= 0)),
+    CONSTRAINT points_rules_season_check CHECK ((season = ANY (ARRAY['preflight'::text, 'trip_season'::text, 'any'::text])))
 );
 
 
@@ -15845,6 +16053,30 @@ ALTER TABLE ONLY public.player_profiles
 
 
 --
+-- Name: points_ledger points_ledger_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.points_ledger
+    ADD CONSTRAINT points_ledger_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: points_ledger points_ledger_trip_id_user_id_source_source_ref_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.points_ledger
+    ADD CONSTRAINT points_ledger_trip_id_user_id_source_source_ref_key UNIQUE NULLS NOT DISTINCT (trip_id, user_id, source, source_ref);
+
+
+--
+-- Name: points_rules points_rules_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.points_rules
+    ADD CONSTRAINT points_rules_pkey PRIMARY KEY (source);
+
+
+--
 -- Name: postcard_stickers postcard_stickers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16609,6 +16841,13 @@ CREATE UNIQUE INDEX one_co_captain_per_trip ON public.trip_members USING btree (
 --
 
 CREATE UNIQUE INDEX player_profiles_game_name_norm_uq ON public.player_profiles USING btree (public.normalize_game_name(game_name));
+
+
+--
+-- Name: points_ledger_standings_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX points_ledger_standings_idx ON public.points_ledger USING btree (trip_id, season, user_id) WHERE (status = 'approved'::text);
 
 
 --
@@ -17400,6 +17639,13 @@ CREATE TRIGGER player_birthdays_updated BEFORE UPDATE ON public.player_birthdays
 --
 
 CREATE TRIGGER player_private_legal_age BEFORE INSERT ON public.player_private FOR EACH ROW EXECUTE FUNCTION trip_private.legal_dob_guard();
+
+
+--
+-- Name: points_ledger points_ledger_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER points_ledger_archive_guard BEFORE INSERT OR UPDATE ON public.points_ledger FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -18651,6 +18897,22 @@ ALTER TABLE ONLY public.photo_reports
 
 ALTER TABLE ONLY public.player_profiles
     ADD CONSTRAINT player_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: points_ledger points_ledger_source_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.points_ledger
+    ADD CONSTRAINT points_ledger_source_fkey FOREIGN KEY (source) REFERENCES public.points_rules(source);
+
+
+--
+-- Name: points_ledger points_ledger_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.points_ledger
+    ADD CONSTRAINT points_ledger_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
 
 
 --
@@ -20412,6 +20674,13 @@ CREATE POLICY culture_stamps_own ON public.culture_stamps FOR SELECT TO authenti
 ALTER TABLE public.day_votes ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: points_rules everyone signed in reads the points table; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "everyone signed in reads the points table" ON public.points_rules FOR SELECT TO authenticated USING (true);
+
+
+--
 -- Name: experience_previews; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -20736,6 +21005,25 @@ ALTER TABLE public.player_profiles ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "players read their own draft" ON public.trip_drafts FOR SELECT TO authenticated USING ((user_id = auth.uid()));
 
+
+--
+-- Name: points_ledger players read their own points; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own points" ON public.points_ledger FOR SELECT TO authenticated USING (((user_id = auth.uid()) AND trip_private.is_trip_member(trip_id, auth.uid())));
+
+
+--
+-- Name: points_ledger; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.points_ledger ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: points_rules; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.points_rules ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: postcard_stickers; Type: ROW SECURITY; Schema: public; Owner: -
@@ -23802,6 +24090,15 @@ GRANT ALL ON FUNCTION public.trip_squad_messages(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION trip_standings(p_trip uuid, p_season text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.trip_standings(p_trip uuid, p_season text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.trip_standings(p_trip uuid, p_season text) TO authenticated;
+GRANT ALL ON FUNCTION public.trip_standings(p_trip uuid, p_season text) TO service_role;
+
+
+--
 -- Name: FUNCTION undo_cost_payment(p_item uuid, p_user uuid, p_amount_cents bigint, p_reason text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -24309,6 +24606,14 @@ GRANT ALL ON FUNCTION trip_private.at_home_vote(p_activity uuid, p_idx integer) 
 --
 
 REVOKE ALL ON FUNCTION trip_private.auto_team_trg() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION award_points(p_trip uuid, p_user uuid, p_season text, p_source text, p_source_ref uuid, p_points integer, p_status text, p_earned_at timestamp with time zone, p_created_by uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.award_points(p_trip uuid, p_user uuid, p_season text, p_source text, p_source_ref uuid, p_points integer, p_status text, p_earned_at timestamp with time zone, p_created_by uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.award_points(p_trip uuid, p_user uuid, p_season text, p_source text, p_source_ref uuid, p_points integer, p_status text, p_earned_at timestamp with time zone, p_created_by uuid) TO service_role;
 
 
 --
@@ -26974,6 +27279,14 @@ GRANT ALL ON FUNCTION trip_private.set_pay_note(p_trip uuid, p_note text) TO ser
 
 
 --
+-- Name: FUNCTION set_points_status(p_trip uuid, p_user uuid, p_source text, p_source_ref uuid, p_status text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_points_status(p_trip uuid, p_user uuid, p_source text, p_source_ref uuid, p_status text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_points_status(p_trip uuid, p_user uuid, p_source text, p_source_ref uuid, p_status text) TO service_role;
+
+
+--
 -- Name: FUNCTION set_preflight(p_trip uuid, p_days integer, p_skipped boolean); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -27291,6 +27604,14 @@ GRANT ALL ON FUNCTION trip_private.spin_next_game(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION standings(p_trip uuid, p_season text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.standings(p_trip uuid, p_season text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.standings(p_trip uuid, p_season text) TO service_role;
+
+
+--
 -- Name: FUNCTION start_game_turns(p_trip uuid, p_week integer, p_cards integer, p_random boolean); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -27534,6 +27855,15 @@ GRANT ALL ON FUNCTION trip_private.trip_season_started(p_trip uuid) TO service_r
 REVOKE ALL ON FUNCTION trip_private.trip_squad_messages(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.trip_squad_messages(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.trip_squad_messages(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION trip_standings(p_trip uuid, p_season text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.trip_standings(p_trip uuid, p_season text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.trip_standings(p_trip uuid, p_season text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.trip_standings(p_trip uuid, p_season text) TO service_role;
 
 
 --
@@ -28575,6 +28905,31 @@ GRANT ALL ON TABLE public.player_private TO service_role;
 GRANT ALL ON TABLE public.player_profiles TO anon;
 GRANT ALL ON TABLE public.player_profiles TO authenticated;
 GRANT ALL ON TABLE public.player_profiles TO service_role;
+
+
+--
+-- Name: TABLE points_ledger; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.points_ledger TO service_role;
+GRANT SELECT ON TABLE public.points_ledger TO authenticated;
+
+
+--
+-- Name: SEQUENCE points_ledger_id_seq; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON SEQUENCE public.points_ledger_id_seq TO anon;
+GRANT ALL ON SEQUENCE public.points_ledger_id_seq TO authenticated;
+GRANT ALL ON SEQUENCE public.points_ledger_id_seq TO service_role;
+
+
+--
+-- Name: TABLE points_rules; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.points_rules TO service_role;
+GRANT SELECT ON TABLE public.points_rules TO authenticated;
 
 
 --

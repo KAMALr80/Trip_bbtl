@@ -75,6 +75,8 @@ table	public	photo_reports				t	2	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCA
 table	public	player_birthdays				t	1	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	REFERENCES,SELECT,TRIGGER,TRUNCATE		20261001085327_e61b7d87-4547-4f2c-a72d-7ee64824e0e2.sql	1	0	
 table	public	player_private				t	1	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	0	
 table	public	player_profiles				t	3	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	INSERT,UPDATE	20261001061742_49871a3b-b2ea-45f8-9945-6b921be493eb.sql	1	5	src/data/account.ts src/features/me/MeExtras.tsx src/features/passport/PassportBook.tsx src/features/players/PlayerCards.tsx src/features/trip/TripList.tsx
+table	public	points_ledger				t	1		SELECT		20261030100000_m3_points_ledger.sql	1	0	
+table	public	points_rules				t	1		SELECT		20261030100000_m3_points_ledger.sql	1	0	
 table	public	postcard_stickers				t	1	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261002085632_da6294f9-5d94-462c-a613-3e11979ee426.sql	1	2	src/features/at-home/AtHome.tsx src/features/passport/PassportBook.tsx
 table	public	preview_hidden				t	1	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261004015942_273e095c-316d-468b-90eb-7704245d10cc.sql	1	0	
 table	public	price_rules				t	1	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261005154302_ba6aa404-5943-406c-862e-1dfa2ed6565a.sql	1	0	
@@ -440,6 +442,7 @@ function	public	trip_season	p_trip uuid	f	true						20261001055053_28d3de7e-29b6
 function	public	trip_season_score	p_trip uuid	f	true				EXECUTE		20261005024938_64b7bea2-bfed-40ea-93ea-3e169bd7dabe.sql	1	3	src/features/play/PlayHub.tsx src/features/points/Seasons.tsx src/features/points/TripSeasonBoard.tsx
 function	public	trip_season_started	p_trip uuid	f	true				EXECUTE		20261005223206_337f661b-ecd0-4989-b2bf-4c27b0430077.sql	1	1	src/features/play/PlayHub.tsx
 function	public	trip_squad_messages	p_trip uuid	f	true				EXECUTE		20261002020111_f180a993-1d28-46f1-a383-0792ab4361a4.sql	1	0	
+function	public	trip_standings	p_trip uuid, p_season text	f	true				EXECUTE		20261030100000_m3_points_ledger.sql	1	0	
 function	public	undo_cost_payment	p_item uuid, p_user uuid, p_amount_cents bigint, p_reason text	f	true				EXECUTE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	1	src/features/at-home/TripCosts.tsx
 function	public	unlock_big_group	p_trip uuid	f	true				EXECUTE		20261002022825_07b81448-6efe-4855-90a0-76ffec10d339.sql	1	0	
 function	public	unlock_extra_seats	p_trip uuid	t	true				EXECUTE		20261005154302_ba6aa404-5943-406c-862e-1dfa2ed6565a.sql	2	1	src/features/trip/SeatCap.tsx
@@ -500,6 +503,7 @@ function	trip_private	at_home_reveal	p_activity uuid	t	true				EXECUTE		20261002
 trigger	trip_private	at_home_tier		t	true						20261002085632_da6294f9-5d94-462c-a613-3e11979ee426.sql	1	0	
 function	trip_private	at_home_vote	p_activity uuid, p_idx integer	t	true				EXECUTE		20261002085632_da6294f9-5d94-462c-a613-3e11979ee426.sql	1	0	
 trigger	trip_private	auto_team_trg		t	true						20261002061513_3de59ba7-2343-48e6-8af2-8210734342ef.sql	1	0	
+function	trip_private	award_points	p_trip uuid, p_user uuid, p_season text, p_source text, p_source_ref uuid, p_points integer, p_status text, p_earned_at timestamp with time zone, p_created_by uuid	t	true						20261030100000_m3_points_ledger.sql	1	0	
 function	trip_private	beta_free		t	true				EXECUTE		20261005154302_ba6aa404-5943-406c-862e-1dfa2ed6565a.sql	1	0	
 function	trip_private	boarding_tile		t	true				EXECUTE		20261002232405_03742b42-95e5-44fc-ad60-4bcd086716ef.sql	1	0	
 function	trip_private	bonus_window	p_trip uuid	t	true						20261002033304_2ae6f19b-aef9-4246-a62d-9f1a5e21c7c3.sql	2	0	
@@ -818,6 +822,7 @@ function	trip_private	set_night_skipped	p_trip uuid, p_week integer, p_skipped b
 function	trip_private	set_no_alcohol	p_on boolean	t	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	0	
 function	trip_private	set_passport_destination	p_trip uuid, p_country text, p_state text, p_city text	t	true				EXECUTE		20261002092746_20d2bed8-0e85-454e-bc0c-74b1fac49edc.sql	1	0	
 function	trip_private	set_pay_note	p_trip uuid, p_note text	t	true				EXECUTE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	0	
+function	trip_private	set_points_status	p_trip uuid, p_user uuid, p_source text, p_source_ref uuid, p_status text	t	true						20261030100000_m3_points_ledger.sql	1	0	
 function	trip_private	set_preflight	p_trip uuid, p_days integer, p_skipped boolean	t	true				EXECUTE		20261026130000_m2_captain_tiles.sql	1	0	
 function	trip_private	set_preflight_a2c	p_trip uuid, p_start date, p_weekday integer, p_time time without time zone	t	true				EXECUTE		20261026110000_m2_limits_co_captain.sql	4	0	
 function	trip_private	set_preflight_start	p_trip uuid, p_start date, p_plan text, p_weekday integer, p_time time without time zone, p_every integer, p_count integer	t	true			EXECUTE	EXECUTE		20261026110000_m2_limits_co_captain.sql	3	0	
@@ -857,6 +862,7 @@ function	trip_private	solo_today	p_user uuid	t	true						20261005055943_411e244e
 function	trip_private	speed_bonus_ok	p_revealed timestamp with time zone, p_finished timestamp with time zone	f	true						20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql	1	0	
 function	trip_private	spend_credits	p_trip uuid, p_action text	t	true				EXECUTE		20261002223245_4c843674-2dcd-4d21-9017-b3732a0fda52.sql	2	0	
 function	trip_private	spin_next_game	p_trip uuid	t	true				EXECUTE		20261005031128_e385e871-ecf2-484d-93d3-f31b7c53416d.sql	7	0	
+function	trip_private	standings	p_trip uuid, p_season text	t	true						20261030100000_m3_points_ledger.sql	1	0	
 function	trip_private	start_game_turns	p_trip uuid, p_week integer, p_cards integer, p_random boolean	t	true				EXECUTE		20261002104152_3d89b803-5e0f-4b61-83ee-36c93a8a0e03.sql	3	0	
 function	trip_private	step_down	p_trip uuid, p_to uuid	t	true				EXECUTE		20261002223245_4c843674-2dcd-4d21-9017-b3732a0fda52.sql	2	0	
 function	trip_private	submit_checkin	p_trip uuid, p_context text, p_key text, p_answers jsonb	t	true				EXECUTE			0	0	
@@ -889,6 +895,7 @@ function	trip_private	trip_season_score	p_trip uuid	t	true				EXECUTE		202610052
 function	trip_private	trip_season_start_at	p_trip uuid	t	true				EXECUTE		20261026100000_m2_rooms_trips_phase_engine.sql	2	0	
 function	trip_private	trip_season_started	p_trip uuid	t	true				EXECUTE		20261006024714_82adb54f-0d8b-4207-84a6-7b7909b4eb72.sql	2	0	
 function	trip_private	trip_squad_messages	p_trip uuid	t	true				EXECUTE		20261002020111_f180a993-1d28-46f1-a383-0792ab4361a4.sql	1	0	
+function	trip_private	trip_standings	p_trip uuid, p_season text	t	true				EXECUTE		20261030100000_m3_points_ledger.sql	1	0	
 function	trip_private	trip_today	p_trip uuid	t	true				EXECUTE		20261002054820_cea4b60b-d85f-4615-8940-0dbafab48732.sql	2	0	
 function	trip_private	trip_totals	p_trip uuid	t	true						20261001061742_49871a3b-b2ea-45f8-9945-6b921be493eb.sql	1	0	
 trigger	trip_private	trips_minor_guard		t	true			EXECUTE	EXECUTE		20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql	1	0	
