@@ -1803,6 +1803,16 @@ $$;
 
 
 --
+-- Name: open_item(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.open_item(p_item uuid) RETURNS boolean
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.open_item(p_item) $$;
+
+
+--
 -- Name: open_live(uuid, uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2988,6 +2998,16 @@ CREATE FUNCTION public.share_preview(p_trip uuid DEFAULT NULL::uuid, p_exp uuid 
 
 
 --
+-- Name: share_trip_quest(uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.share_trip_quest(p_item uuid, p_shared boolean) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.share_trip_quest(p_item, p_shared) $$;
+
+
+--
 -- Name: shuffle_teams(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3089,6 +3109,16 @@ CREATE FUNCTION public.submit_checkin(p_trip uuid, p_context text, p_key text, p
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.submit_checkin(p_trip, p_context, p_key, p_answers) $$;
+
+
+--
+-- Name: submit_drop_proof(uuid, integer, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.submit_drop_proof(p_item uuid, p_part integer DEFAULT 0, p_photo_path text DEFAULT NULL::text, p_body text DEFAULT NULL::text) RETURNS uuid
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.submit_drop_proof(p_item, p_part, p_photo_path, p_body) $$;
 
 
 --
@@ -4042,22 +4072,26 @@ CREATE FUNCTION trip_private.approve_proof(p_proof uuid) RETURNS boolean
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO ''
     AS $$
-DECLARE p public.proofs; t public.trips;
+DECLARE p public.proofs; t public.trips; s public.trip_schedule;
 BEGIN
   SELECT * INTO p FROM public.proofs WHERE id = p_proof FOR UPDATE;
   IF NOT FOUND OR NOT trip_private.is_trip_member(p.trip_id, auth.uid()) THEN RAISE EXCEPTION 'That proof isn''t in your trip'; END IF;
   IF p.user_id = auth.uid() THEN RAISE EXCEPTION 'You can''t approve your own proof'; END IF;
   SELECT * INTO t FROM public.trips WHERE id = p.trip_id;
+  SELECT * INTO s FROM public.trip_schedule WHERE id = p.schedule_id;
   IF t.has_minors AND p.photo_path IS NOT NULL AND NOT trip_private.is_leader(p.trip_id) THEN
     RAISE EXCEPTION 'In this trip the Captain or Co-Captain checks photos';
   END IF;
   IF p.crew_status = 'expired' OR (p.crew_status = 'waiting' AND now() >= p.expires_at) THEN
     RAISE EXCEPTION 'This one ran out of time';
   END IF;
+  IF s.kind = 'surprise_drop' AND s.settled_at IS NOT NULL THEN RAISE EXCEPTION 'This drop has been scored'; END IF;
   INSERT INTO public.proof_votes (proof_id, voter_id) VALUES (p_proof, auth.uid()) ON CONFLICT DO NOTHING;
   IF p.crew_status <> 'waiting' THEN RETURN false; END IF;
   UPDATE public.proofs SET crew_status = 'approved', approved_by = auth.uid(), approved_at = now() WHERE id = p_proof;
-  PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'approved');
+  IF p.source <> 'surprise_drop' THEN
+    PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'approved');
+  END IF;
   RETURN true;
 END
 $$;
@@ -4437,6 +4471,24 @@ CREATE FUNCTION trip_private.beta_free() RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$ SELECT coalesce((SELECT beta_free FROM public.app_settings ORDER BY id LIMIT 1), true) $$;
+
+
+--
+-- Name: bingo_lines(integer[], integer); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.bingo_lines(p_marked integer[], p_size integer) RETURNS integer
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO ''
+    AS $$
+  WITH lines AS (
+    SELECT array_agg(r * p_size + c) AS cells FROM generate_series(0, p_size - 1) r, generate_series(0, p_size - 1) c GROUP BY r
+    UNION ALL SELECT array_agg(r * p_size + c) FROM generate_series(0, p_size - 1) r, generate_series(0, p_size - 1) c GROUP BY c
+    UNION ALL SELECT array_agg(i * p_size + i) FROM generate_series(0, p_size - 1) i
+    UNION ALL SELECT array_agg(i * p_size + (p_size - 1 - i)) FROM generate_series(0, p_size - 1) i
+  )
+  SELECT count(*)::int FROM lines WHERE cells <@ coalesce(p_marked, '{}')
+$$;
 
 
 --
@@ -5568,14 +5620,19 @@ BEGIN
   IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
   RETURN QUERY
     SELECT p.id, p.user_id, p.schedule_id, s.kind,
-           trip_private.tailor_text(c.title, t),
+           trip_private.tailor_text(c.title, t)
+             || CASE WHEN s.kind = 'surprise_drop' AND cardinality(c.items) > p.part AND s.variant IN ('bingo', 'scavenger')
+                     THEN ' · ' || c.items[p.part + 1] ELSE '' END,
            CASE WHEN trip_private.proof_photo_ok(p.id, auth.uid()) THEN p.photo_path END,
            p.body, p.ai_status, p.expires_at, p.created_at
     FROM public.proofs p
     JOIN public.trip_schedule s ON s.id = p.schedule_id
     JOIN public.trips t ON t.id = p.trip_id
     LEFT JOIN public.content_items c ON c.id = s.content_item_id
-    WHERE p.trip_id = p_trip AND p.user_id <> auth.uid() AND p.crew_status = 'waiting' AND p.expires_at > now()
+    WHERE p.trip_id = p_trip AND p.user_id <> auth.uid()
+      AND ((p.crew_status = 'waiting' AND p.expires_at > now())
+           OR (s.kind = 'surprise_drop' AND s.variant = 'photo' AND s.closes_at > now()
+               AND NOT EXISTS (SELECT 1 FROM public.proof_votes v WHERE v.proof_id = p.id AND v.voter_id = auth.uid())))
     ORDER BY p.created_at;
 END
 $$;
@@ -6370,6 +6427,53 @@ RETURN v_id; END $$;
 
 
 --
+-- Name: drop_points(uuid, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.drop_points(p_item uuid, p_user uuid) RETURNS integer
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE
+  s public.trip_schedule; c public.content_items;
+  v_marked int[]; v_n int; v_size int; v_lines int; v_bonus int := 0; v_place int; v_votes int; v_rank int;
+BEGIN
+  SELECT * INTO s FROM public.trip_schedule WHERE id = p_item;
+  SELECT * INTO c FROM public.content_items WHERE id = s.content_item_id;
+  SELECT array_agg(part ORDER BY part) INTO v_marked FROM public.proofs
+  WHERE schedule_id = p_item AND user_id = p_user AND crew_status IN ('approved', 'not_needed');
+  v_n := coalesce(cardinality(v_marked), 0);
+  IF v_n = 0 THEN RETURN 0; END IF;
+  CASE s.variant
+    WHEN 'bingo' THEN
+      v_size := round(sqrt(cardinality(c.items)))::int;
+      v_lines := trip_private.bingo_lines(v_marked, v_size);
+      IF v_lines = 0 THEN RETURN 0; END IF;
+      v_bonus := 4 * (v_lines - 1) + CASE WHEN v_n = cardinality(c.items) THEN 8 ELSE 0 END;
+    WHEN 'scavenger' THEN
+      IF v_n * 2 < cardinality(c.items) THEN RETURN 0; END IF;
+      v_bonus := 3 * (v_n - ceil(cardinality(c.items) / 2.0)::int) + CASE WHEN v_n = cardinality(c.items) THEN 5 ELSE 0 END;
+    WHEN 'speed' THEN
+      SELECT x.place INTO v_place FROM (
+        SELECT p.user_id, rank() OVER (ORDER BY p.created_at) AS place FROM public.proofs p
+        WHERE p.schedule_id = p_item AND p.crew_status IN ('approved', 'not_needed')) x
+      WHERE x.user_id = p_user;
+      v_bonus := CASE v_place WHEN 1 THEN 15 WHEN 2 THEN 10 WHEN 3 THEN 5 ELSE 0 END;
+    WHEN 'photo' THEN
+      SELECT x.r INTO v_rank FROM (
+        SELECT p.user_id, dense_rank() OVER (ORDER BY (SELECT count(*) FROM public.proof_votes v WHERE v.proof_id = p.id) DESC) AS r,
+               (SELECT count(*) FROM public.proof_votes v WHERE v.proof_id = p.id) AS votes
+        FROM public.proofs p WHERE p.schedule_id = p_item AND p.crew_status IN ('approved', 'not_needed')) x
+      WHERE x.user_id = p_user AND x.votes > 0;
+      v_bonus := CASE v_rank WHEN 1 THEN 15 WHEN 2 THEN 8 ELSE 0 END;
+    ELSE NULL;
+  END CASE;
+  RETURN least(33, 10 + greatest(v_bonus, 0));
+END
+$$;
+
+
+--
 -- Name: edit_trip(uuid, text, text, date, date); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -6576,7 +6680,9 @@ BEGIN
   FOR p IN UPDATE public.proofs SET crew_status = 'expired'
            WHERE crew_status = 'waiting' AND expires_at <= now()
            RETURNING trip_id, user_id, source, schedule_id LOOP
-    PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'rejected');
+    IF p.source <> 'surprise_drop' THEN
+      PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'rejected');
+    END IF;
     n := n + 1;
   END LOOP;
   RETURN n;
@@ -8885,20 +8991,25 @@ CREATE FUNCTION trip_private.my_schedule(p_trip uuid, p_at timestamp with time z
 DECLARE t public.trips; v_at timestamptz := coalesce(p_at, now());
 BEGIN
   IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
-  -- Looking ahead (Test Lab time travel) is for leaders only, so players can't peek at drops.
   IF v_at > now() + interval '1 minute' AND NOT trip_private.is_leader(p_trip) THEN v_at := now(); END IF;
   SELECT * INTO t FROM public.trips WHERE trips.id = p_trip;
   RETURN QUERY
+    WITH visible AS (
+      SELECT s.*, s.opens_at <= v_at
+               AND (s.kind NOT IN ('sealed_quest', 'airport_mission', 'home_mission', 'trip_quest') OR s.revealed_at IS NOT NULL) AS shown
+      FROM public.trip_schedule s
+      WHERE s.trip_id = p_trip
+        AND (s.user_id IS NULL OR s.user_id = auth.uid() OR (s.kind = 'trip_quest' AND s.shared))
+    )
     SELECT s.id, s.kind, s.slot, s.user_id, s.day, s.opens_at, s.closes_at, s.ref_id, s.variant, s.points,
            s.opens_at <= v_at,
-           CASE WHEN s.opens_at <= v_at THEN trip_private.tailor_text(c.title, t) END,
-           CASE WHEN s.opens_at <= v_at THEN s.tailored_text END,
-           CASE WHEN s.opens_at <= v_at THEN trip_private.tailor_text(c.insight, t) END,
-           CASE WHEN s.opens_at <= v_at THEN c.choices END,
-           CASE WHEN s.opens_at <= v_at THEN c.items END
-    FROM public.trip_schedule s
+           CASE WHEN s.shown THEN trip_private.tailor_text(c.title, t) END,
+           CASE WHEN s.shown THEN s.tailored_text END,
+           CASE WHEN s.shown THEN trip_private.tailor_text(c.insight, t) END,
+           CASE WHEN s.shown THEN c.choices END,
+           CASE WHEN s.shown THEN c.items END
+    FROM visible s
     LEFT JOIN public.content_items c ON c.id = s.content_item_id
-    WHERE s.trip_id = p_trip AND (s.user_id IS NULL OR s.user_id = auth.uid())
     ORDER BY s.opens_at, s.kind, s.slot;
 END
 $$;
@@ -9183,6 +9294,38 @@ CREATE FUNCTION trip_private.on_member_joined() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$ BEGIN PERFORM trip_private.resplit_even_costs(NEW.trip_id); RETURN NEW; END $$;
+
+
+--
+-- Name: open_item(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.open_item(p_item uuid) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE s public.trip_schedule;
+BEGIN
+  SELECT * INTO s FROM public.trip_schedule WHERE id = p_item FOR UPDATE;
+  IF NOT FOUND OR s.user_id IS DISTINCT FROM auth.uid() OR NOT trip_private.is_trip_member(s.trip_id, auth.uid())
+     OR s.kind NOT IN ('sealed_quest', 'airport_mission', 'home_mission', 'trip_quest') THEN
+    RAISE EXCEPTION 'That isn''t one of your sealed cards';
+  END IF;
+  IF now() < s.opens_at THEN RAISE EXCEPTION 'Not yet: it drops %', to_char(s.opens_at, 'Dy HH24:MI TZ'); END IF;
+  IF s.closes_at IS NOT NULL AND now() >= s.closes_at THEN RAISE EXCEPTION 'This one has closed'; END IF;
+  IF s.revealed_at IS NOT NULL THEN RETURN false; END IF;
+  IF s.kind IN ('airport_mission', 'home_mission') AND s.slot <> '1' AND NOT EXISTS (
+       SELECT 1 FROM public.trip_schedule p WHERE p.trip_id = s.trip_id AND p.user_id = s.user_id AND p.kind = s.kind
+         AND p.slot = (s.slot::int - 1)::text AND p.revealed_at IS NOT NULL) THEN
+    RAISE EXCEPTION 'Open Mission % first', s.slot::int - 1;
+  END IF;
+  UPDATE public.trip_schedule SET revealed_at = now(), updated_at = now() WHERE id = p_item;
+  IF s.kind = 'sealed_quest' AND now() < s.opens_at + interval '3 hours' THEN
+    PERFORM trip_private.award_points(s.trip_id, auth.uid(), 'preflight', 'sealed_speed', s.id, 5, 'approved', now(), auth.uid());
+  END IF;
+  RETURN true;
+END
+$$;
 
 
 --
@@ -12034,7 +12177,9 @@ BEGIN
   IF NOT FOUND THEN RETURN; END IF;
   IF p_verdict = 'pass' AND p.crew_status = 'waiting' THEN
     UPDATE public.proofs SET crew_status = 'approved', approved_at = now() WHERE id = p_proof;
-    PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'approved');
+    IF p.source <> 'surprise_drop' THEN
+      PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'approved');
+    END IF;
   END IF;
 END
 $$;
@@ -12348,6 +12493,36 @@ END $$;
 
 
 --
+-- Name: settle_drops(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.settle_drops() RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE d record; p record; v_points int; n int := 0;
+BEGIN
+  FOR d IN
+    SELECT s.* FROM public.trip_schedule s
+    WHERE s.kind = 'surprise_drop' AND s.settled_at IS NULL AND s.closes_at <= now()
+      AND NOT EXISTS (SELECT 1 FROM public.proofs x WHERE x.schedule_id = s.id AND x.crew_status = 'waiting' AND x.expires_at > now())
+  LOOP
+    FOR p IN SELECT DISTINCT user_id FROM public.proofs WHERE schedule_id = d.id LOOP
+      v_points := trip_private.drop_points(d.id, p.user_id);
+      IF v_points > 0 AND trip_private.is_trip_member(d.trip_id, p.user_id) THEN
+        PERFORM trip_private.award_points(d.trip_id, p.user_id, 'trip_season', 'surprise_drop', d.id, v_points,
+                                          'approved', d.closes_at, NULL);
+      END IF;
+    END LOOP;
+    UPDATE public.trip_schedule SET settled_at = now() WHERE id = d.id;
+    n := n + 1;
+  END LOOP;
+  RETURN n;
+END
+$$;
+
+
+--
 -- Name: share_preview(uuid, uuid, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -12400,6 +12575,22 @@ BEGIN
   ON CONFLICT (culture_exp_id) DO UPDATE SET country=excluded.country, region=excluded.region, city=excluded.city, month_year=excluded.month_year, length_days=excluded.length_days, task_titles=excluded.task_titles, culture_public=excluded.culture_public, updated_at=now();
   RETURN true;
 END $$;
+
+
+--
+-- Name: share_trip_quest(uuid, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.share_trip_quest(p_item uuid, p_shared boolean) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  UPDATE public.trip_schedule SET shared = p_shared, updated_at = now()
+  WHERE id = p_item AND kind = 'trip_quest' AND user_id = auth.uid() AND revealed_at IS NOT NULL;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Open your trip quest first'; END IF;
+END
+$$;
 
 
 --
@@ -12814,6 +13005,53 @@ END $$;
 
 
 --
+-- Name: submit_drop_proof(uuid, integer, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.submit_drop_proof(p_item uuid, p_part integer, p_photo_path text, p_body text) RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE s public.trip_schedule; t public.trips; c public.content_items; v_solo boolean; v_id uuid; v_status text;
+BEGIN
+  SELECT * INTO s FROM public.trip_schedule WHERE id = p_item;
+  IF NOT FOUND OR s.kind <> 'surprise_drop' OR NOT trip_private.is_trip_member(s.trip_id, auth.uid()) THEN
+    RAISE EXCEPTION 'That drop isn''t in your trip';
+  END IF;
+  IF now() < s.opens_at THEN RAISE EXCEPTION 'That drop hasn''t opened yet'; END IF;
+  IF now() >= s.closes_at THEN RAISE EXCEPTION 'This drop has closed'; END IF;
+  SELECT * INTO c FROM public.content_items WHERE id = s.content_item_id;
+  IF s.variant IN ('bingo', 'scavenger') THEN
+    IF p_part IS NULL OR p_part < 0 OR p_part >= cardinality(c.items) THEN RAISE EXCEPTION 'Pick a square'; END IF;
+  ELSE
+    p_part := 0;
+  END IF;
+  p_body := nullif(btrim(p_body), '');
+  IF p_photo_path IS NULL AND (p_body IS NULL OR s.variant <> 'speed') THEN RAISE EXCEPTION 'Add a photo'; END IF;
+  IF p_body IS NOT NULL AND NOT trip_private.content_text_safe(p_body) THEN RAISE EXCEPTION 'Please reword that'; END IF;
+  IF p_photo_path IS NOT NULL AND (split_part(p_photo_path, '/', 1) <> s.trip_id::text OR split_part(p_photo_path, '/', 2) <> auth.uid()::text
+     OR split_part(p_photo_path, '/', 3) <> s.id::text
+     OR NOT EXISTS (SELECT 1 FROM storage.objects o WHERE o.bucket_id = 'quest-proofs' AND o.name = p_photo_path)) THEN
+    RAISE EXCEPTION 'Upload your photo first';
+  END IF;
+  SELECT * INTO t FROM public.trips WHERE id = s.trip_id;
+  v_solo := t.play_mode = 'solo'
+    OR (SELECT count(*) FROM public.trip_members m WHERE m.trip_id = s.trip_id AND m.status = 'approved') < 2;
+  SELECT id, crew_status INTO v_id, v_status FROM public.proofs WHERE schedule_id = p_item AND user_id = auth.uid() AND part = p_part;
+  IF v_status IN ('approved', 'not_needed', 'expired') THEN RETURN v_id; END IF;
+  INSERT INTO public.proofs (trip_id, user_id, schedule_id, part, source, photo_path, body, ai_status, crew_status, approved_at, expires_at)
+  VALUES (s.trip_id, auth.uid(), p_item, p_part, 'surprise_drop', p_photo_path, p_body,
+          CASE WHEN p_photo_path IS NOT NULL AND s.variant IN ('bingo', 'scavenger', 'photo') THEN 'pending' ELSE 'not_needed' END,
+          CASE WHEN v_solo THEN 'not_needed' ELSE 'waiting' END, CASE WHEN v_solo THEN now() END, now() + interval '24 hours')
+  ON CONFLICT (schedule_id, user_id, part) DO UPDATE SET photo_path = excluded.photo_path, body = excluded.body,
+    ai_status = excluded.ai_status, ai_reason = NULL, ai_flags = NULL, created_at = now()
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END
+$$;
+
+
+--
 -- Name: submit_proof(uuid, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -12837,6 +13075,9 @@ BEGIN
   SELECT * INTO k FROM trip_private.proof_kind(s.kind);
   IF NOT FOUND THEN RAISE EXCEPTION 'That card doesn''t take a proof'; END IF;
   IF now() < s.opens_at THEN RAISE EXCEPTION 'That quest hasn''t opened yet'; END IF;
+  IF s.kind IN ('sealed_quest', 'airport_mission', 'home_mission', 'trip_quest') AND s.revealed_at IS NULL THEN
+    RAISE EXCEPTION 'Open it first';
+  END IF;
   IF s.closes_at IS NOT NULL AND now() >= s.closes_at THEN RAISE EXCEPTION 'The time for this one has run out'; END IF;
   p_body := nullif(btrim(p_body), '');
   IF p_photo_path IS NULL AND p_body IS NULL THEN RAISE EXCEPTION 'Add a photo or a few words'; END IF;
@@ -12853,7 +13094,6 @@ BEGIN
     SELECT CASE phase WHEN 'preflight' THEN 'preflight' ELSE 'trip_season' END INTO v_season
     FROM trip_private.trip_phase(s.trip_id, now());
   END IF;
-  -- Solo self-honors (R-414); so does a crew of one.
   v_solo := t.play_mode = 'solo'
     OR (SELECT count(*) FROM public.trip_members m WHERE m.trip_id = s.trip_id AND m.status = 'approved') < 2;
 
@@ -15950,6 +16190,8 @@ CREATE TABLE public.trip_schedule (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     variant text,
+    shared boolean DEFAULT false NOT NULL,
+    settled_at timestamp with time zone,
     CONSTRAINT trip_schedule_kind_check CHECK ((kind = ANY (ARRAY['phase'::text, 'call_night'::text, 'crowning'::text, 'daily_discovery'::text, 'daily_card'::text, 'sealed_quest'::text, 'showcase'::text, 'airport_mission'::text, 'home_mission'::text, 'surprise_drop'::text, 'trip_quest'::text, 'ws_quest'::text, 'journal_prompt'::text]))),
     CONSTRAINT trip_schedule_text_safe CHECK (trip_private.content_text_safe(tailored_text))
 );
@@ -24445,6 +24687,15 @@ GRANT ALL ON FUNCTION public.normalize_game_name(p text) TO service_role;
 
 
 --
+-- Name: FUNCTION open_item(p_item uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.open_item(p_item uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.open_item(p_item uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.open_item(p_item uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION open_live(p_trip uuid, p_call_night uuid, p_crowning boolean); Type: ACL; Schema: public; Owner: -
 --
 
@@ -25463,6 +25714,15 @@ GRANT ALL ON FUNCTION public.share_preview(p_trip uuid, p_exp uuid, p_on boolean
 
 
 --
+-- Name: FUNCTION share_trip_quest(p_item uuid, p_shared boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.share_trip_quest(p_item uuid, p_shared boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.share_trip_quest(p_item uuid, p_shared boolean) TO authenticated;
+GRANT ALL ON FUNCTION public.share_trip_quest(p_item uuid, p_shared boolean) TO service_role;
+
+
+--
 -- Name: FUNCTION shuffle_teams(p_trip uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -25545,6 +25805,15 @@ GRANT ALL ON FUNCTION public.step_down(p_trip uuid, p_to uuid) TO service_role;
 REVOKE ALL ON FUNCTION public.submit_checkin(p_trip uuid, p_context text, p_key text, p_answers jsonb) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.submit_checkin(p_trip uuid, p_context text, p_key text, p_answers jsonb) TO authenticated;
 GRANT ALL ON FUNCTION public.submit_checkin(p_trip uuid, p_context text, p_key text, p_answers jsonb) TO service_role;
+
+
+--
+-- Name: FUNCTION submit_drop_proof(p_item uuid, p_part integer, p_photo_path text, p_body text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.submit_drop_proof(p_item uuid, p_part integer, p_photo_path text, p_body text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.submit_drop_proof(p_item uuid, p_part integer, p_photo_path text, p_body text) TO authenticated;
+GRANT ALL ON FUNCTION public.submit_drop_proof(p_item uuid, p_part integer, p_photo_path text, p_body text) TO service_role;
 
 
 --
@@ -26940,6 +27209,14 @@ GRANT ALL ON FUNCTION trip_private.draw_game_card(p_trip uuid, p_category text) 
 
 
 --
+-- Name: FUNCTION drop_points(p_item uuid, p_user uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.drop_points(p_item uuid, p_user uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.drop_points(p_item uuid, p_user uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION edit_trip(p_trip uuid, p_name text, p_destination text, p_start_date date, p_end_date date); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -27974,6 +28251,15 @@ REVOKE ALL ON FUNCTION trip_private.on_member_changed() FROM PUBLIC;
 
 REVOKE ALL ON FUNCTION trip_private.on_member_joined() FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.on_member_joined() TO service_role;
+
+
+--
+-- Name: FUNCTION open_item(p_item uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.open_item(p_item uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.open_item(p_item uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.open_item(p_item uuid) TO service_role;
 
 
 --
@@ -29265,12 +29551,29 @@ GRANT ALL ON FUNCTION trip_private.set_window_prep(p_exp uuid, p_days integer) T
 
 
 --
+-- Name: FUNCTION settle_drops(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.settle_drops() FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.settle_drops() TO service_role;
+
+
+--
 -- Name: FUNCTION share_preview(p_trip uuid, p_exp uuid, p_on boolean); Type: ACL; Schema: trip_private; Owner: -
 --
 
 REVOKE ALL ON FUNCTION trip_private.share_preview(p_trip uuid, p_exp uuid, p_on boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.share_preview(p_trip uuid, p_exp uuid, p_on boolean) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.share_preview(p_trip uuid, p_exp uuid, p_on boolean) TO service_role;
+
+
+--
+-- Name: FUNCTION share_trip_quest(p_item uuid, p_shared boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.share_trip_quest(p_item uuid, p_shared boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.share_trip_quest(p_item uuid, p_shared boolean) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.share_trip_quest(p_item uuid, p_shared boolean) TO service_role;
 
 
 --
@@ -29440,6 +29743,15 @@ GRANT ALL ON FUNCTION trip_private.step_down(p_trip uuid, p_to uuid) TO service_
 REVOKE ALL ON FUNCTION trip_private.submit_checkin(p_trip uuid, p_context text, p_key text, p_answers jsonb) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.submit_checkin(p_trip uuid, p_context text, p_key text, p_answers jsonb) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.submit_checkin(p_trip uuid, p_context text, p_key text, p_answers jsonb) TO service_role;
+
+
+--
+-- Name: FUNCTION submit_drop_proof(p_item uuid, p_part integer, p_photo_path text, p_body text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.submit_drop_proof(p_item uuid, p_part integer, p_photo_path text, p_body text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.submit_drop_proof(p_item uuid, p_part integer, p_photo_path text, p_body text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.submit_drop_proof(p_item uuid, p_part integer, p_photo_path text, p_body text) TO service_role;
 
 
 --
@@ -31325,6 +31637,20 @@ GRANT SELECT(updated_at) ON TABLE public.trip_schedule TO authenticated;
 --
 
 GRANT SELECT(variant) ON TABLE public.trip_schedule TO authenticated;
+
+
+--
+-- Name: COLUMN trip_schedule.shared; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(shared) ON TABLE public.trip_schedule TO authenticated;
+
+
+--
+-- Name: COLUMN trip_schedule.settled_at; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(settled_at) ON TABLE public.trip_schedule TO authenticated;
 
 
 --

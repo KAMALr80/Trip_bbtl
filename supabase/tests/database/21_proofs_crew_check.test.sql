@@ -22,6 +22,8 @@ CREATE FUNCTION pg_temp.item(p_kind text, p_user text) RETURNS uuid LANGUAGE sql
 $$;
 INSERT INTO ids VALUES ('q1', pg_temp.item('sealed_quest', 'p1')), ('q2', pg_temp.item('sealed_quest', 'p2')),
                        ('show1', pg_temp.item('showcase', 'p1'));
+-- Sealed quests are opened (revealed) before a proof; 23_reveal_and_drops covers opening.
+UPDATE public.trip_schedule SET revealed_at = now() WHERE kind = 'sealed_quest';
 -- A photo in storage for p1's quest.
 INSERT INTO storage.objects (bucket_id, name, owner)
 VALUES ('quest-proofs', (SELECT id FROM ids WHERE k = 'trip') || '/' || tests.user_id('p1') || '/' || (SELECT id FROM ids WHERE k = 'q1') || '/a.jpg',

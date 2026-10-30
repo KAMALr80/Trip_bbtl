@@ -14,7 +14,7 @@
 |---|---|---|
 | Tables | 141 | 14 |
 | Views | 0 | 0 |
-| Functions | 321 | 434 |
+| Functions | 324 | 440 |
 | Triggers | 5 | 47 |
 
 Objects (re)defined in 5 or more migrations: **19**. This is why the snapshot, not the migration history, is the reference (gotcha G5).
@@ -82,7 +82,7 @@ revoke `anon` (09 §2).
 
 ## Client usage
 
-### Public functions callable by clients but not referenced in `src/`: 41
+### Public functions callable by clients but not referenced in `src/`: 36
 
 Candidates to revoke (M1-08). Some may be called from SQL, cron or the Test Lab only: check
 before removing. Reference matching is by quoted name, so dynamic names built from strings
@@ -91,7 +91,6 @@ are still found.
 - `apply_game_plan(p_trip uuid, p_plan text, p_weekday integer, p_time time without time zone, p_start date, p_every integer, p_count integer)`
 - `archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text)`
 - `claim_airport(p_trip uuid, p_date date, p_mission integer, p_photo text, p_guess text)`
-- `close_live(p_session uuid)`
 - `confirm_departure(p_trip uuid)`
 - `create_at_home(p_pack text, p_length text, p_start date, p_vibe text, p_tz text)`
 - `create_culture_a2e(p_kind text, p_mode text, p_title text, p_country text, p_region text, p_city text, p_start date, p_days integer, p_layer text, p_vibe text, p_types text[], p_prep integer, p_finale text, p_place text, p_repeat boolean)`
@@ -102,19 +101,15 @@ are still found.
 - `culture_quest_card(p_session uuid)`
 - `hide_inspiration(p_card uuid)`
 - `is_trip_member(p_trip uuid, p_user uuid)`
-- `live_present(p_session uuid, p_presenter uuid)`
-- `live_state(p_session uuid)`
-- `live_vote_award(p_session uuid, p_award text, p_nominee uuid)`
 - `member_age_ranges(p_trip uuid)`
 - `mix_ai_quota(p_trip uuid)`
 - `my_passport()`
 - `new_trip_code()`
 - `normalize_game_name(p text)`
-- `open_live(p_trip uuid, p_call_night uuid, p_crowning boolean)`
+- `open_item(p_item uuid)`
 - `post_photo(p_trip uuid, p_date date, p_photo text)`
 - `preview_culture_link(p_preview uuid)`
 - `preview_ten_day_drops(p_trip uuid)`
-- `reopen_live(p_session uuid)`
 - `reveal_inspiration_votes(p_card uuid)`
 - `season_timing(p_trip uuid)`
 - `set_boarding_tile(p_tile text)`
@@ -123,18 +118,18 @@ are still found.
 - `set_price_rule(p_key text, p_cents integer)`
 - `set_trip_archived(p_trip uuid, p_archived boolean, p_note text)`
 - `set_wheels_up(p_trip uuid, p_date date, p_time text)`
-- `solo_goal(p_trip uuid, p_season text)`
+- `share_trip_quest(p_item uuid, p_shared boolean)`
+- `submit_drop_proof(p_item uuid, p_part integer, p_photo_path text, p_body text)`
 - `trip_phase(p_trip uuid, p_at timestamp with time zone)`
 - `trip_squad_messages(p_trip uuid)`
-- `trip_standings(p_trip uuid, p_season text)`
 - `unlock_big_group(p_trip uuid)`
 - `unlock_trip(p_trip uuid, p_headcount integer)`
 
-### Public tables/views not referenced by name in `src/`: 81
+### Public tables/views not referenced by name in `src/`: 77
 
 Usually fine: most are read and written only through `trip_private` functions.
 
-`account_consents`, `age_guesses`, `ai_credit_purchases`, `airport_claims`, `app_admins`, `app_settings`, `at_home_answers`, `at_home_votes`, `beta_access`, `beta_codes`, `bingo_marks`, `bug_issues`, `content_feedback`, `content_items`, `cost_log`, `culture_exp_hidden`, `culture_exp_likes`, `culture_quest_answers`, `culture_quest_players`, `culture_quest_sessions`, `culture_showcase_ballots`, `culture_showcase_rewards`, `culture_showcase_viewers`, `day_votes`, `experience_previews`, `game_format_prompts`, `game_night_card_skips`, `game_night_flow`, `game_night_moments`, `game_night_polls`, `game_night_reactions`, `game_night_turns`, `game_night_votes`, `game_pick_log`, `home_day_results`, `home_day_sessions`, `junkie_ranks`, `live_award_votes`, `live_presents`, `live_sessions`, `mission_votes`, `photo_posts`, `photo_removed`, `player_birthdays`, `player_private`, `points_ledger`, `points_rules`, `preview_hidden`, `price_rules`, `proof_votes`, `quest_challenges`, `quest_posts`, `quest_thumbs`, `room_blocks`, `room_requests`, `sealed_quests`, `season_quests`, `season_settings`, `secret_missions`, `solo_quests`, `trip_adult_activities`, `trip_adult_approvals`, `trip_adult_settings`, `trip_crownings`, `trip_crowns`, `trip_day_games`, `trip_day_trivia_keys`, `trip_deletion_log`, `trip_item_alternatives`, `trip_role_changes`, `trip_schedule`, `trip_season_finds`, `trip_season_games`, `trip_season_reveals`, `trip_team_members`, `trip_teams`, `trivia_answers`, `user_credits`, `waitlist`, `weekly_answer_votes`, `weekly_questions`
+`account_consents`, `age_guesses`, `ai_credit_purchases`, `airport_claims`, `app_admins`, `app_settings`, `at_home_answers`, `at_home_votes`, `beta_access`, `beta_codes`, `bingo_marks`, `bug_issues`, `content_feedback`, `content_items`, `cost_log`, `culture_exp_hidden`, `culture_exp_likes`, `culture_quest_answers`, `culture_quest_players`, `culture_quest_sessions`, `culture_showcase_ballots`, `culture_showcase_rewards`, `culture_showcase_viewers`, `day_votes`, `experience_previews`, `game_format_prompts`, `game_night_card_skips`, `game_night_flow`, `game_night_moments`, `game_night_polls`, `game_night_reactions`, `game_night_turns`, `game_night_votes`, `game_pick_log`, `home_day_results`, `home_day_sessions`, `junkie_ranks`, `live_award_votes`, `live_presents`, `mission_votes`, `photo_posts`, `photo_removed`, `player_birthdays`, `player_private`, `preview_hidden`, `price_rules`, `proof_votes`, `quest_challenges`, `quest_posts`, `quest_thumbs`, `room_blocks`, `room_requests`, `sealed_quests`, `season_quests`, `season_settings`, `secret_missions`, `solo_quests`, `trip_adult_activities`, `trip_adult_approvals`, `trip_adult_settings`, `trip_crownings`, `trip_day_games`, `trip_day_trivia_keys`, `trip_deletion_log`, `trip_item_alternatives`, `trip_role_changes`, `trip_schedule`, `trip_season_finds`, `trip_season_games`, `trip_season_reveals`, `trip_team_members`, `trip_teams`, `trivia_answers`, `user_credits`, `waitlist`, `weekly_answer_votes`, `weekly_questions`
 
 ## Tables
 
@@ -207,7 +202,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `junkie_ranks` | table | ✅ | 1 | — | 0 |
 | public | `live_award_votes` | table | ✅ | 0 | — | 0 |
 | public | `live_presents` | table | ✅ | 0 | — | 0 |
-| public | `live_sessions` | table | ✅ | 1 | — | 0 |
+| public | `live_sessions` | table | ✅ | 1 | — | 1 |
 | public | `live_vote_ballots` | table | ✅ | 1 | — | 1 |
 | public | `live_votes` | table | ✅ | 1 | — | 1 |
 | public | `mission_claims` | table | ✅ | 1 | — | 3 |
@@ -221,8 +216,8 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `player_birthdays` | table | ✅ | 1 | — | 0 |
 | public | `player_private` | table | ✅ | 1 | — | 0 |
 | public | `player_profiles` | table | ✅ | 3 | INSERT,UPDATE | 5 |
-| public | `points_ledger` | table | ✅ | 1 | — | 0 |
-| public | `points_rules` | table | ✅ | 1 | — | 0 |
+| public | `points_ledger` | table | ✅ | 1 | — | 1 |
+| public | `points_rules` | table | ✅ | 1 | — | 1 |
 | public | `postcard_stickers` | table | ✅ | 1 | — | 2 |
 | public | `preview_hidden` | table | ✅ | 1 | — | 0 |
 | public | `price_rules` | table | ✅ | 1 | — | 0 |
@@ -251,7 +246,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `trip_adult_approvals` | table | ✅ | 1 | — | 0 |
 | public | `trip_adult_settings` | table | ✅ | 1 | — | 0 |
 | public | `trip_crownings` | table | ✅ | 1 | — | 0 |
-| public | `trip_crowns` | table | ✅ | 1 | — | 0 |
+| public | `trip_crowns` | table | ✅ | 1 | — | 1 |
 | public | `trip_day_games` | table | ✅ | 1 | — | 0 |
 | public | `trip_day_tags` | table | ✅ | 4 | DELETE,INSERT,UPDATE | 1 |
 | public | `trip_day_trivia_keys` | table | ✅ | 1 | — | 0 |

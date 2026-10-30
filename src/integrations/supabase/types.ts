@@ -5500,6 +5500,8 @@ export type Database = {
           points: number | null;
           ref_id: string | null;
           revealed_at: string | null;
+          settled_at: string | null;
+          shared: boolean;
           slot: string;
           tailored_text: string | null;
           trip_id: string;
@@ -5519,6 +5521,8 @@ export type Database = {
           points?: number | null;
           ref_id?: string | null;
           revealed_at?: string | null;
+          settled_at?: string | null;
+          shared?: boolean;
           slot?: string;
           tailored_text?: string | null;
           trip_id: string;
@@ -5537,6 +5541,8 @@ export type Database = {
           points?: number | null;
           ref_id?: string | null;
           revealed_at?: string | null;
+          settled_at?: string | null;
+          shared?: boolean;
           slot?: string;
           tailored_text?: string | null;
           trip_id?: string;
@@ -7139,6 +7145,7 @@ export type Database = {
         Returns: Json;
       };
       normalize_game_name: { Args: { p: string }; Returns: string };
+      open_item: { Args: { p_item: string }; Returns: boolean };
       open_live: {
         Args: { p_call_night?: string; p_crowning?: boolean; p_trip: string };
         Returns: string;
@@ -7662,6 +7669,7 @@ export type Database = {
         Args: { p_exp?: string; p_on?: boolean; p_trip?: string };
         Returns: boolean;
       };
+      share_trip_quest: { Args: { p_item: string; p_shared: boolean }; Returns: undefined };
       shuffle_teams: { Args: { p_trip: string }; Returns: number };
       skip_card: { Args: { p_category: string; p_trip: string }; Returns: number };
       skip_limit: { Args: { p_trip: string }; Returns: number };
@@ -7684,6 +7692,10 @@ export type Database = {
       submit_checkin: {
         Args: { p_answers: Json; p_context: string; p_key: string; p_trip: string };
         Returns: undefined;
+      };
+      submit_drop_proof: {
+        Args: { p_body?: string; p_item: string; p_part?: number; p_photo_path?: string };
+        Returns: string;
       };
       submit_proof: {
         Args: { p_body?: string; p_item: string; p_photo_path?: string };
