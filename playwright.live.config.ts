@@ -22,6 +22,12 @@ export default defineConfig({
     url: "http://localhost:8080/api/public/version",
     reuseExistingServer: !process.env["CI"],
     timeout: 120_000,
-    env: { VITE_SUPABASE_URL: url, VITE_SUPABASE_PUBLISHABLE_KEY: key },
+    env: {
+      VITE_SUPABASE_URL: url,
+      VITE_SUPABASE_PUBLISHABLE_KEY: key,
+      // Server routes (the public guide) use the service role.
+      SUPABASE_URL: url,
+      SUPABASE_SERVICE_ROLE_KEY: process.env["SUPABASE_SERVICE_ROLE_KEY"] ?? "",
+    },
   },
 });

@@ -22,8 +22,8 @@
 | M3-09 | Surprise Drops (Bingo, Scavenger, Speed, Photo) | L |
 | M3-10 | Trip quest | S |
 | M3-11 | Crowns: Early Bird & Jet Setter, tie-break, solo goal | M |
-| M3-12 | Window Seat: daily quest, journal, shared guide | L |
-| M3-13 | Culture rooms on the engine (focuses, finale, solo showcase) | M |
+| M3-12 | ✅ | Daily quest (5) and evening journal (2) per player per day; the journal offers the day's prompt plus 2 to swap to and can be typed or dictated (`write_journal`, `journal_options`). One shared guide per trip from journal entries and approved quest photos (`trip_guide`), shareable as a read-only link at `/guide/<token>`; names and photos show there only for players who opt in, and never photos of a trip with minors. **Left:** Storyteller badge progress (M5).
+| M3-13 | ✅ | At-home rooms run on the engine: Home Missions, Daily Discovery, content filtered by culture and focuses, finale = crowning night on Game Night Live. Solo at-home rooms get a showcase note each experience day; their guide is the finale showcase page (R-365), and the solo goal crowns them. Home's "Explore a Culture" and "Window Seat" buttons now open the setup wizard. **Left:** the older `CultureExperiences` / `Inspiration` screens are still reachable from Passport links; they go when M5 rebuilds the Passport.
 | M3-14 | AI proof-check interface (stub; real vision in M6) | S |
 | M3-15 | Standings UI + score strip + tappable avatars | M |
 | M3-16 | Retire old scoring functions | S |

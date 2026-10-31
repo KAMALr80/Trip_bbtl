@@ -105,4 +105,16 @@ FROM (VALUES
 CROSS JOIN generate_series(1, 6) i
 ON CONFLICT (id) DO NOTHING;
 
+-- ---------------------------------------------------------------- a shared guide (M3-12)
+-- One journal line on Lisbon Crew, published at /guide/5eed5eed5eed5eed5eed5eed (e2e/live).
+INSERT INTO public.journal_entries (trip_id, user_id, schedule_id, day, prompt, body)
+SELECT s.trip_id, '00000000-0000-4000-8000-000000000004', s.id, s.day, 'Best bite today?', 'Pastel de nata by the river, still warm.'
+FROM public.trip_schedule s
+WHERE s.trip_id = '00000000-0000-4000-9000-000000000001' AND s.kind = 'daily_discovery'
+ORDER BY s.opens_at LIMIT 1
+ON CONFLICT DO NOTHING;
+INSERT INTO public.trip_guides (trip_id, token, published_at, published_by)
+VALUES ('00000000-0000-4000-9000-000000000001', '5eed5eed5eed5eed5eed5eed', now(), '00000000-0000-4000-8000-000000000002')
+ON CONFLICT (trip_id) DO NOTHING;
+
 DROP TABLE seed_users;

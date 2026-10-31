@@ -27,7 +27,8 @@ import { GameArcade } from "@/features/play/GameArcade";
 import { gameSceneArt } from "@/features/play/GameScene";
 import { OnePhoneNight } from "@/features/play/OnePhoneNight";
 import { SoloGuide } from "@/features/window-seat/SoloGuide";
-import { CrewGuide } from "@/features/window-seat/CrewGuide";
+import { TripGuide, isShowcase } from "@/features/guide/TripGuide";
+import { JournalPrompt } from "@/features/guide/JournalPrompt";
 import { AtHomePlay, isAtHome } from "@/features/at-home/AtHome";
 import { HomeDayFlow } from "@/features/play/HomeDayFlow";
 import { DailyCard } from "@/features/daily/DailyPlay";
@@ -770,6 +771,7 @@ function PhasePage(
     onFullBoard,
   } = props;
   const queryClient = useQueryClient();
+  const t = useT();
   const meta = PHASES[indexOf(phase)] ?? PHASES[0]!;
   const p = phaseProgress(trip, phase);
   const local = trip.play_arrangement === "solo" || trip.play_arrangement === "offline";
@@ -795,6 +797,7 @@ function PhasePage(
         <>
           <CrewCheck trip={trip} members={members} viewOnly={props.viewOnly} />
           <SurpriseDrop trip={trip} userId={userId} viewOnly={props.viewOnly} />
+          <JournalPrompt trip={trip} userId={userId} viewOnly={props.viewOnly} />
           <QuestProofs trip={trip} userId={userId} viewOnly={props.viewOnly} />
         </>
       )}
@@ -909,9 +912,9 @@ function PhasePage(
               <FaceCard
                 icon={<BookOpen />}
                 tone="gold"
-                title="Shared guide"
-                line="Propose, review and publish the squad’s travel guide"
-                pill={trip.myRole === "captain" ? "Captain" : "Open"}
+                title={t("guide.title")}
+                line={t("guide.line")}
+                pill={t("guide.open")}
                 onClick={() => onDetail("guide")}
               />
             )}
@@ -1007,19 +1010,13 @@ function PhasePage(
         {phase === "trip" && (
           <>
             {roomOf(trip.room).pointsEnabled && <CrowningCard trip={trip} />}
-            {windowSeat && (
+            {(windowSeat || isShowcase(trip)) && (
               <FaceCard
                 icon={<BookOpen />}
                 tone="gold"
-                title="Shared guide"
-                line="Approved stories, photos and tips for the crew"
-                pill={
-                  trip.guide_published_at
-                    ? "Published"
-                    : trip.myRole === "captain"
-                      ? "Captain"
-                      : "Open"
-                }
+                title={isShowcase(trip) ? t("guide.showcaseTitle") : t("guide.title")}
+                line={isShowcase(trip) ? t("guide.showcaseLine") : t("guide.line")}
+                pill={t("guide.open")}
                 onClick={() => onDetail("guide")}
               />
             )}{" "}
@@ -1247,15 +1244,7 @@ function PlayDetail(
             refresh={props.refresh}
           />
         ))}{" "}
-      {detail === "guide" && (
-        <CrewGuide
-          tripId={trip.id}
-          tripName={trip.name}
-          userId={userId}
-          isCaptain={trip.myRole === "captain"}
-          publishedAt={trip.guide_published_at}
-        />
-      )}
+      {detail === "guide" && <TripGuide trip={trip} viewOnly={viewOnly} />}
     </div>
   );
 }

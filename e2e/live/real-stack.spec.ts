@@ -38,3 +38,11 @@ test("an invite link survives sign-in, and Join room adds the player", async ({ 
   await expect(invite).toBeHidden();
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
+
+test("a shared guide opens without signing in (M3-12)", async ({ page }) => {
+  await page.goto("/guide/5eed5eed5eed5eed5eed5eed");
+  await expect(page.getByRole("heading", { name: /Lisbon Crew/ })).toBeVisible();
+  await expect(page.getByText("Pastel de nata by the river, still warm.")).toBeVisible();
+  // Names stay hidden until the player opts in (R-355).
+  await expect(page.getByText(/^by /)).toHaveCount(0);
+});

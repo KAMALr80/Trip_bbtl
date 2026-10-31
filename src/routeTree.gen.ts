@@ -18,6 +18,7 @@ import { Route as ShellMeRouteImport } from './routes/_shell.me'
 import { Route as ShellPlayRouteImport } from './routes/_shell.play'
 import { Route as ShellTripRouteImport } from './routes/_shell.trip'
 import { Route as BetaCodeRouteImport } from './routes/beta.$code'
+import { Route as GuideTokenRouteImport } from './routes/guide.$token'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
 import { Route as LegalDocumentRouteImport } from './routes/legal/$document'
 import { Route as TripsNewRouteImport } from './routes/trips.new'
@@ -70,6 +71,11 @@ const ShellTripRoute = ShellTripRouteImport.update({
 const BetaCodeRoute = BetaCodeRouteImport.update({
   id: '/beta/$code',
   path: '/beta/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuideTokenRoute = GuideTokenRouteImport.update({
+  id: '/guide/$token',
+  path: '/guide/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JoinCodeRoute = JoinCodeRouteImport.update({
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/play': typeof ShellPlayRoute
   '/trip': typeof ShellTripRoute
   '/beta/$code': typeof BetaCodeRoute
+  '/guide/$token': typeof GuideTokenRoute
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
   '/trips/new': typeof TripsNewRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/play': typeof ShellPlayRoute
   '/trip': typeof ShellTripRoute
   '/beta/$code': typeof BetaCodeRoute
+  '/guide/$token': typeof GuideTokenRoute
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
   '/trips/new': typeof TripsNewRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/_shell/play': typeof ShellPlayRoute
   '/_shell/trip': typeof ShellTripRoute
   '/beta/$code': typeof BetaCodeRoute
+  '/guide/$token': typeof GuideTokenRoute
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
   '/trips/new': typeof TripsNewRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/play'
     | '/trip'
     | '/beta/$code'
+    | '/guide/$token'
     | '/join/$code'
     | '/legal/$document'
     | '/trips/new'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/play'
     | '/trip'
     | '/beta/$code'
+    | '/guide/$token'
     | '/join/$code'
     | '/legal/$document'
     | '/trips/new'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/_shell/play'
     | '/_shell/trip'
     | '/beta/$code'
+    | '/guide/$token'
     | '/join/$code'
     | '/legal/$document'
     | '/trips/new'
@@ -241,6 +253,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   BetaCodeRoute: typeof BetaCodeRoute
+  GuideTokenRoute: typeof GuideTokenRoute
   JoinCodeRoute: typeof JoinCodeRoute
   LegalDocumentRoute: typeof LegalDocumentRoute
   TripsNewRoute: typeof TripsNewRoute
@@ -311,6 +324,13 @@ declare module '@tanstack/react-router' {
       path: '/beta/$code'
       fullPath: '/beta/$code'
       preLoaderRoute: typeof BetaCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guide/$token': {
+      id: '/guide/$token'
+      path: '/guide/$token'
+      fullPath: '/guide/$token'
+      preLoaderRoute: typeof GuideTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/join/$code': {
@@ -420,6 +440,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   BetaCodeRoute: BetaCodeRoute,
+  GuideTokenRoute: GuideTokenRoute,
   JoinCodeRoute: JoinCodeRoute,
   LegalDocumentRoute: LegalDocumentRoute,
   TripsNewRoute: TripsNewRoute,

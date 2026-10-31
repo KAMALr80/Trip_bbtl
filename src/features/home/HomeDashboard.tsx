@@ -319,7 +319,8 @@ export function HomeDashboard({
       label: "Travel From Home",
       subtitle: "Your couch, any country",
       img: iconHome,
-      action: () => setScreen("inspiration"),
+      // Culture rooms are set up on the engine like every room (M3-13).
+      action: () => void navigate({ to: "/trips/new", search: { room: "explore_culture" } }),
     },
     {
       label: "Explore the App",
@@ -337,7 +338,7 @@ export function HomeDashboard({
       label: "Window Seat",
       subtitle: "Bring the trip to them",
       img: windowSeatArt,
-      action: () => setScreen("window"),
+      action: () => void navigate({ to: "/trips/new", search: { room: "window_seat" } }),
     },
   ];
   const cinematicShortcuts = [
@@ -364,7 +365,8 @@ export function HomeDashboard({
         label: "EXPLORE A CULTURE",
         gate: "B",
         img: iconHome,
-        action: () => setScreen("inspiration"),
+        // Culture rooms are set up on the engine like every room (M3-13).
+        action: () => void navigate({ to: "/trips/new", search: { room: "explore_culture" } }),
         status: "ON TIME",
         detail: "",
       },
@@ -372,7 +374,7 @@ export function HomeDashboard({
         label: "INSPIRE SOMEONE",
         gate: "C",
         img: windowSeatArt,
-        action: () => setScreen("window"),
+        action: () => void navigate({ to: "/trips/new", search: { room: "window_seat" } }),
         status: "ON TIME",
         detail: "",
       },
@@ -398,13 +400,14 @@ export function HomeDashboard({
         label: "Explore a Culture",
         subline: "Play from home",
         img: iconHome,
-        action: () => setScreen("inspiration"),
+        // Culture rooms are set up on the engine like every room (M3-13).
+        action: () => void navigate({ to: "/trips/new", search: { room: "explore_culture" } }),
       },
       {
         label: "Inspire Someone",
         subline: "Share the view",
         img: windowSeatArt,
-        action: () => setScreen("window"),
+        action: () => void navigate({ to: "/trips/new", search: { room: "window_seat" } }),
       },
       {
         label: "Game Night",

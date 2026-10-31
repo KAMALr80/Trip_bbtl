@@ -363,7 +363,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 34
+      "count": 32
     }
   },
   "src/features/players/PlayerCards.tsx": {
@@ -511,14 +511,6 @@
   "src/features/trip/TripUnlock.tsx": {
     "no-restricted-syntax": {
       "count": 14
-    }
-  },
-  "src/features/window-seat/CrewGuide.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    },
-    "no-restricted-syntax": {
-      "count": 7
     }
   },
   "src/features/window-seat/SoloGuide.tsx": {
