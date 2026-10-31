@@ -30,9 +30,9 @@ const saved = (page: Page) =>
   page.evaluate(
     () =>
       new Promise<string[]>((resolve) => {
-        const req = indexedDB.open("tj-offline", 1);
-        req.onupgradeneeded = () => req.result.createObjectStore("snapshot");
+        const req = indexedDB.open("tj-offline");
         req.onsuccess = () => {
+          if (!req.result.objectStoreNames.contains("snapshot")) return resolve([]);
           const get = req.result.transaction("snapshot").objectStore("snapshot").get("current");
           get.onsuccess = () => {
             const snap = get.result as

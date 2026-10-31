@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { openItem, useMySchedule, type ScheduleItem } from "@/data/daily";
+import { usePendingAction } from "@/data/offline/outbox";
 import { useMyProofs, useSubmitDropProof, type Proof } from "@/data/proofs";
 import { useMinute } from "@/features/play/PhaseNotice";
 import { useT } from "@/i18n";
@@ -92,6 +93,15 @@ function DropPart({
   const [text, setText] = useState("");
   const many = game === "bingo" || game === "scavenger";
   const send = (photo: File | null) => submit.mutate({ item: drop.id, part, photo, text });
+  // A photo sent offline, waiting in the outbox (M4-04).
+  const pending = usePendingAction(`submit_drop_proof:${drop.id}:${part}`);
+  if (pending && !proof)
+    return (
+      <li className="rounded-md border p-2 text-xs" role="status">
+        {many && <span className="block font-semibold">{label}</span>}
+        {t("offline.waiting")}
+      </li>
+    );
   if (proof)
     return (
       <li className="rounded-md border p-2 text-xs">

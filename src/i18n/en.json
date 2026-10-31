@@ -495,6 +495,19 @@
     "title": "Offline",
     "synced": "Last synced {{ago}}",
     "never": "Not synced on this phone yet",
-    "hint": "You're seeing your trip as of the last sync. Anything new needs a connection."
+    "hint": "You're seeing your trip as of the last sync. Anything new needs a connection.",
+    "waiting": "Saved on this phone · sends when you're back online",
+    "approveWaiting": "👍 saved · sends when you're back online",
+    "queued_one": "{{count}} thing waiting to send",
+    "queued_other": "{{count}} things waiting to send",
+    "refused": "Couldn't send {{what}}: {{reason}}",
+    "dismiss": "OK",
+    "what": {
+      "answer_daily": "your answer",
+      "write_journal": "your journal entry",
+      "submit_proof": "your proof",
+      "submit_drop_proof": "your drop photo",
+      "approve_proof": "your 👍"
+    }
   }
 }

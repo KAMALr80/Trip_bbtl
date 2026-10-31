@@ -3,6 +3,7 @@ import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/r
 import { supabase } from "@/integrations/supabase/client";
 import type { Database, Tables } from "@/integrations/supabase/types";
 import { rpc } from "./rpc";
+import { sendOrQueue } from "./offline/outbox";
 
 export type ScheduleItem = Database["public"]["Functions"]["my_schedule"]["Returns"][number];
 export type DailyAnswer = Tables<"daily_answers">;
@@ -47,15 +48,23 @@ export function useDailyAnswers(tripId: string | null | undefined) {
   return useQuery({ ...dailyAnswersQuery(tripId ?? ""), enabled: !!tripId });
 }
 
-/** Answer a Daily Discovery or Daily Card; refreshes my answers and the standings. */
-export function useAnswerDaily(tripId: string) {
+export type DailyResult = Database["public"]["Functions"]["answer_daily"]["Returns"][number];
+
+/**
+ * Answer a Daily Discovery or Daily Card; refreshes my answers and the standings. With no network
+ * the answer waits in the outbox (M4-04) and the result is `Queued`.
+ */
+export function useAnswerDaily(tripId: string, userId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ item, choice }: { item: string; choice: number | null }) => {
-      const { data, error } = await rpc("answer_daily", { p_item: item, p_choice: choice });
-      if (error) throw error;
-      return data?.[0] ?? null;
-    },
+    networkMode: "always",
+    mutationFn: ({ item, choice }: { item: string; choice: number | null }) =>
+      sendOrQueue<DailyResult | null>(
+        userId,
+        { kind: "answer_daily", tripId, item, choice },
+        null,
+        crypto.randomUUID(),
+      ),
     onSettled: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: scheduleKeys.answers(tripId) }),

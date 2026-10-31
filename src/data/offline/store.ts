@@ -25,14 +25,19 @@ export type Snapshot = {
 
 const DB = "tj-offline";
 const STORE = "snapshot";
+/** Actions waiting for the network (M4-04), keyed by entry id. */
+export const OUTBOX = "outbox";
 const KEY = "current";
 
 function open(): Promise<IDBDatabase | null> {
   return new Promise((resolve) => {
     try {
       if (typeof indexedDB === "undefined") return resolve(null);
-      const req = indexedDB.open(DB, 1);
-      req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+      const req = indexedDB.open(DB, 2);
+      req.onupgradeneeded = () => {
+        for (const name of [STORE, OUTBOX])
+          if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name);
+      };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => resolve(null);
       req.onblocked = () => resolve(null);
@@ -42,13 +47,17 @@ function open(): Promise<IDBDatabase | null> {
   });
 }
 
-async function run<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>) {
+export async function run<T>(
+  mode: IDBTransactionMode,
+  fn: (s: IDBObjectStore) => IDBRequest<T>,
+  store: string = STORE,
+) {
   const db = await open();
   if (!db) return undefined;
   return new Promise<T | undefined>((resolve) => {
     try {
-      const tx = db.transaction(STORE, mode);
-      const req = fn(tx.objectStore(STORE));
+      const tx = db.transaction(store, mode);
+      const req = fn(tx.objectStore(store));
       tx.oncomplete = () => {
         db.close();
         resolve(req.result);
