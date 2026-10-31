@@ -1,11 +1,48 @@
 # Owner steps to go live
 
 Everything here needs your accounts, money, legal sign-off or a decision. The code work is in the
-milestones (M3–M6). Do the steps in order; the ones marked **now** unblock the first staging deploy.
+milestones (M5–M6). Do the steps in order; the ones marked **now** unblock the first staging deploy.
 
 When a step gives you a key or password, don't paste it into a chat. Add it in the cloud
 environment's settings (session title bar → environment menu → **Edit** → **Network secrets**, or
 environment variables) under the name shown, then start a new session.
+
+---
+
+## Your to-do list (updated Oct 31, 2026)
+
+Tick these off in order. Everything else in the milestones is code work. Details are in the
+numbered sections below.
+
+**Now: unblocks staging and the M4 phone checks**
+- [ ] Review and merge [PR #6](https://github.com/jay-brainbean/trip/pull/6) (no native apps; M4
+      install, offline, reminders). Its CI run is the first one of the new offline browser tests
+      (`playwright.pwa.config.ts`); if that step fails, tell Claude.
+- [ ] Turn on branch protection for `main` and make CI required (GitHub → Settings → Branches).
+- [ ] Create the staging accounts: Supabase (1.1), Cloudflare (1.2); AI key optional (1.3).
+- [ ] Make the web push keys: `bun scripts/pwa/vapid-keys.ts`, then add `VAPID_PUBLIC_KEY` and
+      `VAPID_PRIVATE_KEY` as secrets (6.1). Do it once; never change them.
+- [ ] Say "deploy staging" in a new session.
+- [ ] Get one iPhone and one Android phone and run the M4-10 checklist
+      (`milestones/M4-web-offline-notifications.md`, end of the file). Report anything that fails.
+
+**Before inviting anyone**
+- [ ] Domain on Cloudflare (2.1), Google sign-in (2.2), email sender for sign-in codes (2.3).
+- [ ] Optional: Sentry for errors (2.4), Resend key for reminder emails (6.2).
+- [ ] Rescue the 13 images from Lovable on your own computer (3).
+- [ ] Install material: a 1024×1024 master app icon and 3–5 phone screenshots (6.3).
+
+**Decisions (write `**Answer:** …` in `06-open-questions.md`; the defaults apply if you don't)**
+- [ ] For M5, which comes next: Q11 (deleting photos after Day 7), Q13 (Window Seat stamps), Q23
+      (world map, badges and levels in Phase 1), Q28 (what "hide a trip or photo" hides).
+- [ ] For M6: Q12 (teen rules), Q24 (admin area). Q17 (sign-in methods; default email code +
+      Google). Later: Q18 (payments).
+- [ ] Review and tag the content library: `supabase/seed/content_candidates.csv` (2,938 lines). Most
+      kinds are below the launch target of 30 items per mode.
+
+**When staging looks right**
+- [ ] Production Supabase on the Pro plan with backups, then "deploy production" (5).
+- [ ] Legal review, data-protection basics, a beta with 3–5 real crews, then launch (7).
 
 ---
 
@@ -35,6 +72,9 @@ environment variables) under the name shown, then start a new session.
 ### 1.4 Network access for the cloud session
 If deploys are refused, allow these hosts in the environment's network settings:
 `api.supabase.com`, `*.supabase.co`, `api.cloudflare.com`.
+
+### 1.5 Web push keys
+Make them before the first deploy so reminders work on staging: see 6.1.
 
 **Then:** start a new session and say "deploy staging". Claude runs `scripts/deploy.sh staging`.
 

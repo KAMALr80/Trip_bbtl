@@ -40,6 +40,11 @@ because the staging accounts don't exist ([owner-go-live-steps.md](owner-go-live
 
 ---
 
+**Your to-dos as the owner** (accounts, keys, decisions, phone checks) are one checklist at the top
+of [owner-go-live-steps.md](owner-go-live-steps.md).
+
+---
+
 ## What's in this pack
 
 | File | What it's for | Who reads it |
