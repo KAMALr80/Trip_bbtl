@@ -1,11 +1,48 @@
 # Owner steps to go live
 
 Everything here needs your accounts, money, legal sign-off or a decision. The code work is in the
-milestones (M3–M6). Do the steps in order; the ones marked **now** unblock the first staging deploy.
+milestones (M5–M6). Do the steps in order; the ones marked **now** unblock the first staging deploy.
 
 When a step gives you a key or password, don't paste it into a chat. Add it in the cloud
 environment's settings (session title bar → environment menu → **Edit** → **Network secrets**, or
 environment variables) under the name shown, then start a new session.
+
+---
+
+## Your to-do list (updated Oct 31, 2026)
+
+Tick these off in order. Everything else in the milestones is code work. Details are in the
+numbered sections below.
+
+**Now: unblocks staging and the M4 phone checks**
+- [ ] Review and merge [PR #6](https://github.com/jay-brainbean/trip/pull/6) (no native apps; M4
+      install, offline, reminders). Its CI run is the first one of the new offline browser tests
+      (`playwright.pwa.config.ts`); if that step fails, tell Claude.
+- [ ] Turn on branch protection for `main` and make CI required (GitHub → Settings → Branches).
+- [ ] Create the staging accounts: Supabase (1.1), Cloudflare (1.2); AI key optional (1.3).
+- [ ] Make the web push keys: `bun scripts/pwa/vapid-keys.ts`, then add `VAPID_PUBLIC_KEY` and
+      `VAPID_PRIVATE_KEY` as secrets (6.1). Do it once; never change them.
+- [ ] Say "deploy staging" in a new session.
+- [ ] Get one iPhone and one Android phone and run the M4-10 checklist
+      (`milestones/M4-web-offline-notifications.md`, end of the file). Report anything that fails.
+
+**Before inviting anyone**
+- [ ] Domain on Cloudflare (2.1), Google sign-in (2.2), email sender for sign-in codes (2.3).
+- [ ] Optional: Sentry for errors (2.4), Resend key for reminder emails (6.2).
+- [ ] Rescue the 13 images from Lovable on your own computer (3).
+- [ ] Install material: a 1024×1024 master app icon and 3–5 phone screenshots (6.3).
+
+**Decisions (write `**Answer:** …` in `06-open-questions.md`; the defaults apply if you don't)**
+- [ ] For M5, which comes next: Q11 (deleting photos after Day 7), Q13 (Window Seat stamps), Q23
+      (world map, badges and levels in Phase 1), Q28 (what "hide a trip or photo" hides).
+- [ ] For M6: Q12 (teen rules), Q24 (admin area). Q17 (sign-in methods; default email code +
+      Google). Later: Q18 (payments).
+- [ ] Review and tag the content library: `supabase/seed/content_candidates.csv` (2,938 lines). Most
+      kinds are below the launch target of 30 items per mode.
+
+**When staging looks right**
+- [ ] Production Supabase on the Pro plan with backups, then "deploy production" (5).
+- [ ] Legal review, data-protection basics, a beta with 3–5 real crews, then launch (7).
 
 ---
 
@@ -35,6 +72,9 @@ environment variables) under the name shown, then start a new session.
 ### 1.4 Network access for the cloud session
 If deploys are refused, allow these hosts in the environment's network settings:
 `api.supabase.com`, `*.supabase.co`, `api.cloudflare.com`.
+
+### 1.5 Web push keys
+Make them before the first deploy so reminders work on staging: see 6.1.
 
 **Then:** start a new session and say "deploy staging". Claude runs `scripts/deploy.sh staging`.
 
@@ -78,9 +118,9 @@ them to the developer).
 ## 4. Founder decisions
 Open `dev-docs/06-open-questions.md` and write `**Answer:** …` under each question still open.
 Defaults are used if you don't. The ones needed next:
-- **M3 (core game):** Q3 AI checks vs Crew Check, Q4 exact points, Q5 solo crown goal, Q7 tie-breaks,
-  Q9 Daily Discovery content, Q10 no crowning night set, Q13 Window Seat stamps, Q22 question days,
-  Q25 trip quest points, Q27 Surprise Drop timing.
+- **M3 (core game):** answered Oct 30 (defaults). Q13 Window Seat stamps is still open.
+- **M4 (web app):** Q17 sign-in methods (default: email code + Google; Apple optional now). Q16 is
+  answered: no native apps.
 - **M5 (memories):** Q11 photo deletion after Day 7, Q23 world map / badges in Phase 1, Q28 hide trip/photo.
 - **M6 (launch):** Q12 teen rules, Q24 admin area.
 - **Later:** Q18 payments.
@@ -98,16 +138,17 @@ Also: review and tag `supabase/seed/content_candidates.csv` (2,938 content lines
 
 ---
 
-## 6. App stores (M4, native app)
-1. **Apple Developer Program** (developer.apple.com, $99/year), enrolled as an organization (needs a
-   D-U-N-S number; this can take 1–2 weeks, so start early).
-2. **Google Play Console** (play.google.com/console, $25 once), organization account, identity check.
-3. **Sign in with Apple**: in the Apple developer account, create a Services ID and key; give them
-   to the developer (needed because the app offers Google sign-in).
-4. **Push notifications**: Firebase project (console.firebase.google.com) for Android, and an APNs
-   key from the Apple account for iOS.
-5. Store listing material: app name, short and long description, 6–8 screenshots per platform,
-   app icon, privacy policy URL, support email, age rating answers.
+## 6. Notifications and install (M4, web app)
+There are no App Store or Google Play apps (Q16, Oct 31, 2026), so no Apple Developer or Play Console
+accounts are needed.
+1. **Web push keys**: run `bun scripts/pwa/vapid-keys.ts` once per environment and add the two lines
+   as secrets `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`. No outside account needed. Don't change them
+   later: every phone would have to turn reminders on again.
+2. **Email reminders (optional backup)**: a Resend account (resend.com) on the same domain as 2.3;
+   add `EMAIL_API_KEY` and `EMAIL_FROM` (e.g. `TripJunkies <reminders@tripjunkies.app>`).
+3. **Install material**: a 1024×1024 master app icon (BRAND.md notes it's missing) and 3–5 phone
+   screenshots for the browser's install sheet.
+4. **Test phones**: one iPhone and one Android phone the team can install the app on (M4-10).
 
 ---
 
@@ -117,11 +158,10 @@ Also: review and tag `supabase/seed/content_candidates.csv` (2,938 content lines
 2. Data-protection basics: decide data retention, name a privacy contact, sign Supabase's and the
    email provider's data processing agreements.
 3. Beta round: 3–5 real crews play a full trip on staging; collect bugs in the in-app bug inbox.
-4. Store submission (review takes days; Apple often asks questions about sign-in, age and photos).
-5. Launch: switch `app_settings.public_launch` on (Founder dashboard), announce.
+4. Launch: switch `app_settings.public_launch` on (Founder dashboard), announce.
 
 ---
 
 ## 8. Later (Phase 2)
-Payments (Stripe on the web, App Store / Play billing in the apps; needs Q18 and a policy review),
+Payments (Stripe on the web; needs Q18),
 Event Groups (13–24), world map, Spanish, flight tracking.

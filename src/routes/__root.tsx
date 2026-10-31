@@ -19,6 +19,18 @@ import loginArt from "@/assets/cinematic-login-coast-tall-768.jpg";
 import { APP_VERSION } from "@/lib/app-version";
 import { Toaster } from "@/components/ui/sonner";
 import { UpdatePrompt } from "@/features/app-shell/UpdatePrompt";
+// Catches the browser's install prompt as early as possible (M4-01).
+import "@/pwa/install";
+import { isNetworkError } from "@/data/offline/rules";
+import {
+  dropSnapshot,
+  restoreSnapshot,
+  saveAccount,
+  savedAccount,
+  startSnapshot,
+} from "@/data/offline/snapshot";
+import { markStartedOffline } from "@/data/offline/status";
+import { clearOutbox, startOutbox } from "@/data/offline/outbox";
 
 const CHUNK_RELOAD_KEY = "tj-chunk-reload";
 function isChunkError(error: unknown) {
@@ -267,11 +279,20 @@ function RootComponent() {
         .eq("id", currentUser.id)
         .maybeSingle();
       if (error) {
-        console.error("Profile load failed", error);
+        // No network (M4-03): use the profile saved on this device, if there is one.
+        const saved = isNetworkError(error, navigator.onLine)
+          ? await savedAccount(currentUser.id)
+          : null;
+        if (saved?.profile) {
+          const offlineProfile = saved.profile as Profile & { appearance: string | null };
+          setProfile(offlineProfile);
+          applyChosenAppearance(offlineProfile.appearance);
+        } else console.error("Profile load failed", error);
         return;
       }
       if (data) {
         setProfile(data);
+        saveAccount({ profile: data });
         applyChosenAppearance(data.appearance);
         return;
       }
@@ -297,6 +318,7 @@ function RootComponent() {
         } else console.error("Profile creation failed", createError);
       } else if (created) {
         setProfile(created);
+        saveAccount({ profile: created });
         applyChosenAppearance(created.appearance);
       }
     },
@@ -321,16 +343,59 @@ function RootComponent() {
     applyAppearance();
     window.addEventListener("tripjunkie-appearance", applyAppearance);
     let active = true;
-    supabase.auth.getUser().then(async ({ data }) => {
+    let startedOffline = false;
+    const boot = async () => {
+      const { data, error } = await supabase.auth
+        .getUser()
+        .catch((e: unknown) => ({ data: { user: null }, error: e }));
       if (!active) return;
+      // No network (M4-03): open as the player signed in last on this device, from the snapshot.
+      // A refusal from the server (signed out, expired) never takes this path.
+      if (!data.user && isNetworkError(error, navigator.onLine)) {
+        const saved = await restoreSnapshot(queryClient);
+        if (!active) return;
+        if (saved?.user) {
+          startedOffline = true;
+          markStartedOffline(true);
+          void startOutbox(queryClient, saved.user.id);
+          setUser(saved.user);
+          if (saved.profile) {
+            const offlineProfile = saved.profile as Profile & { appearance: string | null };
+            setProfile(offlineProfile);
+            applyChosenAppearance(offlineProfile.appearance);
+          }
+          setLoading(false);
+          return;
+        }
+      }
+      startedOffline = false;
+      markStartedOffline(false);
+      // The server answered with no signed-in player: this device's snapshot must go too
+      // (supabase-js doesn't always send SIGNED_OUT for a session the server rejects).
+      if (!data.user) void dropSnapshot().then(clearOutbox);
       setUser(data.user);
-      if (data.user) await loadProfile(data.user);
+      if (data.user) {
+        void startSnapshot(queryClient, data.user);
+        void startOutbox(queryClient, data.user.id);
+        await loadProfile(data.user);
+      }
       if (active) setLoading(false);
-    });
+    };
+    void boot();
+    // Started offline and the network is back: check the session with the server again.
+    const onOnline = () => {
+      if (startedOffline) void boot();
+    };
+    window.addEventListener("online", onOnline);
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      if (event === "SIGNED_OUT") void dropSnapshot().then(clearOutbox);
+      else if (session?.user) {
+        void startSnapshot(queryClient, session.user);
+        void startOutbox(queryClient, session.user.id);
+      }
       setUser(session?.user ?? null);
       if (session?.user) void loadProfile(session.user);
       else setProfile(null);
@@ -342,6 +407,7 @@ function RootComponent() {
       active = false;
       subscription.unsubscribe();
       window.removeEventListener("tripjunkie-appearance", applyAppearance);
+      window.removeEventListener("online", onOnline);
     };
   }, [loadProfile, queryClient, router]);
 

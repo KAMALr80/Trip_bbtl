@@ -16,6 +16,10 @@
 #   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET      Google sign-in (optional)
 #   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SENDER_EMAIL [, SMTP_SENDER_NAME]  (optional)
 #   VITE_SENTRY_DSN                             browser error reporting (optional)
+#   VITE_SERVICE_WORKER                         offline service worker (default true; false = kill switch)
+#   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY [, VAPID_SUBJECT]  web push reminders (optional; make the pair
+#                                               with `bun scripts/pwa/vapid-keys.ts`, once per environment)
+#   EMAIL_API_KEY, EMAIL_FROM                   email backup for reminders, Resend API (optional)
 # Per environment (STAGING / PROD):
 #   SUPABASE_<ENV>_REF          project ref (the id in https://<ref>.supabase.co)
 #   SUPABASE_<ENV>_DB_PASSWORD  database password (db step only)
@@ -63,7 +67,8 @@ check() {
   echo "Settings for $env_name:"
   for v in SUPABASE_ACCESS_TOKEN "SUPABASE_${P}_REF" "SUPABASE_${P}_DB_PASSWORD" \
            CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID "${P}_APP_URL" AI_API_KEY AI_MODEL \
-           GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET SMTP_HOST SMTP_SENDER_EMAIL VITE_SENTRY_DSN; do
+           GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET SMTP_HOST SMTP_SENDER_EMAIL VITE_SENTRY_DSN \
+           VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY EMAIL_API_KEY EMAIL_FROM; do
     if [ -n "${!v:-}" ]; then echo "  ✓ $v"; else echo "  · $v"; fi
   done
 }
@@ -106,7 +111,9 @@ web() {
   read -r publishable service < <(keys)
   url="https://$REF.supabase.co"
   VITE_SUPABASE_URL="$url" VITE_SUPABASE_PUBLISHABLE_KEY="$publishable" \
-    VITE_SUPABASE_PROJECT_ID="$REF" VITE_SENTRY_DSN="${VITE_SENTRY_DSN:-}" bun run build
+    VITE_SUPABASE_PROJECT_ID="$REF" VITE_SENTRY_DSN="${VITE_SENTRY_DSN:-}" \
+    VITE_SERVICE_WORKER="${VITE_SERVICE_WORKER:-true}" VITE_VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY:-}" \
+    bun run build
   log="$(mktemp)"
   "${WRANGLER[@]}" deploy --config .output/server/wrangler.json --env "$env_name" | tee "$log"
   [ -n "$APP_URL" ] || APP_URL="$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' "$log" | head -1)"
@@ -114,17 +121,21 @@ web() {
   # Server secrets: unset optional ones are skipped, so a re-run never blanks a value set by hand.
   jq -n --arg url "$url" --arg pub "$publishable" --arg svc "$service" \
     --arg key "${AI_API_KEY:-}" --arg model "${AI_MODEL:-}" --arg base "${AI_BASE_URL:-}" \
-    --arg pin "${AI_PRICE_IN:-}" --arg pout "${AI_PRICE_OUT:-}" '
+    --arg pin "${AI_PRICE_IN:-}" --arg pout "${AI_PRICE_OUT:-}" \
+    --arg vpub "${VAPID_PUBLIC_KEY:-}" --arg vpriv "${VAPID_PRIVATE_KEY:-}" --arg vsub "${VAPID_SUBJECT:-}" \
+    --arg ekey "${EMAIL_API_KEY:-}" --arg efrom "${EMAIL_FROM:-}" '
     {SUPABASE_URL: $url, SUPABASE_PUBLISHABLE_KEY: $pub, SUPABASE_SERVICE_ROLE_KEY: $svc,
-     AI_API_KEY: $key, AI_MODEL: $model, AI_BASE_URL: $base, AI_PRICE_IN: $pin, AI_PRICE_OUT: $pout}
+     AI_API_KEY: $key, AI_MODEL: $model, AI_BASE_URL: $base, AI_PRICE_IN: $pin, AI_PRICE_OUT: $pout,
+     VAPID_PUBLIC_KEY: $vpub, VAPID_PRIVATE_KEY: $vpriv, VAPID_SUBJECT: $vsub,
+     EMAIL_API_KEY: $ekey, EMAIL_FROM: $efrom}
     | with_entries(select(.value != ""))' |
     "${WRANGLER[@]}" secret bulk --config .output/server/wrangler.json --env "$env_name"
 
   if [ -n "$APP_URL" ] && valid_url "$APP_URL"; then
     sql "INSERT INTO trip_private.cron_endpoints (name, url)
-         VALUES ('purge_photos', '$APP_URL/api/public/purge-photos')
+         VALUES ('purge_photos', '$APP_URL/api/public/purge-photos'), ('notify', '$APP_URL/api/public/notify')
          ON CONFLICT (name) DO UPDATE SET url = excluded.url, updated_at = now();"
-    echo "Deployed $env_name: $APP_URL (photo-purge job points here)."
+    echo "Deployed $env_name: $APP_URL (photo-purge and reminder jobs point here)."
   else
     echo "Deployed $env_name, but no URL was found: set ${P}_APP_URL and re-run 'web'." >&2
   fi

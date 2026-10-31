@@ -10,6 +10,8 @@ Each question has a **recommended default**. If no answer arrives by the milesto
 
 **Oct 30, 2026 (founder): build M3 with the defaults** for Q3, Q4, Q5, Q7, Q9, Q10, Q22, Q25 and Q27. The points live in `public.points_rules`, so changing a value later is a data update, not a code change.
 
+**Oct 31, 2026 (founder): no native apps (Q16).** TripJunkies is a web app that players install from the browser. M4 is now install, offline play and notifications on the web; store submission is gone from M6.
+
 | # | Needed by | Question | Recommended default |
 |---|---|---|---|
 | Q1 | M1 | **What happens to trips created before the new engine?** That includes legacy, "a2c" and "a2e" rooms, and the live **Siam Vibes (`VRFQQM`)** group. | Freeze them as **read-only archive trips** (`rules_version = 1`): overview, photos, stamps and crowns stay; no new play. Tell the Siam Vibes Captain ahead of time. If a group is mid-trip at cutover, delay the cutover for that trip only. **Answer (Oct 21, 2026): recommended default.** |
@@ -27,9 +29,9 @@ Each question has a **recommended default**. If no answer arrives by the milesto
 | Q13 | M3 | **Window Seat crew of 4:** separate passport stamps or one shared stamp? One shared guide (R-354) credits all authors for Storyteller? | Each player gets their own stamp (solo marker only for truly solo). The shared guide counts toward **every** contributor's Storyteller badge. |
 | Q14 | M2 | **Second culture** in setup ("Caribbean in London"): Phase 1 or later? | **Later.** Ship destination-only first, as the deck allows; keep the `cultures text[]` column so it's a UI-only change later. |
 | Q15 | M1 | **Spanish.** Phase 1? | Not Phase 1. But **extract strings into an i18n catalog in M1** so Spanish is a translation job later, not a refactor. **Answer (Oct 21, 2026): recommended default.** |
-| Q16 | M4 | **Native approach:** Capacitor wrapper (reuse the React app) or a React Native rewrite? | **Capacitor** (see 03 §12). Re-evaluate after launch. |
-| Q17 | M4 | **Sign-in methods:** email (password or one-time code?), Google, Apple? | Email **one-time code** (the code exists; turn on verification once the email domain is set up), Google, **Apple** (needed for iOS when Google is offered). |
-| Q18 | Later | **Payments** (Phase 2): provider and when to turn them on? Tier change when players join mid-trip (R-902)? | Stripe on web plus App Store / Play billing rules for in-app purchases (needs a policy review; trips may count as digital goods). Keep `beta_free` on until then. |
+| Q16 | M4 | **Native approach:** Capacitor wrapper (reuse the React app) or a React Native rewrite? | **Capacitor** (see 03 §12). Re-evaluate after launch. **Answer (Oct 31, 2026): no native apps.** Web app only, installed from the browser; no App Store / Google Play builds. |
+| Q17 | M4 | **Sign-in methods:** email (password or one-time code?), Google, Apple? | Email **one-time code** (the code exists; turn on verification once the email domain is set up) and Google. Apple sign-in is optional now that there's no iOS app (Q16); add it later only if players ask. |
+| Q18 | Later | **Payments** (Phase 2): provider and when to turn them on? Tier change when players join mid-trip (R-902)? | Stripe on the web (no store billing rules apply, Q16). Keep `beta_free` on until then. |
 | Q19 | M2 | Final name for **"My TripJunkies Crew"**? Also "Squad" vs "Crew" wording across the app. | Use **"Crew"** everywhere; option label "My crew (on the app)". |
 | Q20 | M1 | **Approve the retire list** in [05](05-legacy-retire-list.md), item by item. | Approve L1–L23; keep the itinerary upload. **Answer (Oct 21, 2026): recommended default.** |
 | Q21 | M2 | **One-night Game Night room:** one phone only, or crew phones with a code but no points? | Both: "Pass one phone" (off-app) or "Everyone on their phone" (code, Game Night Live screen, no points/crowns/stamp). |

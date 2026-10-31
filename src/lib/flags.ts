@@ -6,4 +6,6 @@ const on = (value: string | undefined) => value === "true";
 export const flags = {
   /** The world map (deck slide 15, LATER). */
   map: on(import.meta.env["VITE_FEATURE_MAP"]),
+  /** The offline service worker (M4-02). scripts/deploy.sh turns it on for staging and production. */
+  serviceWorker: on(import.meta.env["VITE_SERVICE_WORKER"]),
 } as const;

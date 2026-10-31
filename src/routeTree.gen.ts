@@ -23,6 +23,7 @@ import { Route as JoinCodeRouteImport } from './routes/join.$code'
 import { Route as LegalDocumentRouteImport } from './routes/legal/$document'
 import { Route as TripsNewRouteImport } from './routes/trips.new'
 import { Route as ShellTTripIdRouteImport } from './routes/_shell.t.$tripId'
+import { Route as ApiPublicNotifyRouteImport } from './routes/api/public/notify'
 import { Route as ApiPublicPurgePhotosRouteImport } from './routes/api/public/purge-photos'
 import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
 import { Route as ShellTTripIdIndexRouteImport } from './routes/_shell.t.$tripId.index'
@@ -98,6 +99,11 @@ const ShellTTripIdRoute = ShellTTripIdRouteImport.update({
   path: '/t/$tripId',
   getParentRoute: () => ShellRoute,
 } as any)
+const ApiPublicNotifyRoute = ApiPublicNotifyRouteImport.update({
+  id: '/api/public/notify',
+  path: '/api/public/notify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPurgePhotosRoute = ApiPublicPurgePhotosRouteImport.update({
   id: '/api/public/purge-photos',
   path: '/api/public/purge-photos',
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/legal/$document': typeof LegalDocumentRoute
   '/trips/new': typeof TripsNewRoute
   '/t/$tripId': typeof ShellTTripIdRouteWithChildren
+  '/api/public/notify': typeof ApiPublicNotifyRoute
   '/api/public/purge-photos': typeof ApiPublicPurgePhotosRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/t/$tripId/play': typeof ShellTTripIdPlayRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/legal/$document': typeof LegalDocumentRoute
   '/trips/new': typeof TripsNewRoute
   '/': typeof ShellIndexRoute
+  '/api/public/notify': typeof ApiPublicNotifyRoute
   '/api/public/purge-photos': typeof ApiPublicPurgePhotosRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/t/$tripId/play': typeof ShellTTripIdPlayRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/trips/new': typeof TripsNewRoute
   '/_shell/': typeof ShellIndexRoute
   '/_shell/t/$tripId': typeof ShellTTripIdRouteWithChildren
+  '/api/public/notify': typeof ApiPublicNotifyRoute
   '/api/public/purge-photos': typeof ApiPublicPurgePhotosRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/_shell/t/$tripId/play': typeof ShellTTripIdPlayRoute
@@ -201,6 +210,7 @@ export interface FileRouteTypes {
     | '/legal/$document'
     | '/trips/new'
     | '/t/$tripId'
+    | '/api/public/notify'
     | '/api/public/purge-photos'
     | '/api/public/version'
     | '/t/$tripId/play'
@@ -220,6 +230,7 @@ export interface FileRouteTypes {
     | '/legal/$document'
     | '/trips/new'
     | '/'
+    | '/api/public/notify'
     | '/api/public/purge-photos'
     | '/api/public/version'
     | '/t/$tripId/play'
@@ -241,6 +252,7 @@ export interface FileRouteTypes {
     | '/trips/new'
     | '/_shell/'
     | '/_shell/t/$tripId'
+    | '/api/public/notify'
     | '/api/public/purge-photos'
     | '/api/public/version'
     | '/_shell/t/$tripId/play'
@@ -257,6 +269,7 @@ export interface RootRouteChildren {
   JoinCodeRoute: typeof JoinCodeRoute
   LegalDocumentRoute: typeof LegalDocumentRoute
   TripsNewRoute: typeof TripsNewRoute
+  ApiPublicNotifyRoute: typeof ApiPublicNotifyRoute
   ApiPublicPurgePhotosRoute: typeof ApiPublicPurgePhotosRoute
   ApiPublicVersionRoute: typeof ApiPublicVersionRoute
 }
@@ -361,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellTTripIdRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/api/public/notify': {
+      id: '/api/public/notify'
+      path: '/api/public/notify'
+      fullPath: '/api/public/notify'
+      preLoaderRoute: typeof ApiPublicNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/purge-photos': {
       id: '/api/public/purge-photos'
       path: '/api/public/purge-photos'
@@ -444,6 +464,7 @@ const rootRouteChildren: RootRouteChildren = {
   JoinCodeRoute: JoinCodeRoute,
   LegalDocumentRoute: LegalDocumentRoute,
   TripsNewRoute: TripsNewRoute,
+  ApiPublicNotifyRoute: ApiPublicNotifyRoute,
   ApiPublicPurgePhotosRoute: ApiPublicPurgePhotosRoute,
   ApiPublicVersionRoute: ApiPublicVersionRoute,
 }

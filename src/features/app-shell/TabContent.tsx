@@ -131,7 +131,7 @@ export function TabContent({
   selectTrip: (id: string) => void;
   refresh: () => Promise<void>;
   onAbout: () => void;
-  onMe: (v: "help" | "bug" | "delete" | "feedback" | "lab" | "reports") => void;
+  onMe: (v: "help" | "bug" | "delete" | "feedback" | "lab" | "reports" | "notifications") => void;
   onReplay: () => void;
   loading: boolean;
   itineraryVersion: number;
@@ -432,6 +432,7 @@ export function TabContent({
             ["Your trips", iconMap, "me-trips"],
             ["Your seasons", iconBoarding, "me-seasons"],
             ["How it works", iconCompass, "how"],
+            ["Notifications", iconBoarding, "notifications"],
             ["Help & FAQ", iconCompass, "help"],
             ["About TripJunkies", iconTrophy, "about"],
             ["Send feedback", founderFeedbackIcon, "feedback"],
@@ -442,8 +443,8 @@ export function TabContent({
               onClick={() =>
                 key === "feedback"
                   ? onMe("bug")
-                  : key === "help"
-                    ? onMe("help")
+                  : key === "help" || key === "notifications"
+                    ? onMe(key)
                     : key === "how"
                       ? onReplay()
                       : key === "about"

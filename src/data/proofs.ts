@@ -3,9 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database, Tables } from "@/integrations/supabase/types";
 import { compressImage } from "@/lib/compress-image";
-import { checkProof } from "@/lib/proof-check.functions";
 import { scheduleKeys } from "./daily";
 import { rpc } from "./rpc";
+import { sendOrQueue, type Queued } from "./offline/outbox";
 
 export type Proof = Tables<"proofs">;
 export type CrewProof = Database["public"]["Functions"]["crew_check"]["Returns"][number] & {
@@ -53,10 +53,14 @@ export function useCrewCheck(tripId: string | null | undefined) {
   });
 }
 
-/** Send a proof: the photo goes to quest-proofs/<trip>/<me>/<item>/, then the server records it. */
+/**
+ * Send a proof: the photo goes to quest-proofs/<trip>/<me>/<item>/, then the server records it.
+ * With no network both wait in the outbox (M4-04) and the result is `Queued`.
+ */
 export function useSubmitProof(tripId: string, userId: string) {
   const queryClient = useQueryClient();
   return useMutation({
+    networkMode: "always",
     mutationFn: async ({
       item,
       photo,
@@ -65,24 +69,16 @@ export function useSubmitProof(tripId: string, userId: string) {
       item: string;
       photo: File | null;
       text: string;
-    }) => {
-      let path: string | null = null;
-      if (photo) {
-        const small = await compressImage(photo, 1280, 300_000);
-        path = `${tripId}/${userId}/${item}/${Date.now()}.jpg`;
-        const up = await supabase.storage
-          .from("quest-proofs")
-          .upload(path, small, { contentType: small.type || "image/jpeg" });
-        if (up.error) throw up.error;
-      }
-      const { data, error } = await rpc("submit_proof", {
-        p_item: item,
-        p_photo_path: path,
-        p_body: text.trim() || null,
-      });
-      if (error) throw error;
-      if (data && path) await checkProof({ data: { proofId: data } }).catch(() => null);
-      return data;
+    }): Promise<string | null | Queued> => {
+      const id = crypto.randomUUID();
+      const small = photo ? await compressImage(photo, 1280, 300_000) : null;
+      const photoPath = small ? `${tripId}/${userId}/${item}/${id}.jpg` : null;
+      return sendOrQueue<string | null>(
+        userId,
+        { kind: "submit_proof", tripId, item, body: text.trim() || null, photoPath },
+        small,
+        id,
+      );
     },
     onSettled: () =>
       Promise.all([
@@ -92,14 +88,18 @@ export function useSubmitProof(tripId: string, userId: string) {
   });
 }
 
-export function useApproveProof(tripId: string) {
+/** 👍 a crew proof; queued with no network (M4-04). */
+export function useApproveProof(tripId: string, userId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (proofId: string) => {
-      const { data, error } = await rpc("approve_proof", { p_proof: proofId });
-      if (error) throw error;
-      return data;
-    },
+    networkMode: "always",
+    mutationFn: (proofId: string) =>
+      sendOrQueue<boolean>(
+        userId,
+        { kind: "approve_proof", tripId, proof: proofId },
+        null,
+        crypto.randomUUID(),
+      ),
     onSettled: () => queryClient.invalidateQueries({ queryKey: proofKeys.crew(tripId) }),
   });
 }
@@ -134,10 +134,14 @@ export function useShareTripQuest(tripId: string) {
   });
 }
 
-/** A Surprise Drop proof: one photo per Bingo square / Scavenger find, or one for Speed / Photo. */
+/**
+ * A Surprise Drop proof: one photo per Bingo square / Scavenger find, or one for Speed / Photo.
+ * Queued with no network (M4-04).
+ */
 export function useSubmitDropProof(tripId: string, userId: string) {
   const queryClient = useQueryClient();
   return useMutation({
+    networkMode: "always",
     mutationFn: async ({
       item,
       part,
@@ -148,25 +152,16 @@ export function useSubmitDropProof(tripId: string, userId: string) {
       part: number;
       photo: File | null;
       text: string;
-    }) => {
-      let path: string | null = null;
-      if (photo) {
-        const small = await compressImage(photo, 1280, 300_000);
-        path = `${tripId}/${userId}/${item}/${part}-${Date.now()}.jpg`;
-        const up = await supabase.storage
-          .from("quest-proofs")
-          .upload(path, small, { contentType: small.type || "image/jpeg" });
-        if (up.error) throw up.error;
-      }
-      const { data, error } = await rpc("submit_drop_proof", {
-        p_item: item,
-        p_part: part,
-        p_photo_path: path,
-        p_body: text.trim() || null,
-      });
-      if (error) throw error;
-      if (data && path) await checkProof({ data: { proofId: data } }).catch(() => null);
-      return data;
+    }): Promise<string | null | Queued> => {
+      const id = crypto.randomUUID();
+      const small = photo ? await compressImage(photo, 1280, 300_000) : null;
+      const photoPath = small ? `${tripId}/${userId}/${item}/${part}-${id}.jpg` : null;
+      return sendOrQueue<string | null>(
+        userId,
+        { kind: "submit_drop_proof", tripId, item, part, body: text.trim() || null, photoPath },
+        small,
+        id,
+      );
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: proofKeys.mine(tripId) }),
   });

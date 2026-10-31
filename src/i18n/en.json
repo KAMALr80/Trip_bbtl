@@ -490,5 +490,56 @@
     "publicMissing": "This guide isn't shared right now.",
     "publicFooter": "Made with TripJunkies™",
     "error": "That didn't work: {{reason}}"
+  },
+  "offline": {
+    "title": "Offline",
+    "synced": "Last synced {{ago}}",
+    "never": "Not synced on this phone yet",
+    "hint": "You're seeing your trip as of the last sync. Anything new needs a connection.",
+    "waiting": "Saved on this phone · sends when you're back online",
+    "approveWaiting": "👍 saved · sends when you're back online",
+    "queued_one": "{{count}} thing waiting to send",
+    "queued_other": "{{count}} things waiting to send",
+    "refused": "Couldn't send {{what}}: {{reason}}",
+    "dismiss": "OK",
+    "what": {
+      "answer_daily": "your answer",
+      "write_journal": "your journal entry",
+      "submit_proof": "your proof",
+      "submit_drop_proof": "your drop photo",
+      "approve_proof": "your 👍"
+    },
+    "mixNeedsNetwork": "Needs a connection"
+  },
+  "install": {
+    "title": "Install TripJunkies",
+    "why": "Put it on your Home Screen so games, your trip and reminders work on the plane, even with no signal.",
+    "button": "Install",
+    "iosStep1": "Tap Share",
+    "iosStep2": "in Safari, then Add to Home Screen.",
+    "notNow": "Not now"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "thisPhone": "Reminders on this phone",
+    "pushOn": "Send reminders to this phone",
+    "installFirst": "On iPhone, add TripJunkies to your Home Screen first (Share → Add to Home Screen), then open it from there to turn reminders on.",
+    "unsupported": "This browser can't show reminders. Email reminders below still work.",
+    "blocked": "Notifications are blocked for TripJunkies in this browser's settings. Allow them there, then come back.",
+    "test": "Send me a test",
+    "testSent": "Sent. It should arrive in a few seconds.",
+    "quiet": "Quiet hours",
+    "quietHint": "No reminders between these times (your time zone). Anything due then waits until they end.",
+    "from": "From",
+    "to": "To",
+    "types": "Reminders",
+    "push": "Push",
+    "email": "Email",
+    "pushFor": "Push: {{label}}",
+    "emailFor": "Email: {{label}}",
+    "cardTitle": "Turn on reminders",
+    "cardWhy": "Get the daily tip, call nights and drops when they happen. Change what you get in Me → Notifications.",
+    "cardButton": "Turn on",
+    "cardNotNow": "Not now"
   }
 }

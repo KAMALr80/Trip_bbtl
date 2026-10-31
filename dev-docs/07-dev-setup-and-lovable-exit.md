@@ -30,7 +30,7 @@ bun run lint         # eslint
 | `AI_API_KEY`, `AI_MODEL`, `AI_BASE_URL` (optional) | server secret | AI provider for all 12 call sites (`src/integrations/ai/index.server.ts`) | Done (M0-08). The Lovable fallback is removed; AI is off until both are set. `AI_PRICE_IN` / `AI_PRICE_OUT` feed the cost report |
 | `CRON_SECRET`, `CRON_SECRET_PREVIOUS` | server secret | `/api/public/*` cron auth (`cron-auth.ts`) | Renamed (M0-10). The photo-purge job authenticates with the DB-held key in `trip_private.cron_keys` and reads its URL from `trip_private.cron_endpoints` (set per environment) |
 | `VITE_SENTRY_DSN` | client | Browser error reporting (`src/lib/error-reporting.ts`) | Done (M0-12, browser side) |
-| *(new)* `SENTRY_DSN` (Worker), `FCM_SERVICE_ACCOUNT`, `EMAIL_API_KEY`, `PLACES_API_KEY` | server secrets | M0/M4 | |
+| *(new)* `SENTRY_DSN` (Worker), `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` (web push, M4-08; also `VITE_VAPID_PUBLIC_KEY` at build), `EMAIL_API_KEY` / `EMAIL_FROM` (reminder email, M4-08), `PLACES_API_KEY` | server secrets | M0/M4 | |
 
 ### Regenerating DB types
 ```bash
@@ -83,8 +83,8 @@ The project is tied to Lovable in **ten places**. Do them in this order (it's M0
 
 ### 3.3 Authentication
 - [ ] Google sign-in goes through `@lovable.dev/cloud-auth-js` (`src/integrations/lovable/index.ts`, called from `src/routes/index.tsx` around line 1273). **Replace** it with `supabase.auth.signInWithOAuth({ provider: 'google' })` using **your own Google OAuth client**.
-- [ ] Add **Apple** sign-in (needed for iOS when Google is offered; see M4).
-- [ ] Remove `src/integrations/supabase/previewAuthStorage.ts`. It shares the session with the Lovable editor iframe over `postMessage`. Use the default `localStorage` storage on web, and Capacitor Preferences / secure storage in native.
+- [ ] ~~Add **Apple** sign-in~~ Not needed: no iOS app (Q16, Oct 31, 2026).
+- [ ] Remove `src/integrations/supabase/previewAuthStorage.ts`. It shares the session with the Lovable editor iframe over `postMessage`. Use the default `localStorage` storage.
 - [ ] Set up **custom SMTP** (Resend, Postmark or SES) for auth emails. The roadmap says email-code verification is "waiting on an email domain"; turn it on.
 
 ### 3.4 Hosting
@@ -106,7 +106,7 @@ The project is tied to Lovable in **ten places**. Do them in this order (it's M0
 - [ ] Re-check that the `purge-expired-trip-photos` pg_cron job calls the right URL for each environment.
 
 ### 3.7 Error reporting
-- [ ] Replace `src/lib/lovable-error-reporting.ts` (uses `window.__lovableEvents`) and its use in `__root.tsx` with **Sentry** (web + Capacitor SDKs).
+- [ ] Replace `src/lib/lovable-error-reporting.ts` (uses `window.__lovableEvents`) and its use in `__root.tsx` with **Sentry** (browser + Worker).
 
 ### 3.8 Build config
 - [ ] Replace `@lovable.dev/vite-tanstack-config` in `vite.config.ts` with an explicit Vite config. Per the comment in `vite.config.ts`, that package bundles:
@@ -135,5 +135,4 @@ The project is tied to Lovable in **ten places**. Do them in this order (it's M0
 |---|---|
 | DB migration | `scripts/deploy.sh staging db`, then `production` (later from CI on merge to `main` / release tag) |
 | Web | `scripts/deploy.sh staging web` / `production web` (build with that project's keys, deploy, secrets, cron URL) |
-| Native | `bun run build:spa && npx cap sync && fastlane ios beta / android beta` (M4) |
 | Version | Bump `src/lib/app-version.ts`. `/api/public/version` + `UpdatePrompt` already ask open clients to reload |

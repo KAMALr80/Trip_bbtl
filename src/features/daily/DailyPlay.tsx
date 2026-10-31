@@ -9,7 +9,9 @@ import {
   useMySchedule,
   type ScheduleItem,
 } from "@/data/daily";
+import { isQueued, usePendingAction } from "@/data/offline/outbox";
 import { useMinute } from "@/features/play/PhaseNotice";
+import { useAuth } from "@/lib/auth-context";
 import { useT } from "@/i18n";
 import { friendlyError } from "@/lib/friendly-error";
 import type { TripWithRole } from "@/lib/trips";
@@ -29,8 +31,11 @@ function DailyItem({ trip, viewOnly, kind }: Props & { kind: "daily_discovery" |
   const now = useMinute();
   const schedule = useMySchedule(trip.id);
   const answers = useDailyAnswers(trip.id);
-  const answer = useAnswerDaily(trip.id);
+  const { user } = useAuth();
+  const answer = useAnswerDaily(trip.id, user?.id ?? "");
   const item = openItem(schedule.data, kind, now);
+  // An answer given offline, waiting in the outbox (M4-04).
+  const pending = usePendingAction(`answer_daily:${item?.id ?? ""}`);
   if (!item) return null;
   const mine = answers.data?.find((a) => a.schedule_id === item.id);
   const label =
@@ -39,8 +44,9 @@ function DailyItem({ trip, viewOnly, kind }: Props & { kind: "daily_discovery" |
       : item.variant === "question"
         ? `${t("daily.discovery")} · ${t("daily.questionDay")}`
         : `${t("daily.discovery")} · ${t("daily.tip")}`;
-  const result = answer.data;
-  const played = !!mine || !!result;
+  const result = isQueued(answer.data) ? null : answer.data;
+  const waiting = !mine && !result && !!pending;
+  const played = !!mine || !!result || waiting;
   const points = result?.points ?? mine?.points ?? 0;
   const rightAnswer = result?.answer ?? null;
 
@@ -52,7 +58,12 @@ function DailyItem({ trip, viewOnly, kind }: Props & { kind: "daily_discovery" |
       {item.insight && <p className="text-xs text-muted-foreground mt-1">{item.insight}</p>}
       {!played && !viewOnly && <Choices item={item} busy={answer.isPending} onPick={pick} />}
       {!played && viewOnly && <p className="text-xs mt-3">{t("daily.viewOnly")}</p>}
-      {played && (
+      {waiting && (
+        <p className="text-sm font-bold mt-3" role="status">
+          {t("offline.waiting")}
+        </p>
+      )}
+      {played && !waiting && (
         <p className="text-sm font-bold mt-3" role="status">
           {(result?.correct ?? mine?.correct) && `${t("daily.right")} `}
           {points > 0 ? t("daily.earned", { count: points }) : t("daily.noPoints")}

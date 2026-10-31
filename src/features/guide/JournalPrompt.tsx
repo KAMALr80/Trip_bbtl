@@ -5,7 +5,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { openItem, useMySchedule } from "@/data/daily";
 import { useJournalOptions, useMyJournal, useWriteJournal } from "@/data/guide";
+import { usePendingAction } from "@/data/offline/outbox";
 import { useMinute } from "@/features/play/PhaseNotice";
+import { useAuth } from "@/lib/auth-context";
 import { useT } from "@/i18n";
 import { friendlyError } from "@/lib/friendly-error";
 import type { TripWithRole } from "@/lib/trips";
@@ -49,24 +51,34 @@ function JournalCard({
   const t = useT();
   const options = useJournalOptions(itemId).data ?? [];
   const entry = useMyJournal(trip.id).data?.find((e) => e.schedule_id === itemId);
-  const write = useWriteJournal(trip.id);
+  const { user } = useAuth();
+  const write = useWriteJournal(trip.id, user?.id ?? "");
+  // An entry written offline, waiting in the outbox (M4-04), shows instead of the saved one.
+  const pending = usePendingAction(`write_journal:${itemId}`);
+  const queued = pending?.action.kind === "write_journal" ? pending.action : null;
+  const shown = queued
+    ? {
+        prompt: options.find((o) => o.idx === queued.choice)?.prompt ?? entry?.prompt ?? "",
+        body: queued.body,
+      }
+    : entry;
   const [choice, setChoice] = useState(0);
   const [text, setText] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const title = showcase ? t("journal.showcaseTitle") : t("journal.title");
   const prompt = options.find((o) => o.idx === choice)?.prompt ?? options[0]?.prompt ?? "";
-  const body = text ?? entry?.body ?? "";
+  const body = text ?? shown?.body ?? "";
   return (
     <section className="app-card mt-3" aria-label={title}>
       <p className="text-xs font-bold uppercase text-muted-foreground">
         {title} · {t("journal.points")}
       </p>
-      {entry && !editing ? (
+      {shown && !editing ? (
         <>
-          <p className="text-sm font-semibold mt-2">{entry.prompt}</p>
-          <p className="text-sm mt-1 whitespace-pre-wrap">{entry.body}</p>
+          <p className="text-sm font-semibold mt-2">{shown.prompt}</p>
+          <p className="text-sm mt-1 whitespace-pre-wrap">{shown.body}</p>
           <p className="text-xs font-bold mt-2" role="status">
-            {t("journal.saved")}
+            {queued ? t("offline.waiting") : t("journal.saved")}
           </p>
           <Button
             variant="outline"

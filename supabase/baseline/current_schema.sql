@@ -445,6 +445,16 @@ CREATE FUNCTION public.claim_airport(p_trip uuid, p_date date, p_mission integer
 
 
 --
+-- Name: claim_notifications(integer, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.claim_notifications(p_limit integer DEFAULT 200, p_user uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, user_id uuid, type text, title text, body text, deep_link text, attempts integer, push boolean, email boolean, email_address text, subscriptions jsonb)
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.claim_notifications(p_limit, p_user) $$;
+
+
+--
 -- Name: clear_song_discs(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -880,6 +890,16 @@ CREATE FUNCTION public.delete_cost_item(p_item uuid) RETURNS void
 
 
 --
+-- Name: delete_push_subscription(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.delete_push_subscription(p_endpoint text) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.delete_push_subscription(p_endpoint) $$;
+
+
+--
 -- Name: delete_trip(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -977,6 +997,16 @@ CREATE FUNCTION public.finalize_season(p_trip uuid, p_season text) RETURNS void
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.finalize_season(p_trip,p_season) $$;
+
+
+--
+-- Name: finish_notifications(jsonb); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.finish_notifications(p_results jsonb) RETURNS integer
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.finish_notifications(p_results) $$;
 
 
 --
@@ -1669,6 +1699,16 @@ CREATE FUNCTION public.my_mix_used() RETURNS integer
 
 
 --
+-- Name: my_notification_settings(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.my_notification_settings() RETURNS TABLE(type text, label text, push boolean, email boolean, quiet_start time without time zone, quiet_end time without time zone)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.my_notification_settings() $$;
+
+
+--
 -- Name: my_passport(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2095,6 +2135,16 @@ CREATE FUNCTION public.quest_review(p_post uuid, p_action text) RETURNS void
 
 
 --
+-- Name: queue_test_notification(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.queue_test_notification() RETURNS uuid
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.queue_test_notification() $$;
+
+
+--
 -- Name: quick_vote_action(uuid, text, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2362,6 +2412,17 @@ CREATE FUNCTION public.save_game_scores(p_trip uuid, p_week integer, p_rows json
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.save_game_scores(p_trip,p_week,p_rows) $$;
+
+
+--
+-- Name: save_push_subscription(text, text, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.save_push_subscription(p_endpoint text, p_p256dh text, p_auth text, p_user_agent text DEFAULT NULL::text) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$
+  SELECT trip_private.save_push_subscription(p_endpoint, p_p256dh, p_auth, p_user_agent) $$;
 
 
 --
@@ -2750,6 +2811,16 @@ CREATE FUNCTION public.set_no_alcohol(p_on boolean) RETURNS void
 
 
 --
+-- Name: set_notification_pref(text, boolean, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_notification_pref(p_type text, p_push boolean, p_email boolean) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.set_notification_pref(p_type, p_push, p_email) $$;
+
+
+--
 -- Name: set_passport_destination(uuid, text, text, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2843,6 +2914,16 @@ CREATE FUNCTION public.set_public_leaderboard(p_public boolean) RETURNS boolean
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.set_public_leaderboard(p_public) $$;
+
+
+--
+-- Name: set_quiet_hours(time without time zone, time without time zone); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_quiet_hours(p_start time without time zone, p_end time without time zone) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.set_quiet_hours(p_start, p_end) $$;
 
 
 --
@@ -4860,6 +4941,43 @@ INSERT INTO public.airport_claims(trip_id,day_date,user_id,mission,photo_path,gu
 
 
 --
+-- Name: claim_notifications(integer, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.claim_notifications(p_limit integer DEFAULT 200, p_user uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, user_id uuid, type text, title text, body text, deep_link text, attempts integer, push boolean, email boolean, email_address text, subscriptions jsonb)
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  UPDATE public.notification_queue q SET status = 'skipped'
+  FROM public.notification_prefs p
+  WHERE p.user_id = q.user_id AND p.type = q.type AND NOT (p.push OR p.email)
+    AND q.status = 'queued' AND q.send_after <= now();
+  RETURN QUERY
+  WITH due AS (
+    SELECT q.id FROM public.notification_queue q
+    WHERE (q.status = 'queued' AND q.send_after <= now()
+           OR q.status = 'sending' AND q.claimed_at < now() - interval '10 minutes')
+      AND (p_user IS NULL OR q.user_id = p_user)
+    ORDER BY q.send_after LIMIT greatest(1, least(p_limit, 1000))
+    FOR UPDATE SKIP LOCKED
+  ), claimed AS (
+    UPDATE public.notification_queue q SET status = 'sending', claimed_at = now(), attempts = q.attempts + 1
+    FROM due WHERE q.id = due.id
+    RETURNING q.*
+  )
+  SELECT c.id, c.user_id, c.type, c.title, c.body, c.deep_link, c.attempts,
+         coalesce(p.push, true), coalesce(p.email, false), u.email::text,
+         coalesce((SELECT jsonb_agg(jsonb_build_object('endpoint', s.endpoint, 'p256dh', s.p256dh, 'auth', s.auth))
+                   FROM public.push_subscriptions s WHERE s.user_id = c.user_id), '[]'::jsonb)
+  FROM claimed c
+  LEFT JOIN public.notification_prefs p ON p.user_id = c.user_id AND p.type = c.type
+  LEFT JOIN auth.users u ON u.id = c.user_id;
+END
+$$;
+
+
+--
 -- Name: clear_song_discs(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -6260,6 +6378,18 @@ END $$;
 
 
 --
+-- Name: delete_push_subscription(text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.delete_push_subscription(p_endpoint text) RETURNS void
+    LANGUAGE sql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  DELETE FROM public.push_subscriptions WHERE endpoint = p_endpoint AND user_id = auth.uid()
+$$;
+
+
+--
 -- Name: delete_trip(uuid, text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -6275,6 +6405,68 @@ CREATE FUNCTION trip_private.delete_trip(p_trip uuid, p_name text) RETURNS void
  INSERT INTO public.trip_deletion_log(trip_id,trip_name,captain_id,member_count) VALUES(p_trip,t.name,auth.uid(),n);
  DELETE FROM public.trips WHERE id=p_trip;
 END $$;
+
+
+--
+-- Name: desired_notifications(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.desired_notifications(p_trip uuid) RETURNS TABLE(user_id uuid, type text, title text, body text, deep_link text, at timestamp with time zone, deadline timestamp with time zone, earliest timestamp with time zone, dedupe text)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  WITH t AS (SELECT * FROM public.trips WHERE id = p_trip AND rules_version = 2 AND setup_completed_at IS NOT NULL),
+  m AS (SELECT tm.user_id, coalesce(nullif(p.time_zone, ''), (SELECT home_timezone FROM t)) AS tz
+        FROM public.trip_members tm LEFT JOIN public.profiles p ON p.id = tm.user_id
+        WHERE tm.trip_id = p_trip AND tm.status = 'approved'),
+  s AS (SELECT sc.*, m.user_id AS member, m.tz
+        FROM public.trip_schedule sc JOIN m ON sc.user_id IS NULL OR sc.user_id = m.user_id
+        WHERE sc.trip_id = p_trip AND EXISTS (SELECT 1 FROM t)),
+  r AS (
+    -- Each morning: the tip itself (R-313), at 8 AM in the player's zone or when it opens if later.
+    SELECT member, 'daily' AS type, 'Daily Discovery' AS title,
+           left(coalesce(s.tailored_text, 'Today''s Daily Discovery is here.'), 200) AS body, '/home' AS link,
+           greatest(s.opens_at, (((s.opens_at AT TIME ZONE s.tz)::date + time '08:00') AT TIME ZONE s.tz)) AS at,
+           s.closes_at AS deadline, s.opens_at AS earliest, s.id AS ref
+    FROM s WHERE s.kind = 'daily_discovery'
+    UNION ALL
+    SELECT member, 'sealed_drop', 'A sealed quest just dropped', 'Open it within 3 hours for +5 bonus points.',
+           '/play', s.opens_at, s.opens_at + interval '3 hours', s.opens_at, s.id
+    FROM s WHERE s.kind = 'sealed_quest'
+    UNION ALL
+    SELECT member, 'sealed_prep', 'Your sealed quest is due tomorrow', 'Get it done before the call night.',
+           '/play', s.closes_at - interval '24 hours', s.closes_at, NULL::timestamptz, s.id
+    FROM s WHERE s.kind = 'sealed_quest' AND s.closes_at IS NOT NULL
+    UNION ALL
+    SELECT member, 'night_soon', 'Call night in an hour', 'Join the call from Play when it starts.',
+           '/play', s.opens_at - interval '1 hour', s.opens_at, NULL::timestamptz, s.id
+    FROM s WHERE s.kind = 'call_night'
+    UNION ALL
+    SELECT member, 'preflight_closing', 'Pre-Flight closes tonight', 'Last chance for Pre-Flight points.',
+           '/play', s.closes_at - interval '5 hours', s.closes_at, NULL::timestamptz, s.id
+    FROM s WHERE s.kind = 'phase' AND s.slot = 'preflight' AND s.closes_at IS NOT NULL
+    UNION ALL
+    SELECT member, 'missions_open', 'Airport Missions are open', 'Three missions for travel day, 4 points each.',
+           '/play', min(s.opens_at), max(s.closes_at), min(s.opens_at), NULL::uuid
+    FROM s WHERE s.kind IN ('airport_mission', 'home_mission') GROUP BY member
+    UNION ALL
+    SELECT member, 'drop_open', 'A Surprise Drop is open', 'Play it on Play before it ends.',
+           '/play', s.opens_at, s.closes_at, s.opens_at, s.id
+    FROM s WHERE s.kind = 'surprise_drop'
+    UNION ALL
+    SELECT member, 'drop_ending', 'A Surprise Drop ends in 3 hours', 'Send your proofs before it closes.',
+           '/play', s.closes_at - interval '3 hours', s.closes_at, NULL::timestamptz, s.id
+    FROM s WHERE s.kind = 'surprise_drop' AND s.closes_at IS NOT NULL
+    UNION ALL
+    SELECT member, 'crowning_24h', 'Crowning night is tomorrow',
+           coalesce('See you at ' || nullif((SELECT crowning_place FROM t), ''), 'Who takes the crown?'),
+           '/play', s.opens_at - interval '24 hours', s.opens_at, NULL::timestamptz, s.id
+    FROM s WHERE s.kind = 'crowning'
+  )
+  SELECT r.member, r.type, r.title, r.body, r.link, r.at, r.deadline, r.earliest,
+         r.type || ':' || p_trip || ':' || coalesce(r.ref::text, '') || ':' || r.member
+  FROM r WHERE r.at > now()
+$$;
 
 
 --
@@ -6655,6 +6847,52 @@ END $$;
 
 
 --
+-- Name: enqueue_notification(uuid, uuid, text, text, text, text, timestamp with time zone, timestamp with time zone, text, boolean, timestamp with time zone); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.enqueue_notification(p_user uuid, p_trip uuid, p_type text, p_title text, p_body text, p_link text, p_at timestamp with time zone, p_deadline timestamp with time zone, p_dedupe text, p_planned boolean DEFAULT false, p_earliest timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE
+  pr public.profiles;
+  v_push boolean := true;
+  v_email boolean := false;
+  v_at timestamptz;
+  v_id uuid;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM trip_private.notification_types() n WHERE n.type = p_type) THEN
+    RAISE EXCEPTION 'Unknown notification type %', p_type;
+  END IF;
+  SELECT n.push, n.email INTO v_push, v_email FROM public.notification_prefs n
+  WHERE n.user_id = p_user AND n.type = p_type;
+  v_push := coalesce(v_push, true);
+  v_email := coalesce(v_email, false);
+  IF NOT (v_push OR v_email) THEN
+    DELETE FROM public.notification_queue WHERE dedupe_key = p_dedupe AND status = 'queued';
+    RETURN NULL;
+  END IF;
+  SELECT * INTO pr FROM public.profiles WHERE id = p_user;
+  v_at := CASE WHEN p_type = 'test' THEN p_at
+               ELSE trip_private.quiet_shift(p_at, pr.time_zone, coalesce(pr.quiet_start, '22:00'),
+                                             coalesce(pr.quiet_end, '08:00'), p_deadline, p_earliest) END;
+  IF v_at IS NULL THEN
+    DELETE FROM public.notification_queue WHERE dedupe_key = p_dedupe AND status = 'queued';
+    RETURN NULL;
+  END IF;
+  INSERT INTO public.notification_queue AS q (user_id, trip_id, type, title, body, deep_link, send_after, dedupe_key, planned)
+  VALUES (p_user, p_trip, p_type, left(p_title, 120), left(coalesce(p_body, ''), 500), coalesce(p_link, '/home'),
+          v_at, p_dedupe, p_planned)
+  ON CONFLICT (dedupe_key) DO UPDATE
+    SET title = excluded.title, body = excluded.body, deep_link = excluded.deep_link, send_after = excluded.send_after
+    WHERE q.status = 'queued'
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END
+$$;
+
+
+--
 -- Name: ensure_sealed(uuid, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -6882,6 +7120,36 @@ BEGIN
  IF NOT trip_private.is_trip_member(p_trip,auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
  PERFORM trip_private.crown_season(p_trip, p_season);
 END $$;
+
+
+--
+-- Name: finish_notifications(jsonb); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.finish_notifications(p_results jsonb) RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE r jsonb; n int := 0;
+BEGIN
+  FOR r IN SELECT * FROM jsonb_array_elements(coalesce(p_results, '[]'::jsonb)) LOOP
+    DELETE FROM public.push_subscriptions WHERE endpoint IN (SELECT jsonb_array_elements_text(coalesce(r->'gone', '[]'::jsonb)));
+    UPDATE public.notification_queue q SET
+      status = CASE r->>'outcome' WHEN 'sent' THEN 'sent'
+                                  WHEN 'skipped' THEN 'skipped'
+                                  WHEN 'retry' THEN CASE WHEN q.attempts >= 5 THEN 'failed' ELSE 'queued' END
+                                  ELSE 'failed' END,
+      send_after = CASE WHEN r->>'outcome' = 'retry' THEN now() + make_interval(mins => power(2, q.attempts - 1)::int)
+                        ELSE q.send_after END,
+      channel = coalesce(r->>'channel', q.channel),
+      last_error = left(r->>'error', 300),
+      sent_at = CASE WHEN r->>'outcome' = 'sent' THEN now() END
+    WHERE q.id = (r->>'id')::uuid AND q.status = 'sending';
+    n := n + 1;
+  END LOOP;
+  RETURN n;
+END
+$$;
 
 
 --
@@ -8571,6 +8839,27 @@ $$;
 
 
 --
+-- Name: live_notify(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.live_notify() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE m record;
+BEGIN
+  FOR m IN SELECT user_id FROM public.trip_members
+           WHERE trip_id = NEW.trip_id AND status = 'approved' AND user_id IS DISTINCT FROM NEW.opened_by LOOP
+    PERFORM trip_private.enqueue_notification(m.user_id, NEW.trip_id, 'night_live',
+      CASE WHEN NEW.is_crowning THEN 'Crowning night is live' ELSE 'Game Night is live' END,
+      'Join from Play to vote.', '/play', now(), NEW.auto_close_at, 'night_live:' || NEW.id || ':' || m.user_id);
+  END LOOP;
+  RETURN NULL;
+END
+$$;
+
+
+--
 -- Name: live_present(uuid, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -8806,6 +9095,30 @@ BEGIN
  JOIN public.trip_members m ON m.user_id=s.user_id AND m.trip_id=p_trip AND m.status='approved'
  WHERE s.trip_id=p_trip AND s.stamped_on=(SELECT max(x.stamped_on) FROM public.passport_stamps x WHERE x.user_id=s.user_id AND x.trip_id=p_trip);
 END $$;
+
+
+--
+-- Name: members_changed(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.members_changed() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_trip uuid;
+BEGIN
+  FOR v_trip IN SELECT DISTINCT trip_id FROM changed LOOP
+    IF EXISTS (SELECT 1 FROM public.trips WHERE id = v_trip) THEN
+      PERFORM trip_private.plan_notifications(v_trip);
+    END IF;
+  END LOOP;
+  IF TG_OP = 'DELETE' THEN
+    DELETE FROM public.notification_queue q USING changed c
+    WHERE q.trip_id = c.trip_id AND q.user_id = c.user_id AND q.status = 'queued';
+  END IF;
+  RETURN NULL;
+END
+$$;
 
 
 --
@@ -9092,6 +9405,23 @@ CREATE FUNCTION trip_private.my_mix_used() RETURNS integer
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$ SELECT count(*)::int FROM public.ai_usage WHERE user_id=auth.uid() AND kind='arcade_mix' AND created_at >= date_trunc('day', now()) $$;
+
+
+--
+-- Name: my_notification_settings(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.my_notification_settings() RETURNS TABLE(type text, label text, push boolean, email boolean, quiet_start time without time zone, quiet_end time without time zone)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT n.type, n.label, coalesce(p.push, true), coalesce(p.email, false), pr.quiet_start, pr.quiet_end
+  FROM trip_private.notification_types() n
+  LEFT JOIN public.notification_prefs p ON p.user_id = auth.uid() AND p.type = n.type
+  LEFT JOIN public.profiles pr ON pr.id = auth.uid()
+  WHERE n.type <> 'test' AND auth.uid() IS NOT NULL
+  ORDER BY n.sort
+$$;
 
 
 --
@@ -9424,6 +9754,30 @@ CREATE FUNCTION trip_private.night_open(p_trip uuid, p_week integer) RETURNS boo
    AND clock_timestamp() <= n.starts_at + interval '3 hours 30 minutes'
    AND (clock_timestamp() >= n.starts_at - interval '15 minutes'
         OR EXISTS (SELECT 1 FROM public.game_night_flow f WHERE f.trip_id=p_trip AND f.week_number=p_week AND f.first_player IS NOT NULL))) $$;
+
+
+--
+-- Name: notification_types(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.notification_types() RETURNS TABLE(type text, label text, sort integer)
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO ''
+    AS $$
+  VALUES ('daily', 'Daily Discovery each morning', 1),
+         ('sealed_drop', 'A sealed quest drops', 2),
+         ('sealed_prep', 'A sealed quest is due tomorrow', 3),
+         ('night_soon', 'Call night in an hour', 4),
+         ('night_live', 'Game Night is live', 5),
+         ('preflight_closing', 'Pre-Flight closes tonight', 6),
+         ('missions_open', 'Airport Missions are open', 7),
+         ('drop_open', 'A Surprise Drop is open', 8),
+         ('drop_ending', 'A Surprise Drop ends soon', 9),
+         ('crowning_24h', 'Crowning night tomorrow', 10),
+         ('crew_check', 'A crew proof needs your 👍', 11),
+         ('proof_expired', 'Your proof ran out of time', 12),
+         ('test', 'Test notification', 99)
+$$;
 
 
 --
@@ -9925,6 +10279,29 @@ END LOOP; END $$;
 
 
 --
+-- Name: plan_notifications(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.plan_notifications(p_trip uuid) RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE d record; v_keep text[] := '{}'; n int := 0;
+BEGIN
+  FOR d IN SELECT * FROM trip_private.desired_notifications(p_trip) LOOP
+    v_keep := v_keep || d.dedupe;
+    PERFORM trip_private.enqueue_notification(d.user_id, p_trip, d.type, d.title, d.body, d.deep_link,
+                                              d.at, d.deadline, d.dedupe, true, d.earliest);
+    n := n + 1;
+  END LOOP;
+  DELETE FROM public.notification_queue q
+  WHERE q.trip_id = p_trip AND q.planned AND q.status = 'queued' AND NOT (q.dedupe_key = ANY (v_keep));
+  RETURN n;
+END
+$$;
+
+
+--
 -- Name: plan_trip(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -10333,6 +10710,37 @@ $$;
 
 
 --
+-- Name: proof_notify(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.proof_notify() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE m record; v_tz text; v_local timestamp; v_slot text;
+BEGIN
+  IF TG_OP = 'INSERT' AND NEW.crew_status = 'waiting' THEN
+    FOR m IN SELECT tm.user_id, coalesce(nullif(p.time_zone, ''), t.home_timezone) AS tz
+             FROM public.trip_members tm JOIN public.trips t ON t.id = tm.trip_id
+             LEFT JOIN public.profiles p ON p.id = tm.user_id
+             WHERE tm.trip_id = NEW.trip_id AND tm.status = 'approved' AND tm.user_id <> NEW.user_id LOOP
+      v_local := now() AT TIME ZONE m.tz;
+      v_slot := v_local::date || CASE WHEN v_local::time < time '14:00' THEN 'am' ELSE 'pm' END;
+      PERFORM trip_private.enqueue_notification(m.user_id, NEW.trip_id, 'crew_check', 'Crew Check',
+        'A crew proof is waiting for your 👍', '/play', now(), NEW.expires_at,
+        'crew_check:' || NEW.trip_id || ':' || v_slot || ':' || m.user_id);
+    END LOOP;
+  ELSIF TG_OP = 'UPDATE' AND NEW.crew_status = 'expired' AND OLD.crew_status IS DISTINCT FROM 'expired' THEN
+    PERFORM trip_private.enqueue_notification(NEW.user_id, NEW.trip_id, 'proof_expired', 'Your proof ran out of time',
+      'Nobody gave it a 👍 within 24 hours, so it didn''t count.', '/play', now(), NULL,
+      'proof_expired:' || NEW.id);
+  END IF;
+  RETURN NULL;
+END
+$$;
+
+
+--
 -- Name: proof_photo_ok(uuid, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -10387,6 +10795,20 @@ CREATE FUNCTION trip_private.proof_upload_ok(p_name text) RETURNS boolean
    AND (s.user_id IS NULL OR s.user_id=auth.uid()) AND (EXISTS (SELECT 1 FROM trip_private.proof_kind(s.kind)) OR s.kind='surprise_drop')
    AND now() >= s.opens_at AND (s.closes_at IS NULL OR now() < s.closes_at)
    AND trip_private.is_trip_member(s.trip_id, auth.uid()))) $_$;
+
+
+--
+-- Name: prune_notifications(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.prune_notifications() RETURNS integer
+    LANGUAGE sql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  WITH d AS (DELETE FROM public.notification_queue
+             WHERE status IN ('sent', 'skipped', 'failed') AND created_at < now() - interval '30 days' RETURNING 1)
+  SELECT count(*)::int FROM d
+$$;
 
 
 --
@@ -10594,6 +11016,29 @@ CREATE FUNCTION trip_private.quest_unlocked(p_trip uuid, p_week integer) RETURNS
 
 
 --
+-- Name: queue_test_notification(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.queue_test_notification() RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.push_subscriptions WHERE user_id = auth.uid()) THEN
+    RAISE EXCEPTION 'Turn on notifications on this phone first';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.notification_queue WHERE user_id = auth.uid() AND type = 'test'
+             AND created_at > now() - interval '1 minute') THEN
+    RAISE EXCEPTION 'One test a minute, please';
+  END IF;
+  RETURN trip_private.enqueue_notification(auth.uid(), NULL, 'test', 'TripJunkies', 'Reminders are on. See you on the trip!',
+    '/me', now(), NULL, 'test:' || auth.uid() || ':' || extract(epoch FROM now())::bigint);
+END
+$$;
+
+
+--
 -- Name: quick_vote_action(uuid, text, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -10642,6 +11087,41 @@ BEGIN
  IF NOT (trip_private.is_leader(v.trip_id) OR (v_week IS NOT NULL AND EXISTS(SELECT 1 FROM public.game_nights WHERE trip_id=v.trip_id AND week_number=v_week AND host_id=auth.uid()))) THEN RAISE EXCEPTION 'Only the host, Captain or Co-Captain can see totals before reveal'; END IF;
  RETURN QUERY SELECT count(*) FILTER(WHERE b.option_index=0),count(*) FILTER(WHERE b.option_index=1) FROM public.live_vote_ballots b WHERE b.vote_id=p_vote;
 END $$;
+
+
+--
+-- Name: quiet_shift(timestamp with time zone, text, time without time zone, time without time zone, timestamp with time zone, timestamp with time zone); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.quiet_shift(p_at timestamp with time zone, p_zone text, p_start time without time zone, p_end time without time zone, p_deadline timestamp with time zone, p_earliest timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS timestamp with time zone
+    LANGUAGE plpgsql STABLE
+    SET search_path TO ''
+    AS $$
+DECLARE
+  v_zone text := coalesce(nullif(p_zone, ''), 'UTC');
+  v_local timestamp := p_at AT TIME ZONE v_zone;
+  v_t time := v_local::time;
+  v_quiet boolean;
+  v_start timestamp;
+  v_end timestamp;
+BEGIN
+  IF p_start = p_end THEN RETURN p_at; END IF;   -- no quiet hours
+  v_quiet := CASE WHEN p_start < p_end THEN v_t >= p_start AND v_t < p_end
+                  ELSE v_t >= p_start OR v_t < p_end END;
+  IF NOT v_quiet THEN RETURN p_at; END IF;
+  -- The quiet window this time is in, as local timestamps.
+  IF p_start < p_end OR v_t >= p_start THEN v_start := v_local::date + p_start;
+  ELSE v_start := (v_local::date - 1) + p_start; END IF;
+  v_end := CASE WHEN p_end > p_start THEN v_start::date + p_end ELSE (v_start::date + 1) + p_end END;
+  IF p_deadline IS NOT NULL AND (v_end AT TIME ZONE v_zone) >= p_deadline THEN
+    IF p_earliest IS NOT NULL AND (v_start AT TIME ZONE v_zone) - interval '5 minutes' < p_earliest THEN
+      RETURN NULL;
+    END IF;
+    RETURN least(p_at, (v_start AT TIME ZONE v_zone) - interval '5 minutes');
+  END IF;
+  RETURN v_end AT TIME ZONE v_zone;
+END
+$$;
 
 
 --
@@ -11307,6 +11787,25 @@ ON CONFLICT (trip_id,week_number,user_id) DO UPDATE SET here=EXCLUDED.here,
 
 
 --
+-- Name: save_push_subscription(text, text, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.save_push_subscription(p_endpoint text, p_p256dh text, p_auth text, p_user_agent text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  INSERT INTO public.push_subscriptions (user_id, endpoint, p256dh, auth, user_agent)
+  VALUES (auth.uid(), p_endpoint, p_p256dh, p_auth, left(p_user_agent, 400))
+  ON CONFLICT (endpoint) DO UPDATE
+    SET user_id = auth.uid(), p256dh = excluded.p256dh, auth = excluded.auth,
+        user_agent = excluded.user_agent, updated_at = now();
+END
+$$;
+
+
+--
 -- Name: save_teams(uuid, jsonb); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -11338,6 +11837,26 @@ BEGIN
   INSERT INTO public.trip_drafts (user_id, data) VALUES (auth.uid(), p_data)
   ON CONFLICT (user_id) DO UPDATE SET data = excluded.data, updated_at = now();
 END $$;
+
+
+--
+-- Name: schedule_changed(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.schedule_changed() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_trip uuid;
+BEGIN
+  FOR v_trip IN SELECT DISTINCT trip_id FROM changed LOOP
+    IF EXISTS (SELECT 1 FROM public.trips WHERE id = v_trip) THEN
+      PERFORM trip_private.plan_notifications(v_trip);
+    END IF;
+  END LOOP;
+  RETURN NULL;
+END
+$$;
 
 
 --
@@ -12226,6 +12745,35 @@ BEGIN UPDATE public.player_private SET no_alcohol=coalesce(p_on,false), updated_
 
 
 --
+-- Name: set_notification_pref(text, boolean, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_notification_pref(p_type text, p_push boolean, p_email boolean) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_trip uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  IF p_type = 'test' OR NOT EXISTS (SELECT 1 FROM trip_private.notification_types() n WHERE n.type = p_type) THEN
+    RAISE EXCEPTION 'Unknown reminder type';
+  END IF;
+  INSERT INTO public.notification_prefs (user_id, type, push, email)
+  VALUES (auth.uid(), p_type, coalesce(p_push, true), coalesce(p_email, false))
+  ON CONFLICT (user_id, type) DO UPDATE SET push = excluded.push, email = excluded.email, updated_at = now();
+  -- Muting drops what is queued; turning it back on re-plans this player's trips.
+  IF NOT (coalesce(p_push, true) OR coalesce(p_email, false)) THEN
+    DELETE FROM public.notification_queue WHERE user_id = auth.uid() AND type = p_type AND status = 'queued';
+  ELSE
+    FOR v_trip IN SELECT trip_id FROM public.trip_members WHERE user_id = auth.uid() AND status = 'approved' LOOP
+      PERFORM trip_private.plan_notifications(v_trip);
+    END LOOP;
+  END IF;
+END
+$$;
+
+
+--
 -- Name: set_passport_destination(uuid, text, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -12413,6 +12961,26 @@ CREATE FUNCTION trip_private.set_public_leaderboard(p_public boolean) RETURNS bo
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$ DECLARE allowed boolean; BEGIN IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF; allowed := coalesce(p_public,false) AND coalesce(trip_private.age_of(auth.uid()),0) >= 18; UPDATE public.player_profiles SET public_leaderboard=allowed WHERE user_id=auth.uid(); RETURN allowed; END $$;
+
+
+--
+-- Name: set_quiet_hours(time without time zone, time without time zone); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_quiet_hours(p_start time without time zone, p_end time without time zone) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_trip uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  UPDATE public.profiles SET quiet_start = coalesce(p_start, '22:00'), quiet_end = coalesce(p_end, '08:00')
+  WHERE id = auth.uid();
+  FOR v_trip IN SELECT trip_id FROM public.trip_members WHERE user_id = auth.uid() AND status = 'approved' LOOP
+    PERFORM trip_private.plan_notifications(v_trip);
+  END LOOP;
+END
+$$;
 
 
 --
@@ -15532,6 +16100,50 @@ CREATE TABLE public.mission_votes (
 
 
 --
+-- Name: notification_prefs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notification_prefs (
+    user_id uuid NOT NULL,
+    type text NOT NULL,
+    push boolean DEFAULT true NOT NULL,
+    email boolean DEFAULT false NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: notification_queue; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notification_queue (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    trip_id uuid,
+    type text NOT NULL,
+    title text NOT NULL,
+    body text NOT NULL,
+    deep_link text DEFAULT '/home'::text NOT NULL,
+    send_after timestamp with time zone NOT NULL,
+    status text DEFAULT 'queued'::text NOT NULL,
+    attempts integer DEFAULT 0 NOT NULL,
+    channel text,
+    last_error text,
+    claimed_at timestamp with time zone,
+    sent_at timestamp with time zone,
+    dedupe_key text NOT NULL,
+    planned boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT notification_queue_body_check CHECK ((length(body) <= 500)),
+    CONSTRAINT notification_queue_channel_check CHECK ((channel = ANY (ARRAY['push'::text, 'email'::text]))),
+    CONSTRAINT notification_queue_deep_link_check CHECK (((deep_link ~ '^/'::text) AND (length(deep_link) <= 300))),
+    CONSTRAINT notification_queue_last_error_check CHECK ((length(last_error) <= 300)),
+    CONSTRAINT notification_queue_status_check CHECK ((status = ANY (ARRAY['queued'::text, 'sending'::text, 'sent'::text, 'skipped'::text, 'failed'::text]))),
+    CONSTRAINT notification_queue_title_check CHECK ((length(title) <= 120))
+);
+
+
+--
 -- Name: orders; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -15796,6 +16408,8 @@ CREATE TABLE public.profiles (
     time_zone_manual boolean DEFAULT false NOT NULL,
     appearance text,
     home_layout text DEFAULT 'trips_first'::text NOT NULL,
+    quiet_start time without time zone DEFAULT '22:00:00'::time without time zone NOT NULL,
+    quiet_end time without time zone DEFAULT '08:00:00'::time without time zone NOT NULL,
     CONSTRAINT profiles_appearance_check CHECK (((appearance IS NULL) OR (appearance = ANY (ARRAY['light'::text, 'dark'::text])))),
     CONSTRAINT profiles_home_layout_check CHECK ((home_layout = ANY (ARRAY['classic'::text, 'trips_first'::text])))
 );
@@ -15847,6 +16461,26 @@ CREATE TABLE public.proofs (
     CONSTRAINT proofs_crew_status_check CHECK ((crew_status = ANY (ARRAY['not_needed'::text, 'waiting'::text, 'approved'::text, 'expired'::text]))),
     CONSTRAINT proofs_part_check CHECK (((part >= 0) AND (part <= 15))),
     CONSTRAINT proofs_photo_path_check CHECK (((photo_path IS NULL) OR (length(photo_path) <= 300)))
+);
+
+
+--
+-- Name: push_subscriptions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.push_subscriptions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    endpoint text NOT NULL,
+    p256dh text NOT NULL,
+    auth text NOT NULL,
+    user_agent text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT push_subscriptions_auth_check CHECK (((length(auth) >= 10) AND (length(auth) <= 100))),
+    CONSTRAINT push_subscriptions_endpoint_check CHECK (((endpoint ~ '^https://'::text) AND (length(endpoint) <= 1000))),
+    CONSTRAINT push_subscriptions_p256dh_check CHECK (((length(p256dh) >= 40) AND (length(p256dh) <= 200))),
+    CONSTRAINT push_subscriptions_user_agent_check CHECK ((length(user_agent) <= 400))
 );
 
 
@@ -17752,6 +18386,30 @@ ALTER TABLE ONLY public.mission_votes
 
 
 --
+-- Name: notification_prefs notification_prefs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_prefs
+    ADD CONSTRAINT notification_prefs_pkey PRIMARY KEY (user_id, type);
+
+
+--
+-- Name: notification_queue notification_queue_dedupe_key_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_queue
+    ADD CONSTRAINT notification_queue_dedupe_key_key UNIQUE (dedupe_key);
+
+
+--
+-- Name: notification_queue notification_queue_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_queue
+    ADD CONSTRAINT notification_queue_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17909,6 +18567,22 @@ ALTER TABLE ONLY public.proofs
 
 ALTER TABLE ONLY public.proofs
     ADD CONSTRAINT proofs_schedule_id_user_id_part_key UNIQUE (schedule_id, user_id, part);
+
+
+--
+-- Name: push_subscriptions push_subscriptions_endpoint_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.push_subscriptions
+    ADD CONSTRAINT push_subscriptions_endpoint_key UNIQUE (endpoint);
+
+
+--
+-- Name: push_subscriptions push_subscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.push_subscriptions
+    ADD CONSTRAINT push_subscriptions_pkey PRIMARY KEY (id);
 
 
 --
@@ -18686,6 +19360,20 @@ CREATE INDEX live_votes_trip_idx ON public.live_votes USING btree (trip_id, crea
 
 
 --
+-- Name: notification_queue_due_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_queue_due_idx ON public.notification_queue USING btree (send_after) WHERE (status = 'queued'::text);
+
+
+--
+-- Name: notification_queue_trip_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_queue_trip_idx ON public.notification_queue USING btree (trip_id) WHERE (status = 'queued'::text);
+
+
+--
 -- Name: one_captain_per_trip; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -18718,6 +19406,13 @@ CREATE INDEX points_ledger_standings_idx ON public.points_ledger USING btree (tr
 --
 
 CREATE INDEX proofs_waiting_idx ON public.proofs USING btree (trip_id, expires_at) WHERE (crew_status = 'waiting'::text);
+
+
+--
+-- Name: push_subscriptions_user_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX push_subscriptions_user_idx ON public.push_subscriptions USING btree (user_id);
 
 
 --
@@ -19470,6 +20165,13 @@ CREATE TRIGGER live_sessions_archive_guard BEFORE INSERT OR UPDATE ON public.liv
 
 
 --
+-- Name: live_sessions live_sessions_notify; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER live_sessions_notify AFTER INSERT ON public.live_sessions FOR EACH ROW EXECUTE FUNCTION trip_private.live_notify();
+
+
+--
 -- Name: live_votes live_votes_archive_guard; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -19488,6 +20190,13 @@ CREATE TRIGGER mission_claims_archive_guard BEFORE INSERT OR UPDATE ON public.mi
 --
 
 CREATE TRIGGER mission_votes_archive_guard BEFORE INSERT OR UPDATE ON public.mission_votes FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: notification_queue notification_queue_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER notification_queue_archive_guard BEFORE INSERT OR UPDATE ON public.notification_queue FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -19572,6 +20281,13 @@ CREATE TRIGGER profiles_founding_signup AFTER INSERT ON public.profiles FOR EACH
 --
 
 CREATE TRIGGER proofs_archive_guard BEFORE INSERT OR UPDATE ON public.proofs FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: proofs proofs_notify; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER proofs_notify AFTER INSERT OR UPDATE OF crew_status ON public.proofs FOR EACH ROW EXECUTE FUNCTION trip_private.proof_notify();
 
 
 --
@@ -20016,6 +20732,27 @@ CREATE TRIGGER trip_members_crew_size BEFORE INSERT OR UPDATE OF trip_id ON publ
 
 
 --
+-- Name: trip_members trip_members_notify_del; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_members_notify_del AFTER DELETE ON public.trip_members REFERENCING OLD TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION trip_private.members_changed();
+
+
+--
+-- Name: trip_members trip_members_notify_ins; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_members_notify_ins AFTER INSERT ON public.trip_members REFERENCING NEW TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION trip_private.members_changed();
+
+
+--
+-- Name: trip_members trip_members_notify_upd; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_members_notify_upd AFTER UPDATE ON public.trip_members REFERENCING NEW TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION trip_private.members_changed();
+
+
+--
 -- Name: trip_members trip_members_replan; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -20055,6 +20792,27 @@ CREATE TRIGGER trip_player_cards_archive_guard BEFORE INSERT OR UPDATE ON public
 --
 
 CREATE TRIGGER trip_schedule_archive_guard BEFORE INSERT OR UPDATE ON public.trip_schedule FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: trip_schedule trip_schedule_notify_del; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_schedule_notify_del AFTER DELETE ON public.trip_schedule REFERENCING OLD TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION trip_private.schedule_changed();
+
+
+--
+-- Name: trip_schedule trip_schedule_notify_ins; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_schedule_notify_ins AFTER INSERT ON public.trip_schedule REFERENCING NEW TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION trip_private.schedule_changed();
+
+
+--
+-- Name: trip_schedule trip_schedule_notify_upd; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_schedule_notify_upd AFTER UPDATE ON public.trip_schedule REFERENCING NEW TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION trip_private.schedule_changed();
 
 
 --
@@ -20849,6 +21607,30 @@ ALTER TABLE ONLY public.mission_votes
 
 
 --
+-- Name: notification_prefs notification_prefs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_prefs
+    ADD CONSTRAINT notification_prefs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: notification_queue notification_queue_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_queue
+    ADD CONSTRAINT notification_queue_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
+-- Name: notification_queue notification_queue_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_queue
+    ADD CONSTRAINT notification_queue_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: orders orders_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -20982,6 +21764,14 @@ ALTER TABLE ONLY public.proofs
 
 ALTER TABLE ONLY public.proofs
     ADD CONSTRAINT proofs_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
+-- Name: push_subscriptions push_subscriptions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.push_subscriptions
+    ADD CONSTRAINT push_subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -23071,6 +23861,18 @@ ALTER TABLE public.mission_claims ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mission_votes ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: notification_prefs; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.notification_prefs ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: notification_queue; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.notification_queue ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: orders; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -23167,6 +23969,13 @@ CREATE POLICY "players read their own journal" ON public.journal_entries FOR SEL
 
 
 --
+-- Name: notification_prefs players read their own notification settings; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own notification settings" ON public.notification_prefs FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
 -- Name: points_ledger players read their own points; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -23178,6 +23987,13 @@ CREATE POLICY "players read their own points" ON public.points_ledger FOR SELECT
 --
 
 CREATE POLICY "players read their own proofs" ON public.proofs FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: push_subscriptions players read their own subscriptions; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own subscriptions" ON public.push_subscriptions FOR SELECT TO authenticated USING ((user_id = auth.uid()));
 
 
 --
@@ -23236,6 +24052,12 @@ ALTER TABLE public.proof_votes ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.proofs ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: push_subscriptions; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: culture_quest_answers quest_answers_own; Type: POLICY; Schema: public; Owner: -
@@ -24017,6 +24839,14 @@ GRANT ALL ON FUNCTION public.claim_airport(p_trip uuid, p_date date, p_mission i
 
 
 --
+-- Name: FUNCTION claim_notifications(p_limit integer, p_user uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.claim_notifications(p_limit integer, p_user uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.claim_notifications(p_limit integer, p_user uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION clear_song_discs(p_trip uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -24364,6 +25194,15 @@ GRANT ALL ON FUNCTION public.delete_cost_item(p_item uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION delete_push_subscription(p_endpoint text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.delete_push_subscription(p_endpoint text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.delete_push_subscription(p_endpoint text) TO service_role;
+GRANT ALL ON FUNCTION public.delete_push_subscription(p_endpoint text) TO authenticated;
+
+
+--
 -- Name: FUNCTION delete_trip(p_trip uuid, p_name text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -24449,6 +25288,14 @@ GRANT ALL ON FUNCTION public.extend_draw_timer(p_trip uuid) TO service_role;
 
 REVOKE ALL ON FUNCTION public.finalize_season(p_trip uuid, p_season text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.finalize_season(p_trip uuid, p_season text) TO service_role;
+
+
+--
+-- Name: FUNCTION finish_notifications(p_results jsonb); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.finish_notifications(p_results jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.finish_notifications(p_results jsonb) TO service_role;
 
 
 --
@@ -25013,6 +25860,15 @@ GRANT ALL ON FUNCTION public.my_mix_used() TO service_role;
 
 
 --
+-- Name: FUNCTION my_notification_settings(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.my_notification_settings() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.my_notification_settings() TO service_role;
+GRANT ALL ON FUNCTION public.my_notification_settings() TO authenticated;
+
+
+--
 -- Name: FUNCTION my_passport(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -25379,6 +26235,15 @@ GRANT ALL ON FUNCTION public.quest_review(p_post uuid, p_action text) TO service
 
 
 --
+-- Name: FUNCTION queue_test_notification(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.queue_test_notification() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.queue_test_notification() TO service_role;
+GRANT ALL ON FUNCTION public.queue_test_notification() TO authenticated;
+
+
+--
 -- Name: FUNCTION quick_vote_action(p_trip uuid, p_action text, p_vote uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -25605,6 +26470,15 @@ GRANT ALL ON FUNCTION public.save_cost_item(p_trip uuid, p_item uuid, p_title te
 
 REVOKE ALL ON FUNCTION public.save_game_scores(p_trip uuid, p_week integer, p_rows jsonb) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.save_game_scores(p_trip uuid, p_week integer, p_rows jsonb) TO service_role;
+
+
+--
+-- Name: FUNCTION save_push_subscription(p_endpoint text, p_p256dh text, p_auth text, p_user_agent text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.save_push_subscription(p_endpoint text, p_p256dh text, p_auth text, p_user_agent text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.save_push_subscription(p_endpoint text, p_p256dh text, p_auth text, p_user_agent text) TO service_role;
+GRANT ALL ON FUNCTION public.save_push_subscription(p_endpoint text, p_p256dh text, p_auth text, p_user_agent text) TO authenticated;
 
 
 --
@@ -25933,6 +26807,15 @@ GRANT ALL ON FUNCTION public.set_no_alcohol(p_on boolean) TO service_role;
 
 
 --
+-- Name: FUNCTION set_notification_pref(p_type text, p_push boolean, p_email boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_notification_pref(p_type text, p_push boolean, p_email boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_notification_pref(p_type text, p_push boolean, p_email boolean) TO service_role;
+GRANT ALL ON FUNCTION public.set_notification_pref(p_type text, p_push boolean, p_email boolean) TO authenticated;
+
+
+--
 -- Name: FUNCTION set_passport_destination(p_trip uuid, p_country text, p_state text, p_city text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -26011,6 +26894,15 @@ GRANT ALL ON FUNCTION public.set_public_launch(p_on boolean) TO service_role;
 REVOKE ALL ON FUNCTION public.set_public_leaderboard(p_public boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.set_public_leaderboard(p_public boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.set_public_leaderboard(p_public boolean) TO service_role;
+
+
+--
+-- Name: FUNCTION set_quiet_hours(p_start time without time zone, p_end time without time zone); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_quiet_hours(p_start time without time zone, p_end time without time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_quiet_hours(p_start time without time zone, p_end time without time zone) TO service_role;
+GRANT ALL ON FUNCTION public.set_quiet_hours(p_start time without time zone, p_end time without time zone) TO authenticated;
 
 
 --
@@ -27193,6 +28085,14 @@ GRANT ALL ON FUNCTION trip_private.claim_airport(p_trip uuid, p_date date, p_mis
 
 
 --
+-- Name: FUNCTION claim_notifications(p_limit integer, p_user uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.claim_notifications(p_limit integer, p_user uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.claim_notifications(p_limit integer, p_user uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION clear_song_discs(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -27642,11 +28542,26 @@ GRANT ALL ON FUNCTION trip_private.delete_cost_item(p_item uuid) TO service_role
 
 
 --
+-- Name: FUNCTION delete_push_subscription(p_endpoint text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.delete_push_subscription(p_endpoint text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.delete_push_subscription(p_endpoint text) TO authenticated;
+
+
+--
 -- Name: FUNCTION delete_trip(p_trip uuid, p_name text); Type: ACL; Schema: trip_private; Owner: -
 --
 
 REVOKE ALL ON FUNCTION trip_private.delete_trip(p_trip uuid, p_name text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.delete_trip(p_trip uuid, p_name text) TO authenticated;
+
+
+--
+-- Name: FUNCTION desired_notifications(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.desired_notifications(p_trip uuid) FROM PUBLIC;
 
 
 --
@@ -27751,6 +28666,13 @@ REVOKE ALL ON FUNCTION trip_private.enforce_seat_cap() FROM PUBLIC;
 
 
 --
+-- Name: FUNCTION enqueue_notification(p_user uuid, p_trip uuid, p_type text, p_title text, p_body text, p_link text, p_at timestamp with time zone, p_deadline timestamp with time zone, p_dedupe text, p_planned boolean, p_earliest timestamp with time zone); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.enqueue_notification(p_user uuid, p_trip uuid, p_type text, p_title text, p_body text, p_link text, p_at timestamp with time zone, p_deadline timestamp with time zone, p_dedupe text, p_planned boolean, p_earliest timestamp with time zone) FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION ensure_sealed(p_trip uuid, p_user uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -27822,6 +28744,14 @@ REVOKE ALL ON FUNCTION trip_private.fill_schedule_content(p_trip uuid) FROM PUBL
 REVOKE ALL ON FUNCTION trip_private.finalize_season(p_trip uuid, p_season text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.finalize_season(p_trip uuid, p_season text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.finalize_season(p_trip uuid, p_season text) TO service_role;
+
+
+--
+-- Name: FUNCTION finish_notifications(p_results jsonb); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.finish_notifications(p_results jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.finish_notifications(p_results jsonb) TO service_role;
 
 
 --
@@ -28423,6 +29353,13 @@ GRANT ALL ON FUNCTION trip_private.live_and_crowns_due() TO service_role;
 
 
 --
+-- Name: FUNCTION live_notify(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.live_notify() FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION live_present(p_session uuid, p_presenter uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -28518,6 +29455,13 @@ GRANT ALL ON FUNCTION trip_private.member_stamp_badges(p_trip uuid) TO authentic
 
 
 --
+-- Name: FUNCTION members_changed(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.members_changed() FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION mission_action(p_trip uuid, p_action text, p_slot integer, p_claim uuid, p_layover boolean, p_phase text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -28595,6 +29539,14 @@ GRANT ALL ON FUNCTION trip_private.my_lab_view() TO service_role;
 REVOKE ALL ON FUNCTION trip_private.my_mix_used() FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.my_mix_used() TO authenticated;
 GRANT ALL ON FUNCTION trip_private.my_mix_used() TO service_role;
+
+
+--
+-- Name: FUNCTION my_notification_settings(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.my_notification_settings() FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.my_notification_settings() TO authenticated;
 
 
 --
@@ -28744,6 +29696,13 @@ GRANT ALL ON FUNCTION trip_private.night_no_show_check(p_trip uuid, p_week integ
 REVOKE ALL ON FUNCTION trip_private.night_open(p_trip uuid, p_week integer) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.night_open(p_trip uuid, p_week integer) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.night_open(p_trip uuid, p_week integer) TO service_role;
+
+
+--
+-- Name: FUNCTION notification_types(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.notification_types() FROM PUBLIC;
 
 
 --
@@ -28916,6 +29875,13 @@ GRANT ALL ON FUNCTION trip_private.plan_nights(p_trip uuid, p_first timestamp wi
 
 
 --
+-- Name: FUNCTION plan_notifications(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.plan_notifications(p_trip uuid) FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION plan_trip(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29031,6 +29997,13 @@ GRANT ALL ON FUNCTION trip_private.price(p_key text) TO service_role;
 
 
 --
+-- Name: FUNCTION proof_notify(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.proof_notify() FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION proof_photo_ok(p_proof uuid, p_viewer uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29055,6 +30028,13 @@ GRANT ALL ON FUNCTION trip_private.proof_read_ok(p_name text) TO service_role;
 REVOKE ALL ON FUNCTION trip_private.proof_upload_ok(p_name text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.proof_upload_ok(p_name text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.proof_upload_ok(p_name text) TO service_role;
+
+
+--
+-- Name: FUNCTION prune_notifications(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.prune_notifications() FROM PUBLIC;
 
 
 --
@@ -29159,6 +30139,15 @@ GRANT ALL ON FUNCTION trip_private.quest_unlocked(p_trip uuid, p_week integer) T
 
 
 --
+-- Name: FUNCTION queue_test_notification(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.queue_test_notification() FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.queue_test_notification() TO authenticated;
+GRANT ALL ON FUNCTION trip_private.queue_test_notification() TO service_role;
+
+
+--
 -- Name: FUNCTION quick_vote_action(p_trip uuid, p_action text, p_vote uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29174,6 +30163,13 @@ GRANT ALL ON FUNCTION trip_private.quick_vote_action(p_trip uuid, p_action text,
 REVOKE ALL ON FUNCTION trip_private.quick_vote_totals(p_vote uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.quick_vote_totals(p_vote uuid) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.quick_vote_totals(p_vote uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION quiet_shift(p_at timestamp with time zone, p_zone text, p_start time without time zone, p_end time without time zone, p_deadline timestamp with time zone, p_earliest timestamp with time zone); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.quiet_shift(p_at timestamp with time zone, p_zone text, p_start time without time zone, p_end time without time zone, p_deadline timestamp with time zone, p_earliest timestamp with time zone) FROM PUBLIC;
 
 
 --
@@ -29487,6 +30483,14 @@ GRANT ALL ON FUNCTION trip_private.save_game_scores(p_trip uuid, p_week integer,
 
 
 --
+-- Name: FUNCTION save_push_subscription(p_endpoint text, p_p256dh text, p_auth text, p_user_agent text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.save_push_subscription(p_endpoint text, p_p256dh text, p_auth text, p_user_agent text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.save_push_subscription(p_endpoint text, p_p256dh text, p_auth text, p_user_agent text) TO authenticated;
+
+
+--
 -- Name: FUNCTION save_teams(p_trip uuid, p_teams jsonb); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29502,6 +30506,13 @@ GRANT ALL ON FUNCTION trip_private.save_teams(p_trip uuid, p_teams jsonb) TO ser
 REVOKE ALL ON FUNCTION trip_private.save_trip_draft(p_data jsonb) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.save_trip_draft(p_data jsonb) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.save_trip_draft(p_data jsonb) TO service_role;
+
+
+--
+-- Name: FUNCTION schedule_changed(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.schedule_changed() FROM PUBLIC;
 
 
 --
@@ -29869,6 +30880,14 @@ GRANT ALL ON FUNCTION trip_private.set_no_alcohol(p_on boolean) TO service_role;
 
 
 --
+-- Name: FUNCTION set_notification_pref(p_type text, p_push boolean, p_email boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_notification_pref(p_type text, p_push boolean, p_email boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_notification_pref(p_type text, p_push boolean, p_email boolean) TO authenticated;
+
+
+--
 -- Name: FUNCTION set_passport_destination(p_trip uuid, p_country text, p_state text, p_city text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29934,6 +30953,14 @@ GRANT ALL ON FUNCTION trip_private.set_public_launch(p_on boolean) TO service_ro
 
 REVOKE ALL ON FUNCTION trip_private.set_public_leaderboard(p_public boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.set_public_leaderboard(p_public boolean) TO authenticated;
+
+
+--
+-- Name: FUNCTION set_quiet_hours(p_start time without time zone, p_end time without time zone); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_quiet_hours(p_start time without time zone, p_end time without time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_quiet_hours(p_start time without time zone, p_end time without time zone) TO authenticated;
 
 
 --
@@ -31558,6 +32585,21 @@ GRANT ALL ON TABLE public.mission_votes TO service_role;
 
 
 --
+-- Name: TABLE notification_prefs; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.notification_prefs TO service_role;
+GRANT SELECT ON TABLE public.notification_prefs TO authenticated;
+
+
+--
+-- Name: TABLE notification_queue; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.notification_queue TO service_role;
+
+
+--
 -- Name: TABLE orders; Type: ACL; Schema: public; Owner: -
 --
 
@@ -31712,6 +32754,55 @@ GRANT ALL ON TABLE public.proof_votes TO service_role;
 
 GRANT ALL ON TABLE public.proofs TO service_role;
 GRANT SELECT ON TABLE public.proofs TO authenticated;
+
+
+--
+-- Name: TABLE push_subscriptions; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.push_subscriptions TO service_role;
+
+
+--
+-- Name: COLUMN push_subscriptions.id; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(id) ON TABLE public.push_subscriptions TO authenticated;
+
+
+--
+-- Name: COLUMN push_subscriptions.user_id; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(user_id) ON TABLE public.push_subscriptions TO authenticated;
+
+
+--
+-- Name: COLUMN push_subscriptions.endpoint; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(endpoint) ON TABLE public.push_subscriptions TO authenticated;
+
+
+--
+-- Name: COLUMN push_subscriptions.user_agent; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(user_agent) ON TABLE public.push_subscriptions TO authenticated;
+
+
+--
+-- Name: COLUMN push_subscriptions.created_at; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(created_at) ON TABLE public.push_subscriptions TO authenticated;
+
+
+--
+-- Name: COLUMN push_subscriptions.updated_at; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(updated_at) ON TABLE public.push_subscriptions TO authenticated;
 
 
 --

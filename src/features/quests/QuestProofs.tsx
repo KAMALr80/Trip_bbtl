@@ -14,7 +14,9 @@ import {
   type CrewProof,
   type Proof,
 } from "@/data/proofs";
+import { usePendingAction, useOutbox } from "@/data/offline/outbox";
 import { useMinute } from "@/features/play/PhaseNotice";
+import { useAuth } from "@/lib/auth-context";
 import { useT } from "@/i18n";
 import { friendlyError } from "@/lib/friendly-error";
 import type { Member, TripWithRole } from "@/lib/trips";
@@ -96,6 +98,8 @@ function QuestCard({
 }) {
   const t = useT();
   const submit = useSubmitProof(trip.id, userId);
+  // A proof sent offline, waiting in the outbox (M4-04).
+  const pending = usePendingAction(`submit_proof:${item.id}`);
   const reveal = useOpenItem(trip.id);
   const share = useShareTripQuest(trip.id);
   const [photo, setPhoto] = useState<File | null>(null);
@@ -148,7 +152,11 @@ function QuestCard({
               {share.data ? t("quests.keepSecret") : t("quests.share")}
             </Button>
           )}
-          {proof ? (
+          {pending && !proof ? (
+            <p className="text-sm font-bold mt-3" role="status">
+              {t("offline.waiting")}
+            </p>
+          ) : proof ? (
             <p className="text-sm font-bold mt-3" role="status">
               {proof.crew_status === "waiting"
                 ? t("quests.waiting")
@@ -219,7 +227,15 @@ export function CrewCheck({
 }) {
   const t = useT();
   const crew = useCrewCheck(trip.id);
-  const approve = useApproveProof(trip.id);
+  const { user } = useAuth();
+  const approve = useApproveProof(trip.id, user?.id ?? "");
+  // 👍s given offline, waiting in the outbox (M4-04).
+  const outbox = useOutbox();
+  const approvedOffline = new Set(
+    outbox.flatMap((e) =>
+      e.status === "queued" && e.action.kind === "approve_proof" ? [e.action.proof] : [],
+    ),
+  );
   const rows = crew.data ?? [];
   if (!rows.length) return null;
   const nameOf = (id: string) =>
@@ -237,6 +253,7 @@ export function CrewCheck({
             proof={p}
             name={nameOf(p.user_id)}
             busy={approve.isPending}
+            waiting={approvedOffline.has(p.id)}
             viewOnly={viewOnly}
             onApprove={() => approve.mutate(p.id)}
           />
@@ -255,12 +272,14 @@ function CrewProofRow({
   proof,
   name,
   busy,
+  waiting,
   viewOnly,
   onApprove,
 }: {
   proof: CrewProof;
   name: string;
   busy: boolean;
+  waiting: boolean;
   viewOnly?: boolean | undefined;
   onApprove: () => void;
 }) {
@@ -285,15 +304,21 @@ function CrewProofRow({
       <p className="text-xs text-muted-foreground mt-1">
         {t("crewCheck.needsBy", { time: when(proof.expires_at) })}
       </p>
-      {!viewOnly && (
-        <Button
-          className="mt-2 min-h-11 w-full"
-          disabled={busy}
-          aria-label={t("crewCheck.approveLabel", { name })}
-          onClick={onApprove}
-        >
-          {t("crewCheck.approve")}
-        </Button>
+      {waiting ? (
+        <p className="text-sm font-bold mt-2" role="status">
+          {t("offline.approveWaiting")}
+        </p>
+      ) : (
+        !viewOnly && (
+          <Button
+            className="mt-2 min-h-11 w-full"
+            disabled={busy}
+            aria-label={t("crewCheck.approveLabel", { name })}
+            onClick={onApprove}
+          >
+            {t("crewCheck.approve")}
+          </Button>
+        )
       )}
     </li>
   );

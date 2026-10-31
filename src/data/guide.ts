@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { scheduleKeys } from "./daily";
 import { rpc } from "./rpc";
+import { sendOrQueue } from "./offline/outbox";
 
 export const guideKeys = {
   options: (item: string) => ["journal", item, "options"] as const,
@@ -41,18 +42,18 @@ export function useMyJournal(tripId: string) {
   });
 }
 
-export function useWriteJournal(tripId: string) {
+/** Save tonight's journal entry; with no network it waits in the outbox (M4-04). */
+export function useWriteJournal(tripId: string, userId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ item, body, choice }: { item: string; body: string; choice: number }) => {
-      const { data, error } = await rpc("write_journal", {
-        p_item: item,
-        p_body: body,
-        p_choice: choice,
-      });
-      if (error) throw error;
-      return data;
-    },
+    networkMode: "always",
+    mutationFn: ({ item, body, choice }: { item: string; body: string; choice: number }) =>
+      sendOrQueue<string | null>(
+        userId,
+        { kind: "write_journal", tripId, item, body, choice },
+        null,
+        crypto.randomUUID(),
+      ),
     onSettled: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: guideKeys.mine(tripId) }),

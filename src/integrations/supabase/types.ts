@@ -3263,6 +3263,100 @@ export type Database = {
           },
         ];
       };
+      notification_prefs: {
+        Row: {
+          email: boolean;
+          push: boolean;
+          type: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          email?: boolean;
+          push?: boolean;
+          type: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          email?: boolean;
+          push?: boolean;
+          type?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      notification_queue: {
+        Row: {
+          attempts: number;
+          body: string;
+          channel: string | null;
+          claimed_at: string | null;
+          created_at: string;
+          dedupe_key: string;
+          deep_link: string;
+          id: string;
+          last_error: string | null;
+          planned: boolean;
+          send_after: string;
+          sent_at: string | null;
+          status: string;
+          title: string;
+          trip_id: string | null;
+          type: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          body: string;
+          channel?: string | null;
+          claimed_at?: string | null;
+          created_at?: string;
+          dedupe_key: string;
+          deep_link?: string;
+          id?: string;
+          last_error?: string | null;
+          planned?: boolean;
+          send_after: string;
+          sent_at?: string | null;
+          status?: string;
+          title: string;
+          trip_id?: string | null;
+          type: string;
+          user_id: string;
+        };
+        Update: {
+          attempts?: number;
+          body?: string;
+          channel?: string | null;
+          claimed_at?: string | null;
+          created_at?: string;
+          dedupe_key?: string;
+          deep_link?: string;
+          id?: string;
+          last_error?: string | null;
+          planned?: boolean;
+          send_after?: string;
+          sent_at?: string | null;
+          status?: string;
+          title?: string;
+          trip_id?: string | null;
+          type?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notification_queue_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       orders: {
         Row: {
           amount_due_cents: number;
@@ -3805,6 +3899,8 @@ export type Database = {
           id: string;
           last_seen_at: string;
           onboarding_completed: boolean;
+          quiet_end: string;
+          quiet_start: string;
           seen_tips: string[];
           time_zone: string | null;
           time_zone_manual: boolean;
@@ -3820,6 +3916,8 @@ export type Database = {
           id: string;
           last_seen_at?: string;
           onboarding_completed?: boolean;
+          quiet_end?: string;
+          quiet_start?: string;
           seen_tips?: string[];
           time_zone?: string | null;
           time_zone_manual?: boolean;
@@ -3834,6 +3932,8 @@ export type Database = {
           id?: string;
           last_seen_at?: string;
           onboarding_completed?: boolean;
+          quiet_end?: string;
+          quiet_start?: string;
           seen_tips?: string[];
           time_zone?: string | null;
           time_zone_manual?: boolean;
@@ -3947,6 +4047,40 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      push_subscriptions: {
+        Row: {
+          auth: string;
+          created_at: string;
+          endpoint: string;
+          id: string;
+          p256dh: string;
+          updated_at: string;
+          user_agent: string | null;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          auth: string;
+          created_at?: string;
+          endpoint: string;
+          id?: string;
+          p256dh: string;
+          updated_at?: string;
+          user_agent?: string | null;
+          user_id: string;
+        };
+        Update: {
+          auth?: string;
+          created_at?: string;
+          endpoint?: string;
+          id?: string;
+          p256dh?: string;
+          updated_at?: string;
+          user_agent?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       quest_challenges: {
         Row: {
@@ -6590,6 +6724,22 @@ export type Database = {
         };
         Returns: undefined;
       };
+      claim_notifications: {
+        Args: { p_limit?: number; p_user?: string };
+        Returns: {
+          attempts: number;
+          body: string;
+          deep_link: string;
+          email: boolean;
+          email_address: string;
+          id: string;
+          push: boolean;
+          subscriptions: Json;
+          title: string;
+          type: string;
+          user_id: string;
+        }[];
+      };
       clear_song_discs: { Args: { p_trip: string }; Returns: undefined };
       close_live: { Args: { p_session: string }; Returns: undefined };
       close_live_vote: { Args: { p_vote: string }; Returns: undefined };
@@ -6871,6 +7021,7 @@ export type Database = {
         Returns: undefined;
       };
       delete_cost_item: { Args: { p_item: string }; Returns: undefined };
+      delete_push_subscription: { Args: { p_endpoint: string }; Returns: undefined };
       delete_trip: { Args: { p_name: string; p_trip: string }; Returns: undefined };
       discard_trip_draft: { Args: Record<PropertyKey, never>; Returns: undefined };
       dismiss_bug_update: { Args: { p_report: string }; Returns: undefined };
@@ -6893,6 +7044,7 @@ export type Database = {
       end_trip: { Args: { p_trip: string }; Returns: undefined };
       extend_draw_timer: { Args: { p_trip: string }; Returns: number };
       finalize_season: { Args: { p_season: string; p_trip: string }; Returns: undefined };
+      finish_notifications: { Args: { p_results: Json }; Returns: number };
       founder_age_tiers: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -7198,6 +7350,17 @@ export type Database = {
         }[];
       };
       my_mix_used: { Args: Record<PropertyKey, never>; Returns: number };
+      my_notification_settings: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          email: boolean;
+          label: string;
+          push: boolean;
+          quiet_end: string;
+          quiet_start: string;
+          type: string;
+        }[];
+      };
       my_passport: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -7424,6 +7587,7 @@ export type Database = {
         }[];
       };
       quest_review: { Args: { p_action: string; p_post: string }; Returns: undefined };
+      queue_test_notification: { Args: Record<PropertyKey, never>; Returns: string };
       quick_vote_action: {
         Args: { p_action: string; p_trip: string; p_vote?: string };
         Returns: string;
@@ -7518,6 +7682,10 @@ export type Database = {
       };
       save_game_scores: {
         Args: { p_rows: Json; p_trip: string; p_week: number };
+        Returns: undefined;
+      };
+      save_push_subscription: {
+        Args: { p_auth: string; p_endpoint: string; p_p256dh: string; p_user_agent?: string };
         Returns: undefined;
       };
       save_teams: { Args: { p_teams: Json; p_trip: string }; Returns: undefined };
@@ -7717,6 +7885,10 @@ export type Database = {
         Returns: undefined;
       };
       set_no_alcohol: { Args: { p_on: boolean }; Returns: undefined };
+      set_notification_pref: {
+        Args: { p_email: boolean; p_push: boolean; p_type: string };
+        Returns: undefined;
+      };
       set_passport_destination: {
         Args: { p_city: string; p_country: string; p_state: string; p_trip: string };
         Returns: undefined;
@@ -7745,6 +7917,7 @@ export type Database = {
       set_price_rule: { Args: { p_cents: number; p_key: string }; Returns: undefined };
       set_public_launch: { Args: { p_on: boolean }; Returns: undefined };
       set_public_leaderboard: { Args: { p_public: boolean }; Returns: boolean };
+      set_quiet_hours: { Args: { p_end: string; p_start: string }; Returns: undefined };
       set_room_listing: {
         Args: {
           p_city: string;

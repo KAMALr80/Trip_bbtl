@@ -5,7 +5,10 @@
 - Keep optional haptics in the browser-only shared helper, never required for play; reduced-motion users get the same gameplay.
 - Night Flight page textures and orbit controls are presentation-only over existing trip data and shared actions; appearance never changes access rules.
 - Journey is a read-only client view over member-scoped schedules and results; opening it must not change trip rules or reveal gated content.
-- Manifest-only PWA, no service worker, so previews never go stale.
+- Service worker (M4-02, `src/pwa/`): on only in builds with VITE_SERVICE_WORKER=true (staging, production). Pages are network first, so online players always get the latest build; a new build waits until the player taps Refresh on UpdatePrompt, never mid-game. Data (Supabase, server functions, `/api`) is never cached by the worker. `VITE_SERVICE_WORKER=false` deploys the self-removing kill switch.
+- Offline snapshot (M4-03, `src/data/offline/`): screens fall back to it only when `isNetworkError` says the network failed, never on a refusal from the server. Add a query to the snapshot only through `keepQuery` in `rules.ts`, and only the player's own view (no other players' photos or hidden content). Signing out, or a session the server rejects, deletes it.
+- Offline outbox (M4-04): a player action that may wait for the network goes through `sendOrQueue` (with `networkMode: "always"`) and must be safe to resend on the server; add its kind to `outbox-rules.ts`. Screens show waiting actions from `usePendingAction`, not by faking query data. The server keeps every deadline: a queued action is a claim it may refuse.
+- Install and reminders (M4-01, M4-07): offer them only after the player is in a trip, from a tap, and never in front of play; on iPhone push only works in the installed app. Push subscriptions go through `src/pwa/push.ts` (save_push_subscription); never ask for notification permission on first visit.
 - Boarding… art falls back to tile A while its founder setting loads.
 - Appearance: profile, saved, dark. Share nav clearance to avoid overlaps.
 - One look (M1-03). The `cinematic-*` CSS classes are that look, not a variant; don't add look switches or per-page skins.
