@@ -5,7 +5,7 @@
 - Keep optional haptics in the browser-only shared helper, never required for play; reduced-motion users get the same gameplay.
 - Night Flight page textures and orbit controls are presentation-only over existing trip data and shared actions; appearance never changes access rules.
 - Journey is a read-only client view over member-scoped schedules and results; opening it must not change trip rules or reveal gated content.
-- Manifest-only PWA, no service worker, so previews never go stale.
+- Service worker (M4-02, `src/pwa/`): on only in builds with VITE_SERVICE_WORKER=true (staging, production). Pages are network first, so online players always get the latest build; a new build waits until the player taps Refresh on UpdatePrompt, never mid-game. Data (Supabase, server functions, `/api`) is never cached by the worker. `VITE_SERVICE_WORKER=false` deploys the self-removing kill switch.
 - Boarding… art falls back to tile A while its founder setting loads.
 - Appearance: profile, saved, dark. Share nav clearance to avoid overlaps.
 - One look (M1-03). The `cinematic-*` CSS classes are that look, not a variant; don't add look switches or per-page skins.

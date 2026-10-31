@@ -16,6 +16,7 @@
 #   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET      Google sign-in (optional)
 #   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SENDER_EMAIL [, SMTP_SENDER_NAME]  (optional)
 #   VITE_SENTRY_DSN                             browser error reporting (optional)
+#   VITE_SERVICE_WORKER                         offline service worker (default true; false = kill switch)
 # Per environment (STAGING / PROD):
 #   SUPABASE_<ENV>_REF          project ref (the id in https://<ref>.supabase.co)
 #   SUPABASE_<ENV>_DB_PASSWORD  database password (db step only)
@@ -106,7 +107,8 @@ web() {
   read -r publishable service < <(keys)
   url="https://$REF.supabase.co"
   VITE_SUPABASE_URL="$url" VITE_SUPABASE_PUBLISHABLE_KEY="$publishable" \
-    VITE_SUPABASE_PROJECT_ID="$REF" VITE_SENTRY_DSN="${VITE_SENTRY_DSN:-}" bun run build
+    VITE_SUPABASE_PROJECT_ID="$REF" VITE_SENTRY_DSN="${VITE_SENTRY_DSN:-}" \
+    VITE_SERVICE_WORKER="${VITE_SERVICE_WORKER:-true}" bun run build
   log="$(mktemp)"
   "${WRANGLER[@]}" deploy --config .output/server/wrangler.json --env "$env_name" | tee "$log"
   [ -n "$APP_URL" ] || APP_URL="$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' "$log" | head -1)"

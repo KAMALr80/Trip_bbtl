@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "vite build && bun scripts/pwa/build-sw.ts",
     "build:dev": "vite build --mode development",
     "deploy:staging": "scripts/deploy.sh staging",
     "deploy:production": "scripts/deploy.sh production",

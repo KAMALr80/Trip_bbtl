@@ -16,6 +16,7 @@
 | Security | pgTAP + scripted probes | RLS: non-member can't read; member can't write directly; pending member sees nothing; teen photo privacy; sealed text hidden before reveal | CI |
 | Component | Vitest + Testing Library | Setup wizard steps, Play hub states, Crew Check card, Game Night Live voting UI | CI |
 | End to end | **Playwright** (mobile viewport 390×844, plus 360 and 430) | Critical flows (§3) with 2–3 real accounts in parallel browser contexts | CI on preview deploy; nightly on staging |
+| Offline | Playwright `e2e/pwa` (`playwright.pwa.config.ts`: build with the service worker, `wrangler dev`) | Worker install, offline Home and pages, offline page, nothing from `/api` cached | CI |
 | Real devices | Manual (iPhone with the app installed from Safari, Android Chrome) | Install, service worker updates, offline outbox, web push, camera upload | Before each release that touches them |
 
 **Shared fixtures:** `supabase/tests/fixtures/phases.json` drives **both** the pgTAP phase tests and the Vitest phase tests. That's how the SQL and TypeScript phase engines are kept identical (03 §6).

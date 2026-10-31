@@ -37,6 +37,15 @@ icon, full-screen launch, offline storage and, on iPhone, web push.
 Removed with the decision: the Capacitor spike and project, native auth (Apple sign-in), universal and
 app links, the native camera plugin, store readiness and the store release pipeline.
 
+## Status (Oct 31, 2026)
+
+| ID | State | What's done · what's left |
+|---|---|---|
+| M4-01 | ⬜ | Not started. |
+| M4-02 | ✅ | `src/pwa/sw.ts` + `src/pwa/sw-plan.ts` (the rules, unit-tested), bundled by `scripts/pwa/build-sw.ts` after `vite build`. Precaches this build's JS/CSS, icons, manifest, the Home shell (`/`) and `/offline` (≈ 3.6 MB). Pages network first (3.5s timeout) → cached copy → Home shell → offline page; images and Google Fonts cached on first use; Supabase, server functions, `/api`, legal pages and password reset never cached. A new build waits until Refresh on `UpdatePrompt`. On only with `VITE_SERVICE_WORKER=true` (`scripts/deploy.sh` defaults it on); `false` ships the self-removing kill switch, and the app removes any worker and `tj-*` caches when the flag is off. `e2e/pwa` (CI) checks install, offline Home, offline visited pages and the offline page; the update and kill-switch flows were checked by hand against `wrangler dev`. **Left:** check it on staging once deployed. |
+| M4-03 | ⬜ | Not started. Offline, signed-in screens show the app shell, but their data calls fail until the snapshot exists. |
+| M4-04 – M4-10 | ⬜ | Not started. |
+
 ---
 
 ### M4-01 · Install experience
@@ -46,12 +55,14 @@ app links, the native camera plugin, store readiness and the store release pipel
 - Dismissals are remembered per device; the card never blocks play.
 - **Acceptance:** the install card shows on Android Chrome and the guide on iPhone Safari; neither shows once installed.
 
-### M4-02 · Service worker
-- Today there is no service worker on purpose (`src/AGENTS.md`: "so previews never go stale"). Add one **only in staging and production builds**; local dev and preview deploys stay without it.
-- Precache the built app shell (HTML, JS, CSS, fonts, icons, the art the flight games need) with Workbox (`vite-plugin-pwa` `injectManifest`, or a small hand-written worker). API, Supabase and server-function requests are **never** cached by the worker; the M4-03 snapshot handles data.
-- **Updates:** a new worker waits. The existing `UpdatePrompt` (`/api/public/version`) asks "New version, reload?"; on yes it sends `SKIP_WAITING` and reloads. Never take control mid-game without asking.
-- A kill switch: a `/sw.js` that unregisters itself can be shipped if a bad worker goes out (G12).
-- **Acceptance:** with the network off, the installed app opens to Home from a cold start; a deploy shows the update prompt exactly once.
+### M4-02 · Service worker ✅
+- **Only in staging and production builds** (`VITE_SERVICE_WORKER=true`, set by `scripts/deploy.sh`); local dev, tests and other builds run without one.
+- A small hand-written worker (`src/pwa/sw.ts`), no Workbox: TanStack Start + Nitro builds don't fit `vite-plugin-pwa`, and the rules are short. `scripts/pwa/build-sw.ts` bundles it after `vite build` with the precache list and a version hashed from the precached files.
+- Precache: this build's JS and CSS, icons, manifest, the Home shell and the offline page. Install fails (and retries later) if the Home page it fetched belongs to another build. Images are cached when first shown; **M4-05 adds the flight-game art** to the precache.
+- API, Supabase and server-function requests are **never** cached by the worker; the M4-03 snapshot handles data.
+- **Updates:** a new worker waits. `UpdatePrompt` asks for an update check when the app becomes visible and shows "New version available" once the new build is installed; Refresh sends `TJ_SKIP_WAITING` and reloads when it takes control. Never take control mid-game without asking.
+- **Kill switch:** deploy with `VITE_SERVICE_WORKER=false`. That build's `sw.js` removes itself and its caches and reloads open tabs; the app also unregisters any worker when the flag is off (G12).
+- **Acceptance:** with the network off, the app opens to Home from a cold start; a deploy shows the update prompt exactly once. ✅ (`e2e/pwa`, and by hand against `wrangler dev`).
 
 ### M4-03 · Offline snapshot
 - Whenever online, and specifically at Takeoff, cache the current trip bundle in IndexedDB: trip, members (names + avatars), phase windows, revealed schedule items, **flight game content**, own standings.
