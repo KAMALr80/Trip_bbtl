@@ -16,7 +16,14 @@ export default defineConfig({
   retries: process.env["CI"] ? 1 : 0,
   reporter: process.env["CI"] ? "github" : "list",
   use: { baseURL: `http://127.0.0.1:${PORT}`, trace: "retain-on-failure" },
-  projects: [{ name: "iphone", use: { ...devices["iPhone 13"], browserName: "chromium" } }],
+  // The full Chromium in headless mode, not Playwright's default headless shell: the shell can't
+  // show notifications (the push test) and is further from what phones run for service workers.
+  projects: [
+    {
+      name: "iphone",
+      use: { ...devices["iPhone 13"], browserName: "chromium", channel: "chromium" },
+    },
+  ],
   webServer: {
     command: `bun run build && npx wrangler dev --config .output/server/wrangler.json --port ${PORT} --ip 127.0.0.1`,
     url: `http://127.0.0.1:${PORT}/api/public/version`,
