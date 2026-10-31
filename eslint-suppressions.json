@@ -249,14 +249,6 @@
       "count": 24
     }
   },
-  "src/features/missions/AirportMissions.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    },
-    "no-restricted-syntax": {
-      "count": 33
-    }
-  },
   "src/features/offline/OfflineTripCards.tsx": {
     "no-restricted-syntax": {
       "count": 9
@@ -371,7 +363,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 46
+      "count": 32
     }
   },
   "src/features/players/PlayerCards.tsx": {
@@ -395,41 +387,17 @@
       "count": 1
     }
   },
-  "src/features/points/Season.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    },
-    "no-restricted-syntax": {
-      "count": 13
-    }
-  },
   "src/features/points/Seasons.tsx": {
     "no-restricted-imports": {
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 53
+      "count": 51
     }
   },
   "src/features/points/TieWheel.tsx": {
     "no-restricted-syntax": {
       "count": 1
-    }
-  },
-  "src/features/points/TripSeasonBoard.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    },
-    "no-restricted-syntax": {
-      "count": 5
-    }
-  },
-  "src/features/quests/SealedQuests.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    },
-    "no-restricted-syntax": {
-      "count": 32
     }
   },
   "src/features/setup/CultureA2eSetup.tsx": {
@@ -506,11 +474,6 @@
       "count": 16
     }
   },
-  "src/features/trip/JourneyPhases.tsx": {
-    "no-restricted-syntax": {
-      "count": 17
-    }
-  },
   "src/features/trip/SeatCap.tsx": {
     "no-restricted-imports": {
       "count": 1
@@ -548,14 +511,6 @@
   "src/features/trip/TripUnlock.tsx": {
     "no-restricted-syntax": {
       "count": 14
-    }
-  },
-  "src/features/window-seat/CrewGuide.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    },
-    "no-restricted-syntax": {
-      "count": 7
     }
   },
   "src/features/window-seat/SoloGuide.tsx": {

@@ -75,7 +75,7 @@ SELECT throws_like($$SELECT public.set_call_nights((SELECT id FROM ids WHERE k =
 
 -- ---------------------------------------------------------------- schedule (M2-12)
 SELECT tests.clear_authentication();
-SELECT is((SELECT string_agg(kind || ':' || slot, ',' ORDER BY opens_at) FILTER (WHERE kind <> 'call_night')
+SELECT is((SELECT string_agg(kind || ':' || slot, ',' ORDER BY opens_at) FILTER (WHERE kind IN ('phase', 'crowning'))
            || ',' || count(*) FILTER (WHERE kind = 'call_night')
            FROM public.trip_schedule WHERE trip_id = (SELECT id FROM ids WHERE k = 'trip')),
           'phase:preflight,phase:takeoff,phase:trip_season,crowning:,phase:baggage_claim,1',

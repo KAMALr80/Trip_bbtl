@@ -1,4 +1,5 @@
 -- M0-11 characterisation: Airport Missions (R-331/R-332) and "We've arrived" (R-103).
+-- M3-16: these wrappers are retired for clients; the tests pin the trip_private functions archived trips still use.
 -- Airport Missions use now(): fixtures place the trip's first day relative to today (home zone UTC).
 BEGIN;
 \ir ../_helpers.psql
@@ -25,39 +26,39 @@ GRANT ALL ON claims TO PUBLIC;
 
 -- ---------------------------------------------------------------- the departure-day window
 SELECT tests.authenticate_as(tests.user_id('stranger'));
-SELECT throws_like($$SELECT public.mission_action((SELECT today_trip FROM f), 'reveal', 1)$$,
+SELECT throws_like($$SELECT tests.mission_action((SELECT today_trip FROM f), 'reveal', 1)$$,
                    'Join this trip first', 'non-members cannot reveal missions');
 
 SELECT tests.authenticate_as(tests.user_id('p1'));
-SELECT throws_like($$SELECT public.mission_action((SELECT future_trip FROM f), 'reveal', 1)$$,
+SELECT throws_like($$SELECT tests.mission_action((SELECT future_trip FROM f), 'reveal', 1)$$,
                    'Airport Missions open on departure day', 'missions are sealed before departure day');
-SELECT throws_like($$SELECT public.mission_action((SELECT started_trip FROM f), 'reveal', 1)$$,
+SELECT throws_like($$SELECT tests.mission_action((SELECT started_trip FROM f), 'reveal', 1)$$,
                    'Airport Missions have closed%', 'missions not revealed on departure day are missed');
-SELECT throws_like($$SELECT public.mission_action((SELECT today_trip FROM f), 'reveal', 2)$$,
+SELECT throws_like($$SELECT tests.mission_action((SELECT today_trip FROM f), 'reveal', 2)$$,
                    'Finish the one before this first', 'missions are revealed in order');
 
 -- ---------------------------------------------------------------- reveal, complete, cap
-INSERT INTO claims SELECT 1, public.mission_action((SELECT today_trip FROM f), 'reveal', 1);
+INSERT INTO claims SELECT 1, tests.mission_action((SELECT today_trip FROM f), 'reveal', 1);
 SELECT isnt((SELECT id FROM claims WHERE slot = 1), NULL::uuid, 'mission 1 reveals on departure day');
-SELECT throws_like($$SELECT public.mission_action((SELECT today_trip FROM f), 'reveal', 1)$$,
+SELECT throws_like($$SELECT tests.mission_action((SELECT today_trip FROM f), 'reveal', 1)$$,
                    'Already revealed', 'a mission can only be revealed once');
-SELECT throws_like($$SELECT public.mission_action((SELECT today_trip FROM f), 'reveal', 2)$$,
+SELECT throws_like($$SELECT tests.mission_action((SELECT today_trip FROM f), 'reveal', 2)$$,
                    'Finish the one before this first', 'the next mission waits until this one is answered');
-SELECT is(public.mission_action((SELECT today_trip FROM f), 'complete', NULL, (SELECT id FROM claims WHERE slot = 1)),
+SELECT is(tests.mission_action((SELECT today_trip FROM f), 'complete', NULL, (SELECT id FROM claims WHERE slot = 1)),
           (SELECT id FROM claims WHERE slot = 1), 'submitting proof completes the mission');
-SELECT throws_like($$SELECT public.mission_action((SELECT today_trip FROM f), 'complete', NULL, (SELECT id FROM claims WHERE slot = 1))$$,
+SELECT throws_like($$SELECT tests.mission_action((SELECT today_trip FROM f), 'complete', NULL, (SELECT id FROM claims WHERE slot = 1))$$,
                    'Already answered', 'a mission can only be answered once');
 
-INSERT INTO claims SELECT 2, public.mission_action((SELECT today_trip FROM f), 'reveal', 2);
-SELECT public.mission_action((SELECT today_trip FROM f), 'complete', NULL, (SELECT id FROM claims WHERE slot = 2));
-INSERT INTO claims SELECT 3, public.mission_action((SELECT today_trip FROM f), 'reveal', 3);
-SELECT public.mission_action((SELECT today_trip FROM f), 'skip', NULL, (SELECT id FROM claims WHERE slot = 3));
-SELECT throws_like($$SELECT public.mission_action((SELECT today_trip FROM f), 'reveal', 4)$$,
+INSERT INTO claims SELECT 2, tests.mission_action((SELECT today_trip FROM f), 'reveal', 2);
+SELECT tests.mission_action((SELECT today_trip FROM f), 'complete', NULL, (SELECT id FROM claims WHERE slot = 2));
+INSERT INTO claims SELECT 3, tests.mission_action((SELECT today_trip FROM f), 'reveal', 3);
+SELECT tests.mission_action((SELECT today_trip FROM f), 'skip', NULL, (SELECT id FROM claims WHERE slot = 3));
+SELECT throws_like($$SELECT tests.mission_action((SELECT today_trip FROM f), 'reveal', 4)$$,
                    'Missions 4 and 5 are for layovers', 'missions 4–5 need the layover flag');
-INSERT INTO claims SELECT 4, public.mission_action((SELECT today_trip FROM f), 'reveal', 4, NULL, true);
-SELECT public.mission_action((SELECT today_trip FROM f), 'complete', NULL, (SELECT id FROM claims WHERE slot = 4));
-INSERT INTO claims SELECT 5, public.mission_action((SELECT today_trip FROM f), 'reveal', 5, NULL, true);
-SELECT throws_like($$SELECT public.mission_action((SELECT today_trip FROM f), 'reveal', 6, NULL, true)$$,
+INSERT INTO claims SELECT 4, tests.mission_action((SELECT today_trip FROM f), 'reveal', 4, NULL, true);
+SELECT tests.mission_action((SELECT today_trip FROM f), 'complete', NULL, (SELECT id FROM claims WHERE slot = 4));
+INSERT INTO claims SELECT 5, tests.mission_action((SELECT today_trip FROM f), 'reveal', 5, NULL, true);
+SELECT throws_like($$SELECT tests.mission_action((SELECT today_trip FROM f), 'reveal', 6, NULL, true)$$,
                    'Pick a mission slot', 'there are at most 5 mission slots');
 SELECT tests.clear_authentication();
 
@@ -74,12 +75,12 @@ SELECT ok((SELECT bool_and(position('{destination}' in mission_text) = 0) FROM p
 
 -- ---------------------------------------------------------------- verification by leaders
 SELECT tests.authenticate_as(tests.user_id('p1'));
-SELECT throws_like($$SELECT public.mission_action((SELECT today_trip FROM f), 'verify', NULL, (SELECT id FROM claims WHERE slot = 1))$$,
+SELECT throws_like($$SELECT tests.mission_action((SELECT today_trip FROM f), 'verify', NULL, (SELECT id FROM claims WHERE slot = 1))$$,
                    'Only the Captain or Co-Captain can verify', 'players cannot verify missions');
 SELECT tests.authenticate_as(tests.user_id('co'));
-SELECT lives_ok($$SELECT public.mission_action((SELECT today_trip FROM f), 'verify', NULL, (SELECT id FROM claims WHERE slot = 1))$$,
+SELECT lives_ok($$SELECT tests.mission_action((SELECT today_trip FROM f), 'verify', NULL, (SELECT id FROM claims WHERE slot = 1))$$,
                 'the Co-Captain verifies a mission');
-SELECT throws_like($$SELECT public.mission_action((SELECT today_trip FROM f), 'decline', NULL, (SELECT id FROM claims WHERE slot = 1))$$,
+SELECT throws_like($$SELECT tests.mission_action((SELECT today_trip FROM f), 'decline', NULL, (SELECT id FROM claims WHERE slot = 1))$$,
                    'Already decided', 'a decided mission stays decided');
 SELECT tests.clear_authentication();
 SELECT is((SELECT status FROM public.mission_claims WHERE id = (SELECT id FROM claims WHERE slot = 1)),
@@ -87,14 +88,14 @@ SELECT is((SELECT status FROM public.mission_claims WHERE id = (SELECT id FROM c
 
 -- ---------------------------------------------------------------- proof deadline
 SELECT tests.authenticate_as(tests.user_id('p1'));
-SELECT is((SELECT proof_due_at FROM public.mission_window((SELECT today_trip FROM f))),
+SELECT is((SELECT proof_due_at FROM trip_private.mission_window((SELECT today_trip FROM f))),
           trip_private.trip_season_start_at((SELECT today_trip FROM f)),
           'proof for a revealed mission is due when Trip Season starts (R-332)');
 SELECT tests.clear_authentication();
 UPDATE public.mission_claims SET revealed_at = now() - interval '3 days' WHERE id = (SELECT id FROM claims WHERE slot = 5);
 UPDATE public.trips SET arrived_at = now() - interval '1 hour' WHERE id = (SELECT today_trip FROM f);
 SELECT tests.authenticate_as(tests.user_id('p1'));
-SELECT throws_like($$SELECT public.mission_action((SELECT today_trip FROM f), 'complete', NULL, (SELECT id FROM claims WHERE slot = 5))$$,
+SELECT throws_like($$SELECT tests.mission_action((SELECT today_trip FROM f), 'complete', NULL, (SELECT id FROM claims WHERE slot = 5))$$,
                    'This mission proof deadline has passed', 'no proof after Trip Season has started and 24h have passed');
 SELECT tests.clear_authentication();
 UPDATE public.trips SET arrived_at = NULL WHERE id = (SELECT today_trip FROM f);

@@ -3,8 +3,9 @@ BEGIN;
 \ir ../_helpers.psql
 SELECT plan(5);
 
-SELECT is((SELECT count(*)::int FROM cron.job WHERE jobname IN ('purge-expired-trip-photos', 'crown-due-seasons')), 2,
-          'both scheduled jobs exist');
+SELECT is((SELECT string_agg(jobname, ',' ORDER BY jobname) FROM cron.job),
+          'expire-proofs,live-and-crowns,purge-expired-trip-photos,settle-drops',
+          'the scheduled jobs (the old crown-due-seasons retired with M3-16)');
 SELECT ok((SELECT command NOT ILIKE '%lovable%' FROM cron.job WHERE jobname = 'purge-expired-trip-photos'),
           'the photo purge no longer calls a Lovable-hosted URL');
 SELECT ok((SELECT command LIKE '%Authorization%' AND command LIKE '%cron_keys%' FROM cron.job WHERE jobname = 'purge-expired-trip-photos'),

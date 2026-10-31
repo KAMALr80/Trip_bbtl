@@ -35,6 +35,7 @@ import { signOut } from "@/data/account";
 import { TripOverview } from "@/features/trip/TripOverview";
 import { BugUpdates } from "@/features/admin/BugInbox";
 import { PhaseNotice } from "@/features/play/PhaseNotice";
+import { DailyDiscovery } from "@/features/daily/DailyPlay";
 import { PlayHub } from "@/features/play/PlayHub";
 
 import { CaptainBadge, LockedNote, isUnlocked } from "@/features/trip/TripUnlock";
@@ -159,6 +160,7 @@ export function TabContent({
     return (
       <>
         <PhaseNotice trip={active} viewOnly={viewOnly} />
+        <DailyDiscovery trip={active} viewOnly={viewOnly} />
         <div className="app-card cinematic-trip-countdown">
           <img
             className="cinematic-trip-art-strip"

@@ -40,6 +40,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
 import { useT } from "@/i18n";
+import { DailyDiscovery } from "@/features/daily/DailyPlay";
+import { useMySchedule } from "@/data/daily";
 
 export type HomeScreen =
   "dashboard" | "trip" | "trips" | "passport" | "inspiration" | "window" | "journey" | "arcade";
@@ -120,22 +122,17 @@ function useHomeLayout(userId: string) {
   return layout;
 }
 
+/** A sealed card of mine has dropped and is waiting to be opened (M3-05, M3-08). */
 function useSealedQuestWaiting(tripId: string | undefined) {
-  const [waiting, setWaiting] = useState(false);
-  useEffect(() => {
-    if (!tripId) {
-      setWaiting(false);
-      return;
-    }
-    let live = true;
-    void rpc("sealed_quest_state", { p_trip: tripId }).then(({ data }) => {
-      if (live) setWaiting((data ?? []).some((quest) => quest.state === "sealed"));
-    });
-    return () => {
-      live = false;
-    };
-  }, [tripId]);
-  return waiting;
+  const schedule = useMySchedule(tripId).data ?? [];
+  return schedule.some(
+    (i) =>
+      ["sealed_quest", "airport_mission", "home_mission", "trip_quest"].includes(i.kind) &&
+      i.user_id != null &&
+      i.is_open &&
+      i.body == null &&
+      (!i.closes_at || Date.parse(i.closes_at) > Date.now()),
+  );
 }
 
 function boardCountdown(milliseconds: number) {
@@ -322,7 +319,8 @@ export function HomeDashboard({
       label: "Travel From Home",
       subtitle: "Your couch, any country",
       img: iconHome,
-      action: () => setScreen("inspiration"),
+      // Culture rooms are set up on the engine like every room (M3-13).
+      action: () => void navigate({ to: "/trips/new", search: { room: "explore_culture" } }),
     },
     {
       label: "Explore the App",
@@ -340,7 +338,7 @@ export function HomeDashboard({
       label: "Window Seat",
       subtitle: "Bring the trip to them",
       img: windowSeatArt,
-      action: () => setScreen("window"),
+      action: () => void navigate({ to: "/trips/new", search: { room: "window_seat" } }),
     },
   ];
   const cinematicShortcuts = [
@@ -367,7 +365,8 @@ export function HomeDashboard({
         label: "EXPLORE A CULTURE",
         gate: "B",
         img: iconHome,
-        action: () => setScreen("inspiration"),
+        // Culture rooms are set up on the engine like every room (M3-13).
+        action: () => void navigate({ to: "/trips/new", search: { room: "explore_culture" } }),
         status: "ON TIME",
         detail: "",
       },
@@ -375,7 +374,7 @@ export function HomeDashboard({
         label: "INSPIRE SOMEONE",
         gate: "C",
         img: windowSeatArt,
-        action: () => setScreen("window"),
+        action: () => void navigate({ to: "/trips/new", search: { room: "window_seat" } }),
         status: "ON TIME",
         detail: "",
       },
@@ -401,13 +400,14 @@ export function HomeDashboard({
         label: "Explore a Culture",
         subline: "Play from home",
         img: iconHome,
-        action: () => setScreen("inspiration"),
+        // Culture rooms are set up on the engine like every room (M3-13).
+        action: () => void navigate({ to: "/trips/new", search: { room: "explore_culture" } }),
       },
       {
         label: "Inspire Someone",
         subline: "Share the view",
         img: windowSeatArt,
-        action: () => setScreen("window"),
+        action: () => void navigate({ to: "/trips/new", search: { room: "window_seat" } }),
       },
       {
         label: "Game Night",
@@ -433,6 +433,9 @@ export function HomeDashboard({
             {phaseBanner(trip)}
           </p>
         )}
+        {trip && <DailyDiscovery trip={trip} />}
+        {/* A saved invite is pinned at the top until joined or dismissed (AGENTS.md: pin Join room on Home). */}
+        {invite && <div className="mt-3">{invite}</div>}
         <p className="eyebrow text-blue">
           YOUR DEPARTURE LOUNGE{" "}
           {flightReminder && <span className="flight-reminder-dot" aria-label="Flight reminder" />}
@@ -604,6 +607,7 @@ export function HomeDashboard({
           {phaseBanner(trip)}
         </p>
       )}
+      {trip && <DailyDiscovery trip={trip} />}
       <p className="eyebrow text-blue">
         YOUR DEPARTURE LOUNGE{" "}
         {flightReminder && <span className="flight-reminder-dot" aria-label="Flight reminder" />}

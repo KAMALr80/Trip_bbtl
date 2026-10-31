@@ -1,4 +1,5 @@
 -- M0-11 characterisation: sealed quests and Showcase on an a2c trip (R-321 – R-324).
+-- M3-16: these wrappers are retired for clients; the tests pin the trip_private functions archived trips still use.
 -- Today's speed bonus is "+5 if proof is SUBMITTED within 3h of OPENING". The deck (R-322) says
 -- "+5 if OPENED within 3h of the DROP". The test pins today's rule; change it in M3-05.
 BEGIN;
@@ -38,11 +39,11 @@ SELECT is(trip_private.quest_cutoff((SELECT trip FROM f)),
 
 -- ---------------------------------------------------------------- what a player sees
 SELECT tests.authenticate_as(tests.user_id('stranger'));
-SELECT throws_like($$SELECT * FROM public.sealed_quest_state((SELECT trip FROM f))$$,
+SELECT throws_like($$SELECT * FROM trip_private.sealed_quest_state((SELECT trip FROM f))$$,
                    'Only approved members can see quests', 'non-members cannot see quests');
 
 SELECT tests.authenticate_as(tests.user_id('p1'));
-CREATE TEMP TABLE q AS SELECT * FROM public.sealed_quest_state((SELECT trip FROM f));
+CREATE TEMP TABLE q AS SELECT * FROM trip_private.sealed_quest_state((SELECT trip FROM f));
 GRANT SELECT ON q TO PUBLIC;
 SELECT is((SELECT count(*)::int FROM q WHERE kind = 'sealed'), 2, 'only drops whose time has passed are dealt (2 of 3)');
 SELECT is((SELECT count(*)::int FROM q WHERE kind = 'showcase'), 1, 'each player gets one Showcase');
@@ -51,33 +52,33 @@ SELECT is((SELECT count(*)::int FROM q WHERE kind = 'sealed' AND title IS NULL A
           'a sealed quest''s text stays hidden until it is opened (drop 1 already shows as expired)');
 
 SELECT tests.authenticate_as(tests.user_id('p2'));
-SELECT throws_like($$SELECT public.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 1), 'open')$$,
+SELECT throws_like($$SELECT trip_private.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 1), 'open')$$,
                    'Quest not found', 'a player cannot open someone else''s quest');
 SELECT tests.clear_authentication();
 
 -- ---------------------------------------------------------------- open → submit → review
 -- p1 opens drop 2 and presents it within 3h; drop 1 has been sealed for over 3 days.
 SELECT tests.authenticate_as(tests.user_id('p1'));
-SELECT throws_like($$SELECT public.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 1), 'open')$$,
+SELECT throws_like($$SELECT trip_private.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 1), 'open')$$,
                    'This quest expired', 'a quest not opened within 3 days of its drop expires');
-SELECT lives_ok($$SELECT public.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 2), 'open')$$,
+SELECT lives_ok($$SELECT trip_private.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 2), 'open')$$,
                 'the owner opens a dropped quest');
-SELECT is((SELECT state FROM public.sealed_quest_state((SELECT trip FROM f)) WHERE drop_no = 2), 'open', 'the quest is open');
-SELECT isnt((SELECT title FROM public.sealed_quest_state((SELECT trip FROM f)) WHERE drop_no = 2), NULL, 'its text is now visible');
-SELECT throws_like($$SELECT public.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 2), 'submit', 'upload', 'nope.jpg')$$,
+SELECT is((SELECT state FROM trip_private.sealed_quest_state((SELECT trip FROM f)) WHERE drop_no = 2), 'open', 'the quest is open');
+SELECT isnt((SELECT title FROM trip_private.sealed_quest_state((SELECT trip FROM f)) WHERE drop_no = 2), NULL, 'its text is now visible');
+SELECT throws_like($$SELECT trip_private.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 2), 'submit', 'upload', 'nope.jpg')$$,
                    'Upload your photo first', 'photo proof must already be in the quest-proofs bucket at the owner''s path');
-SELECT lives_ok($$SELECT public.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 2), 'submit', 'show')$$,
+SELECT lives_ok($$SELECT trip_private.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 2), 'submit', 'show')$$,
                 'the owner chooses to show it at game night');
-SELECT is((SELECT (state, points)::text FROM public.sealed_quest_state((SELECT trip FROM f)) WHERE drop_no = 2), '(show_pending,0)',
+SELECT is((SELECT (state, points)::text FROM trip_private.sealed_quest_state((SELECT trip FROM f)) WHERE drop_no = 2), '(show_pending,0)',
           'a game-night presentation scores nothing until a leader approves it');
 
-SELECT throws_like($$SELECT public.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 2), 'approve')$$,
+SELECT throws_like($$SELECT trip_private.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 2), 'approve')$$,
                    'Only the Captain or Co-Captain can review quests', 'players cannot approve quests');
 SELECT tests.authenticate_as(tests.user_id('cap'));
-SELECT lives_ok($$SELECT public.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 2), 'approve')$$,
+SELECT lives_ok($$SELECT trip_private.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 2), 'approve')$$,
                 'the Captain approves the presentation');
 SELECT tests.authenticate_as(tests.user_id('p1'));
-SELECT is((SELECT (state, points)::text FROM public.sealed_quest_state((SELECT trip FROM f)) WHERE drop_no = 2),
+SELECT is((SELECT (state, points)::text FROM trip_private.sealed_quest_state((SELECT trip FROM f)) WHERE drop_no = 2),
           format('(counted,%s)', (SELECT value + 5 FROM q WHERE drop_no = 2)),
           'an approved quest submitted within 3h of opening scores its value +5');
 SELECT tests.clear_authentication();
@@ -102,17 +103,17 @@ SELECT is(trip_private.sealed_award(jsonb_populate_record(NULL::public.sealed_qu
 
 -- ---------------------------------------------------------------- review rules
 SELECT tests.authenticate_as(tests.user_id('cap'));
-SELECT throws_like($$SELECT public.sealed_quest_action((SELECT id FROM sc), 'approve')$$,
+SELECT throws_like($$SELECT trip_private.sealed_quest_action((SELECT id FROM sc), 'approve')$$,
                    'Showcases are approved at the crowning meet-up', 'Showcases are only approved at the crowning meet-up');
-CREATE TEMP TABLE capq AS SELECT * FROM public.sealed_quest_state((SELECT trip FROM f));  -- deals the Captain's own quests
-SELECT throws_like($$SELECT public.sealed_quest_action((SELECT id FROM capq WHERE kind = 'showcase'), 'approve')$$,
+CREATE TEMP TABLE capq AS SELECT * FROM trip_private.sealed_quest_state((SELECT trip FROM f));  -- deals the Captain's own quests
+SELECT throws_like($$SELECT trip_private.sealed_quest_action((SELECT id FROM capq WHERE kind = 'showcase'), 'approve')$$,
                    'You can''t review your own quest', 'leaders cannot review their own quests');
 SELECT tests.clear_authentication();
 
 UPDATE public.sealed_quests SET opened_at = now() - interval '25 hours'
 WHERE trip_id = (SELECT trip FROM f) AND user_id = tests.user_id('p1') AND drop_no = 1;
 SELECT tests.authenticate_as(tests.user_id('p1'));
-SELECT throws_like($$SELECT public.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 1), 'submit', 'show')$$,
+SELECT throws_like($$SELECT trip_private.sealed_quest_action((SELECT id FROM q WHERE kind = 'sealed' AND drop_no = 1), 'submit', 'show')$$,
                    'Boarding closed%', 'proof is refused 24h after opening ("self-destruct")');
 SELECT tests.clear_authentication();
 

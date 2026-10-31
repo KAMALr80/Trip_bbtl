@@ -6,7 +6,7 @@ import { friendlyError } from "@/lib/friendly-error";
 import { fmtWhen } from "@/lib/viewer-time";
 
 import { TieWheel } from "@/features/points/TieWheel";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Crown,
   Download,
@@ -21,8 +21,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarButton } from "@/features/players/PlayerCards";
-import { Confetti, Leaderboard, scoringOn, standings, useSeason } from "@/features/points/Season";
-import { TripSeasonBoard, tripHasStarted } from "@/features/points/TripSeasonBoard";
+import { Confetti } from "@/features/points/Season";
+import { CrewStandings } from "@/features/points/CrewStandings";
 import { tripToday, tripTz, loadItinerary, type ItineraryDay } from "@/lib/itinerary";
 import { friendlyDate, friendlyRange } from "@/lib/trip-dates";
 import type { Member, TripWithRole } from "@/lib/trips";
@@ -47,14 +47,6 @@ type Champ = {
   stamps: number;
   tie_ids?: string[] | null;
   created_at?: string;
-};
-type SeasonRow = {
-  user_id: string;
-  stamps: number;
-  today_stamps: number;
-  max_stamps: number;
-  score: number;
-  carry_on: number;
 };
 type Photo = {
   photo_path: string;
@@ -149,55 +141,41 @@ export function EndTripTool({
 }
 
 /* ---------- shared data ---------- */
+/** Prize details (season_info) and the crowns decided by the new engine (trip_crowns, M3-11),
+ * in this screen's season names: game = Pre-Flight (Early Bird), trip = Trip Season (Jet Setter). */
 export function useSeasonsData(tripId: string) {
   const [info, setInfo] = useState<Info[]>([]),
-    [champs, setChamps] = useState<Champ[]>([]),
-    [tripRows, setTripRows] = useState<SeasonRow[]>([]);
+    [champs, setChamps] = useState<Champ[]>([]);
   const refresh = async () => {
-    const [i, c, ts] = await Promise.all([
+    const [i, c] = await Promise.all([
       rpc("season_info", { p_trip: tripId }),
-      supabase
-        .from("season_champions")
-        .select("season,user_id,score,stamps,tie_ids,created_at")
-        .eq("trip_id", tripId)
-        .in("season", ["game", "trip"]),
-      supabase.rpc("trip_season_score", { p_trip: tripId }),
+      supabase.from("trip_crowns").select("season,user_id,points,crowned_at").eq("trip_id", tripId),
     ]);
     setInfo(i.data ?? []);
-    setChamps(c.data ?? []);
-    setTripRows(ts.data ?? []);
+    setChamps(
+      (c.data ?? []).map((x) => ({
+        season: x.season === "preflight" ? "game" : "trip",
+        user_id: x.user_id,
+        score: x.points,
+        stamps: 0,
+        created_at: x.crowned_at,
+      })),
+    );
   };
   useEffect(() => {
     void refresh();
     const timer = window.setInterval(() => void refresh(), 20000);
     return () => window.clearInterval(timer);
   }, [tripId]);
-  return { info, champs, tripRows, refresh };
+  return { info, champs, refresh };
 }
 export type SeasonsData = ReturnType<typeof useSeasonsData>;
 
-/* ---------- badges ---------- */
-export function useBadges(trip: TripWithRole, members: Member[]) {
-  const data = useSeasonsData(trip.id);
-  const season = useSeason(trip.id);
-  const game = standings(members, season.nights, season.scores, season.settings, season.qotw);
-  const totals = members
-    .map((m) => ({
-      id: m.user_id,
-      total:
-        (game.find((g) => g.user_id === m.user_id)?.stamps ?? 0) +
-        (data.tripRows.find((r) => r.user_id === m.user_id)?.stamps ?? 0),
-    }))
-    .sort((a, b) => b.total - a.total);
-  const junkie =
-    totals[0] && totals[0].total > 0 && totals[0].total !== totals[1]?.total ? totals[0].id : null;
-  return { champs: data.champs, junkie, data, season };
-}
 export function ChampionBadge({ season }: { season: string }) {
   return (
     <span className="passport-stamp inline-flex items-center gap-1 border-orange text-orange px-2 py-0.5 text-[10px] font-extrabold uppercase">
       <Crown size={11} className="fill-orange" />
-      {season === "game" ? "Pre-Flight" : "Trip Season"} Champion
+      {season === "game" ? "Early Bird" : "Jet Setter"}
     </span>
   );
 }
@@ -261,22 +239,17 @@ export function MysteryPrizes({
     };
   }, [true, trip.id]);
   const [reveal, setReveal] = useState<SeasonKey | null>(null);
-  const finalized = useRef<Record<string, boolean>>({});
+  // Crowns are decided on the server (M3-11); the reveal plays once per season on this device.
   useEffect(() => {
-    for (const s of data.info) {
-      if (!s.crowning_at || new Date(s.crowning_at).getTime() > now) continue;
-      const key = `tj-crowned-${trip.id}-${s.season}`;
-      if (finalized.current[s.season]) continue;
-      finalized.current[s.season] = true;
-      void rpc("finalize_season", { p_trip: trip.id, p_season: s.season }).then(async () => {
-        await data.refresh();
-        if (!localStorage.getItem(key)) {
-          safeSetItem(key, "1");
-          setReveal(s.season as SeasonKey);
-        }
-      });
+    for (const k of ["game", "trip"] as SeasonKey[]) {
+      const key = `tj-crowned-${trip.id}-${k}`;
+      if (data.champs.some((c) => c.season === k) && !localStorage.getItem(key)) {
+        safeSetItem(key, "1");
+        setReveal(k);
+        break;
+      }
     }
-  }, [now, data.info, trip.id]);
+  }, [data.champs, trip.id]);
   const list = (["game", "trip"] as SeasonKey[])
     .map((k) => data.info.find((i) => i.season === k))
     .filter((x): x is Info => !!x && !!x.crowning_at);
@@ -532,127 +505,9 @@ function CrowningReveal({
 
 /* ---------- Leaderboards ---------- */
 export function ActiveSeasonBoard(props: Base) {
-  if (!scoringOn(props.trip)) return null;
-  return tripHasStarted(props.trip) ? (
-    <TripSeasonBoard key={`ts-${props.trip.id}`} {...props} compact />
-  ) : (
-    <HomeGame {...props} />
-  );
-}
-function HomeGame(props: Base) {
-  const season = useSeason(props.trip.id);
-  return <Leaderboard {...props} season={season} compact />;
+  return <CrewStandings {...props} compact />;
 }
 
-export function SquadSeasons(
-  props: Base & {
-    data: SeasonsData;
-    season: ReturnType<typeof useSeason>;
-    onMember?: (id: string) => void;
-  },
-) {
-  const { data, season, members, cards } = props;
-  const game = standings(members, season.nights, season.scores, season.settings, season.qotw);
-  const mineGame = game.find((g) => g.user_id === props.userId);
-  const mineTrip = data.tripRows.find((r) => r.user_id === props.userId);
-  const stampTotal = (mineGame?.stamps ?? 0) + (mineTrip?.stamps ?? 0);
-  const score = tripHasStarted(props.trip) && mineTrip ? mineTrip.score : (mineGame?.score ?? 0);
-  const crowns = data.champs.filter((c) => c.user_id === props.userId).length;
-  if (!scoringOn(props.trip)) return null;
-  return (
-    <>
-      <div className="mt-[14px]">
-        <div className="grid grid-cols-3 gap-2 text-center">
-          {(
-            [
-              ["Stamps", stampTotal, "text-orange"],
-              ["Score", score, "text-blue"],
-              ["Crowns", crowns, "text-green"],
-            ] as const
-          ).map(([label, value, color]) => (
-            <div key={label} className="app-card !p-3">
-              <p className={`font-display text-[22px] font-extrabold ${color}`}>{value}</p>
-              <p className="text-[11px] font-bold text-muted-foreground">{label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-      <ChampionsRow
-        champs={data.champs}
-        cards={cards}
-        members={members}
-        onMember={props.onMember}
-      />
-      <Leaderboard
-        trip={props.trip}
-        members={members}
-        cards={cards}
-        userId={props.userId}
-        season={season}
-        onMember={props.onMember}
-      />
-      <TripSeasonBoard
-        trip={props.trip}
-        members={members}
-        cards={cards}
-        userId={props.userId}
-        rows={data.tripRows}
-        onMember={props.onMember}
-      />
-    </>
-  );
-}
-function ChampionsRow({
-  champs,
-  cards,
-  members,
-  onMember,
-}: {
-  champs: Champ[];
-  cards: PlayerWithAvatar[];
-  members: Member[];
-  onMember?: ((id: string) => void) | undefined;
-}) {
-  if (!champs.length) return null;
-  return (
-    <section className="mt-8 grid grid-cols-2 gap-3">
-      {(["game", "trip"] as SeasonKey[]).map((k) => {
-        const list = champs.filter((c) => c.season === k);
-        return (
-          <div key={k} className="rounded-2xl bg-orange-soft p-4 text-center">
-            <p className="text-[11px] font-extrabold text-ink-soft">
-              {seasonEmoji[k]} {seasonName[k].toUpperCase()} CHAMP
-            </p>
-            {list.length ? (
-              list.map((c) => {
-                const card = cards.find((x) => x.user_id === c.user_id);
-                return (
-                  <div key={c.user_id} className="mt-2">
-                    <AvatarButton
-                      userId={c.user_id}
-                      onOpen={onMember}
-                      url={card?.avatarUrl}
-                      name={card?.game_name || "Champ"}
-                      className="h-12 w-12"
-                      wrapperClass="mx-auto"
-                    />
-                    <p className="font-bold text-sm truncate mt-1">
-                      {nameOf(cards, members, c.user_id)}
-                    </p>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="text-sm mt-3 text-muted-foreground">
-                {k === "game" ? "Crowned on Final Call Night" : "Crowned at trip end"}
-              </p>
-            )}
-          </div>
-        );
-      })}
-    </section>
-  );
-}
 export function SeasonPrizeTools({ trip, members, cards }: Omit<Base, "userId">) {
   const data = useSeasonsData(trip.id);
   return (

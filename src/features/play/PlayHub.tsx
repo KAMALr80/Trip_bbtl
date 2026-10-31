@@ -22,20 +22,25 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AvatarButton, PlayerCardView } from "@/features/players/PlayerCards";
-import { SealedQuests } from "@/features/quests/SealedQuests";
-import { AirportMissions } from "@/features/missions/AirportMissions";
 import { PhaseNotice } from "@/features/play/PhaseNotice";
-import { PhaseCountdown } from "@/features/play/PhaseCountdown";
 import { GameArcade } from "@/features/play/GameArcade";
 import { gameSceneArt } from "@/features/play/GameScene";
 import { OnePhoneNight } from "@/features/play/OnePhoneNight";
 import { SoloGuide } from "@/features/window-seat/SoloGuide";
-import { CrewGuide } from "@/features/window-seat/CrewGuide";
+import { TripGuide, isShowcase } from "@/features/guide/TripGuide";
+import { JournalPrompt } from "@/features/guide/JournalPrompt";
 import { AtHomePlay, isAtHome } from "@/features/at-home/AtHome";
 import { HomeDayFlow } from "@/features/play/HomeDayFlow";
+import { DailyCard } from "@/features/daily/DailyPlay";
+import { CrewCheck, QuestProofs } from "@/features/quests/QuestProofs";
+import { SurpriseDrop } from "@/features/quests/SurpriseDrop";
+import { GameNightLive } from "@/features/live/GameNightLive";
+import { useCrowns, usePointsBreakdown, useSoloGoal, useStandings } from "@/data/live";
+import { useMySchedule } from "@/data/daily";
+import { useMyProofs } from "@/data/proofs";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
-import { datePhase, noFlight, readOfflineRoster } from "@/lib/play-arrangement";
+import { noFlight, readOfflineRoster } from "@/lib/play-arrangement";
 import { phaseBoundaries, tripPhase, tripPhaseInput } from "@/features/trip/phase";
 import { roomOf } from "@/features/trip/rooms";
 import { useT } from "@/i18n";
@@ -53,39 +58,11 @@ import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
 
 type Phase = "preflight" | "takeoff" | "trip" | "wrapped";
-type Detail = "quests" | "missions" | "arcade" | "offline-night" | "solo" | "home" | "guide" | null;
-type Score = {
-  user_id: string;
-  games: number;
-  quests: number;
-  showcase: number;
-  legacy: number;
-  other: number;
-  total: number;
-};
-type Quest = {
-  id: string;
-  kind: "sealed" | "showcase";
-  state: string;
-  value: number;
-  points: number;
-  drop_no: number;
-  open_by: string;
-  destroy_at: string | null;
-  opened_at: string | null;
-  title: string | null;
-};
-type Mission = { id: string; status: string; points: number };
-type MissionWindow = { opens_at: string; closes_at: string; proof_due_at: string | null };
-type Champion = { season: string; user_id: string; score: number; stamps: number };
-type TripSeasonScore = {
-  user_id: string;
-  stamps: number;
-  today_stamps: number;
-  max_stamps: number;
-  score: number;
-  carry_on: number;
-};
+type Detail = "arcade" | "offline-night" | "solo" | "home" | "guide" | null;
+/** A standings row for the crown boards: ledger points (M3-01). */
+type Row = { user_id: string; total: number };
+/** A crown, in the season names the older Wrapped screen uses. */
+type Champion = { season: "game" | "trip"; user_id: string; score: number };
 type Props = {
   trip: TripWithRole;
   members: Member[];
@@ -430,6 +407,7 @@ export function PlayHub(props: Props) {
 
 function EnginePlayHub(props: Props) {
   const { trip, members, cards, userId, onMember } = props;
+  const t = useT();
   const [phase, setPhase] = useState<Phase | null>(null),
     [detail, setDetail] = useState<Detail>(null),
     [breakdown, setBreakdown] = useState(false),
@@ -438,15 +416,8 @@ function EnginePlayHub(props: Props) {
     [pointPop, setPointPop] = useState(0),
     [displayPoints, setDisplayPoints] = useState(0),
     [error, setError] = useState("");
-  const [scores, setScores] = useState<Score[]>([]),
-    [tripScores, setTripScores] = useState<TripSeasonScore[]>([]),
-    [quests, setQuests] = useState<Quest[]>([]),
-    [missions, setMissions] = useState<Mission[]>([]),
-    [champions, setChampions] = useState<Champion[]>([]),
-    [tripStarted, setTripStarted] = useState(false),
-    [missionWindow, setMissionWindow] = useState<MissionWindow | null>(null),
-    [cultureKind, setCultureKind] = useState<string | null>(null),
-    [now, setNow] = useState(Date.now());
+  const [tripStarted, setTripStarted] = useState(false),
+    [cultureKind, setCultureKind] = useState<string | null>(null);
   const scrolls = useRef<Record<string, number>>({});
   const previousPoints = useRef<number | null>(null);
   const active = currentPhase(trip, tripStarted),
@@ -454,45 +425,27 @@ function EnginePlayHub(props: Props) {
     preview = indexOf(shownPhase) > indexOf(active);
   const local = trip.play_arrangement === "solo" || trip.play_arrangement === "offline";
   const onlineGroup = !local;
+  // Score and place come from the points ledger (M3-01, M3-15): the season being played now.
+  const ledgerSeason = active === "preflight" ? "preflight" : "trip_season";
+  const standings = useStandings(trip.id, ledgerSeason).data ?? [];
+  const myStanding = standings.find((r) => r.user_id === userId);
+  const ledgerRows = usePointsBreakdown(trip.id, ledgerSeason).data ?? [];
+  const soloGoal = useSoloGoal(trip.id, ledgerSeason, trip.play_mode === "solo").data ?? 0;
+  // Both seasons' boards and the crowns come from the ledger (M3-16 retired the older scoring).
+  const toRows = (r: { user_id: string; points: number }[] | undefined): Row[] =>
+    (r ?? []).map((x) => ({ user_id: x.user_id, total: x.points }));
+  const preRows = toRows(useStandings(trip.id, "preflight").data);
+  const tripRows = toRows(useStandings(trip.id, "trip_season").data);
+  const champions: Champion[] = (useCrowns(trip.id).data ?? []).map((c) => ({
+    season: c.season === "preflight" ? "game" : "trip",
+    user_id: c.user_id,
+    score: c.points,
+  }));
+  const schedule = useMySchedule(trip.id).data ?? [];
+  const myProofs = useMyProofs(trip.id).data ?? [];
   const load = useCallback(async () => {
-    const season =
-      active === "trip" || active === "wrapped"
-        ? "trip"
-        : trip.kind === "trip"
-          ? "preflight"
-          : "home";
-    const [
-      scoreResult,
-      tripResult,
-      questResult,
-      missionResult,
-      championResult,
-      startedResult,
-      windowResult,
-      cultureResult,
-    ] = await Promise.all([
-      local
-        ? Promise.resolve({ data: [], error: null })
-        : rpc("season_points", { p_trip: trip.id, p_season: season }),
-      local
-        ? Promise.resolve({ data: [], error: null })
-        : supabase.rpc("trip_season_score", { p_trip: trip.id }),
-      trip.play_arrangement === "offline"
-        ? Promise.resolve({ data: [], error: null })
-        : rpc("sealed_quest_state", { p_trip: trip.id }),
-      supabase
-        .from("mission_claims")
-        .select("id,status,points")
-        .eq("trip_id", trip.id)
-        .eq("user_id", userId)
-        .eq("phase", "takeoff"),
-      supabase
-        .from("season_champions")
-        .select("season,user_id,score,stamps")
-        .eq("trip_id", trip.id)
-        .in("season", ["game", "trip"]),
+    const [startedResult, cultureResult] = await Promise.all([
       rpc("trip_season_started", { p_trip: trip.id }),
-      rpc("mission_window", { p_trip: trip.id }),
       trip.a2e_room
         ? supabase
             .from("culture_experiences")
@@ -503,32 +456,12 @@ function EnginePlayHub(props: Props) {
             .maybeSingle()
         : Promise.resolve({ data: null, error: null }),
     ]);
-    const issue = [
-      scoreResult,
-      tripResult,
-      questResult,
-      missionResult,
-      championResult,
-      startedResult,
-      windowResult,
-      cultureResult,
-    ].find((r) => r.error)?.error;
+    const issue = [startedResult, cultureResult].find((r) => r.error)?.error;
     if (issue) setError(friendlyError(issue));
     else setError("");
-    setScores((scoreResult.data as Score[]) ?? []);
-    setTripScores((tripResult.data as TripSeasonScore[]) ?? []);
-    setQuests((questResult.data as Quest[]) ?? []);
-    setMissions((missionResult.data as Mission[]) ?? []);
-    setChampions((championResult.data as Champion[]) ?? []);
     setTripStarted(startedResult.data === true);
-    setMissionWindow(
-      (Array.isArray(windowResult.data)
-        ? windowResult.data[0]
-        : windowResult.data) as MissionWindow | null,
-    );
     setCultureKind((cultureResult.data as { a2e_kind?: string } | null)?.a2e_kind ?? null);
-    setNow(Date.now());
-  }, [trip.id, trip.kind, trip.a2e_room, trip.play_arrangement, userId, local]);
+  }, [trip.id, trip.a2e_room]);
   useEffect(() => {
     void load();
     const visible = () => {
@@ -541,12 +474,10 @@ function EnginePlayHub(props: Props) {
       window.clearInterval(timer);
     };
   }, [load]);
-  const mine = scores.find((s) => s.user_id === userId);
-  const rank =
-    [...scores].sort((a, b) => b.total - a.total).findIndex((s) => s.user_id === userId) + 1;
+  const rank = myStanding?.rank ?? 0;
   const me = cards.find((c) => c.user_id === userId);
   useEffect(() => {
-    const total = mine?.total;
+    const total = myStanding?.points;
     let timer: number | undefined;
     let frame: number | undefined;
     if (typeof total === "number") {
@@ -569,7 +500,7 @@ function EnginePlayHub(props: Props) {
       if (timer !== undefined) window.clearTimeout(timer);
       if (frame !== undefined) window.cancelAnimationFrame(frame);
     };
-  }, [mine?.total]);
+  }, [myStanding?.points]);
   const openPhase = (nextPhase: Phase) => {
     scrolls.current[shownPhase] = window.scrollY;
     setDetail(null);
@@ -612,14 +543,10 @@ function EnginePlayHub(props: Props) {
         phase={shownPhase}
         current={active}
         preview={preview}
-        scores={scores}
-        tripScores={tripScores}
-        quests={quests}
-        missions={missions}
+        preRows={preRows}
+        tripRows={tripRows}
         champions={champions}
         tripStarted={tripStarted}
-        missionWindow={missionWindow}
-        now={now}
         cultureKind={cultureKind}
         fullBoard={fullBoard}
         onFullBoard={() => setFullBoard((v) => !v)}
@@ -627,25 +554,16 @@ function EnginePlayHub(props: Props) {
         onDetail={openDetail}
       />
     );
-  const currentQuest = quests.find(
-    (q) => q.kind === "sealed" && ["sealed", "open"].includes(q.state),
+  const nowMs = Date.now();
+  const sealedReady = schedule.find(
+    (i) =>
+      i.user_id === userId &&
+      ["sealed_quest", "airport_mission", "home_mission", "trip_quest"].includes(i.kind) &&
+      i.is_open &&
+      i.body == null &&
+      (!i.closes_at || Date.parse(i.closes_at) > nowMs),
   );
-  const pending =
-    quests.find((q) => ["show_pending"].includes(q.state)) ??
-    (missions.some((m) => m.status === "pending")
-      ? ({
-          id: "mission",
-          kind: "sealed",
-          state: "pending",
-          value: 0,
-          points: 0,
-          drop_no: 0,
-          open_by: "",
-          destroy_at: null,
-          opened_at: null,
-          title: "Proof waiting",
-        } as Quest)
-      : undefined);
+  const pending = myProofs.find((p) => p.crew_status === "waiting");
   const up: {
     key: string;
     icon: React.ReactNode;
@@ -656,22 +574,19 @@ function EnginePlayHub(props: Props) {
     pill?: string;
     action: () => void;
   }[] = [];
-  if (currentQuest)
+  if (sealedReady)
     up.push({
-      key: currentQuest.id,
+      key: sealedReady.id,
       icon: <Ticket />,
       tone: "pink",
-      title:
-        currentQuest.state === "sealed"
-          ? "Sealed quest dropped"
-          : currentQuest.title || "Sealed quest",
+      title: sealedReady.kind === "sealed_quest" ? "Sealed quest dropped" : "Sealed card waiting",
       line:
-        currentQuest.state === "sealed"
-          ? "Open within 3 days · +5 if finished in 3h"
-          : "Quest open · finish before it closes",
-      points: `${currentQuest.value} pts`,
-      pill: currentQuest.state === "sealed" ? "New" : "Open",
-      action: () => openDetail("quests"),
+        sealedReady.kind === "sealed_quest"
+          ? "Open it within 3 hours for +5"
+          : "Open it to see what to do",
+      ...(sealedReady.points ? { points: `${sealedReady.points} pts` } : {}),
+      pill: "New",
+      action: () => openPhase(active),
     });
   if (up.length < 2 && pending)
     up.push({
@@ -679,9 +594,9 @@ function EnginePlayHub(props: Props) {
       icon: <Camera />,
       tone: "orange",
       title: "Proof pending",
-      line: "Your Captain or Co-Captain will review it",
+      line: "One 👍 from the crew approves it",
       pill: "Pending",
-      action: () => openDetail(pending.id === "mission" ? "missions" : "quests"),
+      action: () => openPhase(active),
     });
   const progress = phaseProgress(trip, active);
   return (
@@ -723,6 +638,19 @@ function EnginePlayHub(props: Props) {
                 ? shortDate(trip.end_date)
                 : `Day ${progress.day} of ${progress.total}`}
           </small>
+          {(active === "preflight" || active === "trip") && (
+            <small>
+              {trip.play_mode === "solo"
+                ? soloGoal > 0 &&
+                  t("standings.goal", { points: myStanding?.points ?? 0, goal: soloGoal })
+                : rank > 0 &&
+                  t("standings.place", {
+                    race: t(`standings.race.${ledgerSeason}`),
+                    rank,
+                    count: standings.length,
+                  })}
+            </small>
+          )}
           <Button variant="ghost" className="play-score-link" onClick={() => setPassport(true)}>
             Tap your avatar → Passport
           </Button>
@@ -736,7 +664,7 @@ function EnginePlayHub(props: Props) {
           <div className="play-place">
             <small>PLACE</small>
             <strong>
-              #{rank || "–"} <span>of {scores.length || members.length}</span>
+              #{rank || "–"} <span>of {standings.length || members.length}</span>
             </strong>
           </div>
         )}
@@ -751,20 +679,17 @@ function EnginePlayHub(props: Props) {
           </Button>
         )}
       </section>
-      {breakdown && mine && (
+      {breakdown && (
         <div className="play-breakdown-panel">
-          <span>
-            Sealed quests <b>{mine.quests}</b>
-          </span>
-          <span>
-            Showcase <b>{mine.showcase}</b>
-          </span>
-          <span>
-            Earlier quests <b>{mine.legacy}</b>
-          </span>
-          <span>
-            Phase points <b>{mine.other}</b>
-          </span>
+          {ledgerRows.length === 0 ? (
+            <span>{t("standings.nothingYet")}</span>
+          ) : (
+            ledgerRows.map((r) => (
+              <span key={r.source}>
+                {r.label} <b>{r.points}</b>
+              </span>
+            ))
+          )}
         </div>
       )}
       <PhaseRail trip={trip} current={active} onOpen={openPhase} />
@@ -817,14 +742,10 @@ function PhasePage(
     phase: Phase;
     current: Phase;
     preview: boolean;
-    scores: Score[];
-    tripScores: TripSeasonScore[];
-    quests: Quest[];
-    missions: Mission[];
+    preRows: Row[];
+    tripRows: Row[];
     champions: Champion[];
     tripStarted: boolean;
-    missionWindow: MissionWindow | null;
-    now: number;
     cultureKind: string | null;
     fullBoard: boolean;
     onFullBoard: () => void;
@@ -839,14 +760,10 @@ function PhasePage(
     userId,
     phase,
     preview,
-    scores,
-    tripScores,
-    quests,
-    missions,
+    preRows,
+    tripRows,
     champions,
     tripStarted,
-    missionWindow,
-    now,
     onMember,
     onBack,
     onDetail,
@@ -854,47 +771,16 @@ function PhasePage(
     onFullBoard,
   } = props;
   const queryClient = useQueryClient();
+  const t = useT();
   const meta = PHASES[indexOf(phase)] ?? PHASES[0]!;
   const p = phaseProgress(trip, phase);
   const local = trip.play_arrangement === "solo" || trip.play_arrangement === "offline";
   const culture = noFlight(trip) || roomOf(trip.room).atHome;
   const windowSeat = props.cultureKind === "inspire" || trip.room === "window_seat";
   const noCrown = local || trip.season_scoring === false || windowSeat;
-  const groupRows =
-    phase === "trip" || phase === "wrapped"
-      ? tripScores.map((r) => ({ user_id: r.user_id, total: r.score }))
-      : scores.map((r) => ({ user_id: r.user_id, total: r.total }));
-  const sealed = quests.filter((q) => q.kind === "sealed"),
-    showcase = quests.find((q) => q.kind === "showcase");
-  const waiting = sealed.filter((q) => q.state === "sealed").length;
-  const opened = sealed.filter((q) => ["open", "counted", "show_pending"].includes(q.state)).length;
-  const missionBefore = !!missionWindow && now < Date.parse(missionWindow.opens_at),
-    missionAfter = !!missionWindow && now > Date.parse(missionWindow.closes_at),
-    inFlight = phase === "takeoff" && !culture && missionAfter && !tripStarted;
-  const missionLine = culture ? (
-    "A short start-day challenge set"
-  ) : !missionWindow ? (
-    "Checking the departure-day window"
-  ) : missionBefore ? (
-    `Missions open 12:00 AM on ${shortDate(trip.start_date)} — your home time.`
-  ) : missionAfter ? (
-    missionWindow.proof_due_at ? (
-      "Reveal closed · upload your opened mission proof before its deadline"
-    ) : missions.length ? (
-      "Reveal closed · completed missions stay on your record"
-    ) : (
-      "Missed · 0 pts"
-    )
-  ) : (
-    <PhaseCountdown
-      target={missionWindow.closes_at}
-      prefix="Open ·"
-      connector=" "
-      suffix=" left to reveal"
-      expired="Reveal window closed"
-      timeZone={trip.home_timezone}
-    />
-  );
+  const groupRows = phase === "trip" || phase === "wrapped" ? tripRows : preRows;
+  // Takeoff before landing: flight games and "We've arrived" until Trip Season starts (R-111).
+  const inFlight = phase === "takeoff" && !culture && !tripStarted;
   const titleLabel =
     phase === "takeoff"
       ? "TRAVEL DAY"
@@ -907,6 +793,14 @@ function PhasePage(
         <ArrowLeft /> Play
       </Button>
       {phase === props.current && <PhaseNotice trip={trip} viewOnly={props.viewOnly} />}
+      {phase === props.current && (
+        <>
+          <CrewCheck trip={trip} members={members} viewOnly={props.viewOnly} />
+          <SurpriseDrop trip={trip} userId={userId} viewOnly={props.viewOnly} />
+          <JournalPrompt trip={trip} userId={userId} viewOnly={props.viewOnly} />
+          <QuestProofs trip={trip} userId={userId} viewOnly={props.viewOnly} />
+        </>
+      )}
       <header className="play-phase-art">
         <img src={meta.art} width={1536} height={768} loading="lazy" alt="" />
         <div>
@@ -990,11 +884,6 @@ function PhasePage(
           <Plane />
           <div>
             <strong>You’re in the air — Trip Season opens when you land</strong>
-            {missionWindow?.proof_due_at && (
-              <span className="block text-xs mt-1">
-                Still-revealed missions can upload proof below.
-              </span>
-            )}
           </div>
         </div>
       )}
@@ -1023,48 +912,39 @@ function PhasePage(
               <FaceCard
                 icon={<BookOpen />}
                 tone="gold"
-                title="Shared guide"
-                line="Propose, review and publish the squad’s travel guide"
-                pill={trip.myRole === "captain" ? "Captain" : "Open"}
+                title={t("guide.title")}
+                line={t("guide.line")}
+                pill={t("guide.open")}
                 onClick={() => onDetail("guide")}
               />
             )}
-            <FaceCard
-              icon={<Ticket />}
-              tone="pink"
-              title="Sealed Quests"
-              line={`${opened} of ${sealed.length} opened · ${waiting} waiting`}
-              points={sealed.length ? `${sealed.reduce((n, q) => n + q.value, 0)} pts` : undefined}
-              pill={waiting ? "New" : sealed.length ? "Done" : "Soon"}
-              onClick={sealed.length ? () => onDetail("quests") : undefined}
-            />
-            {!local && (
+            {phase !== props.current && (
               <ComingCard
-                icon={<CalendarClock />}
-                tone="cyan"
-                title="Game Night Live"
-                line="Present on the call, tap 👍 for each other and vote the awards"
+                icon={<Ticket />}
+                tone="pink"
+                title="Sealed Quests"
+                line="One drops 3 days before each call night · 5–15 pts, +5 if opened within 3h"
               />
             )}
-            <FaceCard
-              icon={<Trophy />}
-              tone="orange"
-              title="Showcase"
-              line={
-                showcase?.title
-                  ? `${showcase.title} · due before takeoff`
-                  : "Your task appears before takeoff"
-              }
-              points={showcase ? `${showcase.value} pts` : "20 pts"}
-              pill={showcase ? (showcase.state === "approved" ? "Done" : "Set") : "Soon"}
-              onClick={showcase ? () => onDetail("quests") : undefined}
-            />
-            <ComingCard
-              icon={<BookOpen />}
-              tone="gold"
-              title="Daily Card"
-              line="One quick challenge a day · 1–2 pts"
-            />
+            {!local && phase === props.current && (
+              <GameNightLive
+                trip={trip}
+                members={members}
+                cards={cards}
+                userId={userId}
+                crowning={false}
+                viewOnly={props.viewOnly}
+              />
+            )}
+            {phase !== props.current && (
+              <ComingCard
+                icon={<Trophy />}
+                tone="orange"
+                title="Showcase"
+                line="One task each before takeoff · 20 pts"
+              />
+            )}
+            {phase === props.current && <DailyCard trip={trip} viewOnly={props.viewOnly} />}
           </>
         )}
         {phase === "takeoff" && (
@@ -1078,56 +958,14 @@ function PhasePage(
                 onClick={() => onDetail("arcade")}
               />
             )}
-            <FaceCard
-              icon={<ScanLine />}
-              tone="cyan"
-              title={culture ? "Start-day Missions" : "Airport Missions"}
-              line={missionLine}
-              points={missionAfter && !missions.length ? "0 pts" : "up to 12"}
-              pill={
-                missions.some((m) => m.status === "pending")
-                  ? "Pending"
-                  : missionBefore
-                    ? "Locked"
-                    : missionAfter && !missions.length
-                      ? "Missed"
-                      : missionAfter
-                        ? "Proof open"
-                        : "Open"
-              }
-              onClick={() => onDetail("missions")}
-            />
-            {missionWindow?.proof_due_at && (
-              <FaceCard
-                icon={<Camera />}
-                tone="orange"
-                title="Mission proof"
-                line={
-                  <PhaseCountdown
-                    target={missionWindow.proof_due_at}
-                    prefix="Proof due"
-                    expired="Proof deadline passed · mission locked"
-                    timeZone={trip.home_timezone}
-                  />
-                }
-                pill="Open"
-                onClick={() => onDetail("missions")}
+            {phase !== props.current && (
+              <ComingCard
+                icon={<ScanLine />}
+                tone="cyan"
+                title={culture ? "Home Missions" : "Airport Missions"}
+                line="3 sealed missions, opened one at a time · up to 12 pts toward Trip Season"
               />
             )}
-            <FaceCard
-              icon={<Ticket />}
-              tone="pink"
-              title="Travel-day quest"
-              line={
-                quests.some((q) => q.kind === "sealed")
-                  ? "Your sealed quest is ready when its drop opens"
-                  : "Queued for a later content round"
-              }
-              pill={quests.some((q) => q.kind === "sealed") ? "Sealed" : "Soon"}
-              onClick={
-                quests.some((q) => q.kind === "sealed") ? () => onDetail("quests") : undefined
-              }
-            />
             {!inFlight && (
               <FaceCard
                 icon={<Gamepad2 />}
@@ -1172,35 +1010,14 @@ function PhasePage(
         {phase === "trip" && (
           <>
             {roomOf(trip.room).pointsEnabled && <CrowningCard trip={trip} />}
-            {windowSeat && (
+            {(windowSeat || isShowcase(trip)) && (
               <FaceCard
                 icon={<BookOpen />}
                 tone="gold"
-                title="Shared guide"
-                line="Approved stories, photos and tips for the crew"
-                pill={
-                  trip.guide_published_at
-                    ? "Published"
-                    : trip.myRole === "captain"
-                      ? "Captain"
-                      : "Open"
-                }
+                title={isShowcase(trip) ? t("guide.showcaseTitle") : t("guide.title")}
+                line={isShowcase(trip) ? t("guide.showcaseLine") : t("guide.line")}
+                pill={t("guide.open")}
                 onClick={() => onDetail("guide")}
-              />
-            )}{" "}
-            {sealed.length > 0 && (
-              <FaceCard
-                icon={<Ticket />}
-                tone="orange"
-                title="Sealed quest"
-                line={
-                  sealed.find((q) => q.state === "open")
-                    ? "Opened · add your proof before it closes"
-                    : "Your next quest stays sealed until its drop"
-                }
-                points="10 pts"
-                pill={sealed.find((q) => q.state === "open") ? "Prove it" : "Sealed"}
-                onClick={() => onDetail("quests")}
               />
             )}{" "}
             <ComingCard
@@ -1209,26 +1026,20 @@ function PhasePage(
               title="Surprise Drops"
               line="Bingo, Scavenger Hunt, Speed or Photo Challenge on random days"
             />
-            {!local && (
-              <ComingCard
-                icon={<Camera />}
-                tone="blue"
-                title="Crew Check"
-                line="One 👍 from the crew approves a photo proof"
-              />
-            )}
             <ComingCard
               icon={<Image />}
               tone="pink"
               title="Postcard Picks"
               line="Pick your 2 favourite photos for the trip postcard"
             />
-            {!local && (
-              <ComingCard
-                icon={<CalendarClock />}
-                tone="cyan"
-                title="Game Night Live"
-                line="Crowning night: present your trip quest and vote the awards"
+            {!local && phase === props.current && (
+              <GameNightLive
+                trip={trip}
+                members={members}
+                cards={cards}
+                userId={userId}
+                crowning
+                viewOnly={props.viewOnly}
               />
             )}
           </>
@@ -1239,8 +1050,8 @@ function PhasePage(
             members={members}
             cards={cards}
             userId={userId}
-            scores={scores}
-            tripScores={tripScores}
+            preRows={preRows}
+            tripRows={tripRows}
             champions={champions}
             onMember={onMember}
           />
@@ -1266,8 +1077,8 @@ function WrappedSummary({
   members,
   cards,
   userId,
-  scores,
-  tripScores,
+  preRows,
+  tripRows,
   champions,
   onMember,
 }: {
@@ -1275,8 +1086,8 @@ function WrappedSummary({
   members: Member[];
   cards: PlayerWithAvatar[];
   userId: string;
-  scores: Score[];
-  tripScores: TripSeasonScore[];
+  preRows: Row[];
+  tripRows: Row[];
   champions: Champion[];
   onMember?: ((id: string) => void) | undefined;
 }) {
@@ -1290,7 +1101,7 @@ function WrappedSummary({
     return () => window.clearTimeout(timer);
   }, [trip.id, champions.length]);
   const days = daysBetween(trip.start_date, trip.end_date) + 1;
-  const sorted = [...scores].sort((a, b) => b.total - a.total);
+  const sorted = tripRows.length ? tripRows : preRows;
   const me = sorted.findIndex((r) => r.user_id === userId) + 1;
   const champ = (season: string) => champions.find((c) => c.season === season);
   const name = (id: string | undefined) =>
@@ -1334,7 +1145,7 @@ function WrappedSummary({
         line={
           me > 0 ? `You finished #${me} of ${sorted.length}` : "Final places appear after crowning"
         }
-        points={`${(sorted.find((r) => r.user_id === userId)?.total ?? 0) + (tripScores.find((r) => r.user_id === userId)?.score ?? 0)} pts`}
+        points={`${(preRows.find((r) => r.user_id === userId)?.total ?? 0) + (tripRows.find((r) => r.user_id === userId)?.total ?? 0)} pts`}
       />
       <FaceCard
         icon={<Image />}
@@ -1408,23 +1219,6 @@ function PlayDetail(
       <Button variant="ghost" className="min-h-11" onClick={onBack}>
         <ArrowLeft /> {PHASES[indexOf(props.phase)]?.label}
       </Button>
-      {detail === "quests" && (
-        <SealedQuests
-          trip={trip}
-          members={members}
-          cards={cards}
-          userId={userId}
-          viewOnly={viewOnly}
-        />
-      )}{" "}
-      {detail === "missions" && (
-        <AirportMissions
-          trip={trip}
-          userId={userId}
-          viewOnly={viewOnly}
-          canPlay={datePhase(trip, props.tripStarted) === "airport"}
-        />
-      )}{" "}
       {detail === "home" &&
         (trip.at_home_length?.startsWith("d") ? (
           <>
@@ -1450,15 +1244,7 @@ function PlayDetail(
             refresh={props.refresh}
           />
         ))}{" "}
-      {detail === "guide" && (
-        <CrewGuide
-          tripId={trip.id}
-          tripName={trip.name}
-          userId={userId}
-          isCaptain={trip.myRole === "captain"}
-          publishedAt={trip.guide_published_at}
-        />
-      )}
+      {detail === "guide" && <TripGuide trip={trip} viewOnly={viewOnly} />}
     </div>
   );
 }

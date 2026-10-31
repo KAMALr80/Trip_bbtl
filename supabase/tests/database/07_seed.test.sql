@@ -22,9 +22,9 @@ SELECT is((SELECT role FROM public.trip_members WHERE trip_id = '00000000-0000-4
              AND user_id = '00000000-0000-4000-8000-000000000003'), 'co_captain', 'cocap is Co-Captain');
 
 SELECT tests.authenticate_as('00000000-0000-4000-8000-000000000004');
-SELECT ok((SELECT count(*) FROM public.sealed_quest_state('00000000-0000-4000-9000-000000000001')) >= 2,
+SELECT ok((SELECT count(*) FROM trip_private.sealed_quest_state('00000000-0000-4000-9000-000000000001')) >= 2,
           'a member is dealt sealed quests and a Showcase on Lisbon Crew');
-SELECT isnt(public.mission_action('00000000-0000-4000-9000-000000000002', 'reveal', 1), NULL::uuid,
+SELECT isnt(tests.mission_action('00000000-0000-4000-9000-000000000002', 'reveal', 1), NULL::uuid,
             'Airport Missions are open on Departure Day');
 SELECT is(public.join_trip('LISBONXX'), '00000000-0000-4000-9000-000000000001'::uuid, 'the documented join code works');
 SELECT tests.clear_authentication();

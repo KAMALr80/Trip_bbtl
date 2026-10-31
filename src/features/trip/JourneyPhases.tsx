@@ -1,11 +1,13 @@
+// The "two crowns" card on Home: my points and place in each season, from the points ledger
+// (M3-01). Opens a short explainer with who leads each season.
 import { useState } from "react";
 import { ArrowRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSeason, standings, scoreOf } from "@/features/points/Season";
-import { useSeasonsData } from "@/features/points/Seasons";
-import { friendlyDate } from "@/lib/trip-dates";
+import { useStandings } from "@/data/live";
+import { useT } from "@/i18n";
 import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
+
 export function JourneyPhases({
   trip,
   members,
@@ -17,25 +19,28 @@ export function JourneyPhases({
   cards: PlayerWithAvatar[];
   userId: string;
 }) {
-  const [open, setOpen] = useState(false),
-    season = useSeason(trip.id),
-    data = useSeasonsData(trip.id);
-  const game = standings(members, season.nights, season.scores, season.settings, season.qotw),
-    own = game.find((r) => r.user_id === userId),
-    day = data.tripRows.find((r) => r.user_id === userId);
-  const played = season.nights.filter(
-    (n) => !n.skipped && new Date(n.starts_at).getTime() + 3 * 3600000 < Date.now(),
-  ).length;
-  const leader = (rows: { user_id: string; score: number }[]) =>
-    rows.sort((a, b) => b.score - a.score)[0];
-  const gameLeader = leader(game.map((r) => ({ user_id: r.user_id, score: r.score }))),
-    tripLeader = leader(
-      data.tripRows.map((r) => ({ user_id: r.user_id, score: scoreOf(r.stamps, r.max_stamps) })),
-    );
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const pre = useStandings(trip.id, "preflight").data ?? [];
+  const season = useStandings(trip.id, "trip_season").data ?? [];
   const nickname = (id: string | undefined) =>
-    cards.find((c) => c.user_id === id)?.game_name ||
-    members.find((m) => m.user_id === id)?.display_name ||
-    "Not yet";
+    (id &&
+      (cards.find((c) => c.user_id === id)?.game_name ||
+        members.find((m) => m.user_id === id)?.display_name)) ||
+    t("journey.nobody");
+  const line = (rows: typeof pre, emoji: string, label: string) => {
+    const me = rows.find((r) => r.user_id === userId);
+    return t("journey.line", {
+      emoji,
+      season: label,
+      points: me?.points ?? 0,
+      place:
+        me && me.points > 0
+          ? t("journey.place", { rank: me.rank, count: rows.length })
+          : t("journey.noPlace"),
+    });
+  };
+  const leader = (rows: typeof pre) => rows.find((r) => r.rank === 1 && r.points > 0)?.user_id;
   return (
     <>
       <Button
@@ -44,14 +49,10 @@ export function JourneyPhases({
         onClick={() => setOpen(true)}
       >
         <span>
-          <span className="eyebrow text-blue">YOUR JOURNEY · TWO SEPARATE CROWNS</span>
+          <span className="eyebrow text-blue">{t("journey.eyebrow")}</span>
+          <span className="block font-bold mt-2">{line(pre, "✈️", t("phases.preflight"))}</span>
           <span className="block font-bold mt-2">
-            ✈️ Pre-Flight · {played}/{season.nights.filter((n) => !n.skipped).length} played ·{" "}
-            {own?.score ?? 0}/100
-          </span>
-          <span className="block font-bold mt-2">
-            🌴 Trip Season · {friendlyDate(trip.start_date)} ·{" "}
-            {day ? scoreOf(day.stamps, day.max_stamps) : 0}/100
+            {line(season, "🌴", t("phases.trip_season"))}
           </span>
         </span>
         <ArrowRight className="shrink-0" />
@@ -62,7 +63,7 @@ export function JourneyPhases({
           <section
             role="dialog"
             aria-modal="true"
-            aria-label="Your Journey phases"
+            aria-label={t("journey.dialog")}
             className="relative w-full max-w-lg rounded-t-3xl bg-card p-6 pb-10"
           >
             <Button
@@ -70,36 +71,28 @@ export function JourneyPhases({
               size="icon"
               className="absolute right-4 top-4"
               onClick={() => setOpen(false)}
-              aria-label="Close"
+              aria-label={t("journey.close")}
             >
               <X />
             </Button>
-            <h2 className="font-display text-2xl font-extrabold pr-10">Two journeys, two crowns</h2>
-            <p className="text-sm text-muted-foreground mt-2">
-              Each phase has its own score out of 100 and its own champion. Culture Points are
-              separate too.
-            </p>
+            <h2 className="font-display text-2xl font-extrabold pr-10">{t("journey.title")}</h2>
+            <p className="text-sm text-muted-foreground mt-2">{t("journey.intro")}</p>
             <div className="bg-blue-soft rounded-2xl p-4 mt-5">
-              <h3 className="font-bold">✈️ Pre-Flight Champion</h3>
-              <p className="text-sm mt-1">
-                Weekly game nights, cards, votes and attendance before departure.
-              </p>
+              <h3 className="font-bold">{t("journey.earlyBird")}</h3>
+              <p className="text-sm mt-1">{t("journey.earlyBirdLine")}</p>
               <p className="text-xs font-bold mt-2">
-                {played} of {season.nights.filter((n) => !n.skipped).length} nights played ·
-                Leading: {nickname(gameLeader?.user_id)}
+                {t("journey.leading", { name: nickname(leader(pre)) })}
               </p>
             </div>
             <div className="bg-orange-soft rounded-2xl p-4 mt-3">
-              <h3 className="font-bold">🌴 Trip Season Champion</h3>
-              <p className="text-sm mt-1">
-                Daily bingo, scavenger items, missions and trivia during the trip.
-              </p>
+              <h3 className="font-bold">{t("journey.jetSetter")}</h3>
+              <p className="text-sm mt-1">{t("journey.jetSetterLine")}</p>
               <p className="text-xs font-bold mt-2">
-                Starts {friendlyDate(trip.start_date)} · Leading: {nickname(tripLeader?.user_id)}
+                {t("journey.leading", { name: nickname(leader(season)) })}
               </p>
             </div>
             <Button variant="playful" className="w-full mt-5" onClick={() => setOpen(false)}>
-              Let's go
+              {t("journey.go")}
             </Button>
           </section>
         </div>
