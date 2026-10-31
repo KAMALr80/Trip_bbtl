@@ -508,6 +508,15 @@
       "submit_proof": "your proof",
       "submit_drop_proof": "your drop photo",
       "approve_proof": "your 👍"
-    }
+    },
+    "mixNeedsNetwork": "Needs a connection"
+  },
+  "install": {
+    "title": "Install TripJunkies",
+    "why": "Put it on your Home Screen so games, your trip and reminders work on the plane, even with no signal.",
+    "button": "Install",
+    "iosStep1": "Tap Share",
+    "iosStep2": "in Safari, then Add to Home Screen.",
+    "notNow": "Not now"
   }
 }

@@ -119,14 +119,30 @@ test("a photo proof sent offline is uploaded and recorded once back online", asy
 
   await page.context().setOffline(true);
   await page.route(SUPABASE, noNetwork);
-  // A 2×2 PNG, like a photo from the camera.
-  const png = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR42mP8z8DwnwEIGBkZGRgYAAAoAQH/3gmQ0AAAAABJRU5ErkJggg==",
+  // A camera JPEG with an EXIF block that carries a GPS position (M4-06: it must not be uploaded).
+  const jpeg = Buffer.from(
+    await page.evaluate(async () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 64;
+      canvas.getContext("2d")!.fillRect(0, 0, 32, 32);
+      const blob = await new Promise<Blob>((r) => canvas.toBlob((b) => r(b!), "image/jpeg"));
+      const plain = new Uint8Array(await blob.arrayBuffer());
+      const text = new TextEncoder().encode("Exif\0\0GPSLatitude 38.7223 N GPSLongitude 9.1393 W");
+      const app1 = new Uint8Array([0xff, 0xe1, 0, text.length + 2, ...text]);
+      const withExif = new Uint8Array([...plain.slice(0, 2), ...app1, ...plain.slice(2)]);
+      return btoa(String.fromCharCode(...withExif));
+    }),
     "base64",
   );
+  expect(jpeg.includes("GPSLatitude")).toBe(true);
+  let uploaded: Buffer | null = null;
+  page.on("request", (r) => {
+    if (r.method() === "POST" && r.url().includes("/storage/v1/object/quest-proofs/"))
+      uploaded = r.postDataBuffer();
+  });
   await questCard
     .getByLabel(/photo/i)
-    .setInputFiles({ name: "tram.png", mimeType: "image/png", buffer: png });
+    .setInputFiles({ name: "tram.jpg", mimeType: "image/jpeg", buffer: jpeg });
   await questCard.getByRole("button", { name: /Send/ }).click();
   await expect(questCard.getByRole("status")).toContainText("sends when you're back online");
   expect(uploads).toHaveLength(0);
@@ -137,6 +153,9 @@ test("a photo proof sent offline is uploaded and recorded once back online", asy
   const body = calls.find((c) => c.fn === "submit_proof")?.body as { p_photo_path: string };
   // The photo went to quest-proofs/<trip>/<me>/<item>/ first, at the path the proof names.
   expect(uploads).toEqual([body.p_photo_path]);
+  expect(uploaded).not.toBeNull();
+  expect(uploaded!.includes("GPSLatitude")).toBe(false);
+  expect(uploaded!.includes("Exif")).toBe(false);
   expect(body.p_photo_path).toMatch(
     new RegExp(`^${trip.id}/00000000-0000-4000-8000-000000000001/${quest.id}/[0-9a-f-]+\\.jpg$`),
   );

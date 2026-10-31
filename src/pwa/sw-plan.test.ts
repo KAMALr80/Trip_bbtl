@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   OFFLINE_URL,
   SHELL_URL,
+  FLIGHT_GAME_SOURCES,
   cacheNames,
   fileFor,
+  flightArt,
   pageKey,
   precacheList,
   referencedAssets,
@@ -120,5 +122,29 @@ describe("cache names and keys", () => {
 
   it("keys pages by path and search, not hash", () => {
     expect(pageKey(`${ORIGIN}/home?sheet=help#top`)).toBe(`${ORIGIN}/home?sheet=help`);
+  });
+});
+
+describe("flightArt", () => {
+  it("maps the images the flight games import to their built files", () => {
+    const code = `import bingo from "@/assets/game-world-bingo.jpg";\nimport icon from '@/assets/boarding-game-1.webp';`;
+    const built = [
+      "assets/game-world-bingo-FEB5KpbX.jpg",
+      "assets/boarding-game-1-mHFShdX_.webp",
+      "assets/boarding-game-10-AAAAAAAA.webp",
+      "assets/passport-spread-imoY-DJU.jpg",
+      "assets/index-abc12345.js",
+    ];
+    expect(flightArt([code], built)).toEqual([
+      "/assets/boarding-game-1-mHFShdX_.webp",
+      "/assets/game-world-bingo-FEB5KpbX.jpg",
+    ]);
+  });
+
+  it("finds the art in the real flight-game files", async () => {
+    const { readFileSync } = await import("node:fs");
+    const sources = FLIGHT_GAME_SOURCES.map((f) => readFileSync(f, "utf8"));
+    const imported = sources.join("\n").match(/@\/assets\/[\w.-]+\.\w+/g) ?? [];
+    expect(new Set(imported).size).toBeGreaterThanOrEqual(15);
   });
 });

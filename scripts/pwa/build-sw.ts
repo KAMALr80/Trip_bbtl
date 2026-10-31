@@ -15,7 +15,13 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { SHELL_URL, fileFor, precacheList } from "../../src/pwa/sw-plan";
+import {
+  FLIGHT_GAME_SOURCES,
+  SHELL_URL,
+  fileFor,
+  flightArt,
+  precacheList,
+} from "../../src/pwa/sw-plan";
 
 const OUT = ".output/public";
 if (!existsSync(OUT)) throw new Error(`${OUT} is missing: run vite build first`);
@@ -41,7 +47,12 @@ self.addEventListener("activate", (event) => {
 let body: string;
 let summary: string;
 if (process.env["VITE_SERVICE_WORKER"] === "true") {
-  const precache = precacheList(walk(OUT));
+  const built = walk(OUT);
+  const art = flightArt(
+    FLIGHT_GAME_SOURCES.map((f) => readFileSync(f, "utf8")),
+    built,
+  );
+  const precache = [...new Set([...precacheList(built), ...art])].sort();
   const hash = createHash("sha256");
   for (const url of precache) {
     if (url === SHELL_URL) continue; // rendered by the Worker; its scripts are in the list
@@ -69,7 +80,7 @@ if (process.env["VITE_SERVICE_WORKER"] === "true") {
   const bytes = precache
     .filter((u) => u !== SHELL_URL)
     .reduce((sum, u) => sum + statSync(join(OUT, fileFor(u))).size, 0);
-  summary = `service worker ${version}: ${precache.length} files precached (${(bytes / 1e6).toFixed(1)} MB)`;
+  summary = `service worker ${version}: ${precache.length} files precached, ${art.length} of them flight-game art (${(bytes / 1e6).toFixed(1)} MB)`;
 } else {
   body = KILL_SWITCH;
   summary = "service worker off (VITE_SERVICE_WORKER is not true): wrote the self-removing sw.js";

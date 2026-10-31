@@ -19,6 +19,8 @@ import loginArt from "@/assets/cinematic-login-coast-tall-768.jpg";
 import { APP_VERSION } from "@/lib/app-version";
 import { Toaster } from "@/components/ui/sonner";
 import { UpdatePrompt } from "@/features/app-shell/UpdatePrompt";
+// Catches the browser's install prompt as early as possible (M4-01).
+import "@/pwa/install";
 import { isNetworkError } from "@/data/offline/rules";
 import {
   dropSnapshot,

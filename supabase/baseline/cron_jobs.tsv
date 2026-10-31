@@ -1,4 +1,6 @@
 expire-proofs	*/5 * * * *	SELECT trip_private.expire_proofs();
 live-and-crowns	*/5 * * * *	SELECT trip_private.live_and_crowns_due();
+prune-notifications	41 3 * * *	SELECT trip_private.prune_notifications();
 purge-expired-trip-photos	17 4 * * *	 SELECT net.http_post( url := e.url, headers := jsonb_build_object( 'Content-Type', 'application/json', 'Authorization', 'Bearer ' || k.key ), body := '{}'::jsonb ) FROM trip_private.cron_endpoints e JOIN trip_private.cron_keys k ON k.name = e.name WHERE e.name = 'purge_photos'; 
+send-notifications	* * * * *	 SELECT net.http_post( url := e.url, headers := jsonb_build_object( 'Content-Type', 'application/json', 'Authorization', 'Bearer ' || k.key ), body := '{}'::jsonb ) FROM trip_private.cron_endpoints e JOIN trip_private.cron_keys k ON k.name = e.name WHERE e.name = 'notify' AND EXISTS (SELECT 1 FROM public.notification_queue q WHERE q.status = 'queued' AND q.send_after <= now()); 
 settle-drops	*/5 * * * *	SELECT trip_private.settle_drops();

@@ -52,6 +52,36 @@ export function precacheList(files: readonly string[]): string[] {
   return [...urls].sort();
 }
 
+/**
+ * Games on the Flight (M4-05, R-334) must work from a cold start in airplane mode, so the art
+ * these files import is precached too (≈ 3 MB), not just cached once seen. Their content is
+ * bundled code, already precached.
+ */
+export const FLIGHT_GAME_SOURCES = [
+  "src/features/play/GameArcade.tsx",
+  "src/features/play/OnePhoneNight.tsx",
+  "src/features/play/GameScene.tsx",
+  "src/features/play/GameWheel.tsx",
+  "src/features/play/ArcadeBadge.tsx",
+  "src/features/offline/OfflineTripCards.tsx",
+];
+
+/**
+ * The built files for the images the flight games import: `@/assets/game-world-bingo.jpg` in a
+ * source becomes `assets/game-world-bingo-<hash>.jpg` in the build.
+ */
+export function flightArt(sources: readonly string[], built: readonly string[]): string[] {
+  const wanted = new Set<string>();
+  for (const code of sources)
+    for (const m of code.matchAll(/["']@\/assets\/([\w.-]+)\.(\w+)["']/g))
+      wanted.add(`${m[1]}|${m[2]}`);
+  const urls = built.filter((file) => {
+    const m = /^assets\/(.+)-[\w-]{8}\.(\w+)$/.exec(file);
+    return !!m && wanted.has(`${m[1]}|${m[2]}`);
+  });
+  return urls.map((f) => `/${f}`).sort();
+}
+
 /** Same-origin scripts and stylesheets an HTML page loads, so install can check they're precached. */
 export function referencedAssets(html: string): string[] {
   const found = new Set<string>();

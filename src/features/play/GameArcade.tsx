@@ -14,6 +14,8 @@ import { displayGameTitle, arcadeGameType, gameType } from "@/lib/display-game-t
 import { premadeAvatars, buddyAvatars } from "@/lib/player-cards";
 import { arcadeMix } from "@/lib/arcade-mix.functions";
 import { friendlyError } from "@/lib/friendly-error";
+import { useOffline } from "@/data/offline/status";
+import { t } from "@/i18n";
 
 import type { TripWithRole } from "@/lib/trips";
 import gameOptionA from "@/assets/game-tile-option-a.webp";
@@ -526,8 +528,12 @@ export function GameArcade({
     if (!guest) loadUsed();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const creditsLeft = trips.length > 0;
-  const mixChip =
-    mixUsed >= 10 || (mixUsed >= 3 && !creditsLeft)
+  // Mix It Up asks the AI for new cards, so it needs the network (M4-05); the rest of the arcade
+  // is bundled and plays offline.
+  const { offline } = useOffline();
+  const mixChip = offline
+    ? [t("offline.mixNeedsNetwork"), "text-muted-foreground"]
+    : mixUsed >= 10 || (mixUsed >= 3 && !creditsLeft)
       ? ["Gate closed", "text-muted-foreground"]
       : mixUsed === 2
         ? ["Final call", "text-orange"]
@@ -716,7 +722,7 @@ export function GameArcade({
               <Button
                 variant="playful"
                 className="w-full mt-4"
-                disabled={mixBusy || mixChip[0] === "Gate closed"}
+                disabled={mixBusy || offline || mixChip[0] === "Gate closed"}
                 onClick={() => void runMix()}
               >
                 {mixBusy ? "Mixing…" : "Make a sample mix"}

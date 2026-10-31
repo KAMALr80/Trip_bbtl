@@ -22,6 +22,9 @@ test("the worker installs and precaches this build", async ({ page }) => {
   expect(cached).toContain("/");
   expect(cached).toContain("/offline");
   expect(cached.some((p) => p.endsWith(".css"))).toBe(true);
+  // M4-05: Games on the Flight art is there before it's ever shown.
+  expect(cached.filter((p) => /\/assets\/game-world-/.test(p)).length).toBeGreaterThanOrEqual(9);
+  expect(cached.filter((p) => /\/assets\/boarding-game-/.test(p)).length).toBeGreaterThanOrEqual(9);
 });
 
 test("sw.js is never served from the HTTP cache", async ({ request }) => {
