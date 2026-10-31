@@ -78,9 +78,9 @@ them to the developer).
 ## 4. Founder decisions
 Open `dev-docs/06-open-questions.md` and write `**Answer:** …` under each question still open.
 Defaults are used if you don't. The ones needed next:
-- **M3 (core game):** Q3 AI checks vs Crew Check, Q4 exact points, Q5 solo crown goal, Q7 tie-breaks,
-  Q9 Daily Discovery content, Q10 no crowning night set, Q13 Window Seat stamps, Q22 question days,
-  Q25 trip quest points, Q27 Surprise Drop timing.
+- **M3 (core game):** answered Oct 30 (defaults). Q13 Window Seat stamps is still open.
+- **M4 (web app):** Q17 sign-in methods (default: email code + Google; Apple optional now). Q16 is
+  answered: no native apps.
 - **M5 (memories):** Q11 photo deletion after Day 7, Q23 world map / badges in Phase 1, Q28 hide trip/photo.
 - **M6 (launch):** Q12 teen rules, Q24 admin area.
 - **Later:** Q18 payments.
@@ -98,16 +98,15 @@ Also: review and tag `supabase/seed/content_candidates.csv` (2,938 content lines
 
 ---
 
-## 6. App stores (M4, native app)
-1. **Apple Developer Program** (developer.apple.com, $99/year), enrolled as an organization (needs a
-   D-U-N-S number; this can take 1–2 weeks, so start early).
-2. **Google Play Console** (play.google.com/console, $25 once), organization account, identity check.
-3. **Sign in with Apple**: in the Apple developer account, create a Services ID and key; give them
-   to the developer (needed because the app offers Google sign-in).
-4. **Push notifications**: Firebase project (console.firebase.google.com) for Android, and an APNs
-   key from the Apple account for iOS.
-5. Store listing material: app name, short and long description, 6–8 screenshots per platform,
-   app icon, privacy policy URL, support email, age rating answers.
+## 6. Notifications and install (M4, web app)
+There are no App Store or Google Play apps (Q16, Oct 31, 2026), so no Apple Developer or Play Console
+accounts are needed.
+1. **Web push keys**: the developer generates a VAPID key pair; add them per environment as
+   `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`. No outside account needed.
+2. **Email reminders** use the email sender from 2.3 (same provider, same domain).
+3. **Install material**: a 1024×1024 master app icon (BRAND.md notes it's missing) and 3–5 phone
+   screenshots for the browser's install sheet.
+4. **Test phones**: one iPhone and one Android phone the team can install the app on (M4-10).
 
 ---
 
@@ -117,11 +116,10 @@ Also: review and tag `supabase/seed/content_candidates.csv` (2,938 content lines
 2. Data-protection basics: decide data retention, name a privacy contact, sign Supabase's and the
    email provider's data processing agreements.
 3. Beta round: 3–5 real crews play a full trip on staging; collect bugs in the in-app bug inbox.
-4. Store submission (review takes days; Apple often asks questions about sign-in, age and photos).
-5. Launch: switch `app_settings.public_launch` on (Founder dashboard), announce.
+4. Launch: switch `app_settings.public_launch` on (Founder dashboard), announce.
 
 ---
 
 ## 8. Later (Phase 2)
-Payments (Stripe on the web, App Store / Play billing in the apps; needs Q18 and a policy review),
+Payments (Stripe on the web; needs Q18),
 Event Groups (13–24), world map, Spanish, flight tracking.

@@ -16,7 +16,7 @@
 | Security | pgTAP + scripted probes | RLS: non-member can't read; member can't write directly; pending member sees nothing; teen photo privacy; sealed text hidden before reveal | CI |
 | Component | Vitest + Testing Library | Setup wizard steps, Play hub states, Crew Check card, Game Night Live voting UI | CI |
 | End to end | **Playwright** (mobile viewport 390×844, plus 360 and 430) | Critical flows (§3) with 2–3 real accounts in parallel browser contexts | CI on preview deploy; nightly on staging |
-| Native | Manual + Maestro/Appium (optional) | Push, deep links, offline outbox, camera upload | Before each store build |
+| Real devices | Manual (iPhone with the app installed from Safari, Android Chrome) | Install, service worker updates, offline outbox, web push, camera upload | Before each release that touches them |
 
 **Shared fixtures:** `supabase/tests/fixtures/phases.json` drives **both** the pgTAP phase tests and the Vitest phase tests. That's how the SQL and TypeScript phase engines are kept identical (03 §6).
 
@@ -45,7 +45,7 @@ The phase engine takes `p_at` (03 §6). Tests pass explicit instants. **No test 
 | E5 | **Crew Check**: photo proof → another player 👍 → approved; no 👍 → expired after 24h | 2 |
 | E6 | Pre-Flight closes → **Early Bird** crowned (tie-break case too) | 3 |
 | E7 | Takeoff: 3 Airport Missions reveal, proof, cap 12, points land in Trip Season | 2 |
-| E8 | **Offline**: airplane mode in the native app → flight games work → journal/answers queued → back online → synced once (no duplicates) | 1 native |
+| E8 | **Offline**: airplane mode in the installed web app → flight games work → journal/answers queued → back online → synced once (no duplicates) | 1 phone (installed) |
 | E9 | "We've arrived" by **Co-Captain** → Trip Season banner with city; trip quest assigned | 3 |
 | E10 | Surprise Drop: opens, all play, AI check pass → auto-approve; AI unsure → Crew Check | 3 |
 | E11 | Crowning night → **Jet Setter** crowned | 3 |
@@ -55,7 +55,7 @@ The phase engine takes `p_at` (03 §6). Tests pass explicit instants. **No test 
 | E15 | **Friends off the app**: one phone, names, winners tapped, nothing saved, host gets stamp only | 1 |
 | E16 | **Teen**: Captain teen invite → teen account → `has_minors` effects (no alcohol content, photo privacy) | Captain + teen |
 | E17 | Remove a player; Co-Captain cannot delete the trip; Captain deletes with "DELETE" | Captain + Co + 1 |
-| E18 | Push reminders arrive at the right local time; quiet hours defer; muting a type stops it | 2 native |
+| E18 | Push reminders arrive at the right local time; quiet hours defer; muting a type stops it | 2 phones (iPhone installed, Android) |
 | E19 | Passport: level changes when a new country stamp is added; public vs private view | 2 |
 
 ## 4. Test accounts matrix (seed)
@@ -86,7 +86,7 @@ They pin down current behavior, so the M1 cleanup can't silently break it.
 ## 6. QA checklist per release
 - [ ] All CI green (unit, pgTAP, Playwright smoke)
 - [ ] Migrations applied to staging; `supabase db diff` is empty afterwards
-- [ ] Manual pass on iPhone (Safari + native) and Android (Chrome + native) at 360/390/430 widths
+- [ ] Manual pass on iPhone (Safari + installed app) and Android (Chrome + installed app) at 360/390/430 widths
 - [ ] Reduced-motion and dark-mode spot check
 - [ ] AI kill switch tested (`ai_gate` off → app falls back to pre-written content)
 - [ ] Release notes list any rule built on a default from [06](06-open-questions.md)

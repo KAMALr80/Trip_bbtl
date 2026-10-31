@@ -90,7 +90,7 @@ Built with the Q2, Q8, Q14, Q19, Q21 and Q26 defaults (06).
   2. **Trip basics.** Tap first + last day (range picker; enforce max days per room); vibe; ages/minors (`has_minors`); room details.
   3. **Pre-Flight.** One-line intro; 0–10 days or Skip; up to 4 call nights (M2-06).
   4. **Trip Season.** One-line intro; **crowning / finale night**: date, time, location (required, never pre-set, R-205); optional call link. At home: finale night picker (beta note).
-  5. **Invite.** Trip code + link auto-made; Share (Web Share API / Capacitor Share); off-app: names; solo: "You're all set". **Done** → opens Play.
+  5. **Invite.** Trip code + link auto-made; Share (Web Share API); off-app: names; solo: "You're all set". **Done** → opens Play.
 - Replaces `TripSheets` (create mode), `CultureA2eSetup`, `GamePlanPicker` and the setup parts of `CultureExperiences`.
 - **Rules:** R-201 – R-207, R-211.
 - **Acceptance:** E2 for each room; answers show on Trip / Play right after Done (beta note "Setup answers don't show after saving"); no screen needs scrolling at 390×844 except long lists; Captain can edit everything later from Captain tools.

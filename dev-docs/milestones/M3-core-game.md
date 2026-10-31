@@ -1,6 +1,6 @@
 # M3 — Core Game: Points, Crowns, Daily Play, Surprise Drops, Crew Check, Game Night Live
 
-**Deck priority:** ★05. With M2 + M3 (and offline from M4) **a crew can play a full trip**.
+**Deck priority:** ★05. With M2 + M3 (and offline and reminders from M4) **a crew can play a full trip**.
 **Goal:**
 - Every way to earn points in the deck works and lands in one **points ledger**.
 - Crowns are decided by the server.
@@ -22,13 +22,13 @@
 | M3-09 | Surprise Drops (Bingo, Scavenger, Speed, Photo) | L |
 | M3-10 | Trip quest | S |
 | M3-11 | Crowns: Early Bird & Jet Setter, tie-break, solo goal | M |
-| M3-12 | ✅ | Daily quest (5) and evening journal (2) per player per day; the journal offers the day's prompt plus 2 to swap to and can be typed or dictated (`write_journal`, `journal_options`). One shared guide per trip from journal entries and approved quest photos (`trip_guide`), shareable as a read-only link at `/guide/<token>`; names and photos show there only for players who opt in, and never photos of a trip with minors. **Left:** Storyteller badge progress (M5).
-| M3-13 | ✅ | At-home rooms run on the engine: Home Missions, Daily Discovery, content filtered by culture and focuses, finale = crowning night on Game Night Live. Solo at-home rooms get a showcase note each experience day; their guide is the finale showcase page (R-365), and the solo goal crowns them. Home's "Explore a Culture" and "Window Seat" buttons now open the setup wizard. **Left:** the older `CultureExperiences` / `Inspiration` screens are still reachable from Passport links; they go when M5 rebuilds the Passport.
+| M3-12 | Window Seat: daily quest, journal, shared guide | L |
+| M3-13 | Culture rooms on the engine (focuses, finale, solo showcase) | M |
 | M3-14 | AI proof-check interface (stub; real vision in M6) | S |
 | M3-15 | Standings UI + score strip + tappable avatars | M |
 | M3-16 | Retire old scoring functions | S |
 
-## Status (Oct 30, 2026)
+## Status (Oct 31, 2026)
 
 Built with the founder's defaults for Q3, Q4, Q5, Q7, Q9, Q10, Q22, Q25 and Q27 (06). Database
 tests: `18_points_ledger` – `23_reveal_and_drops`; browser tests: `daily-play`, `crew-check`,
@@ -47,8 +47,8 @@ tests: `18_points_ledger` – `23_reveal_and_drops`; browser tests: `daily-play`
 | M3-09 | 🟡 | Drop proofs per square / find, AI check queued for Bingo / Scavenger / Photo, `drop_points` + `settle_drops` (Q4 formula). **Left:** "present live" as drop proof (R-343), the ticket-stub card, a reminder before a drop ends (M4). |
 | M3-10 | ✅ | Trip quest per player at Trip Season start, share or keep a surprise, presented at the crowning night. |
 | M3-11 | ✅ | `trip_crowns` / `trip_crownings`; Early Bird at Pre-Flight close (none if skipped), Jet Setter at the crowning night's Close or the Q10 fallback, solo goal (60%). **Left:** the luggage-tag celebration; crowns on the trip stamp (M5). |
-| M3-12 | 🟡 | Window Seat quest (5) and journal prompt (2) scheduled per player per day. **Left:** journal entries table and screen, the shared guide and its public page. |
-| M3-13 | 🟡 | At-home rooms get Home Missions and Daily Discovery from the engine, content filtered by culture and focuses; finale = crowning night on Game Night Live. **Left:** the solo showcase page (R-365); retiring `CultureExperiences`. |
+| M3-12 | ✅ | Daily quest (5) and evening journal (2) per player per day; the journal offers the day's prompt plus 2 to swap to and can be typed or dictated (`write_journal`, `journal_options`). One shared guide per trip from journal entries and approved quest photos (`trip_guide`), shareable as a read-only link at `/guide/<token>`; names and photos show there only for players who opt in, and never photos of a trip with minors. **Left:** Storyteller badge progress (M5). |
+| M3-13 | ✅ | At-home rooms run on the engine: Home Missions, Daily Discovery, content filtered by culture and focuses, finale = crowning night on Game Night Live. Solo at-home rooms get a showcase note each experience day; their guide is the finale showcase page (R-365), and the solo goal crowns them. Home's "Explore a Culture" and "Window Seat" buttons now open the setup wizard. **Left:** the older `CultureExperiences` / `Inspiration` screens are still reachable from Passport links; they go when M5 rebuilds the Passport. |
 | M3-14 | ✅ | `checkProofPhoto` stub (`unsure`), `checkProof` server function, `record_proof_check` (service role); a pass approves, unsure/fail only flag. |
 | M3-15 | ✅ | Play's score, place, R-303 race line, solo goal and breakdown read the ledger. `CrewStandings` on the Trip tab shows both seasons with tappable avatars (R-722). |
 | M3-16 | ✅ | Client wrappers of `season_points`, `trip_season`, `trip_season_score`, `game_board`, `finalize_season`, `mission_bonus`, `set_stamp_values` and the older sealed-quest / mission functions are revoked and listed in `trip_private.retired_wrappers`; the `crown-due-seasons` job is gone. Play, the Trip tab standings (`CrewStandings`), the Journey card, the crown celebration and the Home reminders read the ledger, the schedule and `trip_crowns`. `SealedQuests`, `AirportMissions`, `TripSeasonBoard` and the old stamp board are deleted. **Left:** the retired tables move to `legacy_archive` with the rest of 05 §1. |

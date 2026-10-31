@@ -1,13 +1,13 @@
 # M6 — Trust, Safety & Launch
 
-**Deck priority:** 08 (AI photo checks + moderation, flags only). Also from slide 23: *"the age and photo-privacy rules"*, *"a simple admin area with test trips"*, and store launch.
-**Depends on:** M3 (proof pipeline), M4 (native builds), M5 (photo retention).
+**Deck priority:** 08 (AI photo checks + moderation, flags only). Also from slide 23: *"the age and photo-privacy rules"*, *"a simple admin area with test trips"*, and launch (web only, Q16: no store apps).
+**Depends on:** M3 (proof pipeline), M4 (install, offline, notifications), M5 (photo retention).
 **Exit criteria:**
 - AI checks live behind the kill switch.
 - Moderation queue in admin.
 - Age and privacy audit signed off.
 - Full Phase 1 E2E suite (E1–E19) green.
-- Apps submitted to both stores.
+- Production live on `tripjunkies.app`.
 
 | ID | Task | Size |
 |---|---|---|
@@ -21,7 +21,7 @@
 | M6-08 | Performance & reliability (load test, slow-network test, cron monitoring) | M |
 | M6-09 | Legal pages update (Terms, Privacy, teen consent, photo deletion, AI use) | S (+ lawyer) |
 | M6-10 | Full regression + beta round with real crews | L |
-| M6-11 | Store submission + launch checklist | M |
+| M6-11 | Web launch checklist | S |
 
 ---
 
@@ -85,12 +85,12 @@
 - **Lawyer review recommended.**
 
 ### M6-10 · Full regression + crew beta
-- Run E1–E19 on staging, web + iOS + Android.
+- Run E1–E19 on staging: desktop, iPhone (Safari and installed) and Android (Chrome and installed).
 - Then a **real beta**: 3–5 crews (one Going on a Trip, one Window Seat, one at-home culture, one off-app) with the founder.
 - Triage through the bug inbox.
 - **Acceptance:** no P0/P1 open; the founder signs off.
 
-### M6-11 · Store submission + launch
-- Final store assets; submit to App Store and Google Play; respond to review.
-- Production cutover checklist: backups, monitoring, `beta_free` still on until payments, support email.
-- **Acceptance:** both apps live (or in phased release); the web app on `tripjunkies.app` points to the stores.
+### M6-11 · Web launch
+- Production checklist: backups, monitoring, `beta_free` still on until payments, support email, the service worker kill switch tested, VAPID keys set, `app_settings.public_launch` on.
+- Landing page explains how to install the app (Android install card, iPhone Add to Home Screen).
+- **Acceptance:** production is live on `tripjunkies.app`; a new player can sign up, install and join a trip on both phone types.

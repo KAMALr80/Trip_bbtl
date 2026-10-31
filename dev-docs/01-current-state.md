@@ -141,7 +141,7 @@ Legend:
 
 | # | Priority | Status | What exists | What's missing |
 |---|---|---|---|---|
-| ★01 | Downloadable app (App Store + Google Play) | ❌ | Manifest PWA, icons | Native shell (Capacitor), store listings, native auth, push |
+| ★01 | Downloadable app (App Store + Google Play) | ❌ | Manifest PWA, icons | **No store apps** (Q16, Oct 31, 2026): an installable web app takes their place (M4-01), with Web Push (M4-08) |
 | ★02 | Offline play on flights, sync later | 🟡 | `GameArcade` / "Games on the Flight", `OnePhoneNight`, `offline-trip-content.ts`, `OfflineTripCards` use local data | Service worker / bundled assets; offline queue; sync |
 | 03 | Automatic time zones | 🟡 | `trips.home_timezone`, `trips.trip_timezone`, `trip_today()`, viewer time in `profiles.time_zone` | Trip zone is **picked by hand** (`TripTimezoneField`, Captain-only); no lookup from destination (beta bug: Bali → New York time) |
 | ★04 | Captain setup flow + Play in every room | 🟡 | Trip create: 3 steps (`TripSheets`: dates → who → details). Culture rooms: 6 steps (`CultureA2eSetup`: who → place → dates → style → players → finale). Play hub with 4 phases (`PlayHub`) | The 5-screen flow from the deck; one flow for every room; Daily Card ("Soon"); empty Play for At Home / Window Seat (beta note) |

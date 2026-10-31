@@ -45,7 +45,7 @@
 1. Meets the acceptance criteria in the milestone file.
 2. Server enforces the rule; the client only displays.
 3. Automated tests cover the happy path and at least the main edge cases listed in the task.
-4. Works at 360/390/430 widths and in the native shell (once M4 exists).
+4. Works at 360/390/430 widths and as the installed web app (once M4 exists).
 5. Deployed to staging and checked by QA with real test accounts (signed in!).
 6. Docs updated: this pack, if a rule or decision changed.
 

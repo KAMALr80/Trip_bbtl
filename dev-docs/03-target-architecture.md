@@ -26,8 +26,8 @@
 | Proof / approvals | Several mechanisms (two-member verify, Captain review, mission approvals) | One **`proofs`** table + **Crew Check** + AI check status (§8) |
 | Content | Many pools (`security_missions`, `game_cards`, `weekly_question_pool`, `trip_day_games`, `solo_quests`, culture packs…) | One **`content_items`** library tagged by room/mode/kind + a per-trip **`trip_schedule`** (§9) |
 | Time | Trip zone picked by hand | Destination → IANA zone looked up automatically (§10) |
-| Notifications | `.ics` files | Queue + push (FCM/APNs) + email + preferences (§11) |
-| Packaging | Manifest PWA, no service worker | **Capacitor** iOS/Android + offline outbox (§12) |
+| Notifications | `.ics` files | Queue + Web Push + email + preferences (§11) |
+| Packaging | Manifest PWA, no service worker | **Installable web app** (service worker) + offline outbox (§12). No native apps. |
 | AI | Lovable gateway, text only | Own provider key, text + vision, same gate (§13) |
 | Visual looks | Original + Cinematic | **One** "Airline Look" design system (§14) |
 
@@ -43,7 +43,7 @@ TanStack Router file-based routes. Proposed URL map:
 /tour                              → Explore tour (R-907)
 /home                              → Home (Daily Discovery, countdown, departures board)
 /trips/new                         → Captain setup wizard, steps 1–5 as search param ?step=n (R-201)
-/join/$code                        → invite (keep; needs universal/app links in native)
+/join/$code                        → invite (keep)
 /t/$tripId                         → trip layout (loads trip once, provides context)
 /t/$tripId/play                    → Play hub (R-301)
 /t/$tripId/play/$phase             → preflight | takeoff | trip-season | baggage-claim
@@ -228,7 +228,7 @@ trip_schedule(id, trip_id, kind, day date, opens_at, closes_at, content_item_id,
 ## 11. Notifications
 
 ```
-device_tokens(user_id, platform ('ios'|'android'|'web'), token, app_version, updated_at)
+push_subscriptions(user_id, endpoint UNIQUE, p256dh, auth, user_agent, updated_at)   -- one per browser
 notification_prefs(user_id, type, push bool, email bool)     -- one row per type (R-812 "mute any type")
 profiles.quiet_start time, profiles.quiet_end time, profiles.time_zone
 notification_queue(id, user_id, trip_id, type, title, body, deep_link, send_after timestamptz,
@@ -236,28 +236,25 @@ notification_queue(id, user_id, trip_id, type, title, body, deep_link, send_afte
 ```
 
 - **Enqueue** when the schedule is planned (§9) and on events (proof waiting, night live, crowned). `send_after` respects quiet hours: shift it to the end of quiet hours in the user's zone.
-- **Send:** pg_cron (every minute) → a server route `/api/cron/notify` → FCM HTTP v1 (Android, and iOS through APNs via FCM) with **email as backup** (Resend, Postmark or SES) when there's no token or the push fails.
-- **Deep links** into routes (§3).
-- **Web:** web push is optional. iOS web push only works for installed PWAs; native is the main path.
+- **Send:** pg_cron (every minute) → a server route `/api/cron/notify` → **Web Push** (VAPID; the standard Push API in Chrome, Edge, Firefox and Safari) with **email as backup** (Resend, Postmark or SES) when there's no subscription or the push fails. Delete subscriptions the push service reports gone (404/410).
+- **Deep links** into routes (§3): the service worker's `notificationclick` opens or focuses the app at the link.
+- **iPhone:** web push only works once the app is **added to the Home Screen** (iOS 16.4+). The install guide (M4-01) and the email backup cover players who don't install.
 
-## 12. Native app + offline
+## 12. Installable web app + offline
 
-**Recommendation: Capacitor**, wrapping a **SPA build** of the same React app.
-- TanStack Start supports SPA mode: `tanstackStart({ spa: { enabled: true } })`. The option is in the installed `start-plugin-core` schema.
-- The native app bundles static assets, so it **opens with no network** (★02).
-- Server functions and API routes keep running on Cloudflare. In the native build, calls must target the absolute API origin. **Spike this first (M4-01).**
-- Plugins:
-  - `@capacitor/push-notifications` (or `@capacitor-firebase/messaging`)
-  - `@capacitor/app` (deep links)
-  - `@capacitor/preferences` / SQLite for the outbox
-  - `@capacitor/camera`, `@capacitor/share`, `@capacitor/haptics`
-  - native Google and **Apple sign-in**. App Store Guideline 4.8 requires an equivalent privacy-focused login option when third-party sign-in like Google is offered. Sign in with Apple is the standard way to meet it; check the current guideline text at submission.
+**Decision (Oct 31, 2026, founder): no native apps.** The same React app, served from Cloudflare, is
+installed from the browser (Add to Home Screen). A service worker makes it open with no network (★02).
+The earlier Capacitor plan is dropped, along with store listings, native sign-in and FCM/APNs.
+
+- **Service worker** (staging and production builds only): precaches the app shell and the art and content the flight games need. It never caches API, Supabase or server-function responses. New versions wait until the player accepts the existing `UpdatePrompt`, so previews and games never switch version mid-session (G12).
+- **Install:** our own install card on Chrome/Android (`beforeinstallprompt`); a short Add to Home Screen guide on iPhone Safari, which has no prompt. On iPhone, installing is what unlocks web push and keeps stored data from being cleared after 7 days without a visit.
 - **Offline model:**
-  - **Snapshot:** at Takeoff (and whenever online), cache the trip bundle: the member list, today's and tomorrow's schedule items that are already revealed or that reveal offline (flight games), and flight game content.
-  - **Outbox:** user actions (answers, journal entries, votes, photo uploads) are written to a local queue with a client-generated **idempotency key**. On reconnect, flush the queue in order. The server keys on `(source, source_ref, user)` (§7), so retries are safe.
+  - **Snapshot:** at Takeoff (and whenever online), cache the trip bundle in IndexedDB: the member list, today's and tomorrow's schedule items that are already revealed or that reveal offline (flight games), and flight game content.
+  - **Outbox:** user actions (answers, journal entries, votes, photo uploads) are written to a local IndexedDB queue with a client-generated **idempotency key**. When the page is back online (and on app start), flush the queue in order. Background Sync helps where it exists but isn't relied on (Safari has none). The server keys on `(source, source_ref, user)` (§7), so retries are safe.
   - **Rules still live on the server:** offline actions are *claims*; the server accepts or rejects them on sync (e.g. a deadline passed). The UI shows "Will sync when you're online".
   - Flight games give **no points** (R-334), so most offline play needs no server check.
-- **Alternative considered:** a React Native / Expo rewrite of the UI. More native feel, but it throws away about 150 components and doubles the work before Phase 1. Revisit after launch if needed.
+- **Photos:** the browser file input with `capture`; compress and strip EXIF location before upload.
+- **Revisit native** only if the founder changes the decision (e.g. a store presence becomes a business need); a Capacitor wrapper of this app would then be the cheapest route.
 
 ## 13. AI
 
@@ -276,15 +273,15 @@ notification_queue(id, user_id, trip_id, type, title, body, deep_link, send_afte
 
 ## 15. Environments & delivery
 
-| Env | Supabase | Web | Native |
-|---|---|---|---|
-| local | `supabase start` (CLI, Docker) + seed | `bun dev` | Capacitor live-reload |
-| staging | separate Supabase project | Cloudflare Worker `staging` | TestFlight / Play internal testing |
-| production | production project (migrated out of Lovable Cloud if needed, see [07](07-dev-setup-and-lovable-exit.md)) | Cloudflare Worker `prod` on `tripjunkies.app` | App Store / Google Play |
+| Env | Supabase | Web |
+|---|---|---|
+| local | `supabase start` (CLI, Docker) + seed | `bun dev` (no service worker) |
+| staging | separate Supabase project | Cloudflare Worker `staging` (service worker on) |
+| production | new production project (start fresh, see [07](07-dev-setup-and-lovable-exit.md)) | Cloudflare Worker `prod` on `tripjunkies.app` (service worker on) |
 
 **CI (GitHub Actions):** install → typecheck → lint → unit tests (Vitest) → DB tests (pgTAP against `supabase start`) → build → Playwright smoke tests against a preview deploy.
 
 **Observability:**
-- Sentry for errors (replaces `lovable-error-reporting.ts`), on web and native.
+- Sentry for errors (replaces `lovable-error-reporting.ts`), in the browser and the Worker.
 - Supabase logs.
 - A simple product analytics tool (e.g. PostHog) with **no PII in events**.
