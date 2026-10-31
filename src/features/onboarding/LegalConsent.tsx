@@ -5,6 +5,8 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { LEGAL_VERSION, legalLinks } from "@/lib/legal";
+import { isNetworkError } from "@/data/offline/rules";
+import { saveAccount, savedAccount } from "@/data/offline/snapshot";
 export function LegalCheckbox({
   checked,
   onChange,
@@ -86,11 +88,16 @@ export function useLegalStatus(userId: string | undefined) {
       return;
     }
     let live = true;
-    void rpc("account_status").then((r) => {
-      if (live)
-        setStatus(
-          r.error || r.data?.[0]?.legal_version !== LEGAL_VERSION ? "required" : "accepted",
-        );
+    void rpc("account_status").then(async (r) => {
+      // No network (M4-03): trust the version this player accepted on this device.
+      if (r.error && isNetworkError(r.error, navigator.onLine)) {
+        const saved = await savedAccount(userId);
+        if (live) setStatus(saved?.legalVersion === LEGAL_VERSION ? "accepted" : "required");
+        return;
+      }
+      const accepted = !r.error && r.data?.[0]?.legal_version === LEGAL_VERSION;
+      if (accepted) saveAccount({ legalVersion: LEGAL_VERSION });
+      if (live) setStatus(accepted ? "accepted" : "required");
     });
     return () => {
       live = false;

@@ -54,13 +54,19 @@ test("Home and pages opened before load with no network", async ({ page, context
   await expect(tab).toHaveTitle(/TripJunkies/);
 });
 
-test("a page never opened online shows the offline page", async ({ page, context }) => {
+test("a page never opened online opens through the Home shell", async ({ page, context }) => {
   await controlled(page);
   await context.setOffline(true);
-  await page.goto("/me");
-  await expect(page.getByRole("heading", { name: "You're offline" })).toBeVisible();
-  await page.getByRole("link", { name: "Go to Home" }).click();
-  await expect(page).toHaveTitle(/TripJunkies/);
+  await page.goto("/about");
+  // The app's router draws the page from the precached shell.
+  await expect(page.getByText("THE STORY BEHIND THE FUN")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "You're offline" })).toHaveCount(0);
+});
+
+test("the offline page is precached as the last resort", async ({ page }) => {
+  await controlled(page);
+  const body = await page.evaluate(async () => (await caches.match("/offline"))?.text());
+  expect(body).toContain("You're offline");
 });
 
 test("data requests are not cached", async ({ page }) => {

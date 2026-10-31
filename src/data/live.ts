@@ -1,6 +1,6 @@
 // Game Night Live (M3-07): the trip's one open session, its live counts, and the actions on it.
 // Counts refresh every few seconds while the screen is open.
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database, Tables } from "@/integrations/supabase/types";
 import { scheduleKeys } from "./daily";
@@ -98,9 +98,8 @@ export function useLiveActions(tripId: string, sessionId: string | null | undefi
   });
 }
 
-/** Crowns decided so far (M3-11). */
-export function useCrowns(tripId: string) {
-  return useQuery({
+export const crownsQuery = (tripId: string) =>
+  queryOptions({
     queryKey: liveKeys.crowns(tripId),
     queryFn: async () => {
       const { data, error } = await supabase.from("trip_crowns").select("*").eq("trip_id", tripId);
@@ -109,11 +108,14 @@ export function useCrowns(tripId: string) {
     },
     staleTime: 60_000,
   });
+
+/** Crowns decided so far (M3-11). */
+export function useCrowns(tripId: string) {
+  return useQuery(crownsQuery(tripId));
 }
 
-/** Standings for one season (M3-01), refreshed after every award. */
-export function useStandings(tripId: string, season: "preflight" | "trip_season") {
-  return useQuery({
+export const standingsQuery = (tripId: string, season: "preflight" | "trip_season") =>
+  queryOptions({
     queryKey: [...scheduleKeys.standings(tripId), season],
     queryFn: async () => {
       const { data, error } = await rpc("trip_standings", { p_trip: tripId, p_season: season });
@@ -121,8 +123,11 @@ export function useStandings(tripId: string, season: "preflight" | "trip_season"
       return data ?? [];
     },
     staleTime: 15_000,
-    refetchInterval: 20_000,
   });
+
+/** Standings for one season (M3-01), refreshed after every award. */
+export function useStandings(tripId: string, season: "preflight" | "trip_season") {
+  return useQuery({ ...standingsQuery(tripId, season), refetchInterval: 20_000 });
 }
 
 /** "Why do I have 47 points?": my approved points this season, summed by source. */

@@ -2,6 +2,9 @@
 // can refresh exactly what it changed: everything about one trip sits under ["trip", tripId].
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { loadCards, loadMembers, loadTrips } from "./trips";
+import { dailyAnswersQuery, scheduleQuery } from "./daily";
+import { crownsQuery, standingsQuery } from "./live";
+import { callNightsQuery } from "./schedule";
 
 // Avatar photo links are signed for an hour; a minute keeps tab switches from re-signing them.
 const staleTime = 60_000;
@@ -56,5 +59,22 @@ export async function prefetchTrip(queryClient: QueryClient, tripId: string) {
       queryFn: () => loadCards(tripId),
       staleTime,
     }),
+  ]);
+}
+
+/**
+ * Load what the open trip's Home and Play show, so it is in the offline snapshot (M4-03) even if
+ * the player never opened Play before losing the network. Online only; already-fresh data is kept.
+ */
+export async function prefetchTripForOffline(queryClient: QueryClient, tripId: string) {
+  if (typeof window === "undefined" || !navigator.onLine) return;
+  await Promise.allSettled([
+    prefetchTrip(queryClient, tripId),
+    queryClient.prefetchQuery(scheduleQuery(tripId)),
+    queryClient.prefetchQuery(dailyAnswersQuery(tripId)),
+    queryClient.prefetchQuery(callNightsQuery(tripId)),
+    queryClient.prefetchQuery(crownsQuery(tripId)),
+    queryClient.prefetchQuery(standingsQuery(tripId, "preflight")),
+    queryClient.prefetchQuery(standingsQuery(tripId, "trip_season")),
   ]);
 }

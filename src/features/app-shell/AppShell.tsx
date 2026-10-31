@@ -46,7 +46,8 @@ import { FeedbackAdmin } from "@/features/me/TripFeedback";
 
 import { RoleTips } from "@/features/captain-tools/RoleTips";
 import type { Member, TripWithRole } from "@/lib/trips";
-import { queryKeys, useCards, useMembers, useTrips } from "@/data/queries";
+import { prefetchTripForOffline, queryKeys, useCards, useMembers, useTrips } from "@/data/queries";
+import { OfflineBanner } from "@/features/app-shell/OfflineBanner";
 import { loadMembershipSignature } from "@/data/trips";
 import {
   completeOnboarding,
@@ -90,6 +91,8 @@ import { readPendingBeta, clearPendingBeta } from "@/lib/pending-beta";
 import { DeletedTripNotes } from "@/features/trip/DeletedTripNotes";
 
 import { LegalConsent, useLegalStatus } from "@/features/onboarding/LegalConsent";
+import { isNetworkError } from "@/data/offline/rules";
+import { saveAccount, savedAccount } from "@/data/offline/snapshot";
 
 const noTrips: TripWithRole[] = [];
 const noMembers: Member[] = [];
@@ -193,7 +196,14 @@ export function AppShell() {
   const [myProfile, setMyProfile] = useState<AccountProfile | null | undefined>(undefined);
   const loadMyProfile = async () => {
     if (!user) return;
-    const data = await loadPlayerProfile(user.id);
+    const data = await loadPlayerProfile(user.id).catch(() => null);
+    if (data) saveAccount({ playerProfile: data });
+    else if (!navigator.onLine) {
+      // No network (M4-03): the player's profile as saved on this device.
+      const saved = await savedAccount(user.id);
+      setMyProfile((saved?.playerProfile as AccountProfile | undefined) ?? null);
+      return;
+    }
     setMyProfile((data as AccountProfile | null) ?? null);
   };
   useEffect(() => {
@@ -237,6 +247,15 @@ export function AppShell() {
   }, []);
   const loadAccess = async () => {
     let r = await rpc("my_access");
+    // No network (M4-03): the access this player had last time on this device. Without a saved
+    // copy, fall through to the gates as before.
+    if (r.error && isNetworkError(r.error, navigator.onLine) && user) {
+      const saved = await savedAccount(user.id);
+      if (saved?.access) {
+        setAccess(saved.access);
+        return;
+      }
+    }
     let next = r.data?.[0] ?? { beta: false, has_dob: false, age_range: "Unknown" };
     // A saved /beta/<CODE> is redeemed automatically after the first sign-in (server-checked).
     const saved = readPendingBeta();
@@ -257,6 +276,7 @@ export function AppShell() {
         clearPendingBeta();
       }
     }
+    if (!r.error) saveAccount({ access: next });
     setAccess(next);
   };
   useEffect(() => {
@@ -264,6 +284,15 @@ export function AppShell() {
     else setAccess(null);
   }, [user?.id]);
   const active = trips.find((t) => t.id === activeId) ?? null;
+  // Keep the open trip's Home and Play data in the offline snapshot (M4-03), and refresh it when
+  // the network comes back.
+  useEffect(() => {
+    if (!user || !activeId) return;
+    void prefetchTripForOffline(queryClient, activeId);
+    const onOnline = () => void prefetchTripForOffline(queryClient, activeId);
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [user?.id, activeId]);
   useEffect(() => {
     if (!activeId || sessionStorage.getItem(`tj-topup-${activeId}`)) return;
     sessionStorage.setItem(`tj-topup-${activeId}`, "1");
@@ -663,6 +692,7 @@ export function AppShell() {
           )}
         </div>
       </header>
+      <OfflineBanner />
       {meView && tab === "Me" ? (
         <div className="px-[18px]">
           {meView === "lab" && isAdmin ? (

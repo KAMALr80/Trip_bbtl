@@ -42,8 +42,8 @@ app links, the native camera plugin, store readiness and the store release pipel
 | ID | State | What's done · what's left |
 |---|---|---|
 | M4-01 | ⬜ | Not started. |
-| M4-02 | ✅ | `src/pwa/sw.ts` + `src/pwa/sw-plan.ts` (the rules, unit-tested), bundled by `scripts/pwa/build-sw.ts` after `vite build`. Precaches this build's JS/CSS, icons, manifest, the Home shell (`/`) and `/offline` (≈ 3.6 MB). Pages network first (3.5s timeout) → cached copy → Home shell → offline page; images and Google Fonts cached on first use; Supabase, server functions, `/api`, legal pages and password reset never cached. A new build waits until Refresh on `UpdatePrompt`. On only with `VITE_SERVICE_WORKER=true` (`scripts/deploy.sh` defaults it on); `false` ships the self-removing kill switch, and the app removes any worker and `tj-*` caches when the flag is off. `e2e/pwa` (CI) checks install, offline Home, offline visited pages and the offline page; the update and kill-switch flows were checked by hand against `wrangler dev`. **Left:** check it on staging once deployed. |
-| M4-03 | ⬜ | Not started. Offline, signed-in screens show the app shell, but their data calls fail until the snapshot exists. |
+| M4-02 | ✅ | `src/pwa/sw.ts` + `src/pwa/sw-plan.ts` (the rules, unit-tested), bundled by `scripts/pwa/build-sw.ts` after `vite build`. Precaches this build's JS/CSS, icons, manifest, the Home shell (`/`) and `/offline` (≈ 3.6 MB). Pages network first (3.5s timeout) → this page's cached copy (the page that installed the worker is cached on activation) → the Home shell, whose router draws the page asked for → the offline page only if the shell is missing; images and Google Fonts cached on first use; Supabase, server functions, `/api`, legal pages and password reset never cached. A new build waits until Refresh on `UpdatePrompt`. On only with `VITE_SERVICE_WORKER=true` (`scripts/deploy.sh` defaults it on); `false` ships the self-removing kill switch, and the app removes any worker and `tj-*` caches when the flag is off. `e2e/pwa` (CI) checks install, offline Home, offline visited and unvisited pages; the update and kill-switch flows were checked by hand against `wrangler dev`. **Left:** check it on staging once deployed. |
+| M4-03 | ✅ | `src/data/offline/`: one IndexedDB record per device (`tj-offline`) holding TanStack Query's dehydrated cache, filtered by `rules.ts` (my trips; per trip members, cards, schedule, daily answers, standings, call nights, crowns, journal; never the crew's proof photos, live counts or the guide), plus the account facts the start-up gates need (user, profile, player profile, accepted legal version, access). Written a second after query results arrive, account facts at once, and on hide/close. The open trip's Home and Play data is preloaded while online (`prefetchTripForOffline`). At start-up with no network (`isNetworkError`: offline, or fetch itself failed), the root restores it and opens as the last player; the legal, access and profile gates use the saved facts. A refusal from the server (signed out, expired) never falls back, and deletes the snapshot, as does signing out. `OfflineBanner`: "Offline · Last synced 2 hours ago". Persistent storage is requested in the installed app. `e2e/pwa/snapshot.spec.ts`: airplane mode, a connection that fails, and a server refusal. **Left:** photo avatars (signed links) don't show offline, preset avatars do once seen; flight-game content offline is M4-05; actions offline wait for the outbox (M4-04). |
 | M4-04 – M4-10 | ⬜ | Not started. |
 
 ---
@@ -64,11 +64,12 @@ app links, the native camera plugin, store readiness and the store release pipel
 - **Kill switch:** deploy with `VITE_SERVICE_WORKER=false`. That build's `sw.js` removes itself and its caches and reloads open tabs; the app also unregisters any worker when the flag is off (G12).
 - **Acceptance:** with the network off, the app opens to Home from a cold start; a deploy shows the update prompt exactly once. ✅ (`e2e/pwa`, and by hand against `wrangler dev`).
 
-### M4-03 · Offline snapshot
-- Whenever online, and specifically at Takeoff, cache the current trip bundle in IndexedDB: trip, members (names + avatars), phase windows, revealed schedule items, **flight game content**, own standings.
-- The query layer (`src/data/queries.ts`) reads the cache first when offline and shows "Offline · last synced 2h ago".
-- Ask for persistent storage (`navigator.storage.persist()`) after install.
-- **Acceptance:** with airplane mode on, Home and Play render the last state; flight games run.
+### M4-03 · Offline snapshot ✅
+- Whenever online, keep the current trip bundle in IndexedDB: trip, members, cards, revealed schedule items, own answers, standings, call nights, crowns (phase windows are computed from the trip, `phase.ts`). Built: TanStack Query's dehydrated cache, filtered in `src/data/offline/rules.ts`, plus the start-up account facts.
+- With no network the app starts from it and shows "Offline · Last synced 2 hours ago". It falls back **only** when the network failed, never when the server refused (that signs out and deletes the snapshot).
+- Persistent storage (`navigator.storage.persist()`) is requested in the installed app.
+- **Flight game content** moves to M4-05.
+- **Acceptance:** with airplane mode on, Home and Play render the last state. ✅ (`e2e/pwa/snapshot.spec.ts`)
 
 ### M4-04 · Offline outbox + sync
 - Queue user actions offline with a client UUID: Daily Card answers, journal entries, wrap-up answers, proof photos (stored in IndexedDB), Crew Check 👍, award votes only if a session is open.

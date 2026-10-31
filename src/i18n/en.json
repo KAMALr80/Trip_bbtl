@@ -490,5 +490,11 @@
     "publicMissing": "This guide isn't shared right now.",
     "publicFooter": "Made with TripJunkies™",
     "error": "That didn't work: {{reason}}"
+  },
+  "offline": {
+    "title": "Offline",
+    "synced": "Last synced {{ago}}",
+    "never": "Not synced on this phone yet",
+    "hint": "You're seeing your trip as of the last sync. Anything new needs a connection."
   }
 }

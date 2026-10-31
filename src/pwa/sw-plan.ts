@@ -5,7 +5,7 @@
 /** Where the app shell is when the network is down. */
 export const SHELL_URL = "/";
 /**
- * Shown for a page that was never opened online. The file is public/offline.html; Cloudflare serves
+ * The last resort when even the Home shell isn't cached (normally it is precached). The file is public/offline.html; Cloudflare serves
  * it at /offline and redirects /offline.html there, and a redirected response can't answer a page.
  */
 export const OFFLINE_URL = "/offline";

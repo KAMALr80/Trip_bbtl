@@ -33,7 +33,10 @@ type MessageEvt = ExtendableEvent & { data: unknown };
 type Scope = {
   location: Location;
   skipWaiting(): Promise<void>;
-  clients: { claim(): Promise<void> };
+  clients: {
+    claim(): Promise<void>;
+    matchAll(options: { type: "window" }): Promise<readonly { url: string }[]>;
+  };
   addEventListener(type: "install" | "activate", fn: (e: ExtendableEvent) => void): void;
   addEventListener(type: "fetch", fn: (e: FetchEvent) => void): void;
   addEventListener(type: "message", fn: (e: MessageEvt) => void): void;
@@ -78,9 +81,29 @@ sw.addEventListener("activate", (event) => {
         if (key.startsWith("tj-") && !keep.has(key)) await caches.delete(key);
       }
       await sw.clients.claim();
+      await saveOpenPages();
     })(),
   );
 });
+
+/**
+ * The page that installed the worker loaded before the worker could see it, so it isn't cached
+ * yet. Fetch the open pages again so the first page a player opened also works offline.
+ */
+async function saveOpenPages() {
+  const open = await sw.clients.matchAll({ type: "window" });
+  await Promise.all(
+    open.map(async ({ url }) => {
+      const kind = strategyFor({ url, method: "GET", mode: "navigate", origin: ORIGIN }, PRECACHE);
+      if (kind !== "page") return;
+      try {
+        await savePage(url)(await fetch(url, { credentials: "same-origin" }));
+      } catch {
+        /* offline or failed: it is cached on the next visit instead */
+      }
+    }),
+  );
+}
 
 sw.addEventListener("message", (event) => {
   const data = event.data as { type?: unknown } | null;
@@ -153,14 +176,16 @@ async function page(req: Request, network: Promise<Response | null>): Promise<Re
   const first = await Promise.race([network, timeout]);
   if (first) return first;
   const pages = await caches.open(names.pages);
-  const cached =
-    (await pages.match(pageKey(req.url))) ??
-    (new URL(req.url).pathname === SHELL_URL ? await caches.match(SHELL_URL) : undefined);
+  const cached = await pages.match(pageKey(req.url));
   if (cached) return cached;
-  // Nothing cached for this page. If the network is merely slow, keep waiting for it.
-  const late = await network;
-  if (late) return late;
-  return (await caches.match(OFFLINE_URL)) ?? Response.error();
+  if (new URL(req.url).pathname !== SHELL_URL) {
+    // Nothing cached for this page. If the network is merely slow, keep waiting for it.
+    const late = await network;
+    if (late) return late;
+  }
+  // The Home shell: the app's router draws the page that was asked for (React logs a recoverable
+  // hydration warning and renders it in the browser). The offline page only if that is missing.
+  return (await caches.match(SHELL_URL)) ?? (await caches.match(OFFLINE_URL)) ?? Response.error();
 }
 
 /** Only plain, successful HTML pages are kept; never anything that sets a cookie. */

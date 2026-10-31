@@ -1,5 +1,5 @@
 // Call nights and the trip schedule (M2-06, M2-12).
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { rpc } from "./rpc";
@@ -16,12 +16,15 @@ async function loadCallNights(tripId: string): Promise<CallNight[]> {
   return data ?? [];
 }
 
-export function useCallNights(tripId: string) {
-  return useQuery({
+export const callNightsQuery = (tripId: string) =>
+  queryOptions({
     queryKey: ["trip", tripId, "call-nights"],
     queryFn: () => loadCallNights(tripId),
     staleTime: 60_000,
   });
+
+export function useCallNights(tripId: string) {
+  return useQuery(callNightsQuery(tripId));
 }
 
 /** Replace the trip's upcoming call nights (Captain or Co-Captain; up to 4, inside Pre-Flight). */
