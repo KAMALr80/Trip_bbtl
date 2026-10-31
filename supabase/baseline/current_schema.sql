@@ -1323,6 +1323,16 @@ CREATE FUNCTION public.join_waitlist(p_email text) RETURNS void
 
 
 --
+-- Name: journal_options(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.journal_options(p_item uuid) RETURNS TABLE(idx integer, prompt text)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.journal_options(p_item) $$;
+
+
+--
 -- Name: junkie_rank(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2005,6 +2015,16 @@ CREATE FUNCTION public.price_list() RETURNS TABLE(key text, label text, cents in
 
 
 --
+-- Name: public_guide(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.public_guide(p_token text) RETURNS TABLE(title text, place text, start_date date, end_date date, room text, day date, kind text, author text, prompt text, body text, photo_path text)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.public_guide(p_token) $$;
+
+
+--
 -- Name: public_inspiration_queue(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2022,6 +2042,16 @@ CREATE FUNCTION public.public_launch() RETURNS boolean
     LANGUAGE sql STABLE
     SET search_path TO 'public'
     AS $$ SELECT coalesce((SELECT public_launch FROM public.app_settings LIMIT 1), false) $$;
+
+
+--
+-- Name: publish_guide(uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.publish_guide(p_trip uuid, p_publish boolean) RETURNS text
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.publish_guide(p_trip, p_publish) $$;
 
 
 --
@@ -2650,6 +2680,16 @@ CREATE FUNCTION public.set_game_night_place(p_trip uuid, p_week integer, p_place
 
 
 --
+-- Name: set_guide_prefs(uuid, boolean, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_guide_prefs(p_trip uuid, p_show_name boolean, p_share_photos boolean) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.set_guide_prefs(p_trip, p_show_name, p_share_photos) $$;
+
+
+--
 -- Name: set_home_day_place(uuid, date, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3203,6 +3243,16 @@ CREATE FUNCTION public.traveler_level(p_user uuid) RETURNS TABLE(level text, rea
 
 
 --
+-- Name: trip_guide(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.trip_guide(p_trip uuid) RETURNS TABLE(day date, kind text, user_id uuid, author text, prompt text, body text, photo_path text)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.trip_guide(p_trip) $$;
+
+
+--
 -- Name: trip_invite_preview(text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3482,6 +3532,16 @@ CREATE FUNCTION public.welcome_copy() RETURNS jsonb
     LANGUAGE sql STABLE
     SET search_path TO 'public'
     AS $$ SELECT jsonb_build_object('founder_intro',founder_intro,'faq',welcome_faq) FROM public.app_settings WHERE id=true $$;
+
+
+--
+-- Name: write_journal(uuid, text, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.write_journal(p_item uuid, p_body text, p_choice integer DEFAULT 0) RETURNS uuid
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.write_journal(p_item, p_body, p_choice) $$;
 
 
 --
@@ -6225,6 +6285,32 @@ CREATE FUNCTION trip_private.desired_schedule(p_trip uuid) RETURNS TABLE(kind te
     LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO ''
     AS $$
+DECLARE t public.trips; ssn record;
+BEGIN
+  RETURN QUERY SELECT * FROM trip_private.desired_schedule_core(p_trip);
+  SELECT * INTO t FROM public.trips WHERE id = p_trip;
+  IF NOT FOUND OR t.play_mode <> 'solo' OR t.room NOT IN ('explore_culture', 'show_culture') THEN RETURN; END IF;
+  SELECT * INTO ssn FROM trip_private.trip_phase_windows(p_trip) w WHERE w.phase = 'trip_season';
+  IF NOT (ssn.ends_at > ssn.starts_at) THEN RETURN; END IF;
+  RETURN QUERY
+    SELECT 'journal_prompt'::text, d::date::text, m.user_id, d::date,
+           greatest((d::date + time '08:00') AT TIME ZONE ssn.tz, ssn.starts_at),
+           (d::date + 1 + time '12:00') AT TIME ZONE ssn.tz, NULL::uuid, 'showcase'::text, 2
+    FROM generate_series((ssn.starts_at AT TIME ZONE ssn.tz)::date, (ssn.ends_at AT TIME ZONE ssn.tz)::date - 1, interval '1 day') d
+    CROSS JOIN public.trip_members m
+    WHERE m.trip_id = p_trip AND m.status = 'approved';
+END
+$$;
+
+
+--
+-- Name: desired_schedule_core(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.desired_schedule_core(p_trip uuid) RETURNS TABLE(kind text, slot text, user_id uuid, day date, opens_at timestamp with time zone, closes_at timestamp with time zone, ref_id uuid, variant text, points integer)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
 DECLARE
   t public.trips;
   r jsonb;
@@ -7259,6 +7345,42 @@ CREATE FUNCTION trip_private.guard_public_leaderboard() RETURNS trigger
 
 
 --
+-- Name: guide_items(uuid, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.guide_items(p_trip uuid, p_public boolean) RETURNS TABLE(day date, kind text, user_id uuid, author text, prompt text, body text, photo_path text)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  WITH t AS (SELECT * FROM public.trips WHERE id = p_trip),
+  names AS (
+    SELECT m.user_id, coalesce(c.game_name, pp.game_name, 'Traveler') AS name,
+           coalesce(g.show_name, false) AS show_name, coalesce(g.share_photos, false) AS share_photos
+    FROM public.trip_members m
+    LEFT JOIN public.trip_player_cards c ON c.trip_id = m.trip_id AND c.user_id = m.user_id
+    LEFT JOIN public.player_profiles pp ON pp.user_id = m.user_id
+    LEFT JOIN public.guide_prefs g ON g.trip_id = m.trip_id AND g.user_id = m.user_id
+    WHERE m.trip_id = p_trip AND m.status = 'approved'
+  )
+  SELECT j.day, 'journal', CASE WHEN p_public THEN NULL ELSE j.user_id END,
+         CASE WHEN NOT p_public OR n.show_name THEN n.name END, j.prompt, j.body, NULL::text
+  FROM public.journal_entries j JOIN names n ON n.user_id = j.user_id
+  WHERE j.trip_id = p_trip
+  UNION ALL
+  SELECT s.day, 'photo', CASE WHEN p_public THEN NULL ELSE p.user_id END,
+         CASE WHEN NOT p_public OR n.show_name THEN n.name END, NULL, p.body, p.photo_path
+  FROM public.proofs p
+  JOIN public.trip_schedule s ON s.id = p.schedule_id
+  JOIN names n ON n.user_id = p.user_id
+  CROSS JOIN t
+  WHERE p.trip_id = p_trip AND p.photo_path IS NOT NULL AND p.crew_status IN ('approved', 'not_needed')
+    AND s.kind IN ('ws_quest', 'home_mission', 'airport_mission', 'surprise_drop', 'trip_quest')
+    AND (NOT p_public OR (n.share_photos AND NOT t.has_minors))
+  ORDER BY 1, 2 DESC
+$$;
+
+
+--
 -- Name: has_beta_access(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -7662,6 +7784,36 @@ DECLARE e text := lower(trim(coalesce(p_email,''))); BEGIN
   IF e !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' OR length(e) > 254 THEN RAISE EXCEPTION 'Please enter a valid email'; END IF;
   IF (SELECT count(*) FROM public.waitlist WHERE user_id=auth.uid()) >= 3 THEN RETURN; END IF;
   INSERT INTO public.waitlist(email, user_id) VALUES (e, auth.uid()) ON CONFLICT (email) DO NOTHING; END $_$;
+
+
+--
+-- Name: journal_options(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.journal_options(p_item uuid) RETURNS TABLE(idx integer, prompt text)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE s public.trip_schedule; t public.trips;
+BEGIN
+  SELECT * INTO s FROM public.trip_schedule WHERE id = p_item;
+  IF NOT FOUND OR s.kind <> 'journal_prompt' OR s.user_id IS DISTINCT FROM auth.uid()
+     OR NOT trip_private.is_trip_member(s.trip_id, auth.uid()) THEN
+    RAISE EXCEPTION 'That isn''t your journal';
+  END IF;
+  IF now() < s.opens_at THEN RAISE EXCEPTION 'Tonight''s prompt isn''t out yet'; END IF;
+  SELECT * INTO t FROM public.trips WHERE id = s.trip_id;
+  RETURN QUERY
+    SELECT 0, s.tailored_text WHERE s.tailored_text IS NOT NULL
+    UNION ALL
+    SELECT (row_number() OVER (ORDER BY trip_private.schedule_hash(p_item::text || c.id::text)))::int,
+           trip_private.tailor_text(c.body, t)
+    FROM public.content_items c
+    WHERE c.kind = 'journal_prompt' AND trip_private.content_fits(c, t) AND c.id IS DISTINCT FROM s.content_item_id
+    ORDER BY 1
+    LIMIT 3;
+END
+$$;
 
 
 --
@@ -10238,6 +10390,23 @@ CREATE FUNCTION trip_private.proof_upload_ok(p_name text) RETURNS boolean
 
 
 --
+-- Name: public_guide(text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.public_guide(p_token text) RETURNS TABLE(title text, place text, start_date date, end_date date, room text, day date, kind text, author text, prompt text, body text, photo_path text)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT t.name, coalesce(t.cultures[1], t.destination), t.start_date, t.end_date, t.room,
+         i.day, i.kind, i.author, i.prompt, i.body, i.photo_path
+  FROM public.trip_guides g
+  JOIN public.trips t ON t.id = g.trip_id
+  CROSS JOIN LATERAL trip_private.guide_items(t.id, true) i
+  WHERE g.token = p_token AND g.published_at IS NOT NULL AND t.rules_version = 2
+$$;
+
+
+--
 -- Name: public_inspiration_queue(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -10257,6 +10426,28 @@ CREATE FUNCTION trip_private.public_launch() RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$ SELECT coalesce((SELECT public_launch FROM public.app_settings LIMIT 1), false) $$;
+
+
+--
+-- Name: publish_guide(uuid, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.publish_guide(p_trip uuid, p_publish boolean) RETURNS text
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_token text;
+BEGIN
+  IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'The Captain or Co-Captain shares the guide'; END IF;
+  INSERT INTO public.trip_guides (trip_id, published_at, published_by)
+  VALUES (p_trip, CASE WHEN p_publish THEN now() END, auth.uid())
+  ON CONFLICT (trip_id) DO UPDATE
+    SET published_at = CASE WHEN p_publish THEN coalesce(public.trip_guides.published_at, now()) END,
+        published_by = auth.uid(), updated_at = now()
+  RETURNING token INTO v_token;
+  RETURN CASE WHEN p_publish THEN v_token END;
+END
+$$;
 
 
 --
@@ -11919,6 +12110,23 @@ END $$;
 
 
 --
+-- Name: set_guide_prefs(uuid, boolean, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_guide_prefs(p_trip uuid, p_show_name boolean, p_share_photos boolean) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  INSERT INTO public.guide_prefs (trip_id, user_id, show_name, share_photos)
+  VALUES (p_trip, auth.uid(), coalesce(p_show_name, false), coalesce(p_share_photos, false))
+  ON CONFLICT (trip_id, user_id) DO UPDATE SET show_name = excluded.show_name, share_photos = excluded.share_photos, updated_at = now();
+END
+$$;
+
+
+--
 -- Name: set_home_day_place(uuid, date, text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -13372,6 +13580,21 @@ END $$;
 
 
 --
+-- Name: trip_guide(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.trip_guide(p_trip uuid) RETURNS TABLE(day date, kind text, user_id uuid, author text, prompt text, body text, photo_path text)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  RETURN QUERY SELECT * FROM trip_private.guide_items(p_trip, false);
+END
+$$;
+
+
+--
 -- Name: trip_invite_preview(text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -13962,6 +14185,44 @@ RETURN QUERY SELECT q.week_number, CASE WHEN q.drops_at <= now() OR trip_private
  (SELECT count(*)::int FROM public.weekly_answer_votes v WHERE v.trip_id=p_trip AND v.week_number=q.week_number),
  (SELECT o.idx FROM public.weekly_answer_votes v JOIN trip_private.ordered_answers(p_trip,q.week_number) o ON o.user_id=v.target_id WHERE v.trip_id=p_trip AND v.week_number=q.week_number AND v.voter_id=auth.uid())
  FROM public.weekly_questions q LEFT JOIN public.game_nights n ON n.trip_id=q.trip_id AND n.week_number=q.week_number WHERE q.trip_id=p_trip AND (n.week_number IS NOT NULL OR q.week_number >= 1000) ORDER BY q.drops_at; END $$;
+
+
+--
+-- Name: write_journal(uuid, text, integer); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.write_journal(p_item uuid, p_body text, p_choice integer) RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE s public.trip_schedule; v_prompt text; v_id uuid; v_season text;
+BEGIN
+  SELECT * INTO s FROM public.trip_schedule WHERE id = p_item;
+  IF NOT FOUND OR s.kind <> 'journal_prompt' OR s.user_id IS DISTINCT FROM auth.uid()
+     OR NOT trip_private.is_trip_member(s.trip_id, auth.uid()) THEN
+    RAISE EXCEPTION 'That isn''t your journal';
+  END IF;
+  IF now() < s.opens_at THEN RAISE EXCEPTION 'Tonight''s prompt isn''t out yet'; END IF;
+  IF s.closes_at IS NOT NULL AND now() >= s.closes_at THEN RAISE EXCEPTION 'This day''s journal has closed'; END IF;
+  p_body := btrim(p_body);
+  IF coalesce(p_body, '') = '' THEN RAISE EXCEPTION 'Write a line or two first'; END IF;
+  IF length(p_body) > 2000 THEN RAISE EXCEPTION 'Keep it under 2,000 characters'; END IF;
+  IF NOT trip_private.content_text_safe(p_body) THEN RAISE EXCEPTION 'Please reword that'; END IF;
+  SELECT o.prompt INTO v_prompt FROM trip_private.journal_options(p_item) o WHERE o.idx = coalesce(p_choice, 0);
+  IF v_prompt IS NULL THEN RAISE EXCEPTION 'Pick one of the prompts'; END IF;
+  INSERT INTO public.journal_entries (trip_id, user_id, schedule_id, day, prompt, body)
+  VALUES (s.trip_id, auth.uid(), p_item, s.day, v_prompt, p_body)
+  ON CONFLICT (schedule_id, user_id) DO UPDATE SET prompt = excluded.prompt, body = excluded.body, updated_at = now()
+  RETURNING id INTO v_id;
+  SELECT CASE phase WHEN 'preflight' THEN 'preflight' ELSE 'trip_season' END INTO v_season
+  FROM trip_private.trip_phase(s.trip_id, now());
+  IF s.points IS NOT NULL THEN
+    PERFORM trip_private.award_points(s.trip_id, auth.uid(), coalesce(v_season, 'trip_season'), 'ws_journal', s.id, s.points,
+                                      'approved', now(), auth.uid());
+  END IF;
+  RETURN v_id;
+END
+$$;
 
 
 --
@@ -15015,6 +15276,19 @@ CREATE TABLE public.game_scores (
 
 
 --
+-- Name: guide_prefs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.guide_prefs (
+    trip_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    show_name boolean DEFAULT false NOT NULL,
+    share_photos boolean DEFAULT false NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: home_day_results; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -15093,6 +15367,25 @@ CREATE TABLE public.inspiration_votes (
     choice text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT inspiration_votes_choice_check CHECK ((choice = ANY (ARRAY['creator'::text, 'partner'::text, 'love'::text])))
+);
+
+
+--
+-- Name: journal_entries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.journal_entries (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    trip_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    schedule_id uuid NOT NULL,
+    day date NOT NULL,
+    prompt text NOT NULL,
+    body text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT journal_entries_body_check CHECK (((length(body) >= 1) AND (length(body) <= 2000))),
+    CONSTRAINT journal_entries_prompt_check CHECK ((length(prompt) <= 300))
 );
 
 
@@ -16017,6 +16310,19 @@ CREATE TABLE public.trip_feedback (
     CONSTRAINT trip_feedback_favorite_check CHECK (((favorite IS NULL) OR (favorite = ANY (ARRAY['game_nights'::text, 'qotw'::text, 'bingo'::text, 'photo_wall'::text, 'wrapped'::text, 'other'::text])))),
     CONSTRAINT trip_feedback_score_check CHECK (((score IS NULL) OR ((score >= 0) AND (score <= 10)))),
     CONSTRAINT trip_feedback_squad_message_check CHECK (((squad_message IS NULL) OR (char_length(squad_message) <= 280)))
+);
+
+
+--
+-- Name: trip_guides; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.trip_guides (
+    trip_id uuid NOT NULL,
+    token text DEFAULT encode(extensions.gen_random_bytes(12), 'hex'::text) NOT NULL,
+    published_at timestamp with time zone,
+    published_by uuid,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -17302,6 +17608,14 @@ ALTER TABLE ONLY public.game_scores
 
 
 --
+-- Name: guide_prefs guide_prefs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.guide_prefs
+    ADD CONSTRAINT guide_prefs_pkey PRIMARY KEY (trip_id, user_id);
+
+
+--
 -- Name: home_day_results home_day_results_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17347,6 +17661,22 @@ ALTER TABLE ONLY public.host_swaps
 
 ALTER TABLE ONLY public.inspiration_votes
     ADD CONSTRAINT inspiration_votes_pkey PRIMARY KEY (card_id, voter_id);
+
+
+--
+-- Name: journal_entries journal_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.journal_entries
+    ADD CONSTRAINT journal_entries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: journal_entries journal_entries_schedule_id_user_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.journal_entries
+    ADD CONSTRAINT journal_entries_schedule_id_user_id_key UNIQUE (schedule_id, user_id);
 
 
 --
@@ -17870,6 +18200,22 @@ ALTER TABLE ONLY public.trip_feedback
 
 
 --
+-- Name: trip_guides trip_guides_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trip_guides
+    ADD CONSTRAINT trip_guides_pkey PRIMARY KEY (trip_id);
+
+
+--
+-- Name: trip_guides trip_guides_token_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trip_guides
+    ADD CONSTRAINT trip_guides_token_key UNIQUE (token);
+
+
+--
 -- Name: trip_invites trip_invites_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18316,6 +18662,13 @@ CREATE UNIQUE INDEX culture_showcase_code_unique ON public.culture_experiences U
 --
 
 CREATE INDEX daily_answers_trip_user_idx ON public.daily_answers USING btree (trip_id, user_id);
+
+
+--
+-- Name: journal_entries_trip_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX journal_entries_trip_idx ON public.journal_entries USING btree (trip_id, day);
 
 
 --
@@ -19012,6 +19365,13 @@ CREATE TRIGGER guard_variants_text BEFORE INSERT OR UPDATE OF text ON public.con
 
 
 --
+-- Name: guide_prefs guide_prefs_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER guide_prefs_archive_guard BEFORE INSERT OR UPDATE ON public.guide_prefs FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: home_day_sessions home_day_finish_postcard; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -19093,6 +19453,13 @@ CREATE TRIGGER inspiration_validate BEFORE INSERT OR UPDATE ON public.cultural_i
 --
 
 CREATE TRIGGER inspiration_vote_validate BEFORE UPDATE ON public.inspiration_votes FOR EACH ROW EXECUTE FUNCTION trip_private.inspiration_vote_validate();
+
+
+--
+-- Name: journal_entries journal_entries_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER journal_entries_archive_guard BEFORE INSERT OR UPDATE ON public.journal_entries FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -19590,6 +19957,13 @@ CREATE TRIGGER trip_day_trivia_keys_archive_guard BEFORE INSERT OR UPDATE ON pub
 --
 
 CREATE TRIGGER trip_feedback_updated BEFORE UPDATE ON public.trip_feedback FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();
+
+
+--
+-- Name: trip_guides trip_guides_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_guides_archive_guard BEFORE INSERT OR UPDATE ON public.trip_guides FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -20331,6 +20705,14 @@ ALTER TABLE ONLY public.game_scores
 
 
 --
+-- Name: guide_prefs guide_prefs_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.guide_prefs
+    ADD CONSTRAINT guide_prefs_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
 -- Name: home_day_results home_day_results_session_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -20376,6 +20758,22 @@ ALTER TABLE ONLY public.host_swaps
 
 ALTER TABLE ONLY public.inspiration_votes
     ADD CONSTRAINT inspiration_votes_card_id_fkey FOREIGN KEY (card_id) REFERENCES public.cultural_inspirations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: journal_entries journal_entries_schedule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.journal_entries
+    ADD CONSTRAINT journal_entries_schedule_id_fkey FOREIGN KEY (schedule_id) REFERENCES public.trip_schedule(id) ON DELETE CASCADE;
+
+
+--
+-- Name: journal_entries journal_entries_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.journal_entries
+    ADD CONSTRAINT journal_entries_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
 
 
 --
@@ -20824,6 +21222,14 @@ ALTER TABLE ONLY public.trip_day_trivia_keys
 
 ALTER TABLE ONLY public.trip_feedback
     ADD CONSTRAINT trip_feedback_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
+-- Name: trip_guides trip_guides_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trip_guides
+    ADD CONSTRAINT trip_guides_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
 
 
 --
@@ -22474,6 +22880,12 @@ ALTER TABLE public.game_pick_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.game_scores ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: guide_prefs; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.guide_prefs ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: home_day_results; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -22563,6 +22975,12 @@ CREATE POLICY inspiration_votes_update ON public.inspiration_votes FOR UPDATE TO
 
 
 --
+-- Name: journal_entries; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.journal_entries ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: junkie_ranks; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -22624,6 +23042,13 @@ CREATE POLICY "members read crowns" ON public.trip_crowns FOR SELECT TO authenti
 --
 
 CREATE POLICY "members read live sessions" ON public.live_sessions FOR SELECT TO authenticated USING (trip_private.is_trip_member(trip_id, auth.uid()));
+
+
+--
+-- Name: trip_guides members read the guide state; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "members read the guide state" ON public.trip_guides FOR SELECT TO authenticated USING (trip_private.is_trip_member(trip_id, auth.uid()));
 
 
 --
@@ -22725,6 +23150,20 @@ CREATE POLICY "players read their own answers" ON public.daily_answers FOR SELEC
 --
 
 CREATE POLICY "players read their own draft" ON public.trip_drafts FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: guide_prefs players read their own guide choices; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own guide choices" ON public.guide_prefs FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: journal_entries players read their own journal; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own journal" ON public.journal_entries FOR SELECT TO authenticated USING ((user_id = auth.uid()));
 
 
 --
@@ -23054,6 +23493,12 @@ ALTER TABLE public.trip_drafts ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.trip_feedback ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: trip_guides; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.trip_guides ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: trip_invites; Type: ROW SECURITY; Schema: public; Owner: -
@@ -24264,6 +24709,15 @@ GRANT ALL ON FUNCTION public.join_waitlist(p_email text) TO service_role;
 
 
 --
+-- Name: FUNCTION journal_options(p_item uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.journal_options(p_item uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.journal_options(p_item uuid) TO service_role;
+GRANT ALL ON FUNCTION public.journal_options(p_item uuid) TO authenticated;
+
+
+--
 -- Name: FUNCTION junkie_rank(p_user uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -24857,6 +25311,14 @@ GRANT ALL ON FUNCTION public.price_list() TO service_role;
 
 
 --
+-- Name: FUNCTION public_guide(p_token text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.public_guide(p_token text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.public_guide(p_token text) TO service_role;
+
+
+--
 -- Name: FUNCTION public_inspiration_queue(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -24872,6 +25334,15 @@ GRANT ALL ON FUNCTION public.public_inspiration_queue() TO service_role;
 GRANT ALL ON FUNCTION public.public_launch() TO anon;
 GRANT ALL ON FUNCTION public.public_launch() TO authenticated;
 GRANT ALL ON FUNCTION public.public_launch() TO service_role;
+
+
+--
+-- Name: FUNCTION publish_guide(p_trip uuid, p_publish boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.publish_guide(p_trip uuid, p_publish boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.publish_guide(p_trip uuid, p_publish boolean) TO service_role;
+GRANT ALL ON FUNCTION public.publish_guide(p_trip uuid, p_publish boolean) TO authenticated;
 
 
 --
@@ -25399,6 +25870,15 @@ GRANT ALL ON FUNCTION public.set_game_night_place(p_trip uuid, p_week integer, p
 
 
 --
+-- Name: FUNCTION set_guide_prefs(p_trip uuid, p_show_name boolean, p_share_photos boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_guide_prefs(p_trip uuid, p_show_name boolean, p_share_photos boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_guide_prefs(p_trip uuid, p_show_name boolean, p_share_photos boolean) TO service_role;
+GRANT ALL ON FUNCTION public.set_guide_prefs(p_trip uuid, p_show_name boolean, p_share_photos boolean) TO authenticated;
+
+
+--
 -- Name: FUNCTION set_home_day_place(p_trip uuid, p_day date, p_place text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -25873,6 +26353,15 @@ GRANT ALL ON FUNCTION public.traveler_level(p_user uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION trip_guide(p_trip uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.trip_guide(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.trip_guide(p_trip uuid) TO service_role;
+GRANT ALL ON FUNCTION public.trip_guide(p_trip uuid) TO authenticated;
+
+
+--
 -- Name: FUNCTION trip_invite_preview(p_code text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -26108,6 +26597,15 @@ REVOKE ALL ON FUNCTION public.welcome_copy() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.welcome_copy() TO anon;
 GRANT ALL ON FUNCTION public.welcome_copy() TO authenticated;
 GRANT ALL ON FUNCTION public.welcome_copy() TO service_role;
+
+
+--
+-- Name: FUNCTION write_journal(p_item uuid, p_body text, p_choice integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.write_journal(p_item uuid, p_body text, p_choice integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.write_journal(p_item uuid, p_body text, p_choice integer) TO service_role;
+GRANT ALL ON FUNCTION public.write_journal(p_item uuid, p_body text, p_choice integer) TO authenticated;
 
 
 --
@@ -27159,6 +27657,13 @@ REVOKE ALL ON FUNCTION trip_private.desired_schedule(p_trip uuid) FROM PUBLIC;
 
 
 --
+-- Name: FUNCTION desired_schedule_core(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.desired_schedule_core(p_trip uuid) FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION discard_trip_draft(); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -27503,6 +28008,14 @@ REVOKE ALL ON FUNCTION trip_private.guard_order_money() FROM PUBLIC;
 
 
 --
+-- Name: FUNCTION guide_items(p_trip uuid, p_public boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.guide_items(p_trip uuid, p_public boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.guide_items(p_trip uuid, p_public boolean) TO service_role;
+
+
+--
 -- Name: FUNCTION has_beta_access(); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -27698,6 +28211,15 @@ GRANT ALL ON FUNCTION trip_private.join_trip(p_code text) TO service_role;
 REVOKE ALL ON FUNCTION trip_private.join_waitlist(p_email text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.join_waitlist(p_email text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.join_waitlist(p_email text) TO service_role;
+
+
+--
+-- Name: FUNCTION journal_options(p_item uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.journal_options(p_item uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.journal_options(p_item uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.journal_options(p_item uuid) TO service_role;
 
 
 --
@@ -28536,6 +29058,14 @@ GRANT ALL ON FUNCTION trip_private.proof_upload_ok(p_name text) TO service_role;
 
 
 --
+-- Name: FUNCTION public_guide(p_token text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.public_guide(p_token text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.public_guide(p_token text) TO service_role;
+
+
+--
 -- Name: FUNCTION public_inspiration_queue(); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -28551,6 +29081,15 @@ GRANT ALL ON FUNCTION trip_private.public_inspiration_queue() TO service_role;
 REVOKE ALL ON FUNCTION trip_private.public_launch() FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.public_launch() TO authenticated;
 GRANT ALL ON FUNCTION trip_private.public_launch() TO service_role;
+
+
+--
+-- Name: FUNCTION publish_guide(p_trip uuid, p_publish boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.publish_guide(p_trip uuid, p_publish boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.publish_guide(p_trip uuid, p_publish boolean) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.publish_guide(p_trip uuid, p_publish boolean) TO service_role;
 
 
 --
@@ -29285,6 +29824,15 @@ GRANT ALL ON FUNCTION trip_private.set_game_night_host(p_trip uuid, p_week integ
 
 
 --
+-- Name: FUNCTION set_guide_prefs(p_trip uuid, p_show_name boolean, p_share_photos boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_guide_prefs(p_trip uuid, p_show_name boolean, p_share_photos boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_guide_prefs(p_trip uuid, p_show_name boolean, p_share_photos boolean) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.set_guide_prefs(p_trip uuid, p_show_name boolean, p_share_photos boolean) TO service_role;
+
+
+--
 -- Name: FUNCTION set_join_controls(p_trip uuid, p_locked boolean, p_max integer); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29853,6 +30401,15 @@ GRANT ALL ON FUNCTION trip_private.traveler_level(p_user uuid) TO authenticated;
 
 
 --
+-- Name: FUNCTION trip_guide(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.trip_guide(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.trip_guide(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.trip_guide(p_trip uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION trip_invite_preview(p_code text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -30125,6 +30682,15 @@ GRANT ALL ON FUNCTION trip_private.week_game_action(p_trip uuid, p_week integer,
 REVOKE ALL ON FUNCTION trip_private.weekly_question_status(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.weekly_question_status(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.weekly_question_status(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION write_journal(p_item uuid, p_body text, p_choice integer); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.write_journal(p_item uuid, p_body text, p_choice integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.write_journal(p_item uuid, p_body text, p_choice integer) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.write_journal(p_item uuid, p_body text, p_choice integer) TO service_role;
 
 
 --
@@ -30864,6 +31430,14 @@ GRANT ALL ON TABLE public.game_scores TO service_role;
 
 
 --
+-- Name: TABLE guide_prefs; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.guide_prefs TO service_role;
+GRANT SELECT ON TABLE public.guide_prefs TO authenticated;
+
+
+--
 -- Name: TABLE home_day_results; Type: ACL; Schema: public; Owner: -
 --
 
@@ -30906,6 +31480,14 @@ GRANT ALL ON TABLE public.host_swaps TO service_role;
 GRANT ALL ON TABLE public.inspiration_votes TO anon;
 GRANT ALL ON TABLE public.inspiration_votes TO authenticated;
 GRANT ALL ON TABLE public.inspiration_votes TO service_role;
+
+
+--
+-- Name: TABLE journal_entries; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.journal_entries TO service_role;
+GRANT SELECT ON TABLE public.journal_entries TO authenticated;
 
 
 --
@@ -31378,6 +31960,14 @@ GRANT SELECT ON TABLE public.trip_drafts TO authenticated;
 GRANT ALL ON TABLE public.trip_feedback TO anon;
 GRANT ALL ON TABLE public.trip_feedback TO authenticated;
 GRANT ALL ON TABLE public.trip_feedback TO service_role;
+
+
+--
+-- Name: TABLE trip_guides; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.trip_guides TO service_role;
+GRANT SELECT ON TABLE public.trip_guides TO authenticated;
 
 
 --

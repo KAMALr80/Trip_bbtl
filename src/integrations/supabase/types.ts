@@ -2622,6 +2622,39 @@ export type Database = {
           },
         ];
       };
+      guide_prefs: {
+        Row: {
+          share_photos: boolean;
+          show_name: boolean;
+          trip_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          share_photos?: boolean;
+          show_name?: boolean;
+          trip_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          share_photos?: boolean;
+          show_name?: boolean;
+          trip_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "guide_prefs_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       home_day_results: {
         Row: {
           choice: number | null;
@@ -2826,6 +2859,58 @@ export type Database = {
             columns: ["card_id"];
             isOneToOne: false;
             referencedRelation: "cultural_inspirations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      journal_entries: {
+        Row: {
+          body: string;
+          created_at: string;
+          day: string;
+          id: string;
+          prompt: string;
+          schedule_id: string;
+          trip_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body: string;
+          created_at?: string;
+          day: string;
+          id?: string;
+          prompt: string;
+          schedule_id: string;
+          trip_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          day?: string;
+          id?: string;
+          prompt?: string;
+          schedule_id?: string;
+          trip_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_schedule_id_fkey";
+            columns: ["schedule_id"];
+            isOneToOne: false;
+            referencedRelation: "trip_schedule";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "journal_entries_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
             referencedColumns: ["id"];
           },
         ];
@@ -5129,6 +5214,39 @@ export type Database = {
           },
         ];
       };
+      trip_guides: {
+        Row: {
+          published_at: string | null;
+          published_by: string | null;
+          token: string;
+          trip_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          published_at?: string | null;
+          published_by?: string | null;
+          token?: string;
+          trip_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          published_at?: string | null;
+          published_by?: string | null;
+          token?: string;
+          trip_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "trip_guides_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: true;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       trip_invites: {
         Row: {
           cancelled_at: string | null;
@@ -6919,6 +7037,13 @@ export type Database = {
       is_trip_member: { Args: { p_trip: string; p_user: string }; Returns: boolean };
       join_trip: { Args: { p_code: string }; Returns: string };
       join_waitlist: { Args: { p_email: string }; Returns: undefined };
+      journal_options: {
+        Args: { p_item: string };
+        Returns: {
+          idx: number;
+          prompt: string;
+        }[];
+      };
       junkie_rank: {
         Args: { p_user: string };
         Returns: {
@@ -7252,6 +7377,22 @@ export type Database = {
           label: string;
         }[];
       };
+      public_guide: {
+        Args: { p_token: string };
+        Returns: {
+          author: string;
+          body: string;
+          day: string;
+          end_date: string;
+          kind: string;
+          photo_path: string;
+          place: string;
+          prompt: string;
+          room: string;
+          start_date: string;
+          title: string;
+        }[];
+      };
       public_inspiration_queue: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -7266,6 +7407,7 @@ export type Database = {
         }[];
       };
       public_launch: { Args: Record<PropertyKey, never>; Returns: boolean };
+      publish_guide: { Args: { p_publish: boolean; p_trip: string }; Returns: string };
       qotw_action: {
         Args: { p_action: string; p_trip: string; p_week: number };
         Returns: undefined;
@@ -7556,6 +7698,10 @@ export type Database = {
         Args: { p_place: string; p_trip: string; p_week: number };
         Returns: undefined;
       };
+      set_guide_prefs: {
+        Args: { p_share_photos: boolean; p_show_name: boolean; p_trip: string };
+        Returns: undefined;
+      };
       set_home_day_place: {
         Args: { p_day: string; p_place: string; p_trip: string };
         Returns: undefined;
@@ -7732,6 +7878,18 @@ export type Database = {
           real_trips: number;
         }[];
       };
+      trip_guide: {
+        Args: { p_trip: string };
+        Returns: {
+          author: string;
+          body: string;
+          day: string;
+          kind: string;
+          photo_path: string;
+          prompt: string;
+          user_id: string;
+        }[];
+      };
       trip_invite_preview: {
         Args: { p_code: string };
         Returns: {
@@ -7887,6 +8045,10 @@ export type Database = {
         }[];
       };
       welcome_copy: { Args: Record<PropertyKey, never>; Returns: Json };
+      write_journal: {
+        Args: { p_body: string; p_choice?: number; p_item: string };
+        Returns: string;
+      };
     };
     Enums: {
       [_ in never]: never;
