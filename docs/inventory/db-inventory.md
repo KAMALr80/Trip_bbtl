@@ -80,7 +80,7 @@ revoke `anon` (09 §2).
 
 ## Client usage
 
-### Public functions callable by clients but not referenced in `src/`: 44
+### Public functions callable by clients but not referenced in `src/`: 38
 
 Candidates to revoke (M1-08). Some may be called from SQL, cron or the Test Lab only: check
 before removing. Reference matching is by quoted name, so dynamic names built from strings
@@ -97,7 +97,6 @@ are still found.
 - `create_trip_play_mode(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text, p_mode text)`
 - `create_trip_play_mode_v2(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text, p_mode text, p_country text)`
 - `culture_quest_card(p_session uuid)`
-- `delete_push_subscription(p_endpoint text)`
 - `games_live(p_trip uuid)`
 - `guide_propose(p_trip uuid, p_kind text, p_body text, p_photo text)`
 - `guide_publish(p_trip uuid, p_on boolean)`
@@ -106,23 +105,18 @@ are still found.
 - `is_trip_member(p_trip uuid, p_user uuid)`
 - `member_age_ranges(p_trip uuid)`
 - `mix_ai_quota(p_trip uuid)`
-- `my_notification_settings()`
 - `my_passport()`
 - `new_trip_code()`
 - `normalize_game_name(p text)`
 - `post_photo(p_trip uuid, p_date date, p_photo text)`
 - `preview_culture_link(p_preview uuid)`
 - `preview_ten_day_drops(p_trip uuid)`
-- `queue_test_notification()`
 - `reveal_inspiration_votes(p_card uuid)`
-- `save_push_subscription(p_endpoint text, p_p256dh text, p_auth text, p_user_agent text)`
 - `season_timing(p_trip uuid)`
 - `set_boarding_tile(p_tile text)`
 - `set_carry_on_meetup(p_trip uuid, p_at timestamp with time zone, p_place text)`
 - `set_home_ready_start(p_trip uuid, p_start date)`
-- `set_notification_pref(p_type text, p_push boolean, p_email boolean)`
 - `set_price_rule(p_key text, p_cents integer)`
-- `set_quiet_hours(p_start time without time zone, p_end time without time zone)`
 - `set_trip_archived(p_trip uuid, p_archived boolean, p_note text)`
 - `set_wheels_up(p_trip uuid, p_date date, p_time text)`
 - `trip_phase(p_trip uuid, p_at timestamp with time zone)`

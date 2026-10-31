@@ -463,7 +463,8 @@ BEGIN
 END
 $$;
 
--- Results: [{id, outcome: sent|retry|failed, channel, error, gone: [endpoints]}]. A retry waits
+-- Results: [{id, outcome: sent|retry|skipped|failed, channel, error, gone: [endpoints]}]. skipped:
+-- nothing to send it to (no subscription, no email). A retry waits
 -- 1, 2, 4, 8 minutes; after 5 attempts it is failed.
 CREATE FUNCTION trip_private.finish_notifications(p_results jsonb) RETURNS int
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
@@ -473,6 +474,7 @@ BEGIN
     DELETE FROM public.push_subscriptions WHERE endpoint IN (SELECT jsonb_array_elements_text(coalesce(r->'gone', '[]'::jsonb)));
     UPDATE public.notification_queue q SET
       status = CASE r->>'outcome' WHEN 'sent' THEN 'sent'
+                                  WHEN 'skipped' THEN 'skipped'
                                   WHEN 'retry' THEN CASE WHEN q.attempts >= 5 THEN 'failed' ELSE 'queued' END
                                   ELSE 'failed' END,
       send_after = CASE WHEN r->>'outcome' = 'retry' THEN now() + make_interval(mins => power(2, q.attempts - 1)::int)

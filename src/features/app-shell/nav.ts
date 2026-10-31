@@ -9,7 +9,15 @@ import { useLocation, useRouter } from "@tanstack/react-router";
 import type { HomeScreen } from "@/features/home/HomeDashboard";
 import type { Tab } from "./tabs";
 
-export const meViews = ["help", "bug", "delete", "feedback", "lab", "reports"] as const;
+export const meViews = [
+  "help",
+  "bug",
+  "delete",
+  "feedback",
+  "lab",
+  "reports",
+  "notifications",
+] as const;
 export type MeView = (typeof meViews)[number];
 const homeScreens: readonly HomeScreen[] = [
   "dashboard",

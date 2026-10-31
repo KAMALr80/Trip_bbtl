@@ -30,16 +30,34 @@ type FetchEvent = ExtendableEvent & {
   respondWith(r: Response | Promise<Response>): void;
 };
 type MessageEvt = ExtendableEvent & { data: unknown };
+type PushEvt = ExtendableEvent & { data: { json(): unknown } | null };
+type ClickEvt = ExtendableEvent & {
+  notification: { data: unknown; close(): void };
+};
+type WindowClient = {
+  url: string;
+  focus(): Promise<unknown>;
+  navigate(url: string): Promise<unknown>;
+};
 type Scope = {
   location: Location;
   skipWaiting(): Promise<void>;
   clients: {
     claim(): Promise<void>;
-    matchAll(options: { type: "window" }): Promise<readonly { url: string }[]>;
+    matchAll(options: {
+      type: "window";
+      includeUncontrolled?: boolean;
+    }): Promise<readonly WindowClient[]>;
+    openWindow(url: string): Promise<unknown>;
   };
   addEventListener(type: "install" | "activate", fn: (e: ExtendableEvent) => void): void;
   addEventListener(type: "fetch", fn: (e: FetchEvent) => void): void;
   addEventListener(type: "message", fn: (e: MessageEvt) => void): void;
+  addEventListener(type: "push", fn: (e: PushEvt) => void): void;
+  addEventListener(type: "notificationclick", fn: (e: ClickEvt) => void): void;
+  registration: {
+    showNotification(title: string, options: Record<string, unknown>): Promise<void>;
+  };
 };
 const sw = self as unknown as Scope;
 
@@ -104,6 +122,43 @@ async function saveOpenPages() {
     }),
   );
 }
+
+// Reminders (M4-08). The payload is {title, body, url, tag} from the sender; a newer reminder of
+// the same type replaces the one still showing.
+sw.addEventListener("push", (event) => {
+  let data: { title?: string; body?: string; url?: string; tag?: string } = {};
+  try {
+    data = (event.data?.json() as typeof data) ?? {};
+  } catch {
+    /* not JSON: show the default */
+  }
+  event.waitUntil(
+    sw.registration.showNotification(data.title || "TripJunkies", {
+      body: data.body ?? "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: data.tag,
+      data: { url: data.url && data.url.startsWith("/") ? data.url : "/home" },
+    }),
+  );
+});
+
+// Tapping a reminder opens the app at its screen, reusing an open window when there is one.
+sw.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const path = (event.notification.data as { url?: string } | null)?.url ?? "/home";
+  const url = new URL(path, ORIGIN).href;
+  event.waitUntil(
+    (async () => {
+      const open = await sw.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const client = open.find((c) => new URL(c.url).origin === ORIGIN);
+      if (client) {
+        await client.navigate(url).catch(() => undefined);
+        await client.focus();
+      } else await sw.clients.openWindow(url);
+    })(),
+  );
+});
 
 sw.addEventListener("message", (event) => {
   const data = event.data as { type?: unknown } | null;

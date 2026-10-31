@@ -49,6 +49,8 @@ import type { Member, TripWithRole } from "@/lib/trips";
 import { prefetchTripForOffline, queryKeys, useCards, useMembers, useTrips } from "@/data/queries";
 import { OfflineBanner } from "@/features/app-shell/OfflineBanner";
 import { InstallCard } from "@/features/app-shell/InstallCard";
+import { RemindersCard } from "@/features/app-shell/RemindersCard";
+import { NotificationSettings } from "@/features/me/NotificationSettings";
 import { loadMembershipSignature } from "@/data/trips";
 import {
   completeOnboarding,
@@ -694,7 +696,12 @@ export function AppShell() {
         </div>
       </header>
       <OfflineBanner />
-      {tab === "Home" && !viewAsPlayer && <InstallCard trips={trips} />}
+      {tab === "Home" && !viewAsPlayer && (
+        <>
+          <InstallCard trips={trips} />
+          <RemindersCard trips={trips} />
+        </>
+      )}
       {meView && tab === "Me" ? (
         <div className="px-[18px]">
           {meView === "lab" && isAdmin ? (
@@ -721,6 +728,8 @@ export function AppShell() {
             <FeedbackAdmin onBack={() => setMeView(null)} />
           ) : meView === "reports" && isAdmin ? (
             <FounderReports onBack={() => setMeView(null)} />
+          ) : meView === "notifications" ? (
+            <NotificationSettings onBack={() => setMeView(null)} />
           ) : meView === "help" ? (
             <HelpPage onBack={() => setMeView(null)} onReplay={() => void replayIntro()} />
           ) : meView === "bug" ? (

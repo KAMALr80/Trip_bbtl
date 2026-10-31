@@ -51,10 +51,20 @@ const saved = (page: Page) =>
 
 const tripId = sampleTrip.id;
 
+/** The service worker controls the page (the first visit installs it; offline needs it). */
+async function workerReady(page: Page) {
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    for (let i = 0; i < 200 && !navigator.serviceWorker.controller; i++)
+      await new Promise((r) => setTimeout(r, 100));
+  });
+}
+
 async function playOnline(page: Page) {
   await signInWithMockBackend(page, { trip: sampleTrip, rpc: { my_schedule: [discovery] } });
   await page.goto("/home");
   await expect(page.getByText("What would you try first in Lisbon?")).toBeVisible();
+  await workerReady(page);
   // Query results are written a second after the last load; account facts right away.
   await expect
     .poll(() => saved(page))

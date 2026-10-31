@@ -7136,6 +7136,7 @@ BEGIN
     DELETE FROM public.push_subscriptions WHERE endpoint IN (SELECT jsonb_array_elements_text(coalesce(r->'gone', '[]'::jsonb)));
     UPDATE public.notification_queue q SET
       status = CASE r->>'outcome' WHEN 'sent' THEN 'sent'
+                                  WHEN 'skipped' THEN 'skipped'
                                   WHEN 'retry' THEN CASE WHEN q.attempts >= 5 THEN 'failed' ELSE 'queued' END
                                   ELSE 'failed' END,
       send_after = CASE WHEN r->>'outcome' = 'retry' THEN now() + make_interval(mins => power(2, q.attempts - 1)::int)

@@ -101,9 +101,11 @@ Also: review and tag `supabase/seed/content_candidates.csv` (2,938 content lines
 ## 6. Notifications and install (M4, web app)
 There are no App Store or Google Play apps (Q16, Oct 31, 2026), so no Apple Developer or Play Console
 accounts are needed.
-1. **Web push keys**: the developer generates a VAPID key pair; add them per environment as
-   `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`. No outside account needed.
-2. **Email reminders** use the email sender from 2.3 (same provider, same domain).
+1. **Web push keys**: run `bun scripts/pwa/vapid-keys.ts` once per environment and add the two lines
+   as secrets `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`. No outside account needed. Don't change them
+   later: every phone would have to turn reminders on again.
+2. **Email reminders (optional backup)**: a Resend account (resend.com) on the same domain as 2.3;
+   add `EMAIL_API_KEY` and `EMAIL_FROM` (e.g. `TripJunkies <reminders@tripjunkies.app>`).
 3. **Install material**: a 1024×1024 master app icon (BRAND.md notes it's missing) and 3–5 phone
    screenshots for the browser's install sheet.
 4. **Test phones**: one iPhone and one Android phone the team can install the app on (M4-10).

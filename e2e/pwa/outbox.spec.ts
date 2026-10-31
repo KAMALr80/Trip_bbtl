@@ -27,6 +27,16 @@ const discovery = {
 };
 
 const noNetwork = (route: Route) => route.abort("internetdisconnected");
+
+/** The service worker controls the page (the first visit installs it; offline needs it). */
+async function workerReady(page: Page) {
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    for (let i = 0; i < 200 && !navigator.serviceWorker.controller; i++)
+      await new Promise((r) => setTimeout(r, 100));
+  });
+}
+
 const card = (page: Page) => page.getByLabel(/Daily Discovery/);
 
 async function answerOffline(page: Page) {
@@ -36,6 +46,7 @@ async function answerOffline(page: Page) {
   });
   await page.goto("/home");
   await expect(card(page).getByText("What would you try first in Lisbon?")).toBeVisible();
+  await workerReady(page);
 
   await page.context().setOffline(true);
   await page.route(SUPABASE, noNetwork); // registered last, so it wins over the mock
@@ -116,6 +127,7 @@ test("a photo proof sent offline is uploaded and recorded once back online", asy
     .click();
   const questCard = page.getByRole("article", { name: /Sealed quest/ });
   await expect(questCard).toContainText("Draw the tram in 10 minutes");
+  await workerReady(page);
 
   await page.context().setOffline(true);
   await page.route(SUPABASE, noNetwork);

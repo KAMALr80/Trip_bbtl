@@ -30,7 +30,7 @@ bun run lint         # eslint
 | `AI_API_KEY`, `AI_MODEL`, `AI_BASE_URL` (optional) | server secret | AI provider for all 12 call sites (`src/integrations/ai/index.server.ts`) | Done (M0-08). The Lovable fallback is removed; AI is off until both are set. `AI_PRICE_IN` / `AI_PRICE_OUT` feed the cost report |
 | `CRON_SECRET`, `CRON_SECRET_PREVIOUS` | server secret | `/api/public/*` cron auth (`cron-auth.ts`) | Renamed (M0-10). The photo-purge job authenticates with the DB-held key in `trip_private.cron_keys` and reads its URL from `trip_private.cron_endpoints` (set per environment) |
 | `VITE_SENTRY_DSN` | client | Browser error reporting (`src/lib/error-reporting.ts`) | Done (M0-12, browser side) |
-| *(new)* `SENTRY_DSN` (Worker), `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (web push), `EMAIL_API_KEY`, `PLACES_API_KEY` | server secrets | M0/M4 | |
+| *(new)* `SENTRY_DSN` (Worker), `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` (web push, M4-08; also `VITE_VAPID_PUBLIC_KEY` at build), `EMAIL_API_KEY` / `EMAIL_FROM` (reminder email, M4-08), `PLACES_API_KEY` | server secrets | M0/M4 | |
 
 ### Regenerating DB types
 ```bash

@@ -83,3 +83,34 @@ test("data requests are not cached", async ({ page }) => {
   });
   expect(urls.some((u) => u.includes("/api/") || u.includes("/_serverFn/"))).toBe(false);
 });
+
+test("a reminder push is shown as a notification (M4-08)", async ({ page, context }) => {
+  await context.grantPermissions(["notifications"]);
+  await controlled(page);
+  const cdp = await context.newCDPSession(page);
+  const registrationId = new Promise<string>((resolve) => {
+    cdp.on("ServiceWorker.workerRegistrationUpdated", ({ registrations }) => {
+      const reg = registrations.find((r: { isDeleted: boolean }) => !r.isDeleted);
+      if (reg) resolve(reg.registrationId);
+    });
+  });
+  await cdp.send("ServiceWorker.enable");
+  await cdp.send("ServiceWorker.deliverPushMessage", {
+    origin: new URL(page.url()).origin,
+    registrationId: await registrationId,
+    data: JSON.stringify({
+      title: "Daily Discovery",
+      body: "Try a pastel de nata",
+      url: "/home",
+      tag: "daily",
+    }),
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const reg = await navigator.serviceWorker.ready;
+        return (await reg.getNotifications()).map((n) => `${n.title}|${n.body}|${n.tag}`);
+      }),
+    )
+    .toEqual(["Daily Discovery|Try a pastel de nata|daily"]);
+});
