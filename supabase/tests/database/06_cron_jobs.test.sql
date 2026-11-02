@@ -4,8 +4,8 @@ BEGIN;
 SELECT plan(7);
 
 SELECT is((SELECT string_agg(jobname, ',' ORDER BY jobname) FROM cron.job),
-          'expire-proofs,live-and-crowns,prune-notifications,purge-expired-trip-photos,send-notifications,settle-drops',
-          'the scheduled jobs (the old crown-due-seasons retired with M3-16; reminders added in M4-08)');
+          'expire-proofs,live-and-crowns,lock-postcards,prune-notifications,purge-expired-trip-photos,send-notifications,settle-drops',
+          'the scheduled jobs (the old crown-due-seasons retired with M3-16; reminders added in M4-08; the Day 7 lock in M5-03)');
 SELECT ok((SELECT command LIKE '%Authorization%' AND command LIKE '%cron_keys%' AND command LIKE '%''notify''%'
            FROM cron.job WHERE jobname = 'send-notifications'),
           'the reminder sender is called with its own DB-held cron key');

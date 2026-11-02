@@ -1,0 +1,26 @@
+{
+  "comment": "Wrap-up answers (R-604): about 60 characters, and the emoji question takes exactly 3 emojis. src/features/postcard/wrapup.ts and trip_private.is_three_emojis / answer_wrapup run these cases (bun scripts/db/fixture-tests.ts).",
+  "cases": [
+    { "name": "a short answer", "answer": "Sunset at the castle", "emoji": false, "ok": true },
+    { "name": "spaces around are trimmed", "answer": "   Sunset   ", "emoji": false, "ok": true },
+    { "name": "empty is not an answer", "answer": "   ", "emoji": false, "ok": false },
+    { "name": "60 characters", "answer": "123456789012345678901234567890123456789012345678901234567890", "emoji": false, "ok": true },
+    { "name": "61 characters", "answer": "1234567890123456789012345678901234567890123456789012345678901", "emoji": false, "ok": false },
+    { "name": "emoji count as characters, not bytes", "answer": "🌅🌅🌅🌅🌅🌅🌅🌅🌅🌅🌅🌅🌅🌅🌅🌅🌅🌅🌅🌅 best", "emoji": false, "ok": true },
+    { "name": "three emojis", "answer": "🌊🍝☀️", "emoji": true, "ok": true },
+    { "name": "three emojis with spaces", "answer": "😀 😀 😀", "emoji": true, "ok": true },
+    { "name": "two emojis", "answer": "😀😀", "emoji": true, "ok": false },
+    { "name": "four emojis", "answer": "😀😀😀😀", "emoji": true, "ok": false },
+    { "name": "words are not emojis", "answer": "fun sun run", "emoji": true, "ok": false },
+    { "name": "emojis and a word", "answer": "😀😀 yes", "emoji": true, "ok": false },
+    { "name": "three flags", "answer": "🇺🇸🇯🇵🇫🇷", "emoji": true, "ok": true },
+    { "name": "a flag is one emoji", "answer": "🇺🇸😀", "emoji": true, "ok": false },
+    { "name": "a family is one emoji", "answer": "👨‍👩‍👧😀👍🏽", "emoji": true, "ok": true },
+    { "name": "skin tones stay with their emoji", "answer": "👍🏽👍🏿👍", "emoji": true, "ok": true },
+    { "name": "keycaps", "answer": "1️⃣2️⃣3️⃣", "emoji": true, "ok": true },
+    { "name": "plain digits are not emojis", "answer": "123", "emoji": true, "ok": false },
+    { "name": "heart with variation selector", "answer": "❤️🔥✨", "emoji": true, "ok": true },
+    { "name": "a subdivision flag", "answer": "🏴󠁧󠁢󠁳󠁣󠁴󠁿🍕🍝", "emoji": true, "ok": true },
+    { "name": "Arabic text", "answer": "غروب الشمس على البحر", "emoji": false, "ok": true }
+  ]
+}

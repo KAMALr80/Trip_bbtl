@@ -3417,12 +3417,42 @@ export type Database = {
           },
         ];
       };
+      passport_progress: {
+        Row: {
+          countries: number;
+          level: string;
+          stars: number;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          countries?: number;
+          level?: string;
+          stars?: number;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          countries?: number;
+          level?: string;
+          stars?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       passport_stamps: {
         Row: {
           city: string | null;
           country: string;
           created_at: string;
+          crowns: string[];
+          culture: string | null;
           kind: string;
+          room: string | null;
+          season_label: string | null;
+          solo: boolean;
           stamped_on: string;
           state: string | null;
           trip_id: string;
@@ -3434,7 +3464,12 @@ export type Database = {
           city?: string | null;
           country: string;
           created_at?: string;
+          crowns?: string[];
+          culture?: string | null;
           kind: string;
+          room?: string | null;
+          season_label?: string | null;
+          solo?: boolean;
           stamped_on: string;
           state?: string | null;
           trip_id: string;
@@ -3445,7 +3480,12 @@ export type Database = {
           city?: string | null;
           country?: string;
           created_at?: string;
+          crowns?: string[];
+          culture?: string | null;
           kind?: string;
+          room?: string | null;
+          season_label?: string | null;
+          solo?: boolean;
           stamped_on?: string;
           state?: string | null;
           trip_id?: string;
@@ -3488,6 +3528,42 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "photo_posts_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      photo_purge_log: {
+        Row: {
+          created_at: string;
+          id: number;
+          kept: number;
+          remaining: number;
+          removed: number;
+          trip_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          id?: never;
+          kept: number;
+          remaining: number;
+          removed: number;
+          trip_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: never;
+          kept?: number;
+          remaining?: number;
+          removed?: number;
+          trip_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "photo_purge_log_trip_id_fkey";
             columns: ["trip_id"];
             isOneToOne: false;
             referencedRelation: "trips";
@@ -3800,6 +3876,119 @@ export type Database = {
         };
         Relationships: [];
       };
+      postcard_choices: {
+        Row: {
+          favored: string[];
+          swap_in: string | null;
+          swap_out: string | null;
+          swapped_at: string | null;
+          swapped_by: string | null;
+          trip_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          favored?: string[];
+          swap_in?: string | null;
+          swap_out?: string | null;
+          swapped_at?: string | null;
+          swapped_by?: string | null;
+          trip_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          favored?: string[];
+          swap_in?: string | null;
+          swap_out?: string | null;
+          swapped_at?: string | null;
+          swapped_by?: string | null;
+          trip_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "postcard_choices_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: true;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      postcard_hearts: {
+        Row: {
+          created_at: string;
+          proof_id: string;
+          trip_id: string;
+          voter_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          proof_id: string;
+          trip_id: string;
+          voter_id: string;
+        };
+        Update: {
+          created_at?: string;
+          proof_id?: string;
+          trip_id?: string;
+          voter_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "postcard_hearts_proof_id_fkey";
+            columns: ["proof_id"];
+            isOneToOne: false;
+            referencedRelation: "proofs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "postcard_hearts_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      postcard_picks: {
+        Row: {
+          picked_at: string;
+          proof_id: string;
+          trip_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          picked_at?: string;
+          proof_id: string;
+          trip_id: string;
+          user_id: string;
+        };
+        Update: {
+          picked_at?: string;
+          proof_id?: string;
+          trip_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "postcard_picks_proof_id_fkey";
+            columns: ["proof_id"];
+            isOneToOne: true;
+            referencedRelation: "proofs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "postcard_picks_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       postcard_stickers: {
         Row: {
           created_at: string;
@@ -3982,6 +4171,7 @@ export type Database = {
           id: string;
           part: number;
           photo_path: string | null;
+          photo_removed_at: string | null;
           schedule_id: string;
           source: string;
           trip_id: string;
@@ -4001,6 +4191,7 @@ export type Database = {
           id?: string;
           part?: number;
           photo_path?: string | null;
+          photo_removed_at?: string | null;
           schedule_id: string;
           source: string;
           trip_id: string;
@@ -4019,6 +4210,7 @@ export type Database = {
           id?: string;
           part?: number;
           photo_path?: string | null;
+          photo_removed_at?: string | null;
           schedule_id?: string;
           source?: string;
           trip_id?: string;
@@ -5698,6 +5890,45 @@ export type Database = {
           },
         ];
       };
+      trip_postcards: {
+        Row: {
+          answers: NonNullable<Json>;
+          crowns: NonNullable<Json>;
+          excited: NonNullable<Json>;
+          image_path: string | null;
+          locked_at: string;
+          photos: NonNullable<Json>;
+          trip_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          answers?: NonNullable<Json>;
+          crowns?: NonNullable<Json>;
+          excited?: NonNullable<Json>;
+          image_path?: string | null;
+          locked_at?: string;
+          photos?: NonNullable<Json>;
+          trip_id: string;
+        };
+        Update: {
+          answers?: NonNullable<Json>;
+          crowns?: NonNullable<Json>;
+          excited?: NonNullable<Json>;
+          image_path?: string | null;
+          locked_at?: string;
+          photos?: NonNullable<Json>;
+          trip_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "trip_postcards_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: true;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       trip_role_changes: {
         Row: {
           actor: string | null;
@@ -6298,6 +6529,34 @@ export type Database = {
           },
         ];
       };
+      user_badges: {
+        Row: {
+          badge: string;
+          earned_at: string;
+          progress: number;
+          seen_at: string | null;
+          tier: number;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          badge: string;
+          earned_at?: string;
+          progress?: number;
+          seen_at?: string | null;
+          tier: number;
+          user_id: string;
+        };
+        Update: {
+          badge?: string;
+          earned_at?: string;
+          progress?: number;
+          seen_at?: string | null;
+          tier?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       user_credits: {
         Row: {
           balance: number;
@@ -6541,6 +6800,39 @@ export type Database = {
           },
         ];
       };
+      wrapup_answers: {
+        Row: {
+          answer: string;
+          question_key: string;
+          trip_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          answer: string;
+          question_key: string;
+          trip_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          answer?: string;
+          question_key?: string;
+          trip_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wrapup_answers_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -6614,6 +6906,10 @@ export type Database = {
       };
       answer_weekly_question: {
         Args: { p_answer: string; p_emoji: string; p_trip: string; p_week: number };
+        Returns: undefined;
+      };
+      answer_wrapup: {
+        Args: { p_answer: string; p_key: string; p_trip: string };
         Returns: undefined;
       };
       apply_game_plan: {
@@ -6695,6 +6991,10 @@ export type Database = {
       at_home_reveal: { Args: { p_activity: string }; Returns: undefined };
       at_home_vote: { Args: { p_activity: string; p_idx: number }; Returns: undefined };
       boarding_tile: { Args: Record<PropertyKey, never>; Returns: string };
+      break_postcard_tie: {
+        Args: { p_on?: boolean; p_proof: string; p_trip: string };
+        Returns: undefined;
+      };
       cancel_trip_invite: { Args: { p_invite: string }; Returns: undefined };
       captain_pass_limit: { Args: { p_trip: string }; Returns: number };
       captain_status: {
@@ -7045,6 +7345,7 @@ export type Database = {
       extend_draw_timer: { Args: { p_trip: string }; Returns: number };
       finalize_season: { Args: { p_season: string; p_trip: string }; Returns: undefined };
       finish_notifications: { Args: { p_results: Json }; Returns: number };
+      finish_photo_purge: { Args: { p_removed: number; p_trip: string }; Returns: number };
       founder_age_tiers: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -7167,6 +7468,7 @@ export type Database = {
       };
       guide_publish: { Args: { p_on: boolean; p_trip: string }; Returns: undefined };
       guide_review: { Args: { p_action: string; p_item: string }; Returns: undefined };
+      heart_photo: { Args: { p_on?: boolean; p_proof: string; p_trip: string }; Returns: boolean };
       hide_inspiration: { Args: { p_card: string }; Returns: undefined };
       home_day_action: {
         Args: { p_action: string; p_choice?: number; p_session: string };
@@ -7262,6 +7564,7 @@ export type Database = {
         Returns: undefined;
       };
       mark_arrived: { Args: { p_trip: string }; Returns: string };
+      mark_badges_seen: { Args: Record<PropertyKey, never>; Returns: undefined };
       mark_bingo: {
         Args: { p_date: string; p_photo: string; p_square: number; p_trip: string };
         Returns: undefined;
@@ -7370,6 +7673,7 @@ export type Database = {
           trip_id: string;
         }[];
       };
+      my_passport_progress: { Args: Record<PropertyKey, never>; Returns: Json };
       my_past_trips: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -7399,6 +7703,25 @@ export type Database = {
           title: string;
           user_id: string;
           variant: string;
+        }[];
+      };
+      my_stamps: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          city: string;
+          country: string;
+          crowns: string[];
+          culture: string;
+          has_postcard: boolean;
+          kind: string;
+          room: string;
+          season_label: string;
+          solo: boolean;
+          squad_count: number;
+          stamped_on: string;
+          state: string;
+          trip_id: string;
+          trip_name: string;
         }[];
       };
       my_trip_feedback_done: { Args: { p_trip: string }; Returns: boolean };
@@ -7481,10 +7804,22 @@ export type Database = {
           user_id: string;
         }[];
       };
+      photos_to_purge: {
+        Args: { p_limit?: number };
+        Returns: {
+          bucket: string;
+          path: string;
+          trip_id: string;
+        }[];
+      };
       pick_at_home_song: { Args: { p_activity: string; p_user: string }; Returns: undefined };
       pick_night_game: {
         Args: { p_game: number; p_trip: string; p_week: number };
         Returns: undefined;
+      };
+      pick_postcard: {
+        Args: { p_pick?: boolean; p_proof: string; p_trip: string };
+        Returns: number;
       };
       pick_team: { Args: { p_team: string; p_trip: string }; Returns: undefined };
       plan_game_nights: {
@@ -7513,6 +7848,24 @@ export type Database = {
       post_quest: {
         Args: { p_date: string; p_photo: string; p_quest: number; p_trip: string };
         Returns: undefined;
+      };
+      postcard_info: { Args: { p_trip: string }; Returns: Json };
+      postcard_ranking: {
+        Args: { p_trip: string };
+        Returns: {
+          favored: boolean;
+          hearts: number;
+          kept: boolean;
+          kept_count: number;
+          photo_path: string;
+          pos: number;
+          proof_id: string;
+          swap_used: boolean;
+          swapped_in: boolean;
+          swapped_out: boolean;
+          tied: boolean;
+          user_id: string;
+        }[];
       };
       present_checkin: {
         Args: { p_claim: string; p_trip: string; p_week: number };
@@ -8032,6 +8385,10 @@ export type Database = {
         Returns: undefined;
       };
       surprise_night_game: { Args: { p_trip: string; p_week: number }; Returns: number };
+      swap_postcard_photo: {
+        Args: { p_in: string; p_out: string; p_trip: string };
+        Returns: undefined;
+      };
       take_over_captain: { Args: { p_trip: string }; Returns: undefined };
       team_capacities: {
         Args: { p_trip: string };
@@ -8218,6 +8575,17 @@ export type Database = {
         }[];
       };
       welcome_copy: { Args: Record<PropertyKey, never>; Returns: Json };
+      wrapup_board: {
+        Args: { p_trip: string };
+        Returns: {
+          hearted: boolean;
+          mine: boolean;
+          photo_path: string;
+          picked_at: string;
+          proof_id: string;
+          user_id: string;
+        }[];
+      };
       write_journal: {
         Args: { p_body: string; p_choice?: number; p_item: string };
         Returns: string;

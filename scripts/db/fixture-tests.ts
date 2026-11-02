@@ -68,9 +68,29 @@ ROLLBACK;
 `;
 }
 
+type AnswerCase = { name: string; answer: string; emoji: boolean; ok: boolean };
+
+export function wrapupAnswersSql(): string {
+  const cases = fixture("wrapup.json").cases as AnswerCase[];
+  const lines = cases.map((c) => {
+    const v = `trip_private.trim_answer(${q(c.answer)})`;
+    const check = `(char_length(${v}) BETWEEN 1 AND 60 AND (${c.emoji ? "true" : "false"} IS FALSE OR trip_private.is_three_emojis(${v})))`;
+    return `SELECT is(${check}, ${c.ok}, ${q(c.name)});`;
+  });
+  return `${header("wrapup.json")}-- M5-02: the server accepts the same wrap-up answers as src/features/postcard/wrapup.ts (R-604).
+BEGIN;
+\\ir ../_helpers.psql
+SELECT plan(${lines.length});
+${lines.join("\n")}
+SELECT * FROM finish();
+ROLLBACK;
+`;
+}
+
 export const generated = {
   "supabase/tests/database/13_room_rules.test.sql": roomRulesSql,
   "supabase/tests/database/14_phase_engine.test.sql": phaseEngineSql,
+  "supabase/tests/database/27_wrapup_answers.test.sql": wrapupAnswersSql,
 };
 
 if (import.meta.main) {

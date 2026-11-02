@@ -83,6 +83,8 @@ export const rooms: Record<RoomId, RoomConfig> = {
     id: "window_seat",
     modes: ["solo", "crew"],
     maxCrew: 4,
+    // A Window Seat crew keeps 10 photos on its shared stamp (R-354).
+    photosKept: { group: 10, solo: 10 },
     postcardPicksPerPlayer: 5,
     dailyQuest: true,
     journal: true,

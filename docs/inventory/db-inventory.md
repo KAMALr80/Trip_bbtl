@@ -12,12 +12,12 @@
 
 | | public | trip_private |
 |---|---|---|
-| Tables | 147 | 14 |
+| Tables | 155 | 14 |
 | Views | 0 | 0 |
-| Functions | 338 | 462 |
+| Functions | 351 | 491 |
 | Triggers | 5 | 51 |
 
-Objects (re)defined in 5 or more migrations: **19**. This is why the snapshot, not the migration history, is the reference (gotcha G5).
+Objects (re)defined in 5 or more migrations: **20**. This is why the snapshot, not the migration history, is the reference (gotcha G5).
 
 ## Security checks
 
@@ -80,14 +80,16 @@ revoke `anon` (09 §2).
 
 ## Client usage
 
-### Public functions callable by clients but not referenced in `src/`: 38
+### Public functions callable by clients but not referenced in `src/`: 49
 
 Candidates to revoke (M1-08). Some may be called from SQL, cron or the Test Lab only: check
 before removing. Reference matching is by quoted name, so dynamic names built from strings
 are still found.
 
+- `answer_wrapup(p_trip uuid, p_key text, p_answer text)`
 - `apply_game_plan(p_trip uuid, p_plan text, p_weekday integer, p_time time without time zone, p_start date, p_every integer, p_count integer)`
 - `archive_legacy_trips(p_created_before timestamp with time zone, p_keep uuid[], p_note text)`
+- `break_postcard_tie(p_trip uuid, p_proof uuid, p_on boolean)`
 - `claim_airport(p_trip uuid, p_date date, p_mission integer, p_photo text, p_guess text)`
 - `confirm_departure(p_trip uuid)`
 - `create_at_home(p_pack text, p_length text, p_start date, p_vibe text, p_tz text)`
@@ -101,14 +103,21 @@ are still found.
 - `guide_propose(p_trip uuid, p_kind text, p_body text, p_photo text)`
 - `guide_publish(p_trip uuid, p_on boolean)`
 - `guide_review(p_item uuid, p_action text)`
+- `heart_photo(p_trip uuid, p_proof uuid, p_on boolean)`
 - `hide_inspiration(p_card uuid)`
 - `is_trip_member(p_trip uuid, p_user uuid)`
+- `mark_badges_seen()`
 - `member_age_ranges(p_trip uuid)`
 - `mix_ai_quota(p_trip uuid)`
 - `my_passport()`
+- `my_passport_progress()`
+- `my_stamps()`
 - `new_trip_code()`
 - `normalize_game_name(p text)`
+- `pick_postcard(p_trip uuid, p_proof uuid, p_pick boolean)`
 - `post_photo(p_trip uuid, p_date date, p_photo text)`
+- `postcard_info(p_trip uuid)`
+- `postcard_ranking(p_trip uuid)`
 - `preview_culture_link(p_preview uuid)`
 - `preview_ten_day_drops(p_trip uuid)`
 - `reveal_inspiration_votes(p_card uuid)`
@@ -119,17 +128,19 @@ are still found.
 - `set_price_rule(p_key text, p_cents integer)`
 - `set_trip_archived(p_trip uuid, p_archived boolean, p_note text)`
 - `set_wheels_up(p_trip uuid, p_date date, p_time text)`
+- `swap_postcard_photo(p_trip uuid, p_out uuid, p_in uuid)`
 - `trip_phase(p_trip uuid, p_at timestamp with time zone)`
 - `trip_squad_messages(p_trip uuid)`
 - `unlock_big_group(p_trip uuid)`
 - `unlock_trip(p_trip uuid, p_headcount integer)`
 - `weekly_question_status(p_trip uuid)`
+- `wrapup_board(p_trip uuid)`
 
-### Public tables/views not referenced by name in `src/`: 89
+### Public tables/views not referenced by name in `src/`: 97
 
 Usually fine: most are read and written only through `trip_private` functions.
 
-`account_consents`, `age_guesses`, `ai_credit_purchases`, `airport_claims`, `app_admins`, `app_settings`, `at_home_answers`, `at_home_votes`, `beta_access`, `beta_codes`, `bingo_marks`, `bug_issues`, `content_feedback`, `content_items`, `cost_log`, `culture_exp_hidden`, `culture_exp_likes`, `culture_quest_answers`, `culture_quest_players`, `culture_quest_sessions`, `culture_showcase_ballots`, `culture_showcase_rewards`, `culture_showcase_viewers`, `day_votes`, `experience_previews`, `game_format_prompts`, `game_night_card_skips`, `game_night_flow`, `game_night_moments`, `game_night_polls`, `game_night_reactions`, `game_night_turns`, `game_night_votes`, `game_pick_log`, `game_scores`, `home_day_results`, `home_day_sessions`, `junkie_ranks`, `live_award_votes`, `live_presents`, `live_vote_ballots`, `live_votes`, `mission_claims`, `mission_votes`, `notification_prefs`, `notification_queue`, `photo_posts`, `photo_removed`, `player_birthdays`, `player_private`, `preview_hidden`, `price_rules`, `proof_votes`, `push_subscriptions`, `quest_challenges`, `quest_posts`, `quest_thumbs`, `room_blocks`, `room_requests`, `sealed_quests`, `season_quests`, `season_settings`, `secret_missions`, `security_missions`, `skip_passes`, `solo_quests`, `stamp_settings`, `trip_adult_activities`, `trip_adult_approvals`, `trip_adult_settings`, `trip_crownings`, `trip_day_games`, `trip_day_trivia_keys`, `trip_deletion_log`, `trip_item_alternatives`, `trip_role_changes`, `trip_schedule`, `trip_season_finds`, `trip_season_games`, `trip_season_reveals`, `trip_team_members`, `trip_teams`, `trivia_answers`, `user_credits`, `waitlist`, `weekly_answer_votes`, `weekly_answers`, `weekly_questions`, `window_guide_items`
+`account_consents`, `age_guesses`, `ai_credit_purchases`, `airport_claims`, `app_admins`, `app_settings`, `at_home_answers`, `at_home_votes`, `beta_access`, `beta_codes`, `bingo_marks`, `bug_issues`, `content_feedback`, `content_items`, `cost_log`, `culture_exp_hidden`, `culture_exp_likes`, `culture_quest_answers`, `culture_quest_players`, `culture_quest_sessions`, `culture_showcase_ballots`, `culture_showcase_rewards`, `culture_showcase_viewers`, `day_votes`, `experience_previews`, `game_format_prompts`, `game_night_card_skips`, `game_night_flow`, `game_night_moments`, `game_night_polls`, `game_night_reactions`, `game_night_turns`, `game_night_votes`, `game_pick_log`, `game_scores`, `home_day_results`, `home_day_sessions`, `junkie_ranks`, `live_award_votes`, `live_presents`, `live_vote_ballots`, `live_votes`, `mission_claims`, `mission_votes`, `notification_prefs`, `notification_queue`, `passport_progress`, `photo_posts`, `photo_purge_log`, `photo_removed`, `player_birthdays`, `player_private`, `postcard_choices`, `postcard_hearts`, `postcard_picks`, `preview_hidden`, `price_rules`, `proof_votes`, `push_subscriptions`, `quest_challenges`, `quest_posts`, `quest_thumbs`, `room_blocks`, `room_requests`, `sealed_quests`, `season_quests`, `season_settings`, `secret_missions`, `security_missions`, `skip_passes`, `solo_quests`, `stamp_settings`, `trip_adult_activities`, `trip_adult_approvals`, `trip_adult_settings`, `trip_crownings`, `trip_day_games`, `trip_day_trivia_keys`, `trip_deletion_log`, `trip_item_alternatives`, `trip_postcards`, `trip_role_changes`, `trip_schedule`, `trip_season_finds`, `trip_season_games`, `trip_season_reveals`, `trip_team_members`, `trip_teams`, `trivia_answers`, `user_badges`, `user_credits`, `waitlist`, `weekly_answer_votes`, `weekly_answers`, `weekly_questions`, `window_guide_items`, `wrapup_answers`
 
 ## Tables
 
@@ -212,8 +223,10 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `notification_prefs` | table | ✅ | 1 | — | 0 |
 | public | `notification_queue` | table | ✅ | 0 | — | 0 |
 | public | `orders` | table | ✅ | 1 | — | 1 |
+| public | `passport_progress` | table | ✅ | 1 | — | 0 |
 | public | `passport_stamps` | table | ✅ | 1 | — | 2 |
 | public | `photo_posts` | table | ✅ | 1 | — | 0 |
+| public | `photo_purge_log` | table | ✅ | 0 | — | 0 |
 | public | `photo_reactions` | table | ✅ | 3 | DELETE,INSERT | 1 |
 | public | `photo_removed` | table | ✅ | 1 | — | 0 |
 | public | `photo_reports` | table | ✅ | 2 | INSERT | 1 |
@@ -222,6 +235,9 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `player_profiles` | table | ✅ | 3 | INSERT,UPDATE | 5 |
 | public | `points_ledger` | table | ✅ | 1 | — | 1 |
 | public | `points_rules` | table | ✅ | 1 | — | 1 |
+| public | `postcard_choices` | table | ✅ | 0 | — | 0 |
+| public | `postcard_hearts` | table | ✅ | 1 | — | 0 |
+| public | `postcard_picks` | table | ✅ | 1 | — | 0 |
 | public | `postcard_stickers` | table | ✅ | 1 | — | 2 |
 | public | `preview_hidden` | table | ✅ | 1 | — | 0 |
 | public | `price_rules` | table | ✅ | 1 | — | 0 |
@@ -266,6 +282,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `trip_members` | table | ✅ | 1 | — | 10 |
 | public | `trip_play_state` | table | ✅ | 1 | — | 2 |
 | public | `trip_player_cards` | table | ✅ | 3 | INSERT,UPDATE | 4 |
+| public | `trip_postcards` | table | ✅ | 1 | — | 0 |
 | public | `trip_role_changes` | table | ✅ | 1 | — | 0 |
 | public | `trip_schedule` | table | ✅ | 1 | — | 0 |
 | public | `trip_season_finds` | table | ✅ | 1 | — | 0 |
@@ -275,6 +292,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `trip_teams` | table | ✅ | 1 | — | 0 |
 | public | `trips` | table | ✅ | 1 | — | 19 |
 | public | `trivia_answers` | table | ✅ | 1 | — | 0 |
+| public | `user_badges` | table | ✅ | 1 | — | 0 |
 | public | `user_credits` | table | ✅ | 1 | — | 0 |
 | public | `waitlist` | table | ✅ | 1 | — | 0 |
 | public | `weekly_answer_votes` | table | ✅ | 1 | — | 0 |
@@ -282,6 +300,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `weekly_question_pool` | table | ✅ | 1 | — | 1 |
 | public | `weekly_questions` | table | ✅ | 1 | — | 0 |
 | public | `window_guide_items` | table | ✅ | 1 | — | 0 |
+| public | `wrapup_answers` | table | ✅ | 1 | — | 0 |
 | trip_private | `ai_guard_log` | table | ❌ | 0 | — | — |
 | trip_private | `code_attempts` | table | ❌ | 0 | — | — |
 | trip_private | `cron_endpoints` | table | ❌ | 0 | — | — |
@@ -310,6 +329,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | `trip_private.game_stamps` | 6 | `20261002064146_d6694141-2653-428c-9c3f-fa6bbc1b46bc.sql` |
 | `trip_private.approve_member` | 6 | `20261026110000_m2_limits_co_captain.sql` |
 | `trip_private.trip_invite_preview` | 5 | `20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql` |
+| `trip_private.sync_passport` | 5 | `20261102110000_m5_passport.sql` |
 | `trip_private.sealed_drops` | 5 | `20261005051223_126b0dc0-19db-447a-a42b-6e05eeffdb3d.sql` |
 | `trip_private.pick_weekly_prompt` | 5 | `20261002063117_eaae2e6d-3393-4eb4-9b62-ed96ebf9864f.sql` |
 | `trip_private.legal_dob_guard` | 5 | `20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql` |
