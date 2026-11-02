@@ -87,6 +87,26 @@ CREATE FUNCTION public.add_trip_missions(p_trip uuid, p_texts text[]) RETURNS in
 
 
 --
+-- Name: admin_find_trips(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.admin_find_trips(p_query text) RETURNS TABLE(id uuid, name text, destination text, room text, play_mode text, start_date date, end_date date, members integer, phase text, is_sandbox boolean, archived boolean, locked_at timestamp with time zone, created_at timestamp with time zone)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.admin_find_trips(p_query) $$;
+
+
+--
+-- Name: admin_find_users(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.admin_find_users(p_query text) RETURNS TABLE(user_id uuid, email text, game_name text, created_at timestamp with time zone, last_sign_in_at timestamp with time zone, age_range text, trips integer, disabled boolean)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.admin_find_users(p_query) $$;
+
+
+--
 -- Name: adult_badge(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -199,6 +219,16 @@ CREATE FUNCTION public.answer_weekly_question(p_trip uuid, p_week integer, p_ans
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.answer_weekly_question(p_trip, p_week, p_answer, p_emoji) $$;
+
+
+--
+-- Name: answer_wrapup(uuid, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.answer_wrapup(p_trip uuid, p_key text, p_answer text) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.answer_wrapup(p_trip, p_key, p_answer) $$;
 
 
 --
@@ -361,6 +391,16 @@ CREATE FUNCTION public.boarding_tile() RETURNS text
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.boarding_tile() $$;
+
+
+--
+-- Name: break_postcard_tie(uuid, uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.break_postcard_tie(p_trip uuid, p_proof uuid, p_on boolean DEFAULT true) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.break_postcard_tie(p_trip, p_proof, p_on) $$;
 
 
 --
@@ -1010,6 +1050,16 @@ CREATE FUNCTION public.finish_notifications(p_results jsonb) RETURNS integer
 
 
 --
+-- Name: finish_photo_purge(uuid, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.finish_photo_purge(p_trip uuid, p_removed integer) RETURNS integer
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.finish_photo_purge(p_trip, p_removed) $$;
+
+
+--
 -- Name: founder_age_tiers(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1253,6 +1303,16 @@ END $$;
 
 
 --
+-- Name: heart_photo(uuid, uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.heart_photo(p_trip uuid, p_proof uuid, p_on boolean DEFAULT true) RETURNS boolean
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.heart_photo(p_trip, p_proof, p_on) $$;
+
+
+--
 -- Name: hide_inspiration(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1423,6 +1483,26 @@ CREATE FUNCTION public.lab_delete(p_trip uuid) RETURNS uuid[]
 
 
 --
+-- Name: lab_engine_create(text, text, integer, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.lab_engine_create(p_room text, p_mode text, p_size integer, p_days integer) RETURNS uuid
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.lab_engine_create(p_room, p_mode, p_size, p_days) $$;
+
+
+--
+-- Name: lab_engine_play(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.lab_engine_play(p_trip uuid) RETURNS text
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.lab_engine_play(p_trip) $$;
+
+
+--
 -- Name: lab_extra(uuid, text, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1430,6 +1510,16 @@ CREATE FUNCTION public.lab_extra(p_trip uuid, p_action text, p_arg text) RETURNS
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.lab_extra(p_trip,p_action,p_arg) $$;
+
+
+--
+-- Name: lab_jump(uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.lab_jump(p_trip uuid, p_phase text) RETURNS text
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.lab_jump(p_trip, p_phase) $$;
 
 
 --
@@ -1563,6 +1653,16 @@ CREATE FUNCTION public.mark_arrived(p_trip uuid) RETURNS timestamp with time zon
 
 
 --
+-- Name: mark_badges_seen(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.mark_badges_seen() RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.mark_badges_seen() $$;
+
+
+--
 -- Name: mark_bingo(uuid, date, integer, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1644,6 +1744,26 @@ CREATE FUNCTION public.moderate_inspiration(p_card uuid, p_action text) RETURNS 
 
 
 --
+-- Name: moderate_photo(uuid, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.moderate_photo(p_id uuid, p_action text, p_note text DEFAULT NULL::text) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.moderate_photo(p_id, p_action, p_note) $$;
+
+
+--
+-- Name: moderation_queue(boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.moderation_queue(p_include_closed boolean DEFAULT false) RETURNS TABLE(id uuid, proof_id uuid, trip_id uuid, trip_name text, uploader_id uuid, uploader_name text, photo_path text, challenge text, body text, ai_flags text[], reports integer, report_reasons text[], status text, created_at timestamp with time zone, has_minors boolean)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.moderation_queue(p_include_closed) $$;
+
+
+--
 -- Name: my_access(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1719,6 +1839,16 @@ CREATE FUNCTION public.my_passport() RETURNS TABLE(trip_id uuid, stamps integer,
 
 
 --
+-- Name: my_passport_progress(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.my_passport_progress() RETURNS jsonb
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT trip_private.my_passport_progress() $$;
+
+
+--
 -- Name: my_past_trips(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1746,6 +1876,16 @@ CREATE FUNCTION public.my_schedule(p_trip uuid, p_at timestamp with time zone DE
     LANGUAGE sql STABLE
     SET search_path TO ''
     AS $$ SELECT * FROM trip_private.my_schedule(p_trip, p_at) $$;
+
+
+--
+-- Name: my_stamps(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.my_stamps() RETURNS TABLE(trip_id uuid, kind text, country text, state text, city text, culture text, stamped_on date, season_label text, room text, solo boolean, crowns text[], trip_name text, has_postcard boolean, squad_count integer)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.my_stamps() $$;
 
 
 --
@@ -1913,6 +2053,16 @@ CREATE FUNCTION public.pending_members(p_trip uuid) RETURNS TABLE(user_id uuid, 
 
 
 --
+-- Name: photos_to_purge(integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.photos_to_purge(p_limit integer DEFAULT 20) RETURNS TABLE(trip_id uuid, bucket text, path text)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.photos_to_purge(p_limit) $$;
+
+
+--
 -- Name: pick_at_home_song(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1930,6 +2080,16 @@ CREATE FUNCTION public.pick_night_game(p_trip uuid, p_week integer, p_game integ
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.pick_night_game(p_trip,p_week,p_game) $$;
+
+
+--
+-- Name: pick_postcard(uuid, uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.pick_postcard(p_trip uuid, p_proof uuid, p_pick boolean DEFAULT true) RETURNS integer
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.pick_postcard(p_trip, p_proof, p_pick) $$;
 
 
 --
@@ -1962,6 +2122,16 @@ CREATE FUNCTION public.player_card_read(p_trip uuid, p_user uuid) RETURNS jsonb
     AS $$
   SELECT trip_private.player_card_read(p_trip, p_user)
 $$;
+
+
+--
+-- Name: player_profile(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.player_profile(p_user uuid, p_trip uuid DEFAULT NULL::uuid) RETURNS jsonb
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT trip_private.player_profile(p_user, p_trip) $$;
 
 
 --
@@ -2002,6 +2172,26 @@ CREATE FUNCTION public.post_quest(p_trip uuid, p_date date, p_quest integer, p_p
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.post_quest(p_trip,p_date,p_quest,p_photo) $$;
+
+
+--
+-- Name: postcard_info(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.postcard_info(p_trip uuid) RETURNS jsonb
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT trip_private.postcard_info(p_trip) $$;
+
+
+--
+-- Name: postcard_ranking(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.postcard_ranking(p_trip uuid) RETURNS TABLE(proof_id uuid, user_id uuid, photo_path text, hearts integer, pos integer, kept boolean, tied boolean, favored boolean, swapped_in boolean, swapped_out boolean, swap_used boolean, kept_count integer)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.postcard_ranking(p_trip) $$;
 
 
 --
@@ -2052,6 +2242,16 @@ CREATE FUNCTION public.price_list() RETURNS TABLE(key text, label text, cents in
     LANGUAGE sql STABLE
     SET search_path TO 'public'
     AS $$ SELECT r.key, r.label, r.cents, coalesce((SELECT s.beta_free FROM public.app_settings s ORDER BY s.id LIMIT 1), true) FROM public.price_rules r ORDER BY r.sort $$;
+
+
+--
+-- Name: proof_challenge(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.proof_challenge(p_proof uuid) RETURNS TABLE(challenge text, needs_verdict boolean, trip_id uuid, user_id uuid)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.proof_challenge(p_proof) $$;
 
 
 --
@@ -2185,6 +2385,16 @@ CREATE FUNCTION public.reclaim_captain(p_trip uuid) RETURNS void
 
 
 --
+-- Name: record_photo_safety(uuid, text[]); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.record_photo_safety(p_proof uuid, p_flags text[]) RETURNS boolean
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.record_photo_safety(p_proof, p_flags) $$;
+
+
+--
 -- Name: record_proof_check(uuid, text, text, jsonb); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2192,6 +2402,16 @@ CREATE FUNCTION public.record_proof_check(p_proof uuid, p_verdict text, p_reason
     LANGUAGE sql
     SET search_path TO ''
     AS $$ SELECT trip_private.set_proof_ai(p_proof, p_verdict, p_reason, p_flags) $$;
+
+
+--
+-- Name: record_user_block(uuid, uuid, boolean, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.record_user_block(p_admin uuid, p_user uuid, p_disabled boolean, p_note text) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.record_user_block(p_admin, p_user, p_disabled, p_note) $$;
 
 
 --
@@ -2262,6 +2482,16 @@ CREATE FUNCTION public.report_cost_payment(p_item uuid, p_amount_cents bigint, p
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.report_cost_payment(p_item,p_amount_cents,p_note) $$;
+
+
+--
+-- Name: report_proof_photo(uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.report_proof_photo(p_proof uuid, p_reason text DEFAULT NULL::text) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.report_proof_photo(p_proof, p_reason) $$;
 
 
 --
@@ -2887,6 +3117,16 @@ END $$;
 
 
 --
+-- Name: set_profile(boolean, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_profile(p_public boolean, p_about text, p_from text DEFAULT NULL::text) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.set_profile(p_public, p_about, p_from) $$;
+
+
+--
 -- Name: set_profile_updated_at(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2997,6 +3237,16 @@ CREATE FUNCTION public.set_teen_dob(p_dob date, p_agree boolean, p_invite text) 
 
 
 --
+-- Name: set_top_stamps(uuid[]); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_top_stamps(p_trips uuid[]) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.set_top_stamps(p_trips) $$;
+
+
+--
 -- Name: set_trip_access(uuid, boolean, boolean); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3026,6 +3276,16 @@ CREATE FUNCTION public.set_trip_extras(p_trip uuid, p_motto text, p_call text, p
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.set_trip_extras(p_trip,p_motto,p_call,p_backup) $$;
+
+
+--
+-- Name: set_trip_hidden(uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_trip_hidden(p_trip uuid, p_hidden boolean DEFAULT true) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.set_trip_hidden(p_trip, p_hidden) $$;
 
 
 --
@@ -3270,6 +3530,16 @@ CREATE FUNCTION public.surprise_night_game(p_trip uuid, p_week integer) RETURNS 
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.surprise_night_game(p_trip,p_week) $$;
+
+
+--
+-- Name: swap_postcard_photo(uuid, uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.swap_postcard_photo(p_trip uuid, p_out uuid, p_in uuid) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.swap_postcard_photo(p_trip, p_out, p_in) $$;
 
 
 --
@@ -3616,6 +3886,16 @@ CREATE FUNCTION public.welcome_copy() RETURNS jsonb
 
 
 --
+-- Name: wrapup_board(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.wrapup_board(p_trip uuid) RETURNS TABLE(proof_id uuid, user_id uuid, photo_path text, mine boolean, hearted boolean, picked_at timestamp with time zone)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.wrapup_board(p_trip) $$;
+
+
+--
 -- Name: write_journal(uuid, text, integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3818,6 +4098,57 @@ BEGIN
     ON CONFLICT DO NOTHING;
   GET DIAGNOSTICS v_n = ROW_COUNT; RETURN v_n;
 END $$;
+
+
+--
+-- Name: admin_find_trips(text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.admin_find_trips(p_query text) RETURNS TABLE(id uuid, name text, destination text, room text, play_mode text, start_date date, end_date date, members integer, phase text, is_sandbox boolean, archived boolean, locked_at timestamp with time zone, created_at timestamp with time zone)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE q text := '%' || replace(replace(btrim(coalesce(p_query, '')), '%', ''), '_', '') || '%';
+BEGIN
+  IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Admins only'; END IF;
+  RETURN QUERY
+    SELECT t.id, t.name, t.destination, t.room, t.play_mode, t.start_date, t.end_date,
+           (SELECT count(*)::int FROM public.trip_members m WHERE m.trip_id = t.id AND m.status = 'approved'),
+           (SELECT ph.phase FROM trip_private.trip_phase(t.id, now()) ph),
+           t.is_sandbox, t.rules_version = 1, t.locked_at, t.created_at
+    FROM public.trips t
+    WHERE t.name ILIKE q OR t.destination ILIKE q OR t.join_code = upper(btrim(p_query)) OR t.id::text = btrim(p_query)
+    ORDER BY t.created_at DESC
+    LIMIT 50;
+END
+$$;
+
+
+--
+-- Name: admin_find_users(text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.admin_find_users(p_query text) RETURNS TABLE(user_id uuid, email text, game_name text, created_at timestamp with time zone, last_sign_in_at timestamp with time zone, age_range text, trips integer, disabled boolean)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE q text := '%' || replace(replace(btrim(coalesce(p_query, '')), '%', ''), '_', '') || '%';
+BEGIN
+  IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Admins only'; END IF;
+  RETURN QUERY
+    SELECT u.id, u.email::text, pp.game_name, u.created_at, u.last_sign_in_at,
+           trip_private.age_range(trip_private.age_of(u.id)),
+           (SELECT count(*)::int FROM public.trip_members m WHERE m.user_id = u.id),
+           coalesce(b.disabled, false)
+    FROM auth.users u
+    LEFT JOIN public.player_profiles pp ON pp.user_id = u.id
+    LEFT JOIN public.user_blocks b ON b.user_id = u.id
+    WHERE NOT EXISTS (SELECT 1 FROM public.sandbox_bots sb WHERE sb.user_id = u.id)
+      AND (u.email ILIKE q OR pp.game_name ILIKE q OR pp.real_name ILIKE q OR u.id::text = btrim(p_query))
+    ORDER BY u.created_at DESC
+    LIMIT 50;
+END
+$$;
 
 
 --
@@ -4049,6 +4380,32 @@ IF q.revealed_at IS NOT NULL OR s <= now() THEN RAISE EXCEPTION 'Answers are loc
 IF length(trim(coalesce(p_answer,''))) NOT BETWEEN 1 AND 200 THEN RAISE EXCEPTION 'Answers are 1 to 200 characters'; END IF;
 INSERT INTO public.weekly_answers(trip_id, week_number, user_id, answer, emoji) VALUES (p_trip, p_week, auth.uid(), trim(p_answer), nullif(trim(coalesce(p_emoji,'')),''))
 ON CONFLICT (trip_id, week_number, user_id) DO UPDATE SET answer=EXCLUDED.answer, emoji=EXCLUDED.emoji; END $$;
+
+
+--
+-- Name: answer_wrapup(uuid, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.answer_wrapup(p_trip uuid, p_key text, p_answer text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE q record; v text := trip_private.trim_answer(p_answer);
+BEGIN
+  PERFORM trip_private.require_wrapup(p_trip);
+  SELECT * INTO q FROM trip_private.wrapup_questions(p_trip) w WHERE w.key = p_key;
+  IF NOT FOUND THEN RAISE EXCEPTION 'That isn''t one of this trip''s questions'; END IF;
+  IF v = '' THEN
+    DELETE FROM public.wrapup_answers WHERE trip_id = p_trip AND user_id = auth.uid() AND question_key = p_key;
+    RETURN;
+  END IF;
+  IF char_length(v) > 60 THEN RAISE EXCEPTION 'Keep it short: 60 characters at most'; END IF;
+  IF q.emoji AND NOT trip_private.is_three_emojis(v) THEN RAISE EXCEPTION 'Use exactly 3 emojis'; END IF;
+  IF NOT q.emoji AND NOT trip_private.content_text_safe(v) THEN RAISE EXCEPTION 'Please reword that'; END IF;
+  INSERT INTO public.wrapup_answers (trip_id, user_id, question_key, answer) VALUES (p_trip, auth.uid(), p_key, v)
+  ON CONFLICT (trip_id, user_id, question_key) DO UPDATE SET answer = excluded.answer, updated_at = now();
+END
+$$;
 
 
 --
@@ -4605,6 +4962,22 @@ $$;
 
 
 --
+-- Name: badge_tier(text, integer); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.badge_tier(p_badge text, p_count integer) RETURNS integer
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO ''
+    AS $$
+  SELECT count(*)::int FROM unnest(CASE p_badge
+    WHEN 'us_explorer' THEN ARRAY[1, 5, 15]
+    WHEN 'culture_collector' THEN ARRAY[1, 5, 10]
+    WHEN 'storyteller' THEN ARRAY[1, 3, 10] END) AS at
+  WHERE at <= coalesce(p_count, 0)
+$$;
+
+
+--
 -- Name: beta_free(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -4650,6 +5023,30 @@ CREATE FUNCTION trip_private.bonus_window(p_trip uuid) RETURNS interval
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$ SELECT interval '2 days' $$;
+
+
+--
+-- Name: break_postcard_tie(uuid, uuid, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.break_postcard_tie(p_trip uuid, p_proof uuid, p_on boolean) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  PERFORM trip_private.require_wrapup(p_trip);
+  IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain breaks ties'; END IF;
+  IF coalesce(p_on, true) AND NOT EXISTS (SELECT 1 FROM trip_private.postcard_ranking(p_trip) r WHERE r.proof_id = p_proof AND r.tied) THEN
+    RAISE EXCEPTION 'That photo isn''t tied at the cut';
+  END IF;
+  INSERT INTO public.postcard_choices (trip_id, favored)
+  VALUES (p_trip, CASE WHEN coalesce(p_on, true) THEN ARRAY[p_proof] ELSE '{}' END)
+  ON CONFLICT (trip_id) DO UPDATE
+    SET favored = CASE WHEN coalesce(p_on, true) THEN array_append(array_remove(public.postcard_choices.favored, p_proof), p_proof)
+                       ELSE array_remove(public.postcard_choices.favored, p_proof) END,
+        updated_at = now();
+END
+$$;
 
 
 --
@@ -6415,6 +6812,36 @@ CREATE FUNCTION trip_private.desired_notifications(p_trip uuid) RETURNS TABLE(us
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO ''
     AS $$
+  SELECT * FROM trip_private.desired_notifications_core(p_trip)
+  UNION ALL
+  SELECT w.user_id, 'wrapup', w.title, w.body, '/t/' || p_trip || '/play', w.at, w.deadline, NULL::timestamptz,
+         'wrapup:' || p_trip || ':' || w.d || ':' || w.user_id
+  FROM (
+    SELECT tm.user_id, d.d, d.title, d.body, s.closes_at AS deadline,
+           ((s.day + (d.d - 1)) + time '10:00') AT TIME ZONE coalesce(nullif(p.time_zone, ''), t.home_timezone) AS at
+    FROM public.trips t
+    JOIN public.trip_schedule s ON s.trip_id = t.id AND s.kind = 'phase' AND s.slot = 'baggage_claim'
+    JOIN public.trip_members tm ON tm.trip_id = t.id AND tm.status = 'approved'
+    LEFT JOIN public.profiles p ON p.id = tm.user_id
+    CROSS JOIN (VALUES
+      (1, 'Wrap-up week is open', 'Heart the crew''s Postcard Picks and answer 3 quick questions.'),
+      (5, 'Download your trip photos', 'After Day 7 only the postcard photos are kept. Save the rest now.'),
+      (7, 'Last day of wrap-up', 'Your Trip Postcard locks tonight.')) d(d, title, body)
+    WHERE t.id = p_trip AND t.rules_version = 2 AND t.room <> 'game_night' AND t.locked_at IS NULL
+      AND t.setup_completed_at IS NOT NULL
+  ) w
+  WHERE w.at > now() AND (w.deadline IS NULL OR w.at < w.deadline)
+$$;
+
+
+--
+-- Name: desired_notifications_core(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.desired_notifications_core(p_trip uuid) RETURNS TABLE(user_id uuid, type text, title text, body text, deep_link text, at timestamp with time zone, deadline timestamp with time zone, earliest timestamp with time zone, dedupe text)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
   WITH t AS (SELECT * FROM public.trips WHERE id = p_trip AND rules_version = 2 AND setup_completed_at IS NOT NULL),
   m AS (SELECT tm.user_id, coalesce(nullif(p.time_zone, ''), (SELECT home_timezone FROM t)) AS tz
         FROM public.trip_members tm LEFT JOIN public.profiles p ON p.id = tm.user_id
@@ -7153,6 +7580,31 @@ $$;
 
 
 --
+-- Name: finish_photo_purge(uuid, integer); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.finish_photo_purge(p_trip uuid, p_removed integer) RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_kept text[]; v_left int;
+BEGIN
+  SELECT coalesce(array_agg(ph->>'path'), '{}') INTO v_kept
+  FROM public.trip_postcards pc CROSS JOIN LATERAL jsonb_array_elements(pc.photos) ph WHERE pc.trip_id = p_trip;
+  UPDATE public.proofs SET photo_removed_at = now()
+  WHERE trip_id = p_trip AND photo_path IS NOT NULL AND photo_removed_at IS NULL AND NOT (photo_path = ANY (v_kept));
+  SELECT count(*) INTO v_left FROM storage.objects o
+  WHERE o.bucket_id IN ('quest-proofs', 'trip-photos') AND split_part(o.name, '/', 1) = p_trip::text
+    AND NOT (o.name = ANY (v_kept));
+  INSERT INTO public.photo_purge_log (trip_id, removed, kept, remaining)
+  VALUES (p_trip, coalesce(p_removed, 0), cardinality(v_kept), v_left);
+  IF v_left = 0 THEN UPDATE public.trips SET photos_purged_at = now() WHERE id = p_trip AND photos_purged_at IS NULL; END IF;
+  RETURN v_left;
+END
+$$;
+
+
+--
 -- Name: founder_age_tiers(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -7533,6 +7985,9 @@ BEGIN
    IF v_dob > current_date OR v_dob < date '1900-01-01' THEN RAISE EXCEPTION 'Check your birthday'; END IF;
    v_age := extract(year FROM age(current_date,v_dob))::int;
    IF v_age < 13 THEN RAISE EXCEPTION 'Family Mode is coming soon. TripJunkies accounts are for ages 13 and up.'; END IF;
+   IF v_age < 18 AND NOT trip_private.teen_invite_ok(NEW.raw_user_meta_data->>'teen_invite') THEN
+     RAISE EXCEPTION 'TripJunkies accounts are for ages 18 and up. Under 18? Ask your trip''s Captain for a teen invite link.';
+   END IF;
  ELSIF NEW.raw_app_meta_data->>'provider' = 'email' AND NEW.created_at >= timestamptz '2026-10-02 22:00:00+00' THEN
    RAISE EXCEPTION 'Please provide your birthday and accept the current Terms';
  END IF;
@@ -7641,7 +8096,8 @@ CREATE FUNCTION trip_private.guide_items(p_trip uuid, p_public boolean) RETURNS 
   JOIN public.trip_schedule s ON s.id = p.schedule_id
   JOIN names n ON n.user_id = p.user_id
   CROSS JOIN t
-  WHERE p.trip_id = p_trip AND p.photo_path IS NOT NULL AND p.crew_status IN ('approved', 'not_needed')
+  WHERE p.trip_id = p_trip AND p.photo_path IS NOT NULL AND p.photo_removed_at IS NULL AND NOT trip_private.photo_hidden(p.id)
+    AND p.crew_status IN ('approved', 'not_needed')
     AND s.kind IN ('ws_quest', 'home_mission', 'airport_mission', 'surprise_drop', 'trip_quest')
     AND (NOT p_public OR (n.share_photos AND NOT t.has_minors))
   ORDER BY 1, 2 DESC
@@ -7671,6 +8127,30 @@ CREATE FUNCTION trip_private.has_teen_member(p_trip uuid) RETURNS boolean
     SET search_path TO 'public'
     AS $$
  SELECT EXISTS (SELECT 1 FROM public.trip_members m WHERE m.trip_id=p_trip AND m.status IN ('approved','pending') AND trip_private.age_of(m.user_id) BETWEEN 0 AND 17 AND NOT EXISTS (SELECT 1 FROM public.sandbox_bots b WHERE b.user_id=m.user_id)) $$;
+
+
+--
+-- Name: heart_photo(uuid, uuid, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.heart_photo(p_trip uuid, p_proof uuid, p_on boolean) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE k public.postcard_picks;
+BEGIN
+  PERFORM trip_private.require_wrapup(p_trip);
+  SELECT * INTO k FROM public.postcard_picks WHERE proof_id = p_proof AND trip_id = p_trip;
+  IF NOT FOUND OR NOT trip_private.proof_photo_ok(p_proof, auth.uid()) THEN RAISE EXCEPTION 'That photo isn''t a Postcard Pick'; END IF;
+  IF k.user_id = auth.uid() THEN RAISE EXCEPTION 'Heart the crew''s photos, not your own'; END IF;
+  IF coalesce(p_on, true) THEN
+    INSERT INTO public.postcard_hearts (trip_id, proof_id, voter_id) VALUES (p_trip, p_proof, auth.uid()) ON CONFLICT DO NOTHING;
+  ELSE
+    DELETE FROM public.postcard_hearts WHERE proof_id = p_proof AND voter_id = auth.uid();
+  END IF;
+  RETURN coalesce(p_on, true);
+END
+$$;
 
 
 --
@@ -7957,6 +8437,24 @@ CREATE FUNCTION trip_private.is_leader(p_trip uuid) RETURNS boolean
 
 
 --
+-- Name: is_three_emojis(text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.is_three_emojis(p text) RETURNS boolean
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO ''
+    AS $_$
+  SELECT coalesce(p, '') ~ (
+    '^\s*' || c || '\s*' || c || '\s*' || c || '\s*$')
+  FROM (SELECT b || m || '(?:‍' || b || m || ')*' AS c
+        FROM (SELECT
+          '(?:[\U0001F1E6-\U0001F1FF][\U0001F1E6-\U0001F1FF]|[0-9#*]️?⃣|[©®‼⁉™ℹ↔-↙↩↪⌚⌛⌨⏏⏩-⏳⏸-⏺Ⓜ▪▫▶◀◻-◾☀-➿⤴⤵⬅-⬇⬛⬜⭐⭕〰〽㊗㊙\U0001F000-\U0001F1E5\U0001F200-\U0001FAFF])'
+            AS b,
+          '(?:️|[\U0001F3FB-\U0001F3FF]|[\U000E0020-\U000E007F])*' AS m) parts) re
+$_$;
+
+
+--
 -- Name: is_trip_member(uuid, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -8017,7 +8515,7 @@ DECLARE t public.trips%ROWTYPE; inv public.trip_invites%ROWTYPE; v_count integer
   END IF;
   IF t.join_locked THEN RAISE EXCEPTION 'This trip isn''t taking new members right now'; END IF;
   IF v_age < 18 THEN
-    IF NOT v_teen_invite AND t.season_rule IS DISTINCT FROM 'a2c' THEN RAISE EXCEPTION 'Under 18? Ask your trip''s Captain for a teen invite link.'; END IF;
+    IF NOT v_teen_invite THEN RAISE EXCEPTION 'Under 18? Ask your trip''s Captain for a teen invite link.'; END IF;
     IF t.vibe='party' THEN RAISE EXCEPTION 'This trip isn''t open to players under 18'; END IF;
     IF EXISTS (SELECT 1 FROM public.trip_members m WHERE m.user_id=auth.uid()) THEN RAISE EXCEPTION 'Players under 18 can be in one trip at a time'; END IF;
   END IF;
@@ -8407,6 +8905,140 @@ END $$;
 
 
 --
+-- Name: lab_engine_create(text, text, integer, integer); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.lab_engine_create(p_room text, p_mode text, p_size integer, p_days integer) RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE
+  r jsonb := trip_private.room_rules(p_room);
+  me uuid := auth.uid();
+  v_trip uuid;
+  v_start date;
+  v_end date;
+  v_size int;
+  v_pre int;
+  b record;
+  k int := 0;
+  v_tz text := 'America/Los_Angeles';
+BEGIN
+  PERFORM trip_private.lab_guard(NULL);
+  IF r IS NULL THEN RAISE EXCEPTION 'Pick a room'; END IF;
+  IF NOT (r->'modes') ? p_mode THEN RAISE EXCEPTION 'This room has no "%" mode', p_mode; END IF;
+  IF p_days NOT BETWEEN (r->'mainDays'->>'min')::int AND (r->'mainDays'->>'max')::int THEN
+    RAISE EXCEPTION 'This room takes % to % days', r->'mainDays'->>'min', r->'mainDays'->>'max';
+  END IF;
+  v_size := CASE WHEN p_mode = 'crew' THEN least(greatest(coalesce(p_size, 4), 2), (r->>'maxCrew')::int) ELSE 1 END;
+  IF (SELECT count(*) FROM public.sandbox_bots WHERE trip_id IS NULL) < v_size - 1 THEN RAISE EXCEPTION 'Not enough bots ready'; END IF;
+  v_pre := least(3, (r->'preFlightDays'->>'max')::int);
+  v_start := (now() AT TIME ZONE v_tz)::date + greatest(v_pre - 1, 1);
+  v_end := v_start + p_days - 1;
+  INSERT INTO public.trips (name, destination, start_date, end_date, home_timezone, trip_timezone, join_code, is_sandbox,
+                            require_approval, room, play_mode, preflight_days, cultures, passport_country, passport_city,
+                            crowning_at, max_squad, join_code_enabled, setup_completed_at, kind, play_arrangement, season_rule)
+  VALUES ('🧪 ' || p_room || ' · ' || p_mode || ' · ' || p_days || 'd',
+          CASE WHEN (r->>'atHome')::boolean THEN 'Home' ELSE 'Lisbon, Portugal' END,
+          v_start, v_end, v_tz, CASE WHEN (r->>'atHome')::boolean THEN v_tz ELSE 'Europe/Lisbon' END,
+          public.new_trip_code(), true, false, p_room, p_mode, v_pre,
+          CASE WHEN p_room IN ('explore_culture', 'show_culture') THEN ARRAY['Japan'] ELSE '{}' END,
+          CASE WHEN (r->>'atHome')::boolean THEN NULL ELSE 'PT' END,
+          CASE WHEN (r->>'atHome')::boolean THEN NULL ELSE 'Lisbon' END,
+          CASE WHEN (r->>'pointsEnabled')::boolean
+               THEN (v_end + time '20:00') AT TIME ZONE CASE WHEN (r->>'atHome')::boolean THEN v_tz ELSE 'Europe/Lisbon' END END,
+          greatest(2, (r->>'maxCrew')::int), p_mode = 'crew', NULL,
+          CASE WHEN (r->>'atHome')::boolean THEN 'at_home' ELSE 'trip' END,
+          CASE p_mode WHEN 'crew' THEN 'online' ELSE p_mode END, 'a2c')
+  RETURNING id INTO v_trip;
+  INSERT INTO public.trip_members (trip_id, user_id, role, status, approved_at) VALUES (v_trip, me, 'captain', 'approved', now());
+  PERFORM trip_private.lab_card(v_trip, me, 'Founder', 0);
+  FOR b IN SELECT user_id, name FROM public.sandbox_bots WHERE trip_id IS NULL ORDER BY created_at, user_id LIMIT v_size - 1 LOOP
+    k := k + 1;
+    UPDATE public.sandbox_bots SET trip_id = v_trip WHERE user_id = b.user_id;
+    INSERT INTO public.trip_members (trip_id, user_id, role, status, approved_at) VALUES (v_trip, b.user_id, 'player', 'approved', now());
+    PERFORM trip_private.lab_card(v_trip, b.user_id, b.name, k);
+  END LOOP;
+  UPDATE public.trips SET setup_completed_at = now() WHERE id = v_trip;  -- plans the schedule
+  RETURN v_trip;
+END
+$$;
+
+
+--
+-- Name: lab_engine_play(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.lab_engine_play(p_trip uuid) RETURNS text
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE
+  me uuid := auth.uid();
+  v_claims text := current_setting('request.jwt.claims', true);
+  v_sub text := current_setting('request.jwt.claim.sub', true);
+  v_phase text;
+  b record;
+  s record;
+  p record;
+  v_live uuid;
+  ok int := 0;
+  fail int := 0;
+  last_err text := '';
+BEGIN
+  PERFORM trip_private.lab_guard(p_trip);
+  SELECT phase INTO v_phase FROM trip_private.trip_phase(p_trip, now());
+  SELECT id INTO v_live FROM public.live_sessions WHERE trip_id = p_trip AND status = 'open' ORDER BY opened_at DESC LIMIT 1;
+  FOR b IN SELECT sb.user_id FROM public.sandbox_bots sb
+           JOIN public.trip_members m ON m.user_id = sb.user_id AND m.trip_id = p_trip AND m.status = 'approved'
+           WHERE sb.trip_id = p_trip LOOP
+    PERFORM trip_private.lab_become(b.user_id);
+    FOR s IN SELECT x.* FROM public.trip_schedule x
+             WHERE x.trip_id = p_trip AND (x.user_id IS NULL OR x.user_id = b.user_id)
+               AND x.opens_at <= now() AND (x.closes_at IS NULL OR x.closes_at > now())
+               AND x.kind NOT IN ('phase', 'call_night', 'crowning') LOOP
+      BEGIN
+        IF s.kind IN ('daily_discovery', 'daily_card') THEN
+          PERFORM public.answer_daily(s.id, 0);
+        ELSIF s.kind = 'journal_prompt' THEN
+          PERFORM public.write_journal(s.id, 'A bot''s day: ate well, got lost, found a view. 🤖', 0);
+        ELSIF s.kind = 'surprise_drop' THEN
+          PERFORM public.submit_drop_proof(s.id, 0, NULL, 'Found it! 🤖');
+        ELSE
+          BEGIN PERFORM public.open_item(s.id); EXCEPTION WHEN others THEN NULL; END;
+          PERFORM public.submit_proof(s.id, NULL, 'Done by a bot 🤖');
+        END IF;
+        ok := ok + 1;
+      EXCEPTION WHEN others THEN fail := fail + 1; last_err := SQLERRM;
+      END;
+    END LOOP;
+    FOR p IN SELECT c.id FROM public.crew_check(p_trip) c LOOP
+      BEGIN PERFORM public.approve_proof(p.id); ok := ok + 1;
+      EXCEPTION WHEN others THEN fail := fail + 1; last_err := SQLERRM; END;
+    END LOOP;
+    IF v_live IS NOT NULL THEN
+      BEGIN
+        PERFORM public.live_present(v_live, me);
+        PERFORM public.live_vote_award(v_live, a, me) FROM unnest(ARRAY['best_overall', 'most_creative', 'best_story']) a;
+        ok := ok + 1;
+      EXCEPTION WHEN others THEN fail := fail + 1; last_err := SQLERRM; END;
+    END IF;
+    IF v_phase = 'baggage_claim' THEN
+      BEGIN
+        PERFORM public.answer_wrapup(p_trip, 'never_forget', 'The sunset from the castle 🤖');
+        PERFORM public.heart_photo(p_trip, w.proof_id, true) FROM public.wrapup_board(p_trip) w WHERE NOT w.mine;
+        ok := ok + 1;
+      EXCEPTION WHEN others THEN fail := fail + 1; last_err := SQLERRM; END;
+    END IF;
+  END LOOP;
+  PERFORM set_config('request.jwt.claims', coalesce(v_claims, ''), true);
+  PERFORM set_config('request.jwt.claim.sub', coalesce(v_sub, ''), true);
+  RETURN ok || ' actions, ' || fail || ' refused' || CASE WHEN fail > 0 THEN ' (' || left(last_err, 120) || ')' ELSE '' END;
+END
+$$;
+
+
+--
 -- Name: lab_extra(uuid, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -8496,6 +9128,49 @@ BEGIN
   END LOOP;
   INSERT INTO public.trip_itineraries(trip_id,days) VALUES (p_trip,days) ON CONFLICT (trip_id) DO UPDATE SET days=excluded.days, updated_at=now();
 END $$;
+
+
+--
+-- Name: lab_jump(uuid, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.lab_jump(p_trip uuid, p_phase text) RETURNS text
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE t public.trips; v_days int; v_today date; v_start date; v_zone text; v_phase text; v_home boolean;
+BEGIN
+  PERFORM trip_private.lab_guard(p_trip);
+  SELECT * INTO t FROM public.trips WHERE id = p_trip FOR UPDATE;
+  v_days := t.end_date - t.start_date;
+  v_today := (now() AT TIME ZONE t.home_timezone)::date;
+  v_home := (trip_private.room_rules(t.room)->>'atHome')::boolean;
+  v_start := CASE p_phase
+    WHEN 'preflight' THEN v_today + greatest(1, least(t.preflight_days, 3)) + CASE WHEN v_home THEN 1 ELSE 0 END
+    -- at home, Takeoff (Home Missions) is the day before the first experience day
+    WHEN 'takeoff' THEN v_today + CASE WHEN v_home THEN 1 ELSE 0 END
+    WHEN 'trip_season' THEN v_today - CASE WHEN v_home THEN 0 ELSE 1 END
+    WHEN 'baggage_claim' THEN v_today - v_days - 2
+    WHEN 'locked' THEN v_today - v_days - 9
+    ELSE NULL END;
+  IF v_start IS NULL THEN RAISE EXCEPTION 'Pick preflight, takeoff, trip_season, baggage_claim or locked'; END IF;
+  IF p_phase = 'preflight' AND t.preflight_days = 0 THEN RAISE EXCEPTION 'This room has no Pre-Flight'; END IF;
+  v_zone := coalesce(t.trip_timezone, t.home_timezone);
+  UPDATE public.trips
+  SET start_date = v_start, end_date = v_start + v_days, locked_at = NULL, photos_purged_at = NULL,
+      arrived_at = CASE WHEN p_phase IN ('preflight', 'takeoff') THEN NULL ELSE now() - interval '1 day' END,
+      arrived_by = CASE WHEN p_phase IN ('preflight', 'takeoff') THEN NULL ELSE auth.uid() END,
+      crowning_at = CASE WHEN crowning_at IS NULL THEN NULL
+                         ELSE ((v_start + v_days) + time '20:00') AT TIME ZONE v_zone END
+  WHERE id = p_trip;
+  IF p_phase = 'locked' THEN
+    DELETE FROM public.trip_postcards WHERE trip_id = p_trip;   -- a fresh lock each time
+    PERFORM trip_private.lock_trip(p_trip, true);
+  END IF;
+  SELECT phase INTO v_phase FROM trip_private.trip_phase(p_trip, now());
+  RETURN CASE WHEN p_phase = 'locked' THEN 'locked' ELSE v_phase END;
+END
+$$;
 
 
 --
@@ -8772,6 +9447,24 @@ END IF; RETURN NEW; END $$;
 
 
 --
+-- Name: level_for(integer); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.level_for(p_countries integer) RETURNS TABLE(level text, stars integer, level_at integer, next_at integer)
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO ''
+    AS $$
+  SELECT l.level, l.stars, l.at,
+         (SELECT min(n.at) FROM (VALUES (1), (3), (5), (7), (10), (15), (20), (30)) n(at) WHERE n.at > coalesce(p_countries, 0))
+  FROM (VALUES ('none', 0, 0), ('tourist', 0, 1), ('explorer', 0, 3), ('voyager', 0, 5), ('globetrotter', 0, 7),
+               ('passport_junkie', 0, 10), ('passport_junkie', 1, 15), ('passport_junkie', 2, 20),
+               ('passport_junkie', 3, 30)) l(level, stars, at)
+  WHERE l.at <= greatest(coalesce(p_countries, 0), 0)
+  ORDER BY l.at DESC LIMIT 1
+$$;
+
+
+--
 -- Name: list_beta_codes(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -8955,6 +9648,69 @@ $$;
 
 
 --
+-- Name: lock_trip(uuid, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.lock_trip(p_trip uuid, p_force boolean DEFAULT false) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE t public.trips; v_end timestamptz; v_photos jsonb; v_answers jsonb; v_crowns jsonb; v_excited jsonb; m record;
+BEGIN
+  SELECT * INTO t FROM public.trips WHERE id = p_trip FOR UPDATE;
+  IF NOT FOUND OR t.locked_at IS NOT NULL OR t.rules_version <> 2 OR t.room = 'game_night'
+     OR t.setup_completed_at IS NULL THEN
+    RETURN false;
+  END IF;
+  SELECT w.ends_at INTO v_end FROM trip_private.trip_phase_windows(p_trip) w WHERE w.phase = 'baggage_claim';
+  IF NOT coalesce(p_force, false) AND (v_end IS NULL OR now() < v_end) THEN RETURN false; END IF;
+
+  SELECT coalesce(jsonb_agg(jsonb_build_object('proof_id', s.proof_id, 'path', s.photo_path, 'user_id', s.user_id,
+                                               'hearts', s.hearts) ORDER BY s.ord), '[]')
+  INTO v_photos FROM trip_private.postcard_selection(p_trip) s;
+
+  -- Answers grouped by question, in a shuffled order and with no names (R-605).
+  SELECT coalesce(jsonb_agg(jsonb_build_object('key', q.key, 'question', q.question, 'answers', q.answers) ORDER BY q.idx), '[]')
+  INTO v_answers
+  FROM (SELECT w.idx, w.key, w.question,
+               coalesce((SELECT jsonb_agg(a.answer ORDER BY trip_private.schedule_hash(a.user_id::text || p_trip::text || w.key))
+                         FROM public.wrapup_answers a WHERE a.trip_id = p_trip AND a.question_key = w.key), '[]') AS answers
+        FROM trip_private.wrapup_questions(p_trip) w) q;
+
+  SELECT coalesce(jsonb_agg(jsonb_build_object('season', c.season, 'user_id', c.user_id,
+                                               'name', coalesce(pc.game_name, pp.game_name, 'Traveler'),
+                                               'points', c.points, 'solo', c.solo_goal IS NOT NULL)
+                            ORDER BY c.season, c.user_id), '[]')
+  INTO v_crowns
+  FROM public.trip_crowns c
+  LEFT JOIN public.trip_player_cards pc ON pc.trip_id = c.trip_id AND pc.user_id = c.user_id
+  LEFT JOIN public.player_profiles pp ON pp.user_id = c.user_id
+  WHERE c.trip_id = p_trip;
+
+  SELECT coalesce(jsonb_agg(btrim(pc.most_excited) ORDER BY trip_private.schedule_hash(pc.user_id::text || p_trip::text)), '[]')
+  INTO v_excited
+  FROM public.trip_player_cards pc
+  JOIN public.trip_members tm ON tm.trip_id = pc.trip_id AND tm.user_id = pc.user_id AND tm.status = 'approved'
+  WHERE pc.trip_id = p_trip AND nullif(btrim(pc.most_excited), '') IS NOT NULL;
+
+  INSERT INTO public.trip_postcards (trip_id, photos, answers, crowns, excited)
+  VALUES (p_trip, v_photos, v_answers, v_crowns, v_excited)
+  ON CONFLICT (trip_id) DO NOTHING;
+
+  UPDATE public.trips SET locked_at = now() WHERE id = p_trip;
+  PERFORM trip_private.stamp_trip(p_trip);
+
+  FOR m IN SELECT user_id FROM public.trip_members WHERE trip_id = p_trip AND status = 'approved' LOOP
+    PERFORM trip_private.enqueue_notification(m.user_id, p_trip, 'wrapup', 'Your Trip Postcard is ready',
+      'It''s in your passport now. Open it to download or share.', '/t/' || p_trip || '/trip', now(), NULL,
+      'postcard_ready:' || p_trip || ':' || m.user_id);
+  END LOOP;
+  RETURN true;
+END
+$$;
+
+
+--
 -- Name: log_ai_call(uuid, text, integer, integer, numeric); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -9049,6 +9805,18 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Arrival was already confirmed'; END IF;
   RETURN v_at;
 END $$;
+
+
+--
+-- Name: mark_badges_seen(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.mark_badges_seen() RETURNS void
+    LANGUAGE sql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  UPDATE public.user_badges SET seen_at = now() WHERE user_id = auth.uid() AND seen_at IS NULL
+$$;
 
 
 --
@@ -9361,6 +10129,62 @@ END $$;
 
 
 --
+-- Name: moderate_photo(uuid, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.moderate_photo(p_id uuid, p_action text, p_note text DEFAULT NULL::text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE m public.photo_moderation; p public.proofs;
+BEGIN
+  IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Admins only'; END IF;
+  IF p_action NOT IN ('approve', 'remove', 'warn') THEN RAISE EXCEPTION 'Pick approve, remove or warn'; END IF;
+  SELECT * INTO m FROM public.photo_moderation WHERE id = p_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Not in the queue'; END IF;
+  IF p_action IN ('approve', 'remove') THEN
+    UPDATE public.photo_moderation
+    SET status = CASE p_action WHEN 'approve' THEN 'approved' ELSE 'removed' END,
+        reviewed_by = auth.uid(), reviewed_at = now(), updated_at = now()
+    WHERE id = p_id;
+  END IF;
+  IF p_action = 'remove' THEN
+    SELECT * INTO p FROM public.proofs WHERE id = m.proof_id;
+    PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'rejected');
+    DELETE FROM public.postcard_picks WHERE proof_id = m.proof_id;
+  END IF;
+  INSERT INTO public.moderation_log (moderation_id, actor, action, note, subject_user)
+  VALUES (p_id, auth.uid(), p_action, left(p_note, 500), m.uploader_id);
+END
+$$;
+
+
+--
+-- Name: moderation_queue(boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.moderation_queue(p_include_closed boolean DEFAULT false) RETURNS TABLE(id uuid, proof_id uuid, trip_id uuid, trip_name text, uploader_id uuid, uploader_name text, photo_path text, challenge text, body text, ai_flags text[], reports integer, report_reasons text[], status text, created_at timestamp with time zone, has_minors boolean)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Admins only'; END IF;
+  RETURN QUERY
+    SELECT m.id, m.proof_id, m.trip_id, t.name, m.uploader_id, coalesce(pp.game_name, 'Traveler'),
+           p.photo_path, (SELECT ch.challenge FROM trip_private.proof_challenge(p.id) ch), p.body,
+           m.ai_flags, m.reports, m.report_reasons, m.status, m.created_at, t.has_minors
+    FROM public.photo_moderation m
+    JOIN public.proofs p ON p.id = m.proof_id
+    JOIN public.trips t ON t.id = m.trip_id
+    LEFT JOIN public.player_profiles pp ON pp.user_id = m.uploader_id
+    WHERE p_include_closed OR m.status IN ('flagged', 'reported')
+    ORDER BY (m.status = 'flagged') DESC, m.created_at
+    LIMIT 200;
+END
+$$;
+
+
+--
 -- Name: my_access(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -9440,6 +10264,28 @@ FROM public.trip_members m JOIN public.trips tt ON tt.id=m.trip_id AND NOT tt.is
 
 
 --
+-- Name: my_passport_progress(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.my_passport_progress() RETURNS jsonb
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT jsonb_build_object(
+    'countries', coalesce(p.countries, 0),
+    'level', coalesce(p.level, 'none'),
+    'stars', coalesce(p.stars, 0),
+    'next_at', (SELECT l.next_at FROM trip_private.level_for(coalesce(p.countries, 0)) l),
+    'badges', coalesce((SELECT jsonb_agg(jsonb_build_object('badge', b.badge, 'tier', b.tier, 'progress', b.progress,
+                                                           'earned_at', b.earned_at, 'new', b.seen_at IS NULL)
+                                         ORDER BY b.badge)
+                        FROM public.user_badges b WHERE b.user_id = auth.uid()), '[]'::jsonb))
+  FROM (SELECT auth.uid() AS uid) me
+  LEFT JOIN public.passport_progress p ON p.user_id = me.uid
+$$;
+
+
+--
 -- Name: my_past_trips(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -9494,6 +10340,24 @@ BEGIN
     LEFT JOIN public.content_items c ON c.id = s.content_item_id
     ORDER BY s.opens_at, s.kind, s.slot;
 END
+$$;
+
+
+--
+-- Name: my_stamps(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.my_stamps() RETURNS TABLE(trip_id uuid, kind text, country text, state text, city text, culture text, stamped_on date, season_label text, room text, solo boolean, crowns text[], trip_name text, has_postcard boolean, squad_count integer)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT s.trip_id, s.kind, s.country, s.state, s.city, s.culture, s.stamped_on,
+         coalesce(s.season_label, trip_private.season_label(s.stamped_on)), coalesce(s.room, 'trip'), s.solo, s.crowns,
+         t.name, EXISTS (SELECT 1 FROM public.trip_postcards p WHERE p.trip_id = s.trip_id),
+         (SELECT count(*)::int FROM public.trip_members m WHERE m.trip_id = s.trip_id AND m.status = 'approved')
+  FROM public.passport_stamps s JOIN public.trips t ON t.id = s.trip_id
+  WHERE s.user_id = auth.uid()
+  ORDER BY s.stamped_on DESC, t.name
 $$;
 
 
@@ -9757,6 +10621,19 @@ CREATE FUNCTION trip_private.night_open(p_trip uuid, p_week integer) RETURNS boo
 
 
 --
+-- Name: norm_country(text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.norm_country(p text) RETURNS text
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO ''
+    AS $$
+  SELECT CASE WHEN lower(btrim(p)) IN ('usa', 'us', 'u.s.', 'u.s.a.', 'united states', 'united states of america')
+              THEN 'United States' ELSE nullif(btrim(p), '') END
+$$;
+
+
+--
 -- Name: notification_types(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -9776,6 +10653,7 @@ CREATE FUNCTION trip_private.notification_types() RETURNS TABLE(type text, label
          ('crowning_24h', 'Crowning night tomorrow', 10),
          ('crew_check', 'A crew proof needs your 👍', 11),
          ('proof_expired', 'Your proof ran out of time', 12),
+         ('wrapup', 'Wrap-up week and your Trip Postcard', 13),
          ('test', 'Test notification', 99)
 $$;
 
@@ -10056,6 +10934,18 @@ $$;
 
 
 --
+-- Name: photo_hidden(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.photo_hidden(p_proof uuid) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT EXISTS (SELECT 1 FROM public.photo_moderation m WHERE m.proof_id = p_proof AND m.status IN ('flagged', 'removed'))
+$$;
+
+
+--
 -- Name: photo_quota_ok(text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -10065,6 +10955,36 @@ CREATE FUNCTION trip_private.photo_quota_ok(p_name text) RETURNS boolean
     AS $$
  SELECT (SELECT count(*) FROM storage.objects o WHERE o.bucket_id='trip-photos' AND o.owner_id=auth.uid()::text
    AND split_part(o.name,'/',1)=split_part(p_name,'/',1) AND o.created_at >= date_trunc('day', now())) < 15 $$;
+
+
+--
+-- Name: photos_to_purge(integer); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.photos_to_purge(p_limit integer DEFAULT 20) RETURNS TABLE(trip_id uuid, bucket text, path text)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  WITH t AS (
+    SELECT tr.id FROM public.trips tr
+    WHERE tr.locked_at IS NOT NULL AND tr.photos_purged_at IS NULL AND tr.rules_version = 2
+    ORDER BY tr.locked_at LIMIT greatest(1, coalesce(p_limit, 20))
+  ),
+  kept AS (
+    SELECT pc.trip_id, ph->>'path' AS path
+    FROM public.trip_postcards pc CROSS JOIN LATERAL jsonb_array_elements(pc.photos) ph
+    WHERE pc.trip_id IN (SELECT id FROM t)
+  )
+  SELECT t.id, o.bucket_id, o.name
+  FROM t JOIN storage.objects o ON o.bucket_id IN ('quest-proofs', 'trip-photos') AND split_part(o.name, '/', 1) = t.id::text
+  WHERE NOT EXISTS (SELECT 1 FROM kept k WHERE k.trip_id = t.id AND k.path = o.name)
+  UNION ALL
+  -- Locked trips with nothing left to delete still need finishing.
+  SELECT t.id, NULL, NULL FROM t
+  WHERE NOT EXISTS (SELECT 1 FROM storage.objects o WHERE o.bucket_id IN ('quest-proofs', 'trip-photos')
+                      AND split_part(o.name, '/', 1) = t.id::text
+                      AND NOT EXISTS (SELECT 1 FROM kept k WHERE k.trip_id = t.id AND k.path = o.name))
+$$;
 
 
 --
@@ -10132,6 +11052,45 @@ BEGIN
  UPDATE public.trip_play_state SET used_games=array_append(v_used,p_game), spin_game=CASE WHEN spin_week=p_week THEN p_game ELSE spin_game END WHERE trip_id=p_trip;
  INSERT INTO public.game_pick_log(trip_id,week_number,game_number,actor,method) VALUES(p_trip,p_week,p_game,auth.uid(),'picked');
 END $$;
+
+
+--
+-- Name: pick_postcard(uuid, uuid, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.pick_postcard(p_trip uuid, p_proof uuid, p_pick boolean) RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_phase text; v_limit int; v_n int; p public.proofs;
+BEGIN
+  IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  SELECT phase INTO v_phase FROM trip_private.trip_phase(p_trip, now());
+  IF v_phase IS NULL OR v_phase NOT IN ('preflight', 'takeoff', 'trip_season') THEN
+    RAISE EXCEPTION 'Postcard Picks closed at the end of the last trip day';
+  END IF;
+  SELECT l.picks INTO v_limit FROM trip_private.postcard_limits(p_trip) l;
+  IF coalesce(v_limit, 0) = 0 THEN RAISE EXCEPTION 'This room has no postcard'; END IF;
+  -- Serialise this player's picks so two quick taps can't both slip under the limit.
+  PERFORM pg_advisory_xact_lock(trip_private.schedule_hash('postcard:' || p_trip || ':' || auth.uid()));
+  IF NOT coalesce(p_pick, true) THEN
+    DELETE FROM public.postcard_picks WHERE trip_id = p_trip AND user_id = auth.uid() AND proof_id = p_proof;
+  ELSE
+    SELECT * INTO p FROM public.proofs WHERE id = p_proof;
+    IF NOT FOUND OR p.trip_id <> p_trip OR p.user_id <> auth.uid() OR p.photo_path IS NULL
+       OR p.photo_removed_at IS NOT NULL OR p.crew_status = 'expired' THEN
+      RAISE EXCEPTION 'Pick one of your own trip photos';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM public.postcard_picks WHERE proof_id = p_proof) THEN
+      SELECT count(*) INTO v_n FROM public.postcard_picks WHERE trip_id = p_trip AND user_id = auth.uid();
+      IF v_n >= v_limit THEN RAISE EXCEPTION 'You can pick % photos. Unpick one first', v_limit; END IF;
+      INSERT INTO public.postcard_picks (trip_id, user_id, proof_id) VALUES (p_trip, auth.uid(), p_proof);
+    END IF;
+  END IF;
+  SELECT count(*) INTO v_n FROM public.postcard_picks WHERE trip_id = p_trip AND user_id = auth.uid();
+  RETURN v_n;
+END
+$$;
 
 
 --
@@ -10536,6 +11495,82 @@ $$;
 
 
 --
+-- Name: player_profile(uuid, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.player_profile(p_user uuid, p_trip uuid DEFAULT NULL::uuid) RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE
+  me uuid := auth.uid();
+  pp public.player_profiles;
+  pr public.profile_prefs;
+  prog public.passport_progress;
+  v_self boolean;
+  v_crew boolean;
+  v_public boolean;
+  v_base jsonb;
+  v_this jsonb;
+BEGIN
+  IF me IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  SELECT * INTO pp FROM public.player_profiles WHERE user_id = p_user;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  SELECT * INTO pr FROM public.profile_prefs WHERE user_id = p_user;
+  SELECT * INTO prog FROM public.passport_progress WHERE user_id = p_user;
+  v_self := me = p_user;
+  v_crew := v_self OR EXISTS (SELECT 1 FROM public.trip_members a JOIN public.trip_members b ON a.trip_id = b.trip_id
+                              WHERE a.user_id = me AND b.user_id = p_user AND a.status = 'approved' AND b.status = 'approved');
+  v_public := coalesce(pr.is_public, false) AND coalesce(trip_private.age_of(p_user), 0) >= 18;
+  v_base := jsonb_build_object(
+    'user_id', p_user, 'game_name', pp.game_name,
+    'avatar_style', pp.avatar_style, 'avatar_seed', pp.avatar_seed,
+    -- A photo avatar is only signed for the crew (storage policy); others get the seed avatar.
+    'avatar_path', CASE WHEN v_crew THEN pp.avatar_path END,
+    'level', coalesce(prog.level, 'none'), 'stars', coalesce(prog.stars, 0), 'countries', coalesce(prog.countries, 0),
+    'is_public', v_public, 'self', v_self, 'crew', v_crew);
+  IF NOT (v_crew OR v_public) THEN
+    RETURN v_base || jsonb_build_object('private', true);
+  END IF;
+
+  IF p_trip IS NOT NULL THEN
+    SELECT jsonb_build_object('trip_id', t.id, 'trip_name', t.name, 'role', b.role,
+                              'persona', coalesce(c.trip_persona, pp.trip_persona), 'most_excited', c.most_excited)
+    INTO v_this
+    FROM public.trips t
+    JOIN public.trip_members b ON b.trip_id = t.id AND b.user_id = p_user AND b.status = 'approved'
+    JOIN public.trip_members a ON a.trip_id = t.id AND a.user_id = me AND a.status = 'approved'
+    LEFT JOIN public.trip_player_cards c ON c.trip_id = t.id AND c.user_id = p_user
+    WHERE t.id = p_trip;
+  END IF;
+
+  RETURN v_base || jsonb_build_object(
+    'private', false,
+    'about_me', pr.about_me,
+    'from', pp.home_country,
+    'this_trip', v_this,
+    'badges', coalesce((SELECT jsonb_agg(jsonb_build_object('badge', b.badge, 'tier', b.tier) ORDER BY b.badge)
+                        FROM public.user_badges b WHERE b.user_id = p_user), '[]'),
+    'stamps', coalesce((
+      SELECT jsonb_agg(jsonb_build_object(
+               'trip_id', s.trip_id, 'kind', s.kind, 'country', s.country, 'state', s.state, 'city', s.city,
+               'culture', s.culture, 'stamped_on', s.stamped_on,
+               'season_label', coalesce(s.season_label, trip_private.season_label(s.stamped_on)),
+               'room', coalesce(s.room, 'trip'), 'solo', s.solo, 'crowns', s.crowns, 'trip_name', t.name,
+               'top', s.trip_id = ANY (coalesce(pr.top_stamps, '{}')),
+               'hidden', s.trip_id = ANY (coalesce(pr.hidden_trips, '{}')),
+               -- the postcard opens for members of that trip only (trip_postcards RLS)
+               'has_postcard', EXISTS (SELECT 1 FROM public.trip_postcards pc WHERE pc.trip_id = s.trip_id)
+                               AND trip_private.is_trip_member(s.trip_id, me))
+             ORDER BY (s.trip_id = ANY (coalesce(pr.top_stamps, '{}'))) DESC, s.stamped_on DESC)
+      FROM public.passport_stamps s JOIN public.trips t ON t.id = s.trip_id
+      WHERE s.user_id = p_user AND NOT t.is_sandbox
+        AND (v_crew OR NOT (s.trip_id = ANY (coalesce(pr.hidden_trips, '{}'))))), '[]'));
+END
+$$;
+
+
+--
 -- Name: post_game_night_poll(uuid, jsonb); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -10590,6 +11625,150 @@ CREATE FUNCTION trip_private.post_quest(p_trip uuid, p_date date, p_quest intege
  IF p_photo IS NOT NULL AND NOT trip_private.valid_photo(p_trip,p_photo) THEN RAISE EXCEPTION 'Photo upload failed'; END IF;
  INSERT INTO public.quest_posts(trip_id,day_date,user_id,quest,photo_path) VALUES(p_trip,p_date,auth.uid(),p_quest,p_photo) ON CONFLICT(trip_id,day_date,user_id,quest) DO UPDATE SET photo_path=coalesce(excluded.photo_path,public.quest_posts.photo_path);
 END $$;
+
+
+--
+-- Name: postcard_info(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.postcard_info(p_trip uuid) RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE l record; v_close timestamptz;
+BEGIN
+  IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  SELECT * INTO l FROM trip_private.postcard_limits(p_trip);
+  SELECT w.ends_at INTO v_close FROM trip_private.trip_phase_windows(p_trip) w WHERE w.phase = 'trip_season';
+  RETURN jsonb_build_object(
+    'picks', l.picks, 'kept', l.kept, 'solo', l.solo, 'picks_close_at', v_close,
+    'locks_at', (SELECT w.ends_at FROM trip_private.trip_phase_windows(p_trip) w WHERE w.phase = 'baggage_claim'),
+    'questions', (SELECT jsonb_agg(jsonb_build_object('key', q.key, 'question', q.question, 'emoji', q.emoji) ORDER BY q.idx)
+                  FROM trip_private.wrapup_questions(p_trip) q));
+END
+$$;
+
+
+--
+-- Name: postcard_limits(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.postcard_limits(p_trip uuid) RETURNS TABLE(picks integer, kept integer, solo boolean)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT CASE WHEN x.solo THEN (x.r->'photosKept'->>'solo')::int ELSE (x.r->>'postcardPicksPerPlayer')::int END,
+         CASE WHEN x.solo THEN (x.r->'photosKept'->>'solo')::int ELSE (x.r->'photosKept'->>'group')::int END,
+         x.solo
+  FROM (SELECT trip_private.room_rules(t.room) AS r,
+               (t.play_mode <> 'crew' OR (SELECT count(*) FROM public.trip_members m
+                                          WHERE m.trip_id = t.id AND m.status = 'approved') <= 1) AS solo
+        FROM public.trips t WHERE t.id = p_trip) x
+$$;
+
+
+--
+-- Name: postcard_rank(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.postcard_rank(p_trip uuid) RETURNS TABLE(proof_id uuid, user_id uuid, photo_path text, hearts integer, favored boolean, created_at timestamp with time zone, pos integer)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT x.*, (row_number() OVER (ORDER BY x.hearts DESC, x.favored DESC, x.created_at, x.proof_id))::int
+  FROM (
+    SELECT p.id AS proof_id, p.user_id, p.photo_path,
+           (SELECT count(*)::int FROM public.postcard_hearts h WHERE h.proof_id = p.id) AS hearts,
+           coalesce(p.id = ANY (c.favored), false) AS favored, p.created_at
+    FROM public.postcard_picks k
+    JOIN public.proofs p ON p.id = k.proof_id
+    LEFT JOIN public.postcard_choices c ON c.trip_id = p_trip
+    WHERE k.trip_id = p_trip AND p.photo_path IS NOT NULL AND p.photo_removed_at IS NULL AND p.crew_status <> 'expired'
+      AND NOT trip_private.photo_hidden(p.id)
+  ) x
+$$;
+
+
+--
+-- Name: postcard_ranking(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.postcard_ranking(p_trip uuid) RETURNS TABLE(proof_id uuid, user_id uuid, photo_path text, hearts integer, pos integer, kept boolean, tied boolean, favored boolean, swapped_in boolean, swapped_out boolean, swap_used boolean, kept_count integer)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_kept int; v_cut int;
+BEGIN
+  IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'The Captain or Co-Captain sees the ranking'; END IF;
+  SELECT l.kept INTO v_kept FROM trip_private.postcard_limits(p_trip) l;
+  SELECT r.hearts INTO v_cut FROM trip_private.postcard_rank(p_trip) r WHERE r.pos = v_kept;
+  RETURN QUERY
+    WITH r AS (SELECT * FROM trip_private.postcard_rank(p_trip)),
+    sel AS (SELECT s.proof_id FROM trip_private.postcard_selection(p_trip) s),
+    c AS (SELECT * FROM public.postcard_choices WHERE trip_id = p_trip)
+    SELECT r.proof_id, r.user_id,
+           CASE WHEN trip_private.proof_photo_ok(r.proof_id, auth.uid()) THEN r.photo_path END,
+           r.hearts, r.pos, r.proof_id IN (SELECT sel.proof_id FROM sel),
+           -- tied at the cut: same hearts as the last kept photo, with some of them kept and some not
+           (v_cut IS NOT NULL AND r.hearts = v_cut
+             AND (SELECT count(*) FROM r x WHERE x.hearts = v_cut) > (SELECT count(*) FROM r x WHERE x.hearts = v_cut AND x.pos <= v_kept)),
+           r.favored, r.proof_id = (SELECT swap_in FROM c), r.proof_id = (SELECT swap_out FROM c),
+           coalesce((SELECT swap_in IS NOT NULL FROM c), false), v_kept
+    FROM r ORDER BY r.pos;
+END
+$$;
+
+
+--
+-- Name: postcard_selection(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.postcard_selection(p_trip uuid) RETURNS TABLE(proof_id uuid, user_id uuid, photo_path text, hearts integer, ord numeric)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  WITH lim AS (SELECT kept FROM trip_private.postcard_limits(p_trip)),
+  c AS (SELECT * FROM public.postcard_choices WHERE trip_id = p_trip),
+  r AS (SELECT * FROM trip_private.postcard_rank(p_trip)),
+  forced AS (SELECT r.* FROM r WHERE r.proof_id = (SELECT swap_in FROM c)),
+  base AS (
+    SELECT r.* FROM r
+    WHERE r.proof_id IS DISTINCT FROM (SELECT swap_out FROM c) AND r.proof_id IS DISTINCT FROM (SELECT swap_in FROM c)
+    ORDER BY r.pos
+    LIMIT greatest(0, (SELECT kept FROM lim) - (SELECT count(*) FROM forced))
+  )
+  SELECT b.proof_id, b.user_id, b.photo_path, b.hearts, b.pos::numeric FROM base b
+  UNION ALL
+  SELECT f.proof_id, f.user_id, f.photo_path, f.hearts,
+         coalesce((SELECT r.pos FROM r WHERE r.proof_id = (SELECT swap_out FROM c)), 0)::numeric - 0.5
+  FROM forced f WHERE (SELECT kept FROM lim) > 0
+  ORDER BY 5
+$$;
+
+
+--
+-- Name: postcards_due(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.postcards_due() RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE t record; n int := 0;
+BEGIN
+  FOR t IN SELECT id FROM public.trips
+           WHERE locked_at IS NULL AND rules_version = 2 AND room <> 'game_night' AND setup_completed_at IS NOT NULL
+             AND end_date <= current_date - 6
+  LOOP
+    BEGIN
+      IF trip_private.lock_trip(t.id) THEN n := n + 1; END IF;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE WARNING 'lock_trip % failed: %', t.id, SQLERRM;   -- one bad trip doesn't stop the rest
+    END;
+  END LOOP;
+  RETURN n;
+END
+$$;
 
 
 --
@@ -10691,6 +11870,40 @@ CREATE FUNCTION trip_private.price(p_key text) RETURNS integer
 
 
 --
+-- Name: profile_prefs_guard(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.profile_prefs_guard() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF NEW.is_public AND coalesce(trip_private.age_of(NEW.user_id), 0) < 18 THEN NEW.is_public := false; END IF;
+  NEW.updated_at := now();
+  RETURN NEW;
+END
+$$;
+
+
+--
+-- Name: proof_challenge(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.proof_challenge(p_proof uuid) RETURNS TABLE(challenge text, needs_verdict boolean, trip_id uuid, user_id uuid)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT coalesce(CASE WHEN s.variant IN ('bingo', 'scavenger') AND cardinality(c.items) > p.part THEN c.items[p.part + 1] END,
+                  s.tailored_text, c.title, ''),
+         p.ai_status = 'pending', p.trip_id, p.user_id
+  FROM public.proofs p
+  JOIN public.trip_schedule s ON s.id = p.schedule_id
+  LEFT JOIN public.content_items c ON c.id = s.content_item_id
+  WHERE p.id = p_proof
+$$;
+
+
+--
 -- Name: proof_kind(text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -10750,10 +11963,14 @@ CREATE FUNCTION trip_private.proof_photo_ok(p_proof uuid, p_viewer uuid) RETURNS
     AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.proofs p JOIN public.trips t ON t.id = p.trip_id
-    WHERE p.id = p_proof AND trip_private.is_trip_member(p.trip_id, p_viewer)
-      AND (p.user_id = p_viewer OR p.approved_by = p_viewer OR NOT t.has_minors
-           OR EXISTS (SELECT 1 FROM public.trip_members m WHERE m.trip_id = p.trip_id AND m.user_id = p_viewer
-                      AND m.role IN ('captain', 'co_captain'))))
+    WHERE p.id = p_proof AND (
+      (p_viewer = auth.uid() AND trip_private.is_app_admin())
+      OR (trip_private.is_trip_member(p.trip_id, p_viewer)
+          AND (p.user_id = p_viewer
+               OR (NOT trip_private.photo_hidden(p.id)
+                   AND (p.approved_by = p_viewer OR NOT t.has_minors
+                        OR EXISTS (SELECT 1 FROM public.trip_members m WHERE m.trip_id = p.trip_id AND m.user_id = p_viewer
+                                   AND m.role IN ('captain', 'co_captain'))))))))
 $$;
 
 
@@ -11159,6 +12376,34 @@ END $$;
 
 
 --
+-- Name: record_photo_safety(uuid, text[]); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.record_photo_safety(p_proof uuid, p_flags text[]) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE p public.proofs; v_id uuid; v_flags text[] := ARRAY(SELECT DISTINCT left(f, 40) FROM unnest(coalesce(p_flags, '{}')) f WHERE f <> '');
+BEGIN
+  IF cardinality(v_flags) = 0 THEN RETURN false; END IF;
+  SELECT * INTO p FROM public.proofs WHERE id = p_proof;
+  IF NOT FOUND OR p.photo_path IS NULL THEN RETURN false; END IF;
+  INSERT INTO public.photo_moderation (proof_id, trip_id, uploader_id, ai_flags, status)
+  VALUES (p.id, p.trip_id, p.user_id, v_flags, 'flagged')
+  ON CONFLICT (proof_id) DO UPDATE
+    SET ai_flags = ARRAY(SELECT DISTINCT unnest(public.photo_moderation.ai_flags || excluded.ai_flags)),
+        -- a reviewer's decision stands; a new flag re-opens only a reported or unreviewed photo
+        status = CASE WHEN public.photo_moderation.status IN ('approved', 'removed') THEN public.photo_moderation.status ELSE 'flagged' END,
+        updated_at = now()
+  RETURNING id INTO v_id;
+  INSERT INTO public.moderation_log (moderation_id, action, note, subject_user)
+  VALUES (v_id, 'ai_flag', array_to_string(v_flags, ', '), p.user_id);
+  RETURN trip_private.photo_hidden(p.id);
+END
+$$;
+
+
+--
 -- Name: record_speed_finish(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -11176,6 +12421,26 @@ BEGIN
  END IF;
  RETURN NEW;
 END $$;
+
+
+--
+-- Name: record_user_block(uuid, uuid, boolean, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.record_user_block(p_admin uuid, p_user uuid, p_disabled boolean, p_note text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.app_admins WHERE user_id = p_admin) THEN RAISE EXCEPTION 'Admins only'; END IF;
+  IF EXISTS (SELECT 1 FROM public.app_admins WHERE user_id = p_user) THEN RAISE EXCEPTION 'Admins can''t be disabled here'; END IF;
+  INSERT INTO public.user_blocks (user_id, disabled, note, changed_by) VALUES (p_user, p_disabled, left(p_note, 500), p_admin)
+  ON CONFLICT (user_id) DO UPDATE SET disabled = excluded.disabled, note = excluded.note, changed_by = excluded.changed_by,
+                                      changed_at = now();
+  INSERT INTO public.admin_actions (actor, action, target_user, note)
+  VALUES (p_admin, CASE WHEN p_disabled THEN 'disable_user' ELSE 'enable_user' END, p_user, left(p_note, 500));
+END
+$$;
 
 
 --
@@ -11199,6 +12464,55 @@ DECLARE b public.beta_codes%ROWTYPE; v text := upper(regexp_replace(coalesce(p_c
   UPDATE public.beta_codes SET used_by=auth.uid(), used_at=now() WHERE id=b.id;
   INSERT INTO public.beta_access(user_id, source) VALUES (auth.uid(), 'beta_code') ON CONFLICT DO NOTHING;
   RETURN 'ok'; END $$;
+
+
+--
+-- Name: refresh_passport(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.refresh_passport(p_user uuid) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_countries int; lv record; b record;
+BEGIN
+  SELECT count(DISTINCT lower(s.country))::int INTO v_countries
+  FROM public.passport_stamps s JOIN public.trips t ON t.id = s.trip_id
+  WHERE s.user_id = p_user AND s.kind IN ('international', 'road_trip') AND NOT t.is_sandbox;
+  SELECT * INTO lv FROM trip_private.level_for(v_countries);
+  INSERT INTO public.passport_progress (user_id, countries, level, stars)
+  VALUES (p_user, v_countries, lv.level, lv.stars)
+  ON CONFLICT (user_id) DO UPDATE SET countries = excluded.countries, level = excluded.level, stars = excluded.stars,
+                                      updated_at = now();
+
+  FOR b IN
+    SELECT 'us_explorer' AS badge, count(DISTINCT lower(s.state))::int AS n
+    FROM public.passport_stamps s JOIN public.trips t ON t.id = s.trip_id
+    WHERE s.user_id = p_user AND s.kind IN ('international', 'road_trip') AND s.country = 'United States'
+      AND nullif(btrim(s.state), '') IS NOT NULL AND NOT t.is_sandbox
+    UNION ALL
+    SELECT 'culture_collector', count(DISTINCT lower(s.culture))::int
+    FROM public.passport_stamps s JOIN public.trips t ON t.id = s.trip_id
+    WHERE s.user_id = p_user AND s.kind = 'postcard' AND nullif(btrim(s.culture), '') IS NOT NULL AND NOT t.is_sandbox
+    UNION ALL
+    -- Every contributor to a finished Window Seat guide counts it (Q13).
+    SELECT 'storyteller', count(DISTINCT t.id)::int
+    FROM public.trips t
+    WHERE t.room = 'window_seat' AND t.locked_at IS NOT NULL AND NOT t.is_sandbox
+      AND EXISTS (SELECT 1 FROM public.journal_entries j WHERE j.trip_id = t.id AND j.user_id = p_user)
+  LOOP
+    IF trip_private.badge_tier(b.badge, b.n) > 0 THEN
+      INSERT INTO public.user_badges (user_id, badge, tier, progress)
+      VALUES (p_user, b.badge, trip_private.badge_tier(b.badge, b.n), b.n)
+      ON CONFLICT (user_id, badge) DO UPDATE
+        SET progress = greatest(public.user_badges.progress, excluded.progress),
+            earned_at = CASE WHEN excluded.tier > public.user_badges.tier THEN now() ELSE public.user_badges.earned_at END,
+            seen_at = CASE WHEN excluded.tier > public.user_badges.tier THEN NULL ELSE public.user_badges.seen_at END,
+            tier = greatest(public.user_badges.tier, excluded.tier);
+    END IF;
+  END LOOP;
+END
+$$;
 
 
 --
@@ -11331,6 +12645,38 @@ END $$;
 
 
 --
+-- Name: report_proof_photo(uuid, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.report_proof_photo(p_proof uuid, p_reason text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE p public.proofs; v_id uuid; v_reason text := left(trip_private.trim_answer(p_reason), 200);
+BEGIN
+  SELECT * INTO p FROM public.proofs WHERE id = p_proof;
+  IF NOT FOUND OR p.photo_path IS NULL OR NOT trip_private.proof_photo_ok(p_proof, auth.uid()) OR p.user_id = auth.uid() THEN
+    RAISE EXCEPTION 'You can report a crew photo you can see';
+  END IF;
+  INSERT INTO public.photo_moderation (proof_id, trip_id, uploader_id, status)
+  VALUES (p.id, p.trip_id, p.user_id, 'reported')
+  ON CONFLICT (proof_id) DO NOTHING;
+  SELECT id INTO v_id FROM public.photo_moderation WHERE proof_id = p_proof;
+  INSERT INTO public.photo_moderation_reports (moderation_id, reporter_id) VALUES (v_id, auth.uid()) ON CONFLICT DO NOTHING;
+  IF NOT FOUND THEN RETURN; END IF;
+  UPDATE public.photo_moderation
+  SET reports = reports + 1,
+      report_reasons = CASE WHEN v_reason <> '' THEN (report_reasons || v_reason)[1:20] ELSE report_reasons END,
+      status = CASE WHEN status = 'approved' THEN 'reported' ELSE status END,
+      updated_at = now()
+  WHERE id = v_id;
+  INSERT INTO public.moderation_log (moderation_id, actor, action, note, subject_user)
+  VALUES (v_id, auth.uid(), 'report', nullif(v_reason, ''), p.user_id);
+END
+$$;
+
+
+--
 -- Name: request_host_swap(uuid, integer, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -11398,6 +12744,26 @@ CREATE FUNCTION trip_private.require_legal() RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$ BEGIN IF auth.uid() IS NULL OR NOT trip_private.legal_current(auth.uid()) THEN RAISE EXCEPTION 'Please agree to the current Terms before continuing'; END IF; END $$;
+
+
+--
+-- Name: require_wrapup(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.require_wrapup(p_trip uuid) RETURNS void
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_phase text;
+BEGIN
+  IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  IF EXISTS (SELECT 1 FROM public.trips WHERE id = p_trip AND locked_at IS NOT NULL) THEN
+    RAISE EXCEPTION 'The postcard is locked';
+  END IF;
+  SELECT phase INTO v_phase FROM trip_private.trip_phase(p_trip, now());
+  IF v_phase IS DISTINCT FROM 'baggage_claim' THEN RAISE EXCEPTION 'Wrap-up week starts the day after the trip'; END IF;
+END
+$$;
 
 
 --
@@ -11686,7 +13052,7 @@ CREATE FUNCTION trip_private.room_rules(p_room text) RETURNS jsonb
     AS $$
   SELECT CASE p_room
     WHEN 'trip' THEN '{"atHome":false,"contentTags":["trip"],"crowningLabel":"Crowning night","dailyQuest":false,"id":"trip","journal":false,"mainDays":{"max":14,"min":1},"maxCallNights":4,"maxCrew":12,"maxFocuses":0,"modes":["solo","crew","offline"],"photosKept":{"group":6,"solo":10},"pointsEnabled":true,"postcardPicksPerPlayer":2,"preFlightDays":{"max":10,"min":0,"skippable":true},"takeoff":"airport_missions","tripSeasonStart":"arrival_button"}'::jsonb
-    WHEN 'window_seat' THEN '{"atHome":false,"contentTags":["trip","solo"],"crowningLabel":"Crowning night","dailyQuest":true,"id":"window_seat","journal":true,"mainDays":{"max":14,"min":1},"maxCallNights":4,"maxCrew":4,"maxFocuses":0,"modes":["solo","crew"],"photosKept":{"group":6,"solo":10},"pointsEnabled":true,"postcardPicksPerPlayer":5,"preFlightDays":{"max":10,"min":0,"skippable":true},"takeoff":"airport_missions","tripSeasonStart":"arrival_button"}'::jsonb
+    WHEN 'window_seat' THEN '{"atHome":false,"contentTags":["trip","solo"],"crowningLabel":"Crowning night","dailyQuest":true,"id":"window_seat","journal":true,"mainDays":{"max":14,"min":1},"maxCallNights":4,"maxCrew":4,"maxFocuses":0,"modes":["solo","crew"],"photosKept":{"group":10,"solo":10},"pointsEnabled":true,"postcardPicksPerPlayer":5,"preFlightDays":{"max":10,"min":0,"skippable":true},"takeoff":"airport_missions","tripSeasonStart":"arrival_button"}'::jsonb
     WHEN 'explore_culture' THEN '{"atHome":true,"contentTags":["at_home"],"crowningLabel":"Finale night","dailyQuest":false,"id":"explore_culture","journal":false,"mainDays":{"max":7,"min":1},"maxCallNights":4,"maxCrew":12,"maxFocuses":2,"modes":["solo","crew","offline"],"photosKept":{"group":6,"solo":10},"pointsEnabled":true,"postcardPicksPerPlayer":2,"preFlightDays":{"max":10,"min":0,"skippable":true},"takeoff":"home_missions","tripSeasonStart":"first_experience_day"}'::jsonb
     WHEN 'show_culture' THEN '{"atHome":true,"contentTags":["at_home"],"crowningLabel":"Finale night","dailyQuest":false,"id":"show_culture","journal":false,"mainDays":{"max":7,"min":1},"maxCallNights":4,"maxCrew":12,"maxFocuses":0,"modes":["solo","crew","offline"],"photosKept":{"group":6,"solo":10},"pointsEnabled":true,"postcardPicksPerPlayer":2,"preFlightDays":{"max":10,"min":0,"skippable":true},"takeoff":"home_missions","tripSeasonStart":"first_experience_day"}'::jsonb
     WHEN 'game_night' THEN '{"atHome":true,"contentTags":["at_home","trip"],"crowningLabel":"Game night","dailyQuest":false,"id":"game_night","journal":false,"mainDays":{"max":1,"min":1},"maxCallNights":0,"maxCrew":12,"maxFocuses":0,"modes":["crew","offline"],"photosKept":{"group":0,"solo":0},"pointsEnabled":false,"postcardPicksPerPlayer":0,"preFlightDays":{"max":0,"min":0,"skippable":false},"takeoff":"none","tripSeasonStart":"first_experience_day"}'::jsonb
@@ -12210,6 +13576,21 @@ FROM public.season_settings s CROSS JOIN LATERAL (SELECT trip_private.effective_
 
 
 --
+-- Name: season_label(date); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.season_label(p_day date) RETURNS text
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO ''
+    AS $$
+  SELECT CASE WHEN extract(month FROM p_day) IN (12, 1, 2) THEN 'Winter'
+              WHEN extract(month FROM p_day) BETWEEN 3 AND 5 THEN 'Spring'
+              WHEN extract(month FROM p_day) BETWEEN 6 AND 8 THEN 'Summer' ELSE 'Fall' END
+         || ' ' || (extract(year FROM p_day)::int + CASE WHEN extract(month FROM p_day) = 12 THEN 1 ELSE 0 END)
+$$;
+
+
+--
 -- Name: season_points(uuid, text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -12712,9 +14093,10 @@ BEGIN
  IF p_dob IS NULL OR p_dob > current_date OR p_dob < date '1900-01-01' THEN RAISE EXCEPTION 'Check your date of birth'; END IF;
  a := extract(year FROM age(current_date,p_dob))::int;
  IF a < 13 THEN RAISE EXCEPTION 'Family Mode is coming soon. TripJunkies accounts are for ages 13 and up.'; END IF;
+ IF a < 18 THEN RAISE EXCEPTION 'TripJunkies accounts are for ages 18 and up. Under 18? Ask your trip''s Captain for a teen invite link.'; END IF;
  IF EXISTS (SELECT 1 FROM public.player_private WHERE user_id=auth.uid()) THEN RAISE EXCEPTION 'Your birthday is already saved; contact support for corrections'; END IF;
  INSERT INTO public.player_private(user_id,dob) VALUES(auth.uid(),p_dob);
- IF a >= 18 AND (SELECT public_launch FROM public.app_settings LIMIT 1) THEN INSERT INTO public.beta_access(user_id,source) VALUES(auth.uid(),'launch') ON CONFLICT DO NOTHING; END IF;
+ IF (SELECT public_launch FROM public.app_settings LIMIT 1) THEN INSERT INTO public.beta_access(user_id,source) VALUES(auth.uid(),'launch') ON CONFLICT DO NOTHING; END IF;
  RETURN trip_private.age_range(a);
 END $$;
 
@@ -12918,6 +14300,33 @@ END $$;
 
 
 --
+-- Name: set_profile(boolean, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_profile(p_public boolean, p_about text, p_from text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_about text := nullif(trip_private.trim_answer(p_about), ''); v_from text := nullif(trip_private.trim_answer(p_from), '');
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  IF coalesce(p_public, false) AND coalesce(trip_private.age_of(auth.uid()), 0) < 18 THEN
+    RAISE EXCEPTION 'Profiles of players under 18 stay private';
+  END IF;
+  IF char_length(v_about) > 160 THEN RAISE EXCEPTION 'Keep About me to 160 characters'; END IF;
+  IF v_about IS NOT NULL AND NOT trip_private.content_text_safe(v_about) THEN RAISE EXCEPTION 'Please reword that'; END IF;
+  IF char_length(v_from) > 60 THEN RAISE EXCEPTION 'Pick a country'; END IF;
+  INSERT INTO public.profile_prefs (user_id, is_public, about_me)
+  VALUES (auth.uid(), coalesce(p_public, false), v_about)
+  ON CONFLICT (user_id) DO UPDATE SET is_public = excluded.is_public, about_me = excluded.about_me;
+  IF p_from IS NOT NULL THEN
+    UPDATE public.player_profiles SET home_country = v_from WHERE user_id = auth.uid();
+  END IF;
+END
+$$;
+
+
+--
 -- Name: set_proof_ai(uuid, text, text, jsonb); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -12925,17 +14334,18 @@ CREATE FUNCTION trip_private.set_proof_ai(p_proof uuid, p_verdict text, p_reason
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO ''
     AS $$
-DECLARE p public.proofs;
+DECLARE p public.proofs; v_safety text[];
 BEGIN
   IF p_verdict NOT IN ('pass', 'unsure', 'fail', 'error') THEN RAISE EXCEPTION 'Unknown verdict %', p_verdict; END IF;
+  v_safety := ARRAY(SELECT jsonb_array_elements_text(coalesce(p_flags->'safety', '[]'::jsonb)));
+  IF cardinality(v_safety) > 0 AND p_verdict = 'pass' THEN p_verdict := 'unsure'; END IF;
   UPDATE public.proofs SET ai_status = p_verdict, ai_reason = left(p_reason, 300), ai_flags = p_flags
   WHERE id = p_proof RETURNING * INTO p;
   IF NOT FOUND THEN RETURN; END IF;
+  PERFORM trip_private.record_photo_safety(p_proof, v_safety);
   IF p_verdict = 'pass' AND p.crew_status = 'waiting' THEN
     UPDATE public.proofs SET crew_status = 'approved', approved_at = now() WHERE id = p_proof;
-    IF p.source <> 'surprise_drop' THEN
-      PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'approved');
-    END IF;
+    PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'approved');
   END IF;
 END
 $$;
@@ -13096,13 +14506,36 @@ BEGIN
  IF a < 13 THEN RAISE EXCEPTION 'Family Mode is coming soon. TripJunkies accounts are for ages 13 and up.'; END IF;
  IF a >= 18 THEN RETURN trip_private.set_my_dob(p_dob, p_agree); END IF;
  IF EXISTS (SELECT 1 FROM public.player_private WHERE user_id=auth.uid()) THEN RAISE EXCEPTION 'Your birthday is already saved; contact support for corrections'; END IF;
- SELECT * INTO inv FROM public.trip_invites WHERE token=upper(trim(coalesce(p_invite,''))) FOR UPDATE;
- INSERT INTO public.player_private(user_id,dob) VALUES(auth.uid(),p_dob);
- IF FOUND AND inv.teen AND inv.guardian_confirmed_at IS NOT NULL AND inv.used_at IS NULL AND inv.cancelled_at IS NULL AND inv.expires_at > now() THEN
-   INSERT INTO trip_private.teen_accounts(user_id,invite_id,trip_id) VALUES(auth.uid(),inv.id,inv.trip_id) ON CONFLICT DO NOTHING;
+ IF NOT trip_private.teen_invite_ok(p_invite) THEN
+   RAISE EXCEPTION 'TripJunkies accounts are for ages 18 and up. Under 18? Ask your trip''s Captain for a teen invite link.';
  END IF;
+ SELECT * INTO inv FROM public.trip_invites WHERE token=upper(btrim(p_invite)) FOR UPDATE;
+ INSERT INTO public.player_private(user_id,dob) VALUES(auth.uid(),p_dob);
+ INSERT INTO trip_private.teen_accounts(user_id,invite_id,trip_id) VALUES(auth.uid(),inv.id,inv.trip_id) ON CONFLICT DO NOTHING;
  RETURN trip_private.age_range(a);
 END $$;
+
+
+--
+-- Name: set_top_stamps(uuid[]); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_top_stamps(p_trips uuid[]) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v uuid[] := ARRAY(SELECT DISTINCT unnest(coalesce(p_trips, '{}')));
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  IF cardinality(v) > 3 THEN RAISE EXCEPTION 'Pick up to 3 top stamps'; END IF;
+  IF EXISTS (SELECT 1 FROM unnest(v) t
+             WHERE NOT EXISTS (SELECT 1 FROM public.passport_stamps s WHERE s.user_id = auth.uid() AND s.trip_id = t)) THEN
+    RAISE EXCEPTION 'Pick from your own stamps';
+  END IF;
+  INSERT INTO public.profile_prefs (user_id, top_stamps) VALUES (auth.uid(), v)
+  ON CONFLICT (user_id) DO UPDATE SET top_stamps = excluded.top_stamps;
+END
+$$;
 
 
 --
@@ -13151,6 +14584,30 @@ BEGIN
   IF nullif(trim(coalesce(p_backup,'')),'') IS NOT NULL AND trim(p_backup) !~* '^https://' THEN RAISE EXCEPTION 'Call links should start with https://'; END IF;
   UPDATE public.trips SET motto=nullif(trim(coalesce(p_motto,'')),''), call_link=nullif(trim(coalesce(p_call,'')),''), backup_call_link=nullif(trim(coalesce(p_backup,'')),'') WHERE id=p_trip;
 END $$;
+
+
+--
+-- Name: set_trip_hidden(uuid, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_trip_hidden(p_trip uuid, p_hidden boolean) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.passport_stamps s WHERE s.user_id = auth.uid() AND s.trip_id = p_trip)
+     AND NOT EXISTS (SELECT 1 FROM public.trip_members m WHERE m.user_id = auth.uid() AND m.trip_id = p_trip) THEN
+    RAISE EXCEPTION 'That isn''t one of your trips';
+  END IF;
+  INSERT INTO public.profile_prefs (user_id, hidden_trips)
+  VALUES (auth.uid(), CASE WHEN coalesce(p_hidden, true) THEN ARRAY[p_trip] ELSE '{}' END)
+  ON CONFLICT (user_id) DO UPDATE
+    SET hidden_trips = CASE WHEN coalesce(p_hidden, true)
+                            THEN array_append(array_remove(public.profile_prefs.hidden_trips, p_trip), p_trip)
+                            ELSE array_remove(public.profile_prefs.hidden_trips, p_trip) END;
+END
+$$;
 
 
 --
@@ -13707,6 +15164,59 @@ RETURN QUERY SELECT v_game,v_target,v_now; END $$;
 
 
 --
+-- Name: stamp_trip(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.stamp_trip(p_trip uuid) RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE
+  t public.trips;
+  m record;
+  v_place text;
+  v_country text;
+  v_home text;
+  v_kind text;
+  n int := 0;
+BEGIN
+  SELECT * INTO t FROM public.trips WHERE id = p_trip;
+  IF NOT FOUND OR t.rules_version <> 2 OR t.room = 'game_night' THEN RETURN 0; END IF;
+  IF NOT (trip_private.room_rules(t.room)->>'pointsEnabled')::boolean THEN RETURN 0; END IF;
+  v_place := nullif(btrim(split_part(t.destination, ',', array_length(string_to_array(t.destination, ','), 1))), '');
+  v_country := trip_private.norm_country(coalesce(nullif(btrim(t.passport_country), ''), v_place));
+  FOR m IN
+    SELECT tm.user_id, pp.home_country,
+           coalesce((SELECT array_agg(c.season ORDER BY c.season) FROM public.trip_crowns c
+                     WHERE c.trip_id = p_trip AND c.user_id = tm.user_id), '{}') AS crowns
+    FROM public.trip_members tm LEFT JOIN public.player_profiles pp ON pp.user_id = tm.user_id
+    WHERE tm.trip_id = p_trip AND tm.status = 'approved'
+  LOOP
+    v_home := trip_private.norm_country(m.home_country);
+    v_kind := CASE WHEN t.room IN ('explore_culture', 'show_culture') THEN 'postcard'
+                   WHEN v_home IS NOT NULL AND lower(v_home) = lower(v_country) THEN 'road_trip'
+                   ELSE 'international' END;
+    INSERT INTO public.passport_stamps (user_id, trip_id, kind, country, state, city, stamped_on, room, solo, crowns,
+                                       culture, season_label)
+    VALUES (m.user_id, p_trip, v_kind, coalesce(v_country, t.destination),
+            CASE WHEN v_kind <> 'postcard' THEN nullif(btrim(t.passport_state), '') END,
+            coalesce(nullif(btrim(t.passport_city), ''), nullif(btrim(split_part(t.destination, ',', 1)), '')),
+            t.end_date, t.room, t.play_mode = 'solo', m.crowns,
+            CASE WHEN v_kind = 'postcard' THEN coalesce(t.cultures[1], v_country) END,
+            trip_private.season_label(t.end_date))
+    ON CONFLICT (user_id, trip_id) DO UPDATE
+      SET kind = excluded.kind, country = excluded.country, state = excluded.state, city = excluded.city,
+          stamped_on = excluded.stamped_on, room = excluded.room, solo = excluded.solo, crowns = excluded.crowns,
+          culture = excluded.culture, season_label = excluded.season_label;
+    PERFORM trip_private.refresh_passport(m.user_id);
+    n := n + 1;
+  END LOOP;
+  RETURN n;
+END
+$$;
+
+
+--
 -- Name: standings(uuid, text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -13939,6 +15449,36 @@ END $$;
 
 
 --
+-- Name: swap_postcard_photo(uuid, uuid, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.swap_postcard_photo(p_trip uuid, p_out uuid, p_in uuid) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  PERFORM trip_private.require_wrapup(p_trip);
+  IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Captain or Co-Captain swaps a photo'; END IF;
+  PERFORM 1 FROM public.trips WHERE id = p_trip FOR UPDATE;
+  IF EXISTS (SELECT 1 FROM public.postcard_choices WHERE trip_id = p_trip AND swap_in IS NOT NULL) THEN
+    RAISE EXCEPTION 'The one swap is already used';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM trip_private.postcard_selection(p_trip) s WHERE s.proof_id = p_out) THEN
+    RAISE EXCEPTION 'Swap out a photo that is on the postcard';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM trip_private.postcard_rank(p_trip) r WHERE r.proof_id = p_in)
+     OR EXISTS (SELECT 1 FROM trip_private.postcard_selection(p_trip) s WHERE s.proof_id = p_in) THEN
+    RAISE EXCEPTION 'Swap in a pick that isn''t on the postcard';
+  END IF;
+  INSERT INTO public.postcard_choices (trip_id, swap_out, swap_in, swapped_by, swapped_at)
+  VALUES (p_trip, p_out, p_in, auth.uid(), now())
+  ON CONFLICT (trip_id) DO UPDATE SET swap_out = p_out, swap_in = p_in, swapped_by = auth.uid(), swapped_at = now(),
+                                      updated_at = now();
+END
+$$;
+
+
+--
 -- Name: sync_passport(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -13949,10 +15489,10 @@ CREATE FUNCTION trip_private.sync_passport(p_user uuid) RETURNS void
 DECLARE t record; home text; country text; state_name text; city_name text; k text; last_part text;
 BEGIN
  IF p_user IS NULL OR (p_user <> auth.uid() AND NOT EXISTS (SELECT 1 FROM public.trip_members a JOIN public.trip_members b ON b.trip_id=a.trip_id AND b.status='approved' WHERE a.user_id=auth.uid() AND a.status='approved' AND b.user_id=p_user)) THEN RAISE EXCEPTION 'Not allowed'; END IF;
- DELETE FROM public.passport_stamps s WHERE s.user_id=p_user AND NOT EXISTS (SELECT 1 FROM public.trip_members m JOIN public.trips xt ON xt.id=m.trip_id WHERE m.user_id=p_user AND m.status='approved' AND m.trip_id=s.trip_id AND xt.kind='trip' AND NOT xt.is_sandbox AND (xt.ended_at IS NOT NULL OR (now() AT TIME ZONE xt.home_timezone)::date > xt.end_date+2));
+ DELETE FROM public.passport_stamps s USING public.trips st WHERE st.id=s.trip_id AND st.rules_version=1 AND s.user_id=p_user AND NOT EXISTS (SELECT 1 FROM public.trip_members m JOIN public.trips xt ON xt.id=m.trip_id WHERE m.user_id=p_user AND m.status='approved' AND m.trip_id=s.trip_id AND xt.kind='trip' AND NOT xt.is_sandbox AND (xt.ended_at IS NOT NULL OR (now() AT TIME ZONE xt.home_timezone)::date > xt.end_date+2));
  SELECT nullif(btrim(home_country),'') INTO home FROM public.player_profiles WHERE user_id=p_user;
- IF home IS NULL THEN DELETE FROM public.passport_stamps WHERE user_id=p_user; RETURN; END IF;
- FOR t IN SELECT tr.* FROM public.trips tr JOIN public.trip_members m ON m.trip_id=tr.id WHERE m.user_id=p_user AND m.status='approved' AND tr.kind='trip' AND NOT tr.is_sandbox AND (tr.ended_at IS NOT NULL OR (now() AT TIME ZONE tr.home_timezone)::date > tr.end_date+2) LOOP
+ IF home IS NULL THEN DELETE FROM public.passport_stamps s USING public.trips st WHERE st.id=s.trip_id AND st.rules_version=1 AND s.user_id=p_user; RETURN; END IF;
+ FOR t IN SELECT tr.* FROM public.trips tr JOIN public.trip_members m ON m.trip_id=tr.id WHERE m.user_id=p_user AND m.status='approved' AND tr.rules_version=1 AND tr.kind='trip' AND NOT tr.is_sandbox AND (tr.ended_at IS NOT NULL OR (now() AT TIME ZONE tr.home_timezone)::date > tr.end_date+2) LOOP
    last_part := nullif(btrim(split_part(t.destination, ',', array_length(string_to_array(t.destination,','),1))), '');
    country := coalesce(nullif(btrim(t.passport_country),''),last_part);
    IF country IS NULL THEN CONTINUE; END IF;
@@ -14080,6 +15620,20 @@ CREATE FUNCTION trip_private.teen_block(p_what text) RETURNS void
 
 
 --
+-- Name: teen_invite_ok(text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.teen_invite_ok(p_token text) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT EXISTS (SELECT 1 FROM public.trip_invites i
+                 WHERE i.token = upper(btrim(coalesce(p_token, ''))) AND i.teen AND i.guardian_confirmed_at IS NOT NULL
+                   AND i.used_at IS NULL AND i.cancelled_at IS NULL AND i.expires_at > now())
+$$;
+
+
+--
 -- Name: thumb_quest(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -14145,6 +15699,16 @@ CREATE FUNCTION trip_private.traveler_level(p_user uuid) RETURNS TABLE(level tex
     AS $$ BEGIN
  RETURN QUERY SELECT r.tier, (SELECT count(*)::int FROM public.passport_stamps s WHERE s.user_id=p_user), (SELECT count(*)::int FROM public.passport_stamps s WHERE s.user_id=p_user AND s.kind='international') FROM trip_private.junkie_rank(p_user) r;
 END $$;
+
+
+--
+-- Name: trim_answer(text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.trim_answer(p text) RETURNS text
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO ''
+    AS $_$ SELECT regexp_replace(coalesce(p, ''), '^\s+|\s+$', '', 'g') $_$;
 
 
 --
@@ -14756,6 +16320,48 @@ RETURN QUERY SELECT q.week_number, CASE WHEN q.drops_at <= now() OR trip_private
 
 
 --
+-- Name: wrapup_board(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.wrapup_board(p_trip uuid) RETURNS TABLE(proof_id uuid, user_id uuid, photo_path text, mine boolean, hearted boolean, picked_at timestamp with time zone)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF NOT trip_private.is_trip_member(p_trip, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
+  RETURN QUERY
+    SELECT k.proof_id, k.user_id, p.photo_path, k.user_id = auth.uid(),
+           EXISTS (SELECT 1 FROM public.postcard_hearts h WHERE h.proof_id = k.proof_id AND h.voter_id = auth.uid()),
+           k.picked_at
+    FROM public.postcard_picks k JOIN public.proofs p ON p.id = k.proof_id
+    WHERE k.trip_id = p_trip AND p.photo_path IS NOT NULL AND p.photo_removed_at IS NULL AND p.crew_status <> 'expired'
+      AND trip_private.proof_photo_ok(p.id, auth.uid())
+    ORDER BY trip_private.schedule_hash(k.proof_id::text || auth.uid()::text);   -- a shuffled order per player
+END
+$$;
+
+
+--
+-- Name: wrapup_questions(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.wrapup_questions(p_trip uuid) RETURNS TABLE(idx integer, key text, question text, emoji boolean)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$
+  SELECT 0, 'never_forget', 'Moment you''ll never forget', false
+  UNION ALL
+  SELECT * FROM (
+    SELECT (row_number() OVER (ORDER BY trip_private.schedule_hash(p_trip::text || q.key)))::int, q.key, q.question, q.key = 'emojis'
+    FROM (VALUES ('emojis', 'Your trip in 3 emojis'), ('best_bite', 'Best bite'), ('song', 'Song of the trip'),
+                 ('learned', 'Something new you learned'), ('funniest', 'Funniest moment in 5 words'),
+                 ('again', 'One thing you''d do again tomorrow')) q(key, question)
+    ORDER BY 1 LIMIT 2) pool
+  ORDER BY 1
+$$;
+
+
+--
 -- Name: write_journal(uuid, text, integer); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -14804,6 +16410,36 @@ CREATE TABLE public.account_consents (
     founding_member boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: admin_actions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.admin_actions (
+    id bigint NOT NULL,
+    actor uuid NOT NULL,
+    action text NOT NULL,
+    target_user uuid,
+    note text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT admin_actions_action_check CHECK ((action = ANY (ARRAY['disable_user'::text, 'enable_user'::text]))),
+    CONSTRAINT admin_actions_note_check CHECK ((length(note) <= 500))
+);
+
+
+--
+-- Name: admin_actions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+ALTER TABLE public.admin_actions ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.admin_actions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
 );
 
 
@@ -16100,6 +17736,37 @@ CREATE TABLE public.mission_votes (
 
 
 --
+-- Name: moderation_log; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.moderation_log (
+    id bigint NOT NULL,
+    moderation_id uuid,
+    actor uuid,
+    action text NOT NULL,
+    note text,
+    subject_user uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT moderation_log_action_check CHECK ((action = ANY (ARRAY['ai_flag'::text, 'report'::text, 'approve'::text, 'remove'::text, 'warn'::text]))),
+    CONSTRAINT moderation_log_note_check CHECK ((length(note) <= 500))
+);
+
+
+--
+-- Name: moderation_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+ALTER TABLE public.moderation_log ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.moderation_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
 -- Name: notification_prefs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -16168,6 +17835,19 @@ CREATE TABLE public.orders (
 
 
 --
+-- Name: passport_progress; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.passport_progress (
+    user_id uuid NOT NULL,
+    countries integer DEFAULT 0 NOT NULL,
+    level text DEFAULT 'none'::text NOT NULL,
+    stars integer DEFAULT 0 NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: passport_stamps; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -16181,7 +17861,54 @@ CREATE TABLE public.passport_stamps (
     stamped_on date NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT passport_stamps_kind_check CHECK ((kind = ANY (ARRAY['international'::text, 'road_trip'::text])))
+    room text,
+    solo boolean DEFAULT false NOT NULL,
+    crowns text[] DEFAULT '{}'::text[] NOT NULL,
+    culture text,
+    season_label text,
+    CONSTRAINT passport_stamps_crowns_check CHECK ((crowns <@ ARRAY['preflight'::text, 'trip_season'::text])),
+    CONSTRAINT passport_stamps_culture_check CHECK ((length(culture) <= 80)),
+    CONSTRAINT passport_stamps_kind_check CHECK ((kind = ANY (ARRAY['international'::text, 'road_trip'::text, 'postcard'::text]))),
+    CONSTRAINT passport_stamps_season_label_check CHECK ((length(season_label) <= 20))
+);
+
+
+--
+-- Name: COLUMN passport_stamps.kind; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.passport_stamps.kind IS 'international = passport stamp (abroad), road_trip = state stamp (home country), postcard = at-home culture room (R-366)';
+
+
+--
+-- Name: photo_moderation; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.photo_moderation (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    proof_id uuid NOT NULL,
+    trip_id uuid NOT NULL,
+    uploader_id uuid NOT NULL,
+    ai_flags text[] DEFAULT '{}'::text[] NOT NULL,
+    reports integer DEFAULT 0 NOT NULL,
+    report_reasons text[] DEFAULT '{}'::text[] NOT NULL,
+    status text DEFAULT 'flagged'::text NOT NULL,
+    reviewed_by uuid,
+    reviewed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT photo_moderation_status_check CHECK ((status = ANY (ARRAY['flagged'::text, 'reported'::text, 'approved'::text, 'removed'::text])))
+);
+
+
+--
+-- Name: photo_moderation_reports; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.photo_moderation_reports (
+    moderation_id uuid NOT NULL,
+    reporter_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -16195,6 +17922,34 @@ CREATE TABLE public.photo_posts (
     user_id uuid NOT NULL,
     photo_path text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: photo_purge_log; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.photo_purge_log (
+    id bigint NOT NULL,
+    trip_id uuid NOT NULL,
+    removed integer NOT NULL,
+    kept integer NOT NULL,
+    remaining integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: photo_purge_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+ALTER TABLE public.photo_purge_log ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.photo_purge_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
 );
 
 
@@ -16355,6 +18110,45 @@ CREATE TABLE public.points_rules (
 
 
 --
+-- Name: postcard_choices; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.postcard_choices (
+    trip_id uuid NOT NULL,
+    favored uuid[] DEFAULT '{}'::uuid[] NOT NULL,
+    swap_out uuid,
+    swap_in uuid,
+    swapped_by uuid,
+    swapped_at timestamp with time zone,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: postcard_hearts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.postcard_hearts (
+    trip_id uuid NOT NULL,
+    proof_id uuid NOT NULL,
+    voter_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: postcard_picks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.postcard_picks (
+    trip_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    proof_id uuid NOT NULL,
+    picked_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: postcard_stickers; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -16388,6 +18182,23 @@ CREATE TABLE public.price_rules (
     sort integer DEFAULT 0 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT price_rules_cents_check CHECK ((cents >= 0))
+);
+
+
+--
+-- Name: profile_prefs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.profile_prefs (
+    user_id uuid NOT NULL,
+    is_public boolean DEFAULT false NOT NULL,
+    about_me text,
+    top_stamps uuid[] DEFAULT '{}'::uuid[] NOT NULL,
+    hidden_trips uuid[] DEFAULT '{}'::uuid[] NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT profile_prefs_about_me_check CHECK ((char_length(about_me) <= 160)),
+    CONSTRAINT profile_prefs_hidden_trips_check CHECK ((cardinality(hidden_trips) <= 500)),
+    CONSTRAINT profile_prefs_top_stamps_check CHECK ((cardinality(top_stamps) <= 3))
 );
 
 
@@ -16454,6 +18265,7 @@ CREATE TABLE public.proofs (
     approved_at timestamp with time zone,
     expires_at timestamp with time zone NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
+    photo_removed_at timestamp with time zone,
     CONSTRAINT proofs_ai_reason_check CHECK ((length(ai_reason) <= 300)),
     CONSTRAINT proofs_ai_status_check CHECK ((ai_status = ANY (ARRAY['not_needed'::text, 'pending'::text, 'pass'::text, 'unsure'::text, 'fail'::text, 'error'::text]))),
     CONSTRAINT proofs_body_check CHECK ((length(body) <= 500)),
@@ -17094,6 +18906,22 @@ CREATE TABLE public.trip_player_cards (
 
 
 --
+-- Name: trip_postcards; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.trip_postcards (
+    trip_id uuid NOT NULL,
+    locked_at timestamp with time zone DEFAULT now() NOT NULL,
+    photos jsonb DEFAULT '[]'::jsonb NOT NULL,
+    answers jsonb DEFAULT '[]'::jsonb NOT NULL,
+    crowns jsonb DEFAULT '[]'::jsonb NOT NULL,
+    excited jsonb DEFAULT '[]'::jsonb NOT NULL,
+    image_path text,
+    CONSTRAINT trip_postcards_image_path_check CHECK ((length(image_path) <= 300))
+);
+
+
+--
 -- Name: trip_role_changes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -17233,6 +19061,36 @@ CREATE TABLE public.trivia_answers (
 
 
 --
+-- Name: user_badges; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_badges (
+    user_id uuid NOT NULL,
+    badge text NOT NULL,
+    tier integer NOT NULL,
+    progress integer DEFAULT 0 NOT NULL,
+    earned_at timestamp with time zone DEFAULT now() NOT NULL,
+    seen_at timestamp with time zone,
+    CONSTRAINT user_badges_badge_check CHECK ((badge = ANY (ARRAY['us_explorer'::text, 'culture_collector'::text, 'storyteller'::text]))),
+    CONSTRAINT user_badges_tier_check CHECK (((tier >= 1) AND (tier <= 3)))
+);
+
+
+--
+-- Name: user_blocks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_blocks (
+    user_id uuid NOT NULL,
+    disabled boolean NOT NULL,
+    note text,
+    changed_by uuid NOT NULL,
+    changed_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT user_blocks_note_check CHECK ((length(note) <= 500))
+);
+
+
+--
 -- Name: user_credits; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -17362,6 +19220,21 @@ CREATE TABLE public.window_guide_items (
     CONSTRAINT window_guide_items_body_check CHECK (((length(body) >= 1) AND (length(body) <= 600))),
     CONSTRAINT window_guide_items_kind_check CHECK ((kind = ANY (ARRAY['photo'::text, 'review'::text, 'tip'::text]))),
     CONSTRAINT window_guide_items_status_check CHECK ((status = ANY (ARRAY['proposed'::text, 'approved'::text, 'removed'::text])))
+);
+
+
+--
+-- Name: wrapup_answers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.wrapup_answers (
+    trip_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    question_key text NOT NULL,
+    answer text NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT wrapup_answers_answer_check CHECK (((char_length(answer) >= 1) AND (char_length(answer) <= 60))),
+    CONSTRAINT wrapup_answers_question_key_check CHECK ((question_key = ANY (ARRAY['never_forget'::text, 'emojis'::text, 'best_bite'::text, 'song'::text, 'learned'::text, 'funniest'::text, 'again'::text])))
 );
 
 
@@ -17687,6 +19560,14 @@ ALTER TABLE ONLY trip_private.preview_log ALTER COLUMN id SET DEFAULT nextval('t
 
 ALTER TABLE ONLY public.account_consents
     ADD CONSTRAINT account_consents_pkey PRIMARY KEY (user_id);
+
+
+--
+-- Name: admin_actions admin_actions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.admin_actions
+    ADD CONSTRAINT admin_actions_pkey PRIMARY KEY (id);
 
 
 --
@@ -18386,6 +20267,14 @@ ALTER TABLE ONLY public.mission_votes
 
 
 --
+-- Name: moderation_log moderation_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.moderation_log
+    ADD CONSTRAINT moderation_log_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: notification_prefs notification_prefs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18418,6 +20307,14 @@ ALTER TABLE ONLY public.orders
 
 
 --
+-- Name: passport_progress passport_progress_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.passport_progress
+    ADD CONSTRAINT passport_progress_pkey PRIMARY KEY (user_id);
+
+
+--
 -- Name: passport_stamps passport_stamps_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18426,11 +20323,43 @@ ALTER TABLE ONLY public.passport_stamps
 
 
 --
+-- Name: photo_moderation photo_moderation_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_moderation
+    ADD CONSTRAINT photo_moderation_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: photo_moderation photo_moderation_proof_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_moderation
+    ADD CONSTRAINT photo_moderation_proof_id_key UNIQUE (proof_id);
+
+
+--
+-- Name: photo_moderation_reports photo_moderation_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_moderation_reports
+    ADD CONSTRAINT photo_moderation_reports_pkey PRIMARY KEY (moderation_id, reporter_id);
+
+
+--
 -- Name: photo_posts photo_posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.photo_posts
     ADD CONSTRAINT photo_posts_pkey PRIMARY KEY (trip_id, day_date, user_id);
+
+
+--
+-- Name: photo_purge_log photo_purge_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_purge_log
+    ADD CONSTRAINT photo_purge_log_pkey PRIMARY KEY (id);
 
 
 --
@@ -18514,6 +20443,38 @@ ALTER TABLE ONLY public.points_rules
 
 
 --
+-- Name: postcard_choices postcard_choices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postcard_choices
+    ADD CONSTRAINT postcard_choices_pkey PRIMARY KEY (trip_id);
+
+
+--
+-- Name: postcard_hearts postcard_hearts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postcard_hearts
+    ADD CONSTRAINT postcard_hearts_pkey PRIMARY KEY (proof_id, voter_id);
+
+
+--
+-- Name: postcard_picks postcard_picks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postcard_picks
+    ADD CONSTRAINT postcard_picks_pkey PRIMARY KEY (trip_id, user_id, proof_id);
+
+
+--
+-- Name: postcard_picks postcard_picks_proof_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postcard_picks
+    ADD CONSTRAINT postcard_picks_proof_id_key UNIQUE (proof_id);
+
+
+--
 -- Name: postcard_stickers postcard_stickers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18535,6 +20496,14 @@ ALTER TABLE ONLY public.preview_hidden
 
 ALTER TABLE ONLY public.price_rules
     ADD CONSTRAINT price_rules_pkey PRIMARY KEY (key);
+
+
+--
+-- Name: profile_prefs profile_prefs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_prefs
+    ADD CONSTRAINT profile_prefs_pkey PRIMARY KEY (user_id);
 
 
 --
@@ -18946,6 +20915,14 @@ ALTER TABLE ONLY public.trip_player_cards
 
 
 --
+-- Name: trip_postcards trip_postcards_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trip_postcards
+    ADD CONSTRAINT trip_postcards_pkey PRIMARY KEY (trip_id);
+
+
+--
 -- Name: trip_role_changes trip_role_changes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -19050,6 +21027,22 @@ ALTER TABLE ONLY public.trivia_answers
 
 
 --
+-- Name: user_badges user_badges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_badges
+    ADD CONSTRAINT user_badges_pkey PRIMARY KEY (user_id, badge);
+
+
+--
+-- Name: user_blocks user_blocks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_blocks
+    ADD CONSTRAINT user_blocks_pkey PRIMARY KEY (user_id);
+
+
+--
 -- Name: user_credits user_credits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -19119,6 +21112,14 @@ ALTER TABLE ONLY public.weekly_questions
 
 ALTER TABLE ONLY public.window_guide_items
     ADD CONSTRAINT window_guide_items_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: wrapup_answers wrapup_answers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wrapup_answers
+    ADD CONSTRAINT wrapup_answers_pkey PRIMARY KEY (trip_id, user_id, question_key);
 
 
 --
@@ -19388,6 +21389,13 @@ CREATE UNIQUE INDEX one_co_captain_per_trip ON public.trip_members USING btree (
 
 
 --
+-- Name: photo_moderation_open_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX photo_moderation_open_idx ON public.photo_moderation USING btree (created_at) WHERE (status = ANY (ARRAY['flagged'::text, 'reported'::text]));
+
+
+--
 -- Name: player_profiles_game_name_norm_uq; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -19399,6 +21407,13 @@ CREATE UNIQUE INDEX player_profiles_game_name_norm_uq ON public.player_profiles 
 --
 
 CREATE INDEX points_ledger_standings_idx ON public.points_ledger USING btree (trip_id, season, user_id) WHERE (status = 'approved'::text);
+
+
+--
+-- Name: postcard_hearts_trip_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX postcard_hearts_trip_idx ON public.postcard_hearts USING btree (trip_id);
 
 
 --
@@ -20221,10 +22236,24 @@ CREATE TRIGGER passport_stamps_archive_guard BEFORE INSERT OR UPDATE ON public.p
 
 
 --
+-- Name: photo_moderation photo_moderation_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER photo_moderation_archive_guard BEFORE INSERT OR UPDATE ON public.photo_moderation FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: photo_posts photo_posts_archive_guard; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER photo_posts_archive_guard BEFORE INSERT OR UPDATE ON public.photo_posts FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: photo_purge_log photo_purge_log_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER photo_purge_log_archive_guard BEFORE INSERT OR UPDATE ON public.photo_purge_log FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -20256,6 +22285,27 @@ CREATE TRIGGER points_ledger_archive_guard BEFORE INSERT OR UPDATE ON public.poi
 
 
 --
+-- Name: postcard_choices postcard_choices_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER postcard_choices_archive_guard BEFORE INSERT OR UPDATE ON public.postcard_choices FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: postcard_hearts postcard_hearts_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER postcard_hearts_archive_guard BEFORE INSERT OR UPDATE ON public.postcard_hearts FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: postcard_picks postcard_picks_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER postcard_picks_archive_guard BEFORE INSERT OR UPDATE ON public.postcard_picks FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: postcard_stickers postcard_stickers_archive_guard; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -20267,6 +22317,13 @@ CREATE TRIGGER postcard_stickers_archive_guard BEFORE INSERT OR UPDATE ON public
 --
 
 CREATE TRIGGER price_rules_updated BEFORE UPDATE ON public.price_rules FOR EACH ROW EXECUTE FUNCTION public.set_trip_updated_at();
+
+
+--
+-- Name: profile_prefs profile_prefs_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER profile_prefs_guard BEFORE INSERT OR UPDATE ON public.profile_prefs FOR EACH ROW EXECUTE FUNCTION trip_private.profile_prefs_guard();
 
 
 --
@@ -20788,6 +22845,13 @@ CREATE TRIGGER trip_player_cards_archive_guard BEFORE INSERT OR UPDATE ON public
 
 
 --
+-- Name: trip_postcards trip_postcards_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trip_postcards_archive_guard BEFORE INSERT OR UPDATE ON public.trip_postcards FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
 -- Name: trip_schedule trip_schedule_archive_guard; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -20932,6 +22996,13 @@ CREATE TRIGGER window_guide_items_archive_guard BEFORE INSERT OR UPDATE ON publi
 --
 
 CREATE TRIGGER window_guide_items_updated BEFORE UPDATE ON public.window_guide_items FOR EACH ROW EXECUTE FUNCTION trip_private.touch_guide_item();
+
+
+--
+-- Name: wrapup_answers wrapup_answers_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER wrapup_answers_archive_guard BEFORE INSERT OR UPDATE ON public.wrapup_answers FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -21607,6 +23678,14 @@ ALTER TABLE ONLY public.mission_votes
 
 
 --
+-- Name: moderation_log moderation_log_moderation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.moderation_log
+    ADD CONSTRAINT moderation_log_moderation_id_fkey FOREIGN KEY (moderation_id) REFERENCES public.photo_moderation(id) ON DELETE SET NULL;
+
+
+--
 -- Name: notification_prefs notification_prefs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -21639,6 +23718,14 @@ ALTER TABLE ONLY public.orders
 
 
 --
+-- Name: passport_progress passport_progress_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.passport_progress
+    ADD CONSTRAINT passport_progress_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: passport_stamps passport_stamps_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -21647,11 +23734,43 @@ ALTER TABLE ONLY public.passport_stamps
 
 
 --
+-- Name: photo_moderation photo_moderation_proof_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_moderation
+    ADD CONSTRAINT photo_moderation_proof_id_fkey FOREIGN KEY (proof_id) REFERENCES public.proofs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: photo_moderation_reports photo_moderation_reports_moderation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_moderation_reports
+    ADD CONSTRAINT photo_moderation_reports_moderation_id_fkey FOREIGN KEY (moderation_id) REFERENCES public.photo_moderation(id) ON DELETE CASCADE;
+
+
+--
+-- Name: photo_moderation photo_moderation_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_moderation
+    ADD CONSTRAINT photo_moderation_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
 -- Name: photo_posts photo_posts_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.photo_posts
     ADD CONSTRAINT photo_posts_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
+-- Name: photo_purge_log photo_purge_log_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_purge_log
+    ADD CONSTRAINT photo_purge_log_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
 
 
 --
@@ -21703,6 +23822,46 @@ ALTER TABLE ONLY public.points_ledger
 
 
 --
+-- Name: postcard_choices postcard_choices_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postcard_choices
+    ADD CONSTRAINT postcard_choices_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
+-- Name: postcard_hearts postcard_hearts_proof_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postcard_hearts
+    ADD CONSTRAINT postcard_hearts_proof_id_fkey FOREIGN KEY (proof_id) REFERENCES public.proofs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: postcard_hearts postcard_hearts_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postcard_hearts
+    ADD CONSTRAINT postcard_hearts_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
+-- Name: postcard_picks postcard_picks_proof_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postcard_picks
+    ADD CONSTRAINT postcard_picks_proof_id_fkey FOREIGN KEY (proof_id) REFERENCES public.proofs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: postcard_picks postcard_picks_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postcard_picks
+    ADD CONSTRAINT postcard_picks_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
 -- Name: postcard_stickers postcard_stickers_pack_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -21724,6 +23883,14 @@ ALTER TABLE ONLY public.postcard_stickers
 
 ALTER TABLE ONLY public.preview_hidden
     ADD CONSTRAINT preview_hidden_preview_id_fkey FOREIGN KEY (preview_id) REFERENCES public.experience_previews(id) ON DELETE CASCADE;
+
+
+--
+-- Name: profile_prefs profile_prefs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_prefs
+    ADD CONSTRAINT profile_prefs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -22087,6 +24254,14 @@ ALTER TABLE ONLY public.trip_player_cards
 
 
 --
+-- Name: trip_postcards trip_postcards_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trip_postcards
+    ADD CONSTRAINT trip_postcards_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
 -- Name: trip_role_changes trip_role_changes_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -22183,6 +24358,22 @@ ALTER TABLE ONLY public.trivia_answers
 
 
 --
+-- Name: user_badges user_badges_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_badges
+    ADD CONSTRAINT user_badges_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_blocks user_blocks_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_blocks
+    ADD CONSTRAINT user_blocks_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_credits user_credits_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -22228,6 +24419,14 @@ ALTER TABLE ONLY public.weekly_questions
 
 ALTER TABLE ONLY public.window_guide_items
     ADD CONSTRAINT window_guide_items_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
+-- Name: wrapup_answers wrapup_answers_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wrapup_answers
+    ADD CONSTRAINT wrapup_answers_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
 
 
 --
@@ -23274,6 +25473,12 @@ CREATE POLICY account_consents_own_read ON public.account_consents FOR SELECT TO
 
 
 --
+-- Name: admin_actions; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.admin_actions ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: age_guesses; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -23842,6 +26047,13 @@ CREATE POLICY "members read the guide state" ON public.trip_guides FOR SELECT TO
 
 
 --
+-- Name: trip_postcards members read the postcard; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "members read the postcard" ON public.trip_postcards FOR SELECT TO authenticated USING (trip_private.is_trip_member(trip_id, auth.uid()));
+
+
+--
 -- Name: trip_schedule members read the schedule; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -23859,6 +26071,12 @@ ALTER TABLE public.mission_claims ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.mission_votes ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: moderation_log; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.moderation_log ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: notification_prefs; Type: ROW SECURITY; Schema: public; Owner: -
@@ -23893,16 +26111,40 @@ CREATE POLICY "own likes" ON public.culture_exp_likes FOR SELECT TO authenticate
 
 
 --
+-- Name: passport_progress; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.passport_progress ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: passport_stamps; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
 ALTER TABLE public.passport_stamps ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: photo_moderation; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.photo_moderation ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: photo_moderation_reports; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.photo_moderation_reports ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: photo_posts; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
 ALTER TABLE public.photo_posts ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: photo_purge_log; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.photo_purge_log ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: photo_reactions; Type: ROW SECURITY; Schema: public; Owner: -
@@ -23948,6 +26190,20 @@ CREATE POLICY "players read their own answers" ON public.daily_answers FOR SELEC
 
 
 --
+-- Name: wrapup_answers players read their own answers; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own answers" ON public.wrapup_answers FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: user_badges players read their own badges; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own badges" ON public.user_badges FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
 -- Name: trip_drafts players read their own draft; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -23962,10 +26218,24 @@ CREATE POLICY "players read their own guide choices" ON public.guide_prefs FOR S
 
 
 --
+-- Name: postcard_hearts players read their own hearts; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own hearts" ON public.postcard_hearts FOR SELECT TO authenticated USING ((voter_id = auth.uid()));
+
+
+--
 -- Name: journal_entries players read their own journal; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "players read their own journal" ON public.journal_entries FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: passport_progress players read their own level; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own level" ON public.passport_progress FOR SELECT TO authenticated USING ((user_id = auth.uid()));
 
 
 --
@@ -23976,10 +26246,24 @@ CREATE POLICY "players read their own notification settings" ON public.notificat
 
 
 --
+-- Name: postcard_picks players read their own picks; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own picks" ON public.postcard_picks FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
 -- Name: points_ledger players read their own points; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "players read their own points" ON public.points_ledger FOR SELECT TO authenticated USING (((user_id = auth.uid()) AND trip_private.is_trip_member(trip_id, auth.uid())));
+
+
+--
+-- Name: profile_prefs players read their own profile settings; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own profile settings" ON public.profile_prefs FOR SELECT TO authenticated USING ((user_id = auth.uid()));
 
 
 --
@@ -24009,6 +26293,24 @@ ALTER TABLE public.points_ledger ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.points_rules ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: postcard_choices; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.postcard_choices ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: postcard_hearts; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.postcard_hearts ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: postcard_picks; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.postcard_picks ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: postcard_stickers; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -24034,6 +26336,12 @@ CREATE POLICY "private days" ON public.culture_exp_days FOR SELECT TO authentica
    FROM public.culture_experiences e
   WHERE ((e.id = culture_exp_days.experience_id) AND (((e.a2e_kind IS NULL) AND ((e.creator_id = auth.uid()) OR trip_private.is_app_admin() OR ((e.trip_id IS NOT NULL) AND trip_private.is_trip_member(e.trip_id, auth.uid())))) OR ((e.a2e_kind IS NOT NULL) AND trip_private.a2e_culture_access(e.id)))))));
 
+
+--
+-- Name: profile_prefs; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.profile_prefs ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: profiles; Type: ROW SECURITY; Schema: public; Owner: -
@@ -24359,6 +26667,12 @@ ALTER TABLE public.trip_play_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.trip_player_cards ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: trip_postcards; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.trip_postcards ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: trip_role_changes; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -24413,6 +26727,18 @@ ALTER TABLE public.trips ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.trivia_answers ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: user_badges; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.user_badges ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: user_blocks; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.user_blocks ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: user_credits; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -24460,6 +26786,12 @@ ALTER TABLE public.weekly_questions ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.window_guide_items ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: wrapup_answers; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.wrapup_answers ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: trip_join_grants No direct access to join grants; Type: POLICY; Schema: trip_private; Owner: -
@@ -24532,6 +26864,24 @@ GRANT ALL ON FUNCTION public.add_checkin_tasks(p_trip uuid, p_tasks jsonb) TO se
 
 REVOKE ALL ON FUNCTION public.add_trip_missions(p_trip uuid, p_texts text[]) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.add_trip_missions(p_trip uuid, p_texts text[]) TO service_role;
+
+
+--
+-- Name: FUNCTION admin_find_trips(p_query text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.admin_find_trips(p_query text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.admin_find_trips(p_query text) TO service_role;
+GRANT ALL ON FUNCTION public.admin_find_trips(p_query text) TO authenticated;
+
+
+--
+-- Name: FUNCTION admin_find_users(p_query text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.admin_find_users(p_query text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.admin_find_users(p_query text) TO service_role;
+GRANT ALL ON FUNCTION public.admin_find_users(p_query text) TO authenticated;
 
 
 --
@@ -24626,6 +26976,15 @@ GRANT ALL ON FUNCTION public.answer_trivia(p_trip uuid, p_date date, p_question 
 
 REVOKE ALL ON FUNCTION public.answer_weekly_question(p_trip uuid, p_week integer, p_answer text, p_emoji text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.answer_weekly_question(p_trip uuid, p_week integer, p_answer text, p_emoji text) TO service_role;
+
+
+--
+-- Name: FUNCTION answer_wrapup(p_trip uuid, p_key text, p_answer text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.answer_wrapup(p_trip uuid, p_key text, p_answer text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.answer_wrapup(p_trip uuid, p_key text, p_answer text) TO service_role;
+GRANT ALL ON FUNCTION public.answer_wrapup(p_trip uuid, p_key text, p_answer text) TO authenticated;
 
 
 --
@@ -24768,6 +27127,15 @@ GRANT ALL ON FUNCTION public.at_home_vote(p_activity uuid, p_idx integer) TO ser
 REVOKE ALL ON FUNCTION public.boarding_tile() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.boarding_tile() TO authenticated;
 GRANT ALL ON FUNCTION public.boarding_tile() TO service_role;
+
+
+--
+-- Name: FUNCTION break_postcard_tie(p_trip uuid, p_proof uuid, p_on boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.break_postcard_tie(p_trip uuid, p_proof uuid, p_on boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.break_postcard_tie(p_trip uuid, p_proof uuid, p_on boolean) TO service_role;
+GRANT ALL ON FUNCTION public.break_postcard_tie(p_trip uuid, p_proof uuid, p_on boolean) TO authenticated;
 
 
 --
@@ -24966,7 +27334,6 @@ GRANT ALL ON FUNCTION public.create_teen_invite(p_trip uuid, p_guardian boolean)
 --
 
 REVOKE ALL ON FUNCTION public.create_trip(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.create_trip(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text) TO anon;
 GRANT ALL ON FUNCTION public.create_trip(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text) TO authenticated;
 GRANT ALL ON FUNCTION public.create_trip(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text) TO service_role;
 
@@ -25091,7 +27458,6 @@ GRANT ALL ON FUNCTION public.culture_creator_badge(p_user uuid) TO service_role;
 -- Name: TABLE culture_exp_days; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_exp_days TO anon;
 GRANT ALL ON TABLE public.culture_exp_days TO authenticated;
 GRANT ALL ON TABLE public.culture_exp_days TO service_role;
 
@@ -25251,7 +27617,6 @@ GRANT ALL ON FUNCTION public.draw_game_card(p_trip uuid, p_category text) TO ser
 --
 
 REVOKE ALL ON FUNCTION public.edit_trip(p_trip uuid, p_name text, p_destination text, p_start_date date, p_end_date date) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.edit_trip(p_trip uuid, p_name text, p_destination text, p_start_date date, p_end_date date) TO anon;
 GRANT ALL ON FUNCTION public.edit_trip(p_trip uuid, p_name text, p_destination text, p_start_date date, p_end_date date) TO authenticated;
 GRANT ALL ON FUNCTION public.edit_trip(p_trip uuid, p_name text, p_destination text, p_start_date date, p_end_date date) TO service_role;
 
@@ -25296,6 +27661,14 @@ GRANT ALL ON FUNCTION public.finalize_season(p_trip uuid, p_season text) TO serv
 
 REVOKE ALL ON FUNCTION public.finish_notifications(p_results jsonb) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.finish_notifications(p_results jsonb) TO service_role;
+
+
+--
+-- Name: FUNCTION finish_photo_purge(p_trip uuid, p_removed integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.finish_photo_purge(p_trip uuid, p_removed integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.finish_photo_purge(p_trip uuid, p_removed integer) TO service_role;
 
 
 --
@@ -25398,7 +27771,7 @@ GRANT ALL ON FUNCTION public.game_day_status(p_trip uuid, p_date date) TO servic
 -- Name: FUNCTION game_format_prompts_updated_at(); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.game_format_prompts_updated_at() TO anon;
+REVOKE ALL ON FUNCTION public.game_format_prompts_updated_at() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.game_format_prompts_updated_at() TO authenticated;
 GRANT ALL ON FUNCTION public.game_format_prompts_updated_at() TO service_role;
 
@@ -25462,6 +27835,15 @@ GRANT ALL ON FUNCTION public.guide_publish(p_trip uuid, p_on boolean) TO service
 REVOKE ALL ON FUNCTION public.guide_review(p_item uuid, p_action text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.guide_review(p_item uuid, p_action text) TO authenticated;
 GRANT ALL ON FUNCTION public.guide_review(p_item uuid, p_action text) TO service_role;
+
+
+--
+-- Name: FUNCTION heart_photo(p_trip uuid, p_proof uuid, p_on boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.heart_photo(p_trip uuid, p_proof uuid, p_on boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.heart_photo(p_trip uuid, p_proof uuid, p_on boolean) TO service_role;
+GRANT ALL ON FUNCTION public.heart_photo(p_trip uuid, p_proof uuid, p_on boolean) TO authenticated;
 
 
 --
@@ -25532,7 +27914,6 @@ GRANT ALL ON FUNCTION public.is_app_admin() TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.is_trip_member(p_trip uuid, p_user uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.is_trip_member(p_trip uuid, p_user uuid) TO anon;
 GRANT ALL ON FUNCTION public.is_trip_member(p_trip uuid, p_user uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.is_trip_member(p_trip uuid, p_user uuid) TO service_role;
 
@@ -25618,12 +27999,39 @@ GRANT ALL ON FUNCTION public.lab_delete(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION lab_engine_create(p_room text, p_mode text, p_size integer, p_days integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.lab_engine_create(p_room text, p_mode text, p_size integer, p_days integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.lab_engine_create(p_room text, p_mode text, p_size integer, p_days integer) TO service_role;
+GRANT ALL ON FUNCTION public.lab_engine_create(p_room text, p_mode text, p_size integer, p_days integer) TO authenticated;
+
+
+--
+-- Name: FUNCTION lab_engine_play(p_trip uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.lab_engine_play(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.lab_engine_play(p_trip uuid) TO service_role;
+GRANT ALL ON FUNCTION public.lab_engine_play(p_trip uuid) TO authenticated;
+
+
+--
 -- Name: FUNCTION lab_extra(p_trip uuid, p_action text, p_arg text); Type: ACL; Schema: public; Owner: -
 --
 
 REVOKE ALL ON FUNCTION public.lab_extra(p_trip uuid, p_action text, p_arg text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.lab_extra(p_trip uuid, p_action text, p_arg text) TO authenticated;
 GRANT ALL ON FUNCTION public.lab_extra(p_trip uuid, p_action text, p_arg text) TO service_role;
+
+
+--
+-- Name: FUNCTION lab_jump(p_trip uuid, p_phase text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.lab_jump(p_trip uuid, p_phase text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.lab_jump(p_trip uuid, p_phase text) TO service_role;
+GRANT ALL ON FUNCTION public.lab_jump(p_trip uuid, p_phase text) TO authenticated;
 
 
 --
@@ -25667,7 +28075,6 @@ GRANT ALL ON FUNCTION public.lab_view(p_trip uuid, p_view text) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.leave_trip(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.leave_trip(p_trip uuid) TO anon;
 GRANT ALL ON FUNCTION public.leave_trip(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.leave_trip(p_trip uuid) TO service_role;
 
@@ -25731,7 +28138,6 @@ GRANT ALL ON FUNCTION public.log_ai_call(p_usage uuid, p_model text, p_in intege
 --
 
 REVOKE ALL ON FUNCTION public.manage_trip_member(p_trip uuid, p_user uuid, p_action text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.manage_trip_member(p_trip uuid, p_user uuid, p_action text) TO anon;
 GRANT ALL ON FUNCTION public.manage_trip_member(p_trip uuid, p_user uuid, p_action text) TO authenticated;
 GRANT ALL ON FUNCTION public.manage_trip_member(p_trip uuid, p_user uuid, p_action text) TO service_role;
 
@@ -25743,6 +28149,15 @@ GRANT ALL ON FUNCTION public.manage_trip_member(p_trip uuid, p_user uuid, p_acti
 REVOKE ALL ON FUNCTION public.mark_arrived(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.mark_arrived(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.mark_arrived(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION mark_badges_seen(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.mark_badges_seen() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.mark_badges_seen() TO service_role;
+GRANT ALL ON FUNCTION public.mark_badges_seen() TO authenticated;
 
 
 --
@@ -25815,6 +28230,24 @@ GRANT ALL ON FUNCTION public.moderate_inspiration(p_card uuid, p_action text) TO
 
 
 --
+-- Name: FUNCTION moderate_photo(p_id uuid, p_action text, p_note text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.moderate_photo(p_id uuid, p_action text, p_note text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.moderate_photo(p_id uuid, p_action text, p_note text) TO service_role;
+GRANT ALL ON FUNCTION public.moderate_photo(p_id uuid, p_action text, p_note text) TO authenticated;
+
+
+--
+-- Name: FUNCTION moderation_queue(p_include_closed boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.moderation_queue(p_include_closed boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.moderation_queue(p_include_closed boolean) TO service_role;
+GRANT ALL ON FUNCTION public.moderation_queue(p_include_closed boolean) TO authenticated;
+
+
+--
 -- Name: FUNCTION my_access(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -25878,6 +28311,15 @@ GRANT ALL ON FUNCTION public.my_passport() TO service_role;
 
 
 --
+-- Name: FUNCTION my_passport_progress(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.my_passport_progress() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.my_passport_progress() TO service_role;
+GRANT ALL ON FUNCTION public.my_passport_progress() TO authenticated;
+
+
+--
 -- Name: FUNCTION my_past_trips(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -25902,6 +28344,15 @@ GRANT ALL ON FUNCTION public.my_preview_shared(p_trip uuid, p_exp uuid) TO servi
 REVOKE ALL ON FUNCTION public.my_schedule(p_trip uuid, p_at timestamp with time zone) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.my_schedule(p_trip uuid, p_at timestamp with time zone) TO authenticated;
 GRANT ALL ON FUNCTION public.my_schedule(p_trip uuid, p_at timestamp with time zone) TO service_role;
+
+
+--
+-- Name: FUNCTION my_stamps(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.my_stamps() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.my_stamps() TO service_role;
+GRANT ALL ON FUNCTION public.my_stamps() TO authenticated;
 
 
 --
@@ -25936,7 +28387,6 @@ GRANT ALL ON FUNCTION public.my_waiting_trips() TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.new_trip_code() FROM PUBLIC;
-GRANT ALL ON FUNCTION public.new_trip_code() TO anon;
 GRANT ALL ON FUNCTION public.new_trip_code() TO authenticated;
 GRANT ALL ON FUNCTION public.new_trip_code() TO service_role;
 
@@ -25985,7 +28435,7 @@ GRANT ALL ON FUNCTION public.night_format_action(p_trip uuid, p_week integer, p_
 -- Name: FUNCTION normalize_game_name(p text); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.normalize_game_name(p text) TO anon;
+REVOKE ALL ON FUNCTION public.normalize_game_name(p text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.normalize_game_name(p text) TO authenticated;
 GRANT ALL ON FUNCTION public.normalize_game_name(p text) TO service_role;
 
@@ -26045,6 +28495,14 @@ GRANT ALL ON FUNCTION public.pending_members(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION photos_to_purge(p_limit integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.photos_to_purge(p_limit integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.photos_to_purge(p_limit integer) TO service_role;
+
+
+--
 -- Name: FUNCTION pick_at_home_song(p_activity uuid, p_user uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -26060,6 +28518,15 @@ GRANT ALL ON FUNCTION public.pick_at_home_song(p_activity uuid, p_user uuid) TO 
 REVOKE ALL ON FUNCTION public.pick_night_game(p_trip uuid, p_week integer, p_game integer) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.pick_night_game(p_trip uuid, p_week integer, p_game integer) TO authenticated;
 GRANT ALL ON FUNCTION public.pick_night_game(p_trip uuid, p_week integer, p_game integer) TO service_role;
+
+
+--
+-- Name: FUNCTION pick_postcard(p_trip uuid, p_proof uuid, p_pick boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.pick_postcard(p_trip uuid, p_proof uuid, p_pick boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.pick_postcard(p_trip uuid, p_proof uuid, p_pick boolean) TO service_role;
+GRANT ALL ON FUNCTION public.pick_postcard(p_trip uuid, p_proof uuid, p_pick boolean) TO authenticated;
 
 
 --
@@ -26086,6 +28553,15 @@ GRANT ALL ON FUNCTION public.plan_game_nights(p_trip uuid, p_plan text, p_weekda
 REVOKE ALL ON FUNCTION public.player_card_read(p_trip uuid, p_user uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.player_card_read(p_trip uuid, p_user uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.player_card_read(p_trip uuid, p_user uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION player_profile(p_user uuid, p_trip uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.player_profile(p_user uuid, p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.player_profile(p_user uuid, p_trip uuid) TO service_role;
+GRANT ALL ON FUNCTION public.player_profile(p_user uuid, p_trip uuid) TO authenticated;
 
 
 --
@@ -26119,6 +28595,24 @@ GRANT ALL ON FUNCTION public.post_photo(p_trip uuid, p_date date, p_photo text) 
 
 REVOKE ALL ON FUNCTION public.post_quest(p_trip uuid, p_date date, p_quest integer, p_photo text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.post_quest(p_trip uuid, p_date date, p_quest integer, p_photo text) TO service_role;
+
+
+--
+-- Name: FUNCTION postcard_info(p_trip uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.postcard_info(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.postcard_info(p_trip uuid) TO service_role;
+GRANT ALL ON FUNCTION public.postcard_info(p_trip uuid) TO authenticated;
+
+
+--
+-- Name: FUNCTION postcard_ranking(p_trip uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.postcard_ranking(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.postcard_ranking(p_trip uuid) TO service_role;
+GRANT ALL ON FUNCTION public.postcard_ranking(p_trip uuid) TO authenticated;
 
 
 --
@@ -26161,9 +28655,17 @@ GRANT ALL ON FUNCTION public.preview_ten_day_drops(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.price_list() FROM PUBLIC;
-GRANT ALL ON FUNCTION public.price_list() TO anon;
 GRANT ALL ON FUNCTION public.price_list() TO authenticated;
 GRANT ALL ON FUNCTION public.price_list() TO service_role;
+GRANT ALL ON FUNCTION public.price_list() TO anon;
+
+
+--
+-- Name: FUNCTION proof_challenge(p_proof uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.proof_challenge(p_proof uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.proof_challenge(p_proof uuid) TO service_role;
 
 
 --
@@ -26187,9 +28689,10 @@ GRANT ALL ON FUNCTION public.public_inspiration_queue() TO service_role;
 -- Name: FUNCTION public_launch(); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.public_launch() TO anon;
+REVOKE ALL ON FUNCTION public.public_launch() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.public_launch() TO authenticated;
 GRANT ALL ON FUNCTION public.public_launch() TO service_role;
+GRANT ALL ON FUNCTION public.public_launch() TO anon;
 
 
 --
@@ -26221,7 +28724,7 @@ GRANT ALL ON FUNCTION public.qotw_answers(p_trip uuid, p_week integer) TO servic
 -- Name: FUNCTION quest_challenge_update_time(); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.quest_challenge_update_time() TO anon;
+REVOKE ALL ON FUNCTION public.quest_challenge_update_time() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.quest_challenge_update_time() TO authenticated;
 GRANT ALL ON FUNCTION public.quest_challenge_update_time() TO service_role;
 
@@ -26278,11 +28781,27 @@ GRANT ALL ON FUNCTION public.reclaim_captain(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION record_photo_safety(p_proof uuid, p_flags text[]); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.record_photo_safety(p_proof uuid, p_flags text[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.record_photo_safety(p_proof uuid, p_flags text[]) TO service_role;
+
+
+--
 -- Name: FUNCTION record_proof_check(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb); Type: ACL; Schema: public; Owner: -
 --
 
 REVOKE ALL ON FUNCTION public.record_proof_check(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.record_proof_check(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb) TO service_role;
+
+
+--
+-- Name: FUNCTION record_user_block(p_admin uuid, p_user uuid, p_disabled boolean, p_note text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.record_user_block(p_admin uuid, p_user uuid, p_disabled boolean, p_note text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.record_user_block(p_admin uuid, p_user uuid, p_disabled boolean, p_note text) TO service_role;
 
 
 --
@@ -26346,6 +28865,15 @@ GRANT ALL ON FUNCTION public.report_cost_payment(p_item uuid, p_amount_cents big
 
 
 --
+-- Name: FUNCTION report_proof_photo(p_proof uuid, p_reason text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.report_proof_photo(p_proof uuid, p_reason text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.report_proof_photo(p_proof uuid, p_reason text) TO service_role;
+GRANT ALL ON FUNCTION public.report_proof_photo(p_proof uuid, p_reason text) TO authenticated;
+
+
+--
 -- Name: FUNCTION request_host_swap(p_trip uuid, p_week integer, p_to uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -26375,7 +28903,6 @@ GRANT ALL ON FUNCTION public.reschedule_preview(p_trip uuid, p_every integer, p_
 --
 
 REVOKE ALL ON FUNCTION public.reset_trip_code(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.reset_trip_code(p_trip uuid) TO anon;
 GRANT ALL ON FUNCTION public.reset_trip_code(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.reset_trip_code(p_trip uuid) TO service_role;
 
@@ -26870,10 +29397,19 @@ GRANT ALL ON FUNCTION public.set_price_rule(p_key text, p_cents integer) TO serv
 
 
 --
+-- Name: FUNCTION set_profile(p_public boolean, p_about text, p_from text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_profile(p_public boolean, p_about text, p_from text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_profile(p_public boolean, p_about text, p_from text) TO service_role;
+GRANT ALL ON FUNCTION public.set_profile(p_public boolean, p_about text, p_from text) TO authenticated;
+
+
+--
 -- Name: FUNCTION set_profile_updated_at(); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.set_profile_updated_at() TO anon;
+REVOKE ALL ON FUNCTION public.set_profile_updated_at() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.set_profile_updated_at() TO authenticated;
 GRANT ALL ON FUNCTION public.set_profile_updated_at() TO service_role;
 
@@ -26965,6 +29501,15 @@ GRANT ALL ON FUNCTION public.set_teen_dob(p_dob date, p_agree boolean, p_invite 
 
 
 --
+-- Name: FUNCTION set_top_stamps(p_trips uuid[]); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_top_stamps(p_trips uuid[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_top_stamps(p_trips uuid[]) TO service_role;
+GRANT ALL ON FUNCTION public.set_top_stamps(p_trips uuid[]) TO authenticated;
+
+
+--
 -- Name: FUNCTION set_trip_access(p_trip uuid, p_code_enabled boolean, p_require_approval boolean); Type: ACL; Schema: public; Owner: -
 --
 
@@ -26992,6 +29537,15 @@ GRANT ALL ON FUNCTION public.set_trip_extras(p_trip uuid, p_motto text, p_call t
 
 
 --
+-- Name: FUNCTION set_trip_hidden(p_trip uuid, p_hidden boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_trip_hidden(p_trip uuid, p_hidden boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_trip_hidden(p_trip uuid, p_hidden boolean) TO service_role;
+GRANT ALL ON FUNCTION public.set_trip_hidden(p_trip uuid, p_hidden boolean) TO authenticated;
+
+
+--
 -- Name: FUNCTION set_trip_minors(p_trip uuid, p_has boolean); Type: ACL; Schema: public; Owner: -
 --
 
@@ -27013,7 +29567,7 @@ GRANT ALL ON FUNCTION public.set_trip_timezone(p_trip uuid, p_tz text) TO servic
 -- Name: FUNCTION set_trip_updated_at(); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.set_trip_updated_at() TO anon;
+REVOKE ALL ON FUNCTION public.set_trip_updated_at() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.set_trip_updated_at() TO authenticated;
 GRANT ALL ON FUNCTION public.set_trip_updated_at() TO service_role;
 
@@ -27040,7 +29594,6 @@ GRANT ALL ON FUNCTION public.set_weekly_question(p_trip uuid, p_week integer, p_
 --
 
 REVOKE ALL ON FUNCTION public.set_welcome_copy(p_intro text, p_faq jsonb) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.set_welcome_copy(p_intro text, p_faq jsonb) TO anon;
 GRANT ALL ON FUNCTION public.set_welcome_copy(p_intro text, p_faq jsonb) TO authenticated;
 GRANT ALL ON FUNCTION public.set_welcome_copy(p_intro text, p_faq jsonb) TO service_role;
 
@@ -27203,6 +29756,15 @@ GRANT ALL ON FUNCTION public.surprise_night_game(p_trip uuid, p_week integer) TO
 
 
 --
+-- Name: FUNCTION swap_postcard_photo(p_trip uuid, p_out uuid, p_in uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.swap_postcard_photo(p_trip uuid, p_out uuid, p_in uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.swap_postcard_photo(p_trip uuid, p_out uuid, p_in uuid) TO service_role;
+GRANT ALL ON FUNCTION public.swap_postcard_photo(p_trip uuid, p_out uuid, p_in uuid) TO authenticated;
+
+
+--
 -- Name: FUNCTION take_over_captain(p_trip uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -27312,7 +29874,6 @@ GRANT ALL ON FUNCTION public.trip_price(p_trip uuid, p_headcount integer) TO ser
 --
 
 REVOKE ALL ON FUNCTION public.trip_roster(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.trip_roster(p_trip uuid) TO anon;
 GRANT ALL ON FUNCTION public.trip_roster(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.trip_roster(p_trip uuid) TO service_role;
 
@@ -27486,9 +30047,18 @@ GRANT ALL ON FUNCTION public.weekly_question_status(p_trip uuid) TO service_role
 --
 
 REVOKE ALL ON FUNCTION public.welcome_copy() FROM PUBLIC;
-GRANT ALL ON FUNCTION public.welcome_copy() TO anon;
 GRANT ALL ON FUNCTION public.welcome_copy() TO authenticated;
 GRANT ALL ON FUNCTION public.welcome_copy() TO service_role;
+GRANT ALL ON FUNCTION public.welcome_copy() TO anon;
+
+
+--
+-- Name: FUNCTION wrapup_board(p_trip uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.wrapup_board(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.wrapup_board(p_trip uuid) TO service_role;
+GRANT ALL ON FUNCTION public.wrapup_board(p_trip uuid) TO authenticated;
 
 
 --
@@ -27601,6 +30171,24 @@ GRANT ALL ON FUNCTION trip_private.add_trip_missions(p_trip uuid, p_texts text[]
 
 
 --
+-- Name: FUNCTION admin_find_trips(p_query text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.admin_find_trips(p_query text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.admin_find_trips(p_query text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.admin_find_trips(p_query text) TO service_role;
+
+
+--
+-- Name: FUNCTION admin_find_users(p_query text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.admin_find_users(p_query text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.admin_find_users(p_query text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.admin_find_users(p_query text) TO service_role;
+
+
+--
 -- Name: FUNCTION adult_badge(p_trip uuid, p_user uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -27701,6 +30289,15 @@ GRANT ALL ON FUNCTION trip_private.answer_trivia(p_trip uuid, p_date date, p_que
 REVOKE ALL ON FUNCTION trip_private.answer_weekly_question(p_trip uuid, p_week integer, p_answer text, p_emoji text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.answer_weekly_question(p_trip uuid, p_week integer, p_answer text, p_emoji text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.answer_weekly_question(p_trip uuid, p_week integer, p_answer text, p_emoji text) TO service_role;
+
+
+--
+-- Name: FUNCTION answer_wrapup(p_trip uuid, p_key text, p_answer text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.answer_wrapup(p_trip uuid, p_key text, p_answer text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.answer_wrapup(p_trip uuid, p_key text, p_answer text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.answer_wrapup(p_trip uuid, p_key text, p_answer text) TO service_role;
 
 
 --
@@ -27906,6 +30503,15 @@ GRANT ALL ON FUNCTION trip_private.award_points(p_trip uuid, p_user uuid, p_seas
 
 
 --
+-- Name: FUNCTION badge_tier(p_badge text, p_count integer); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.badge_tier(p_badge text, p_count integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.badge_tier(p_badge text, p_count integer) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.badge_tier(p_badge text, p_count integer) TO service_role;
+
+
+--
 -- Name: FUNCTION beta_free(); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -27929,6 +30535,15 @@ GRANT ALL ON FUNCTION trip_private.boarding_tile() TO service_role;
 
 REVOKE ALL ON FUNCTION trip_private.bonus_window(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.bonus_window(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION break_postcard_tie(p_trip uuid, p_proof uuid, p_on boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.break_postcard_tie(p_trip uuid, p_proof uuid, p_on boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.break_postcard_tie(p_trip uuid, p_proof uuid, p_on boolean) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.break_postcard_tie(p_trip uuid, p_proof uuid, p_on boolean) TO service_role;
 
 
 --
@@ -28181,7 +30796,6 @@ GRANT ALL ON TABLE public.content_items TO service_role;
 -- Name: TABLE trips; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trips TO anon;
 GRANT ALL ON TABLE public.trips TO authenticated;
 GRANT ALL ON TABLE public.trips TO service_role;
 
@@ -28562,6 +31176,14 @@ GRANT ALL ON FUNCTION trip_private.delete_trip(p_trip uuid, p_name text) TO auth
 --
 
 REVOKE ALL ON FUNCTION trip_private.desired_notifications(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.desired_notifications(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION desired_notifications_core(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.desired_notifications_core(p_trip uuid) FROM PUBLIC;
 
 
 --
@@ -28752,6 +31374,14 @@ GRANT ALL ON FUNCTION trip_private.finalize_season(p_trip uuid, p_season text) T
 
 REVOKE ALL ON FUNCTION trip_private.finish_notifications(p_results jsonb) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.finish_notifications(p_results jsonb) TO service_role;
+
+
+--
+-- Name: FUNCTION finish_photo_purge(p_trip uuid, p_removed integer); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.finish_photo_purge(p_trip uuid, p_removed integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.finish_photo_purge(p_trip uuid, p_removed integer) TO service_role;
 
 
 --
@@ -28963,6 +31593,15 @@ GRANT ALL ON FUNCTION trip_private.has_teen_member(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION heart_photo(p_trip uuid, p_proof uuid, p_on boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.heart_photo(p_trip uuid, p_proof uuid, p_on boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.heart_photo(p_trip uuid, p_proof uuid, p_on boolean) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.heart_photo(p_trip uuid, p_proof uuid, p_on boolean) TO service_role;
+
+
+--
 -- Name: FUNCTION hide_inspiration(p_card uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29100,6 +31739,15 @@ GRANT ALL ON FUNCTION trip_private.is_leader(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION is_three_emojis(p text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.is_three_emojis(p text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.is_three_emojis(p text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.is_three_emojis(p text) TO service_role;
+
+
+--
 -- Name: FUNCTION is_trip_member(p_trip uuid, p_user uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29233,6 +31881,24 @@ GRANT ALL ON FUNCTION trip_private.lab_delete(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION lab_engine_create(p_room text, p_mode text, p_size integer, p_days integer); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.lab_engine_create(p_room text, p_mode text, p_size integer, p_days integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.lab_engine_create(p_room text, p_mode text, p_size integer, p_days integer) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.lab_engine_create(p_room text, p_mode text, p_size integer, p_days integer) TO service_role;
+
+
+--
+-- Name: FUNCTION lab_engine_play(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.lab_engine_play(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.lab_engine_play(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.lab_engine_play(p_trip uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION lab_extra(p_trip uuid, p_action text, p_arg text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29256,6 +31922,15 @@ GRANT ALL ON FUNCTION trip_private.lab_guard(p_trip uuid) TO service_role;
 REVOKE ALL ON FUNCTION trip_private.lab_itinerary(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.lab_itinerary(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.lab_itinerary(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION lab_jump(p_trip uuid, p_phase text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.lab_jump(p_trip uuid, p_phase text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.lab_jump(p_trip uuid, p_phase text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.lab_jump(p_trip uuid, p_phase text) TO service_role;
 
 
 --
@@ -29327,6 +32002,15 @@ REVOKE ALL ON FUNCTION trip_private.legal_dob_guard() FROM PUBLIC;
 
 
 --
+-- Name: FUNCTION level_for(p_countries integer); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.level_for(p_countries integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.level_for(p_countries integer) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.level_for(p_countries integer) TO service_role;
+
+
+--
 -- Name: FUNCTION list_beta_codes(); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29387,6 +32071,14 @@ GRANT ALL ON FUNCTION trip_private.live_vote_award(p_session uuid, p_award text,
 
 
 --
+-- Name: FUNCTION lock_trip(p_trip uuid, p_force boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.lock_trip(p_trip uuid, p_force boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.lock_trip(p_trip uuid, p_force boolean) TO service_role;
+
+
+--
 -- Name: FUNCTION log_ai_call(p_usage uuid, p_model text, p_in integer, p_out integer, p_cost numeric); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29426,6 +32118,15 @@ GRANT ALL ON FUNCTION trip_private.manage_trip_member(p_trip uuid, p_user uuid, 
 REVOKE ALL ON FUNCTION trip_private.mark_arrived(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.mark_arrived(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.mark_arrived(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION mark_badges_seen(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.mark_badges_seen() FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.mark_badges_seen() TO authenticated;
+GRANT ALL ON FUNCTION trip_private.mark_badges_seen() TO service_role;
 
 
 --
@@ -29506,6 +32207,24 @@ GRANT ALL ON FUNCTION trip_private.moderate_inspiration(p_card uuid, p_action te
 
 
 --
+-- Name: FUNCTION moderate_photo(p_id uuid, p_action text, p_note text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.moderate_photo(p_id uuid, p_action text, p_note text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.moderate_photo(p_id uuid, p_action text, p_note text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.moderate_photo(p_id uuid, p_action text, p_note text) TO service_role;
+
+
+--
+-- Name: FUNCTION moderation_queue(p_include_closed boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.moderation_queue(p_include_closed boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.moderation_queue(p_include_closed boolean) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.moderation_queue(p_include_closed boolean) TO service_role;
+
+
+--
 -- Name: FUNCTION my_access(); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29559,6 +32278,15 @@ GRANT ALL ON FUNCTION trip_private.my_passport() TO service_role;
 
 
 --
+-- Name: FUNCTION my_passport_progress(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.my_passport_progress() FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.my_passport_progress() TO authenticated;
+GRANT ALL ON FUNCTION trip_private.my_passport_progress() TO service_role;
+
+
+--
 -- Name: FUNCTION my_past_trips(); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29583,6 +32311,15 @@ GRANT ALL ON FUNCTION trip_private.my_preview_shared(p_trip uuid, p_exp uuid) TO
 REVOKE ALL ON FUNCTION trip_private.my_schedule(p_trip uuid, p_at timestamp with time zone) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.my_schedule(p_trip uuid, p_at timestamp with time zone) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.my_schedule(p_trip uuid, p_at timestamp with time zone) TO service_role;
+
+
+--
+-- Name: FUNCTION my_stamps(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.my_stamps() FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.my_stamps() TO authenticated;
+GRANT ALL ON FUNCTION trip_private.my_stamps() TO service_role;
 
 
 --
@@ -29699,6 +32436,15 @@ GRANT ALL ON FUNCTION trip_private.night_open(p_trip uuid, p_week integer) TO se
 
 
 --
+-- Name: FUNCTION norm_country(p text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.norm_country(p text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.norm_country(p text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.norm_country(p text) TO service_role;
+
+
+--
 -- Name: FUNCTION notification_types(); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -29801,12 +32547,29 @@ GRANT ALL ON FUNCTION trip_private.phase_windows(p_room text, p_start date, p_en
 
 
 --
+-- Name: FUNCTION photo_hidden(p_proof uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.photo_hidden(p_proof uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.photo_hidden(p_proof uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.photo_hidden(p_proof uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION photo_quota_ok(p_name text); Type: ACL; Schema: trip_private; Owner: -
 --
 
 REVOKE ALL ON FUNCTION trip_private.photo_quota_ok(p_name text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.photo_quota_ok(p_name text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.photo_quota_ok(p_name text) TO service_role;
+
+
+--
+-- Name: FUNCTION photos_to_purge(p_limit integer); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.photos_to_purge(p_limit integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.photos_to_purge(p_limit integer) TO service_role;
 
 
 --
@@ -29830,6 +32593,15 @@ REVOKE ALL ON FUNCTION trip_private.pick_content(p_trip uuid, p_kind text, p_var
 
 REVOKE ALL ON FUNCTION trip_private.pick_night_game(p_trip uuid, p_week integer, p_game integer) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.pick_night_game(p_trip uuid, p_week integer, p_game integer) TO authenticated;
+
+
+--
+-- Name: FUNCTION pick_postcard(p_trip uuid, p_proof uuid, p_pick boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.pick_postcard(p_trip uuid, p_proof uuid, p_pick boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.pick_postcard(p_trip uuid, p_proof uuid, p_pick boolean) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.pick_postcard(p_trip uuid, p_proof uuid, p_pick boolean) TO service_role;
 
 
 --
@@ -29893,7 +32665,6 @@ GRANT ALL ON FUNCTION trip_private.plan_trip(p_trip uuid) TO service_role;
 -- Name: TABLE trip_day_games; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_day_games TO anon;
 GRANT ALL ON TABLE public.trip_day_games TO authenticated;
 GRANT ALL ON TABLE public.trip_day_games TO service_role;
 
@@ -29914,6 +32685,15 @@ GRANT ALL ON FUNCTION trip_private.play_day(p_trip uuid, p_date date) TO service
 REVOKE ALL ON FUNCTION trip_private.player_card_read(p_trip uuid, p_user uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.player_card_read(p_trip uuid, p_user uuid) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.player_card_read(p_trip uuid, p_user uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION player_profile(p_user uuid, p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.player_profile(p_user uuid, p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.player_profile(p_user uuid, p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.player_profile(p_user uuid, p_trip uuid) TO service_role;
 
 
 --
@@ -29950,6 +32730,57 @@ GRANT ALL ON FUNCTION trip_private.post_photo(p_trip uuid, p_date date, p_photo 
 REVOKE ALL ON FUNCTION trip_private.post_quest(p_trip uuid, p_date date, p_quest integer, p_photo text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.post_quest(p_trip uuid, p_date date, p_quest integer, p_photo text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.post_quest(p_trip uuid, p_date date, p_quest integer, p_photo text) TO service_role;
+
+
+--
+-- Name: FUNCTION postcard_info(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.postcard_info(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.postcard_info(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.postcard_info(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION postcard_limits(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.postcard_limits(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.postcard_limits(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.postcard_limits(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION postcard_rank(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.postcard_rank(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.postcard_rank(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION postcard_ranking(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.postcard_ranking(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.postcard_ranking(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.postcard_ranking(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION postcard_selection(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.postcard_selection(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.postcard_selection(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION postcards_due(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.postcards_due() FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.postcards_due() TO service_role;
 
 
 --
@@ -29994,6 +32825,21 @@ GRANT ALL ON FUNCTION trip_private.preview_ten_day_drops(p_trip uuid) TO service
 REVOKE ALL ON FUNCTION trip_private.price(p_key text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.price(p_key text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.price(p_key text) TO service_role;
+
+
+--
+-- Name: FUNCTION profile_prefs_guard(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.profile_prefs_guard() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION proof_challenge(p_proof uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.proof_challenge(p_proof uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.proof_challenge(p_proof uuid) TO service_role;
 
 
 --
@@ -30191,10 +33037,26 @@ GRANT ALL ON FUNCTION trip_private.reclaim_captain(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION record_photo_safety(p_proof uuid, p_flags text[]); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.record_photo_safety(p_proof uuid, p_flags text[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.record_photo_safety(p_proof uuid, p_flags text[]) TO service_role;
+
+
+--
 -- Name: FUNCTION record_speed_finish(); Type: ACL; Schema: trip_private; Owner: -
 --
 
 REVOKE ALL ON FUNCTION trip_private.record_speed_finish() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION record_user_block(p_admin uuid, p_user uuid, p_disabled boolean, p_note text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.record_user_block(p_admin uuid, p_user uuid, p_disabled boolean, p_note text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.record_user_block(p_admin uuid, p_user uuid, p_disabled boolean, p_note text) TO service_role;
 
 
 --
@@ -30204,6 +33066,14 @@ REVOKE ALL ON FUNCTION trip_private.record_speed_finish() FROM PUBLIC;
 REVOKE ALL ON FUNCTION trip_private.redeem_beta_code(p_code text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.redeem_beta_code(p_code text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.redeem_beta_code(p_code text) TO service_role;
+
+
+--
+-- Name: FUNCTION refresh_passport(p_user uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.refresh_passport(p_user uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.refresh_passport(p_user uuid) TO service_role;
 
 
 --
@@ -30272,6 +33142,15 @@ GRANT ALL ON FUNCTION trip_private.report_cost_payment(p_item uuid, p_amount_cen
 
 
 --
+-- Name: FUNCTION report_proof_photo(p_proof uuid, p_reason text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.report_proof_photo(p_proof uuid, p_reason text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.report_proof_photo(p_proof uuid, p_reason text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.report_proof_photo(p_proof uuid, p_reason text) TO service_role;
+
+
+--
 -- Name: FUNCTION request_host_swap(p_trip uuid, p_week integer, p_to uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -30304,6 +33183,15 @@ GRANT ALL ON FUNCTION trip_private.require_feature(p_trip uuid, p_feature text) 
 
 REVOKE ALL ON FUNCTION trip_private.require_legal() FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.require_legal() TO authenticated;
+
+
+--
+-- Name: FUNCTION require_wrapup(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.require_wrapup(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.require_wrapup(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.require_wrapup(p_trip uuid) TO service_role;
 
 
 --
@@ -30625,6 +33513,15 @@ GRANT ALL ON FUNCTION trip_private.season_info(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION season_label(p_day date); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.season_label(p_day date) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.season_label(p_day date) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.season_label(p_day date) TO service_role;
+
+
+--
 -- Name: FUNCTION season_points(p_trip uuid, p_season text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -30931,6 +33828,15 @@ GRANT ALL ON FUNCTION trip_private.set_preflight_a2c(p_trip uuid, p_start date, 
 
 
 --
+-- Name: FUNCTION set_profile(p_public boolean, p_about text, p_from text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_profile(p_public boolean, p_about text, p_from text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_profile(p_public boolean, p_about text, p_from text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.set_profile(p_public boolean, p_about text, p_from text) TO service_role;
+
+
+--
 -- Name: FUNCTION set_proof_ai(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -31027,6 +33933,15 @@ GRANT ALL ON FUNCTION trip_private.set_teen_dob(p_dob date, p_agree boolean, p_i
 
 
 --
+-- Name: FUNCTION set_top_stamps(p_trips uuid[]); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_top_stamps(p_trips uuid[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_top_stamps(p_trips uuid[]) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.set_top_stamps(p_trips uuid[]) TO service_role;
+
+
+--
 -- Name: FUNCTION set_trip_access(p_trip uuid, p_code_enabled boolean, p_require_approval boolean); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -31050,6 +33965,15 @@ GRANT ALL ON FUNCTION trip_private.set_trip_archived(p_trip uuid, p_archived boo
 REVOKE ALL ON FUNCTION trip_private.set_trip_extras(p_trip uuid, p_motto text, p_call text, p_backup text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.set_trip_extras(p_trip uuid, p_motto text, p_call text, p_backup text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.set_trip_extras(p_trip uuid, p_motto text, p_call text, p_backup text) TO service_role;
+
+
+--
+-- Name: FUNCTION set_trip_hidden(p_trip uuid, p_hidden boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_trip_hidden(p_trip uuid, p_hidden boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_trip_hidden(p_trip uuid, p_hidden boolean) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.set_trip_hidden(p_trip uuid, p_hidden boolean) TO service_role;
 
 
 --
@@ -31272,6 +34196,14 @@ GRANT ALL ON FUNCTION trip_private.spin_next_game(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION stamp_trip(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.stamp_trip(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.stamp_trip(p_trip uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION standings(p_trip uuid, p_season text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -31342,6 +34274,15 @@ GRANT ALL ON FUNCTION trip_private.surprise_night_game(p_trip uuid, p_week integ
 
 
 --
+-- Name: FUNCTION swap_postcard_photo(p_trip uuid, p_out uuid, p_in uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.swap_postcard_photo(p_trip uuid, p_out uuid, p_in uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.swap_postcard_photo(p_trip uuid, p_out uuid, p_in uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.swap_postcard_photo(p_trip uuid, p_out uuid, p_in uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION sync_passport(p_user uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -31402,6 +34343,15 @@ GRANT ALL ON FUNCTION trip_private.teen_block(p_what text) TO service_role;
 
 
 --
+-- Name: FUNCTION teen_invite_ok(p_token text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.teen_invite_ok(p_token text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.teen_invite_ok(p_token text) TO service_role;
+GRANT ALL ON FUNCTION trip_private.teen_invite_ok(p_token text) TO supabase_auth_admin;
+
+
+--
 -- Name: FUNCTION thumb_quest(p_post uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -31425,6 +34375,15 @@ GRANT ALL ON FUNCTION trip_private.touch_last_seen() TO service_role;
 
 REVOKE ALL ON FUNCTION trip_private.traveler_level(p_user uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.traveler_level(p_user uuid) TO authenticated;
+
+
+--
+-- Name: FUNCTION trim_answer(p text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.trim_answer(p text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.trim_answer(p text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.trim_answer(p text) TO service_role;
 
 
 --
@@ -31712,6 +34671,24 @@ GRANT ALL ON FUNCTION trip_private.weekly_question_status(p_trip uuid) TO servic
 
 
 --
+-- Name: FUNCTION wrapup_board(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.wrapup_board(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.wrapup_board(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.wrapup_board(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION wrapup_questions(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.wrapup_questions(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.wrapup_questions(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.wrapup_questions(p_trip uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION write_journal(p_item uuid, p_body text, p_choice integer); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -31724,16 +34701,29 @@ GRANT ALL ON FUNCTION trip_private.write_journal(p_item uuid, p_body text, p_cho
 -- Name: TABLE account_consents; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.account_consents TO anon;
 GRANT ALL ON TABLE public.account_consents TO authenticated;
 GRANT ALL ON TABLE public.account_consents TO service_role;
+
+
+--
+-- Name: TABLE admin_actions; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.admin_actions TO service_role;
+
+
+--
+-- Name: SEQUENCE admin_actions_id_seq; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON SEQUENCE public.admin_actions_id_seq TO authenticated;
+GRANT ALL ON SEQUENCE public.admin_actions_id_seq TO service_role;
 
 
 --
 -- Name: TABLE age_guesses; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.age_guesses TO anon;
 GRANT ALL ON TABLE public.age_guesses TO authenticated;
 GRANT ALL ON TABLE public.age_guesses TO service_role;
 
@@ -31742,7 +34732,6 @@ GRANT ALL ON TABLE public.age_guesses TO service_role;
 -- Name: TABLE ai_credit_purchases; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.ai_credit_purchases TO anon;
 GRANT ALL ON TABLE public.ai_credit_purchases TO authenticated;
 GRANT ALL ON TABLE public.ai_credit_purchases TO service_role;
 
@@ -31751,7 +34740,6 @@ GRANT ALL ON TABLE public.ai_credit_purchases TO service_role;
 -- Name: TABLE ai_usage; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.ai_usage TO anon;
 GRANT ALL ON TABLE public.ai_usage TO authenticated;
 GRANT ALL ON TABLE public.ai_usage TO service_role;
 
@@ -31760,7 +34748,6 @@ GRANT ALL ON TABLE public.ai_usage TO service_role;
 -- Name: TABLE airport_claims; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.airport_claims TO anon;
 GRANT ALL ON TABLE public.airport_claims TO authenticated;
 GRANT ALL ON TABLE public.airport_claims TO service_role;
 
@@ -31769,7 +34756,6 @@ GRANT ALL ON TABLE public.airport_claims TO service_role;
 -- Name: TABLE app_admins; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.app_admins TO anon;
 GRANT ALL ON TABLE public.app_admins TO authenticated;
 GRANT ALL ON TABLE public.app_admins TO service_role;
 
@@ -31778,9 +34764,43 @@ GRANT ALL ON TABLE public.app_admins TO service_role;
 -- Name: TABLE app_settings; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.app_settings TO anon;
 GRANT ALL ON TABLE public.app_settings TO authenticated;
 GRANT ALL ON TABLE public.app_settings TO service_role;
+
+
+--
+-- Name: COLUMN app_settings.id; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(id) ON TABLE public.app_settings TO anon;
+
+
+--
+-- Name: COLUMN app_settings.public_launch; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(public_launch) ON TABLE public.app_settings TO anon;
+
+
+--
+-- Name: COLUMN app_settings.founder_intro; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(founder_intro) ON TABLE public.app_settings TO anon;
+
+
+--
+-- Name: COLUMN app_settings.welcome_faq; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(welcome_faq) ON TABLE public.app_settings TO anon;
+
+
+--
+-- Name: COLUMN app_settings.boarding_tile; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(boarding_tile) ON TABLE public.app_settings TO anon;
 
 
 --
@@ -31794,7 +34814,6 @@ GRANT ALL ON TABLE public.at_home_answers TO service_role;
 -- Name: TABLE at_home_pack_items; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.at_home_pack_items TO anon;
 GRANT ALL ON TABLE public.at_home_pack_items TO authenticated;
 GRANT ALL ON TABLE public.at_home_pack_items TO service_role;
 
@@ -31803,7 +34822,6 @@ GRANT ALL ON TABLE public.at_home_pack_items TO service_role;
 -- Name: SEQUENCE at_home_pack_items_id_seq; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON SEQUENCE public.at_home_pack_items_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.at_home_pack_items_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.at_home_pack_items_id_seq TO service_role;
 
@@ -31812,7 +34830,6 @@ GRANT ALL ON SEQUENCE public.at_home_pack_items_id_seq TO service_role;
 -- Name: TABLE at_home_packs; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.at_home_packs TO anon;
 GRANT ALL ON TABLE public.at_home_packs TO authenticated;
 GRANT ALL ON TABLE public.at_home_packs TO service_role;
 
@@ -31821,7 +34838,6 @@ GRANT ALL ON TABLE public.at_home_packs TO service_role;
 -- Name: TABLE at_home_song_winners; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.at_home_song_winners TO anon;
 GRANT ALL ON TABLE public.at_home_song_winners TO authenticated;
 GRANT ALL ON TABLE public.at_home_song_winners TO service_role;
 
@@ -31837,7 +34853,6 @@ GRANT ALL ON TABLE public.at_home_votes TO service_role;
 -- Name: TABLE beta_access; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.beta_access TO anon;
 GRANT ALL ON TABLE public.beta_access TO authenticated;
 GRANT ALL ON TABLE public.beta_access TO service_role;
 
@@ -31846,7 +34861,6 @@ GRANT ALL ON TABLE public.beta_access TO service_role;
 -- Name: TABLE beta_codes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.beta_codes TO anon;
 GRANT ALL ON TABLE public.beta_codes TO authenticated;
 GRANT ALL ON TABLE public.beta_codes TO service_role;
 
@@ -31855,7 +34869,6 @@ GRANT ALL ON TABLE public.beta_codes TO service_role;
 -- Name: TABLE bingo_marks; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.bingo_marks TO anon;
 GRANT ALL ON TABLE public.bingo_marks TO authenticated;
 GRANT ALL ON TABLE public.bingo_marks TO service_role;
 
@@ -31864,7 +34877,6 @@ GRANT ALL ON TABLE public.bingo_marks TO service_role;
 -- Name: TABLE bug_issues; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.bug_issues TO anon;
 GRANT ALL ON TABLE public.bug_issues TO authenticated;
 GRANT ALL ON TABLE public.bug_issues TO service_role;
 
@@ -31873,7 +34885,6 @@ GRANT ALL ON TABLE public.bug_issues TO service_role;
 -- Name: TABLE bug_reports; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.bug_reports TO anon;
 GRANT ALL ON TABLE public.bug_reports TO authenticated;
 GRANT ALL ON TABLE public.bug_reports TO service_role;
 
@@ -31890,7 +34901,6 @@ GRANT SELECT ON TABLE public.call_nights TO authenticated;
 -- Name: TABLE checkin_responses; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.checkin_responses TO anon;
 GRANT ALL ON TABLE public.checkin_responses TO authenticated;
 GRANT ALL ON TABLE public.checkin_responses TO service_role;
 
@@ -31927,7 +34937,6 @@ GRANT ALL ON TABLE public.content_variants TO service_role;
 -- Name: TABLE cost_items; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cost_items TO anon;
 GRANT ALL ON TABLE public.cost_items TO authenticated;
 GRANT ALL ON TABLE public.cost_items TO service_role;
 
@@ -31936,7 +34945,6 @@ GRANT ALL ON TABLE public.cost_items TO service_role;
 -- Name: TABLE cost_log; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cost_log TO anon;
 GRANT ALL ON TABLE public.cost_log TO authenticated;
 GRANT ALL ON TABLE public.cost_log TO service_role;
 
@@ -31945,7 +34953,6 @@ GRANT ALL ON TABLE public.cost_log TO service_role;
 -- Name: TABLE cost_notes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cost_notes TO anon;
 GRANT ALL ON TABLE public.cost_notes TO authenticated;
 GRANT ALL ON TABLE public.cost_notes TO service_role;
 
@@ -31954,7 +34961,6 @@ GRANT ALL ON TABLE public.cost_notes TO service_role;
 -- Name: TABLE cost_shares; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cost_shares TO anon;
 GRANT ALL ON TABLE public.cost_shares TO authenticated;
 GRANT ALL ON TABLE public.cost_shares TO service_role;
 
@@ -31963,7 +34969,6 @@ GRANT ALL ON TABLE public.cost_shares TO service_role;
 -- Name: TABLE cultural_inspirations; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cultural_inspirations TO anon;
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE ON TABLE public.cultural_inspirations TO authenticated;
 GRANT ALL ON TABLE public.cultural_inspirations TO service_role;
 
@@ -32049,7 +35054,6 @@ GRANT UPDATE(feature_later) ON TABLE public.cultural_inspirations TO authenticat
 -- Name: TABLE culture_exp_hidden; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_exp_hidden TO anon;
 GRANT ALL ON TABLE public.culture_exp_hidden TO authenticated;
 GRANT ALL ON TABLE public.culture_exp_hidden TO service_role;
 
@@ -32058,7 +35062,6 @@ GRANT ALL ON TABLE public.culture_exp_hidden TO service_role;
 -- Name: TABLE culture_exp_likes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_exp_likes TO anon;
 GRANT ALL ON TABLE public.culture_exp_likes TO authenticated;
 GRANT ALL ON TABLE public.culture_exp_likes TO service_role;
 
@@ -32067,7 +35070,6 @@ GRANT ALL ON TABLE public.culture_exp_likes TO service_role;
 -- Name: TABLE culture_experiences; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_experiences TO anon;
 GRANT ALL ON TABLE public.culture_experiences TO authenticated;
 GRANT ALL ON TABLE public.culture_experiences TO service_role;
 
@@ -32076,7 +35078,6 @@ GRANT ALL ON TABLE public.culture_experiences TO service_role;
 -- Name: TABLE culture_layer_stamps; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_layer_stamps TO anon;
 GRANT ALL ON TABLE public.culture_layer_stamps TO authenticated;
 GRANT ALL ON TABLE public.culture_layer_stamps TO service_role;
 
@@ -32085,7 +35086,6 @@ GRANT ALL ON TABLE public.culture_layer_stamps TO service_role;
 -- Name: TABLE culture_quest_answers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_quest_answers TO anon;
 GRANT ALL ON TABLE public.culture_quest_answers TO authenticated;
 GRANT ALL ON TABLE public.culture_quest_answers TO service_role;
 
@@ -32094,7 +35094,6 @@ GRANT ALL ON TABLE public.culture_quest_answers TO service_role;
 -- Name: TABLE culture_quest_items; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_quest_items TO anon;
 GRANT ALL ON TABLE public.culture_quest_items TO authenticated;
 GRANT ALL ON TABLE public.culture_quest_items TO service_role;
 
@@ -32103,7 +35102,6 @@ GRANT ALL ON TABLE public.culture_quest_items TO service_role;
 -- Name: TABLE culture_quest_players; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_quest_players TO anon;
 GRANT ALL ON TABLE public.culture_quest_players TO authenticated;
 GRANT ALL ON TABLE public.culture_quest_players TO service_role;
 
@@ -32112,7 +35110,6 @@ GRANT ALL ON TABLE public.culture_quest_players TO service_role;
 -- Name: TABLE culture_quest_sessions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_quest_sessions TO anon;
 GRANT ALL ON TABLE public.culture_quest_sessions TO authenticated;
 GRANT ALL ON TABLE public.culture_quest_sessions TO service_role;
 
@@ -32121,7 +35118,6 @@ GRANT ALL ON TABLE public.culture_quest_sessions TO service_role;
 -- Name: TABLE culture_showcase_ballots; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_showcase_ballots TO anon;
 GRANT ALL ON TABLE public.culture_showcase_ballots TO authenticated;
 GRANT ALL ON TABLE public.culture_showcase_ballots TO service_role;
 
@@ -32130,7 +35126,6 @@ GRANT ALL ON TABLE public.culture_showcase_ballots TO service_role;
 -- Name: TABLE culture_showcase_rewards; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_showcase_rewards TO anon;
 GRANT ALL ON TABLE public.culture_showcase_rewards TO authenticated;
 GRANT ALL ON TABLE public.culture_showcase_rewards TO service_role;
 
@@ -32139,7 +35134,6 @@ GRANT ALL ON TABLE public.culture_showcase_rewards TO service_role;
 -- Name: TABLE culture_showcase_viewers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_showcase_viewers TO anon;
 GRANT ALL ON TABLE public.culture_showcase_viewers TO authenticated;
 GRANT ALL ON TABLE public.culture_showcase_viewers TO service_role;
 
@@ -32148,7 +35142,6 @@ GRANT ALL ON TABLE public.culture_showcase_viewers TO service_role;
 -- Name: TABLE culture_stamps; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_stamps TO anon;
 GRANT ALL ON TABLE public.culture_stamps TO authenticated;
 GRANT ALL ON TABLE public.culture_stamps TO service_role;
 
@@ -32165,7 +35158,6 @@ GRANT SELECT ON TABLE public.daily_answers TO authenticated;
 -- Name: TABLE day_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.day_votes TO anon;
 GRANT ALL ON TABLE public.day_votes TO authenticated;
 GRANT ALL ON TABLE public.day_votes TO service_role;
 
@@ -32174,7 +35166,6 @@ GRANT ALL ON TABLE public.day_votes TO service_role;
 -- Name: TABLE experience_previews; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.experience_previews TO anon;
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.experience_previews TO authenticated;
 GRANT ALL ON TABLE public.experience_previews TO service_role;
 
@@ -32316,7 +35307,6 @@ GRANT SELECT(updated_at) ON TABLE public.experience_previews TO authenticated;
 -- Name: TABLE game_cards; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.game_cards TO anon;
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.game_cards TO authenticated;
 GRANT ALL ON TABLE public.game_cards TO service_role;
 
@@ -32325,7 +35315,6 @@ GRANT ALL ON TABLE public.game_cards TO service_role;
 -- Name: SEQUENCE game_cards_id_seq; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON SEQUENCE public.game_cards_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.game_cards_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.game_cards_id_seq TO service_role;
 
@@ -32334,7 +35323,6 @@ GRANT ALL ON SEQUENCE public.game_cards_id_seq TO service_role;
 -- Name: TABLE game_catalog; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_catalog TO anon;
 GRANT ALL ON TABLE public.game_catalog TO authenticated;
 GRANT ALL ON TABLE public.game_catalog TO service_role;
 
@@ -32343,7 +35331,6 @@ GRANT ALL ON TABLE public.game_catalog TO service_role;
 -- Name: TABLE game_format_prompts; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_format_prompts TO anon;
 GRANT ALL ON TABLE public.game_format_prompts TO authenticated;
 GRANT ALL ON TABLE public.game_format_prompts TO service_role;
 
@@ -32352,7 +35339,6 @@ GRANT ALL ON TABLE public.game_format_prompts TO service_role;
 -- Name: SEQUENCE game_format_prompts_id_seq; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON SEQUENCE public.game_format_prompts_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.game_format_prompts_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.game_format_prompts_id_seq TO service_role;
 
@@ -32361,7 +35347,6 @@ GRANT ALL ON SEQUENCE public.game_format_prompts_id_seq TO service_role;
 -- Name: TABLE game_night_card_skips; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_card_skips TO anon;
 GRANT ALL ON TABLE public.game_night_card_skips TO authenticated;
 GRANT ALL ON TABLE public.game_night_card_skips TO service_role;
 
@@ -32370,7 +35355,6 @@ GRANT ALL ON TABLE public.game_night_card_skips TO service_role;
 -- Name: TABLE game_night_flow; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_flow TO anon;
 GRANT ALL ON TABLE public.game_night_flow TO authenticated;
 GRANT ALL ON TABLE public.game_night_flow TO service_role;
 
@@ -32379,7 +35363,6 @@ GRANT ALL ON TABLE public.game_night_flow TO service_role;
 -- Name: TABLE game_night_moments; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_moments TO anon;
 GRANT ALL ON TABLE public.game_night_moments TO authenticated;
 GRANT ALL ON TABLE public.game_night_moments TO service_role;
 
@@ -32388,7 +35371,6 @@ GRANT ALL ON TABLE public.game_night_moments TO service_role;
 -- Name: TABLE game_night_polls; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_polls TO anon;
 GRANT SELECT ON TABLE public.game_night_polls TO authenticated;
 GRANT ALL ON TABLE public.game_night_polls TO service_role;
 
@@ -32397,7 +35379,6 @@ GRANT ALL ON TABLE public.game_night_polls TO service_role;
 -- Name: TABLE game_night_reactions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_reactions TO anon;
 GRANT ALL ON TABLE public.game_night_reactions TO authenticated;
 GRANT ALL ON TABLE public.game_night_reactions TO service_role;
 
@@ -32406,7 +35387,6 @@ GRANT ALL ON TABLE public.game_night_reactions TO service_role;
 -- Name: TABLE game_night_turns; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_turns TO anon;
 GRANT ALL ON TABLE public.game_night_turns TO authenticated;
 GRANT ALL ON TABLE public.game_night_turns TO service_role;
 
@@ -32415,7 +35395,6 @@ GRANT ALL ON TABLE public.game_night_turns TO service_role;
 -- Name: TABLE game_night_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_votes TO anon;
 GRANT ALL ON TABLE public.game_night_votes TO authenticated;
 GRANT ALL ON TABLE public.game_night_votes TO service_role;
 
@@ -32424,7 +35403,6 @@ GRANT ALL ON TABLE public.game_night_votes TO service_role;
 -- Name: TABLE game_nights; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_nights TO anon;
 GRANT SELECT ON TABLE public.game_nights TO authenticated;
 GRANT ALL ON TABLE public.game_nights TO service_role;
 
@@ -32433,7 +35411,6 @@ GRANT ALL ON TABLE public.game_nights TO service_role;
 -- Name: TABLE game_pick_log; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_pick_log TO anon;
 GRANT ALL ON TABLE public.game_pick_log TO authenticated;
 GRANT ALL ON TABLE public.game_pick_log TO service_role;
 
@@ -32442,7 +35419,6 @@ GRANT ALL ON TABLE public.game_pick_log TO service_role;
 -- Name: SEQUENCE game_pick_log_id_seq; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON SEQUENCE public.game_pick_log_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.game_pick_log_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.game_pick_log_id_seq TO service_role;
 
@@ -32451,7 +35427,6 @@ GRANT ALL ON SEQUENCE public.game_pick_log_id_seq TO service_role;
 -- Name: TABLE game_scores; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_scores TO anon;
 GRANT ALL ON TABLE public.game_scores TO authenticated;
 GRANT ALL ON TABLE public.game_scores TO service_role;
 
@@ -32468,7 +35443,6 @@ GRANT SELECT ON TABLE public.guide_prefs TO authenticated;
 -- Name: TABLE home_day_results; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.home_day_results TO anon;
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.home_day_results TO authenticated;
 GRANT ALL ON TABLE public.home_day_results TO service_role;
 
@@ -32477,7 +35451,6 @@ GRANT ALL ON TABLE public.home_day_results TO service_role;
 -- Name: TABLE home_day_sessions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.home_day_sessions TO anon;
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.home_day_sessions TO authenticated;
 GRANT ALL ON TABLE public.home_day_sessions TO service_role;
 
@@ -32486,7 +35459,6 @@ GRANT ALL ON TABLE public.home_day_sessions TO service_role;
 -- Name: TABLE host_penalties; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.host_penalties TO anon;
 GRANT ALL ON TABLE public.host_penalties TO authenticated;
 GRANT ALL ON TABLE public.host_penalties TO service_role;
 
@@ -32495,7 +35467,6 @@ GRANT ALL ON TABLE public.host_penalties TO service_role;
 -- Name: TABLE host_swaps; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.host_swaps TO anon;
 GRANT ALL ON TABLE public.host_swaps TO authenticated;
 GRANT ALL ON TABLE public.host_swaps TO service_role;
 
@@ -32504,7 +35475,6 @@ GRANT ALL ON TABLE public.host_swaps TO service_role;
 -- Name: TABLE inspiration_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.inspiration_votes TO anon;
 GRANT ALL ON TABLE public.inspiration_votes TO authenticated;
 GRANT ALL ON TABLE public.inspiration_votes TO service_role;
 
@@ -32521,7 +35491,6 @@ GRANT SELECT ON TABLE public.journal_entries TO authenticated;
 -- Name: TABLE junkie_ranks; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.junkie_ranks TO anon;
 GRANT ALL ON TABLE public.junkie_ranks TO authenticated;
 GRANT ALL ON TABLE public.junkie_ranks TO service_role;
 
@@ -32552,7 +35521,6 @@ GRANT SELECT ON TABLE public.live_sessions TO authenticated;
 -- Name: TABLE live_vote_ballots; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.live_vote_ballots TO anon;
 GRANT ALL ON TABLE public.live_vote_ballots TO authenticated;
 GRANT ALL ON TABLE public.live_vote_ballots TO service_role;
 
@@ -32561,7 +35529,6 @@ GRANT ALL ON TABLE public.live_vote_ballots TO service_role;
 -- Name: TABLE live_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.live_votes TO anon;
 GRANT ALL ON TABLE public.live_votes TO authenticated;
 GRANT ALL ON TABLE public.live_votes TO service_role;
 
@@ -32570,7 +35537,6 @@ GRANT ALL ON TABLE public.live_votes TO service_role;
 -- Name: TABLE mission_claims; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.mission_claims TO anon;
 GRANT ALL ON TABLE public.mission_claims TO authenticated;
 GRANT ALL ON TABLE public.mission_claims TO service_role;
 
@@ -32579,9 +35545,23 @@ GRANT ALL ON TABLE public.mission_claims TO service_role;
 -- Name: TABLE mission_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.mission_votes TO anon;
 GRANT ALL ON TABLE public.mission_votes TO authenticated;
 GRANT ALL ON TABLE public.mission_votes TO service_role;
+
+
+--
+-- Name: TABLE moderation_log; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.moderation_log TO service_role;
+
+
+--
+-- Name: SEQUENCE moderation_log_id_seq; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON SEQUENCE public.moderation_log_id_seq TO authenticated;
+GRANT ALL ON SEQUENCE public.moderation_log_id_seq TO service_role;
 
 
 --
@@ -32603,34 +35583,67 @@ GRANT ALL ON TABLE public.notification_queue TO service_role;
 -- Name: TABLE orders; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.orders TO anon;
 GRANT ALL ON TABLE public.orders TO authenticated;
 GRANT ALL ON TABLE public.orders TO service_role;
+
+
+--
+-- Name: TABLE passport_progress; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.passport_progress TO service_role;
+GRANT SELECT ON TABLE public.passport_progress TO authenticated;
 
 
 --
 -- Name: TABLE passport_stamps; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.passport_stamps TO anon;
 GRANT ALL ON TABLE public.passport_stamps TO authenticated;
 GRANT ALL ON TABLE public.passport_stamps TO service_role;
+
+
+--
+-- Name: TABLE photo_moderation; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.photo_moderation TO service_role;
+
+
+--
+-- Name: TABLE photo_moderation_reports; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.photo_moderation_reports TO service_role;
 
 
 --
 -- Name: TABLE photo_posts; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.photo_posts TO anon;
 GRANT ALL ON TABLE public.photo_posts TO authenticated;
 GRANT ALL ON TABLE public.photo_posts TO service_role;
+
+
+--
+-- Name: TABLE photo_purge_log; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.photo_purge_log TO service_role;
+
+
+--
+-- Name: SEQUENCE photo_purge_log_id_seq; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON SEQUENCE public.photo_purge_log_id_seq TO authenticated;
+GRANT ALL ON SEQUENCE public.photo_purge_log_id_seq TO service_role;
 
 
 --
 -- Name: TABLE photo_reactions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.photo_reactions TO anon;
 GRANT ALL ON TABLE public.photo_reactions TO authenticated;
 GRANT ALL ON TABLE public.photo_reactions TO service_role;
 
@@ -32639,7 +35652,6 @@ GRANT ALL ON TABLE public.photo_reactions TO service_role;
 -- Name: TABLE photo_removed; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.photo_removed TO anon;
 GRANT ALL ON TABLE public.photo_removed TO authenticated;
 GRANT ALL ON TABLE public.photo_removed TO service_role;
 
@@ -32648,7 +35660,6 @@ GRANT ALL ON TABLE public.photo_removed TO service_role;
 -- Name: TABLE photo_reports; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.photo_reports TO anon;
 GRANT ALL ON TABLE public.photo_reports TO authenticated;
 GRANT ALL ON TABLE public.photo_reports TO service_role;
 
@@ -32657,7 +35668,6 @@ GRANT ALL ON TABLE public.photo_reports TO service_role;
 -- Name: TABLE player_birthdays; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.player_birthdays TO anon;
 GRANT SELECT,REFERENCES,TRIGGER,TRUNCATE ON TABLE public.player_birthdays TO authenticated;
 GRANT ALL ON TABLE public.player_birthdays TO service_role;
 
@@ -32666,7 +35676,6 @@ GRANT ALL ON TABLE public.player_birthdays TO service_role;
 -- Name: TABLE player_private; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.player_private TO anon;
 GRANT ALL ON TABLE public.player_private TO authenticated;
 GRANT ALL ON TABLE public.player_private TO service_role;
 
@@ -32675,7 +35684,6 @@ GRANT ALL ON TABLE public.player_private TO service_role;
 -- Name: TABLE player_profiles; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.player_profiles TO anon;
 GRANT ALL ON TABLE public.player_profiles TO authenticated;
 GRANT ALL ON TABLE public.player_profiles TO service_role;
 
@@ -32692,7 +35700,6 @@ GRANT SELECT ON TABLE public.points_ledger TO authenticated;
 -- Name: SEQUENCE points_ledger_id_seq; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON SEQUENCE public.points_ledger_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.points_ledger_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.points_ledger_id_seq TO service_role;
 
@@ -32706,10 +35713,32 @@ GRANT SELECT ON TABLE public.points_rules TO authenticated;
 
 
 --
+-- Name: TABLE postcard_choices; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.postcard_choices TO service_role;
+
+
+--
+-- Name: TABLE postcard_hearts; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.postcard_hearts TO service_role;
+GRANT SELECT ON TABLE public.postcard_hearts TO authenticated;
+
+
+--
+-- Name: TABLE postcard_picks; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.postcard_picks TO service_role;
+GRANT SELECT ON TABLE public.postcard_picks TO authenticated;
+
+
+--
 -- Name: TABLE postcard_stickers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.postcard_stickers TO anon;
 GRANT ALL ON TABLE public.postcard_stickers TO authenticated;
 GRANT ALL ON TABLE public.postcard_stickers TO service_role;
 
@@ -32718,7 +35747,6 @@ GRANT ALL ON TABLE public.postcard_stickers TO service_role;
 -- Name: TABLE preview_hidden; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.preview_hidden TO anon;
 GRANT ALL ON TABLE public.preview_hidden TO authenticated;
 GRANT ALL ON TABLE public.preview_hidden TO service_role;
 
@@ -32727,16 +35755,23 @@ GRANT ALL ON TABLE public.preview_hidden TO service_role;
 -- Name: TABLE price_rules; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.price_rules TO anon;
 GRANT ALL ON TABLE public.price_rules TO authenticated;
 GRANT ALL ON TABLE public.price_rules TO service_role;
+GRANT SELECT ON TABLE public.price_rules TO anon;
+
+
+--
+-- Name: TABLE profile_prefs; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.profile_prefs TO service_role;
+GRANT SELECT ON TABLE public.profile_prefs TO authenticated;
 
 
 --
 -- Name: TABLE profiles; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.profiles TO anon;
 GRANT ALL ON TABLE public.profiles TO authenticated;
 GRANT ALL ON TABLE public.profiles TO service_role;
 
@@ -32809,7 +35844,6 @@ GRANT SELECT(updated_at) ON TABLE public.push_subscriptions TO authenticated;
 -- Name: TABLE quest_challenges; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.quest_challenges TO anon;
 GRANT ALL ON TABLE public.quest_challenges TO authenticated;
 GRANT ALL ON TABLE public.quest_challenges TO service_role;
 
@@ -32818,7 +35852,6 @@ GRANT ALL ON TABLE public.quest_challenges TO service_role;
 -- Name: TABLE quest_posts; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.quest_posts TO anon;
 GRANT ALL ON TABLE public.quest_posts TO authenticated;
 GRANT ALL ON TABLE public.quest_posts TO service_role;
 
@@ -32827,7 +35860,6 @@ GRANT ALL ON TABLE public.quest_posts TO service_role;
 -- Name: TABLE quest_thumbs; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.quest_thumbs TO anon;
 GRANT ALL ON TABLE public.quest_thumbs TO authenticated;
 GRANT ALL ON TABLE public.quest_thumbs TO service_role;
 
@@ -32836,7 +35868,6 @@ GRANT ALL ON TABLE public.quest_thumbs TO service_role;
 -- Name: TABLE reward_codes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.reward_codes TO anon;
 GRANT ALL ON TABLE public.reward_codes TO authenticated;
 GRANT ALL ON TABLE public.reward_codes TO service_role;
 
@@ -32845,7 +35876,6 @@ GRANT ALL ON TABLE public.reward_codes TO service_role;
 -- Name: TABLE room_blocks; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.room_blocks TO anon;
 GRANT ALL ON TABLE public.room_blocks TO authenticated;
 GRANT ALL ON TABLE public.room_blocks TO service_role;
 
@@ -32854,7 +35884,6 @@ GRANT ALL ON TABLE public.room_blocks TO service_role;
 -- Name: TABLE room_requests; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.room_requests TO anon;
 GRANT ALL ON TABLE public.room_requests TO authenticated;
 GRANT ALL ON TABLE public.room_requests TO service_role;
 
@@ -32863,7 +35892,6 @@ GRANT ALL ON TABLE public.room_requests TO service_role;
 -- Name: TABLE sandbox_bots; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.sandbox_bots TO anon;
 GRANT ALL ON TABLE public.sandbox_bots TO authenticated;
 GRANT ALL ON TABLE public.sandbox_bots TO service_role;
 
@@ -32872,7 +35900,6 @@ GRANT ALL ON TABLE public.sandbox_bots TO service_role;
 -- Name: TABLE sandbox_trips; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.sandbox_trips TO anon;
 GRANT ALL ON TABLE public.sandbox_trips TO authenticated;
 GRANT ALL ON TABLE public.sandbox_trips TO service_role;
 
@@ -32881,7 +35908,6 @@ GRANT ALL ON TABLE public.sandbox_trips TO service_role;
 -- Name: TABLE season_champions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.season_champions TO anon;
 GRANT ALL ON TABLE public.season_champions TO authenticated;
 GRANT ALL ON TABLE public.season_champions TO service_role;
 
@@ -32890,7 +35916,6 @@ GRANT ALL ON TABLE public.season_champions TO service_role;
 -- Name: TABLE season_quests; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.season_quests TO anon;
 GRANT ALL ON TABLE public.season_quests TO authenticated;
 GRANT ALL ON TABLE public.season_quests TO service_role;
 
@@ -32899,7 +35924,6 @@ GRANT ALL ON TABLE public.season_quests TO service_role;
 -- Name: TABLE season_settings; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.season_settings TO anon;
 GRANT ALL ON TABLE public.season_settings TO authenticated;
 GRANT ALL ON TABLE public.season_settings TO service_role;
 
@@ -32908,7 +35932,6 @@ GRANT ALL ON TABLE public.season_settings TO service_role;
 -- Name: TABLE secret_missions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.secret_missions TO anon;
 GRANT ALL ON TABLE public.secret_missions TO authenticated;
 GRANT ALL ON TABLE public.secret_missions TO service_role;
 
@@ -32917,7 +35940,6 @@ GRANT ALL ON TABLE public.secret_missions TO service_role;
 -- Name: TABLE security_missions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.security_missions TO anon;
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.security_missions TO authenticated;
 GRANT ALL ON TABLE public.security_missions TO service_role;
 
@@ -32926,7 +35948,6 @@ GRANT ALL ON TABLE public.security_missions TO service_role;
 -- Name: TABLE skip_passes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.skip_passes TO anon;
 GRANT ALL ON TABLE public.skip_passes TO authenticated;
 GRANT ALL ON TABLE public.skip_passes TO service_role;
 
@@ -32943,7 +35964,6 @@ GRANT ALL ON TABLE public.solo_quests TO service_role;
 -- Name: TABLE song_discs; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.song_discs TO anon;
 GRANT ALL ON TABLE public.song_discs TO authenticated;
 GRANT ALL ON TABLE public.song_discs TO service_role;
 
@@ -32952,7 +35972,6 @@ GRANT ALL ON TABLE public.song_discs TO service_role;
 -- Name: TABLE stamp_settings; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.stamp_settings TO anon;
 GRANT ALL ON TABLE public.stamp_settings TO authenticated;
 GRANT ALL ON TABLE public.stamp_settings TO service_role;
 
@@ -32961,7 +35980,6 @@ GRANT ALL ON TABLE public.stamp_settings TO service_role;
 -- Name: TABLE trip_adult_activities; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_adult_activities TO anon;
 GRANT ALL ON TABLE public.trip_adult_activities TO authenticated;
 GRANT ALL ON TABLE public.trip_adult_activities TO service_role;
 
@@ -32970,7 +35988,6 @@ GRANT ALL ON TABLE public.trip_adult_activities TO service_role;
 -- Name: TABLE trip_adult_approvals; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_adult_approvals TO anon;
 GRANT ALL ON TABLE public.trip_adult_approvals TO authenticated;
 GRANT ALL ON TABLE public.trip_adult_approvals TO service_role;
 
@@ -32979,7 +35996,6 @@ GRANT ALL ON TABLE public.trip_adult_approvals TO service_role;
 -- Name: TABLE trip_adult_settings; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_adult_settings TO anon;
 GRANT ALL ON TABLE public.trip_adult_settings TO authenticated;
 GRANT ALL ON TABLE public.trip_adult_settings TO service_role;
 
@@ -33004,7 +36020,6 @@ GRANT SELECT ON TABLE public.trip_crowns TO authenticated;
 -- Name: TABLE trip_day_tags; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_day_tags TO anon;
 GRANT ALL ON TABLE public.trip_day_tags TO authenticated;
 GRANT ALL ON TABLE public.trip_day_tags TO service_role;
 
@@ -33013,7 +36028,6 @@ GRANT ALL ON TABLE public.trip_day_tags TO service_role;
 -- Name: TABLE trip_day_trivia_keys; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_day_trivia_keys TO anon;
 GRANT ALL ON TABLE public.trip_day_trivia_keys TO authenticated;
 GRANT ALL ON TABLE public.trip_day_trivia_keys TO service_role;
 
@@ -33022,7 +36036,6 @@ GRANT ALL ON TABLE public.trip_day_trivia_keys TO service_role;
 -- Name: TABLE trip_deletion_log; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_deletion_log TO anon;
 GRANT ALL ON TABLE public.trip_deletion_log TO authenticated;
 GRANT ALL ON TABLE public.trip_deletion_log TO service_role;
 
@@ -33031,7 +36044,6 @@ GRANT ALL ON TABLE public.trip_deletion_log TO service_role;
 -- Name: TABLE trip_deletion_notes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_deletion_notes TO anon;
 GRANT ALL ON TABLE public.trip_deletion_notes TO authenticated;
 GRANT ALL ON TABLE public.trip_deletion_notes TO service_role;
 
@@ -33048,7 +36060,6 @@ GRANT SELECT ON TABLE public.trip_drafts TO authenticated;
 -- Name: TABLE trip_feedback; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_feedback TO anon;
 GRANT ALL ON TABLE public.trip_feedback TO authenticated;
 GRANT ALL ON TABLE public.trip_feedback TO service_role;
 
@@ -33065,7 +36076,6 @@ GRANT SELECT ON TABLE public.trip_guides TO authenticated;
 -- Name: TABLE trip_invites; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_invites TO anon;
 GRANT ALL ON TABLE public.trip_invites TO authenticated;
 GRANT ALL ON TABLE public.trip_invites TO service_role;
 
@@ -33074,7 +36084,6 @@ GRANT ALL ON TABLE public.trip_invites TO service_role;
 -- Name: TABLE trip_item_alternatives; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_item_alternatives TO anon;
 GRANT ALL ON TABLE public.trip_item_alternatives TO authenticated;
 GRANT ALL ON TABLE public.trip_item_alternatives TO service_role;
 
@@ -33083,7 +36092,6 @@ GRANT ALL ON TABLE public.trip_item_alternatives TO service_role;
 -- Name: TABLE trip_itineraries; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_itineraries TO anon;
 GRANT ALL ON TABLE public.trip_itineraries TO authenticated;
 GRANT ALL ON TABLE public.trip_itineraries TO service_role;
 
@@ -33092,7 +36100,6 @@ GRANT ALL ON TABLE public.trip_itineraries TO service_role;
 -- Name: TABLE trip_members; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_members TO anon;
 GRANT ALL ON TABLE public.trip_members TO authenticated;
 GRANT ALL ON TABLE public.trip_members TO service_role;
 
@@ -33101,7 +36108,6 @@ GRANT ALL ON TABLE public.trip_members TO service_role;
 -- Name: TABLE trip_play_state; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_play_state TO anon;
 GRANT ALL ON TABLE public.trip_play_state TO authenticated;
 GRANT ALL ON TABLE public.trip_play_state TO service_role;
 
@@ -33110,7 +36116,6 @@ GRANT ALL ON TABLE public.trip_play_state TO service_role;
 -- Name: TABLE trip_player_cards; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_player_cards TO anon;
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE ON TABLE public.trip_player_cards TO authenticated;
 GRANT ALL ON TABLE public.trip_player_cards TO service_role;
 
@@ -33193,10 +36198,17 @@ GRANT UPDATE(next_year_goal) ON TABLE public.trip_player_cards TO authenticated;
 
 
 --
+-- Name: TABLE trip_postcards; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.trip_postcards TO service_role;
+GRANT SELECT ON TABLE public.trip_postcards TO authenticated;
+
+
+--
 -- Name: TABLE trip_role_changes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_role_changes TO anon;
 GRANT ALL ON TABLE public.trip_role_changes TO authenticated;
 GRANT ALL ON TABLE public.trip_role_changes TO service_role;
 
@@ -33324,7 +36336,6 @@ GRANT SELECT(settled_at) ON TABLE public.trip_schedule TO authenticated;
 -- Name: TABLE trip_season_finds; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_season_finds TO anon;
 GRANT ALL ON TABLE public.trip_season_finds TO authenticated;
 GRANT ALL ON TABLE public.trip_season_finds TO service_role;
 
@@ -33333,7 +36344,6 @@ GRANT ALL ON TABLE public.trip_season_finds TO service_role;
 -- Name: TABLE trip_season_games; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_season_games TO anon;
 GRANT ALL ON TABLE public.trip_season_games TO authenticated;
 GRANT ALL ON TABLE public.trip_season_games TO service_role;
 
@@ -33342,7 +36352,6 @@ GRANT ALL ON TABLE public.trip_season_games TO service_role;
 -- Name: TABLE trip_season_reveals; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_season_reveals TO anon;
 GRANT ALL ON TABLE public.trip_season_reveals TO authenticated;
 GRANT ALL ON TABLE public.trip_season_reveals TO service_role;
 
@@ -33351,7 +36360,6 @@ GRANT ALL ON TABLE public.trip_season_reveals TO service_role;
 -- Name: TABLE trip_team_members; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_team_members TO anon;
 GRANT ALL ON TABLE public.trip_team_members TO authenticated;
 GRANT ALL ON TABLE public.trip_team_members TO service_role;
 
@@ -33360,7 +36368,6 @@ GRANT ALL ON TABLE public.trip_team_members TO service_role;
 -- Name: TABLE trip_teams; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_teams TO anon;
 GRANT ALL ON TABLE public.trip_teams TO authenticated;
 GRANT ALL ON TABLE public.trip_teams TO service_role;
 
@@ -33369,9 +36376,23 @@ GRANT ALL ON TABLE public.trip_teams TO service_role;
 -- Name: TABLE trivia_answers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trivia_answers TO anon;
 GRANT ALL ON TABLE public.trivia_answers TO authenticated;
 GRANT ALL ON TABLE public.trivia_answers TO service_role;
+
+
+--
+-- Name: TABLE user_badges; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.user_badges TO service_role;
+GRANT SELECT ON TABLE public.user_badges TO authenticated;
+
+
+--
+-- Name: TABLE user_blocks; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.user_blocks TO service_role;
 
 
 --
@@ -33386,7 +36407,6 @@ GRANT ALL ON TABLE public.user_credits TO service_role;
 -- Name: TABLE waitlist; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.waitlist TO anon;
 GRANT ALL ON TABLE public.waitlist TO authenticated;
 GRANT ALL ON TABLE public.waitlist TO service_role;
 
@@ -33395,7 +36415,6 @@ GRANT ALL ON TABLE public.waitlist TO service_role;
 -- Name: TABLE weekly_answer_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.weekly_answer_votes TO anon;
 GRANT ALL ON TABLE public.weekly_answer_votes TO authenticated;
 GRANT ALL ON TABLE public.weekly_answer_votes TO service_role;
 
@@ -33404,7 +36423,6 @@ GRANT ALL ON TABLE public.weekly_answer_votes TO service_role;
 -- Name: TABLE weekly_answers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.weekly_answers TO anon;
 GRANT ALL ON TABLE public.weekly_answers TO authenticated;
 GRANT ALL ON TABLE public.weekly_answers TO service_role;
 
@@ -33413,7 +36431,6 @@ GRANT ALL ON TABLE public.weekly_answers TO service_role;
 -- Name: TABLE weekly_question_pool; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.weekly_question_pool TO anon;
 GRANT ALL ON TABLE public.weekly_question_pool TO authenticated;
 GRANT ALL ON TABLE public.weekly_question_pool TO service_role;
 
@@ -33422,7 +36439,6 @@ GRANT ALL ON TABLE public.weekly_question_pool TO service_role;
 -- Name: SEQUENCE weekly_question_pool_id_seq; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON SEQUENCE public.weekly_question_pool_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.weekly_question_pool_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.weekly_question_pool_id_seq TO service_role;
 
@@ -33431,7 +36447,6 @@ GRANT ALL ON SEQUENCE public.weekly_question_pool_id_seq TO service_role;
 -- Name: TABLE weekly_questions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.weekly_questions TO anon;
 GRANT ALL ON TABLE public.weekly_questions TO authenticated;
 GRANT ALL ON TABLE public.weekly_questions TO service_role;
 
@@ -33440,9 +36455,16 @@ GRANT ALL ON TABLE public.weekly_questions TO service_role;
 -- Name: TABLE window_guide_items; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.window_guide_items TO anon;
 GRANT ALL ON TABLE public.window_guide_items TO authenticated;
 GRANT ALL ON TABLE public.window_guide_items TO service_role;
+
+
+--
+-- Name: TABLE wrapup_answers; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.wrapup_answers TO service_role;
+GRANT SELECT ON TABLE public.wrapup_answers TO authenticated;
 
 
 --
@@ -33463,7 +36485,6 @@ GRANT ALL ON TABLE trip_private.trip_speed_finishes TO service_role;
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO anon;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;
 
@@ -33472,7 +36493,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENC
 -- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO service_role;
 
@@ -33481,7 +36501,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIO
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO anon;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO service_role;
 

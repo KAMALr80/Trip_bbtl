@@ -21,6 +21,7 @@ import { Route as BetaCodeRouteImport } from './routes/beta.$code'
 import { Route as GuideTokenRouteImport } from './routes/guide.$token'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
 import { Route as LegalDocumentRouteImport } from './routes/legal/$document'
+import { Route as PUserIdRouteImport } from './routes/p.$userId'
 import { Route as TripsNewRouteImport } from './routes/trips.new'
 import { Route as ShellTTripIdRouteImport } from './routes/_shell.t.$tripId'
 import { Route as ApiPublicNotifyRouteImport } from './routes/api/public/notify'
@@ -89,6 +90,11 @@ const LegalDocumentRoute = LegalDocumentRouteImport.update({
   path: '/legal/$document',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PUserIdRoute = PUserIdRouteImport.update({
+  id: '/p/$userId',
+  path: '/p/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TripsNewRoute = TripsNewRouteImport.update({
   id: '/trips/new',
   path: '/trips/new',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/guide/$token': typeof GuideTokenRoute
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
+  '/p/$userId': typeof PUserIdRoute
   '/trips/new': typeof TripsNewRoute
   '/t/$tripId': typeof ShellTTripIdRouteWithChildren
   '/api/public/notify': typeof ApiPublicNotifyRoute
@@ -162,6 +169,7 @@ export interface FileRoutesByTo {
   '/guide/$token': typeof GuideTokenRoute
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
+  '/p/$userId': typeof PUserIdRoute
   '/trips/new': typeof TripsNewRoute
   '/': typeof ShellIndexRoute
   '/api/public/notify': typeof ApiPublicNotifyRoute
@@ -184,6 +192,7 @@ export interface FileRoutesById {
   '/guide/$token': typeof GuideTokenRoute
   '/join/$code': typeof JoinCodeRoute
   '/legal/$document': typeof LegalDocumentRoute
+  '/p/$userId': typeof PUserIdRoute
   '/trips/new': typeof TripsNewRoute
   '/_shell/': typeof ShellIndexRoute
   '/_shell/t/$tripId': typeof ShellTTripIdRouteWithChildren
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
     | '/guide/$token'
     | '/join/$code'
     | '/legal/$document'
+    | '/p/$userId'
     | '/trips/new'
     | '/t/$tripId'
     | '/api/public/notify'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/guide/$token'
     | '/join/$code'
     | '/legal/$document'
+    | '/p/$userId'
     | '/trips/new'
     | '/'
     | '/api/public/notify'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/guide/$token'
     | '/join/$code'
     | '/legal/$document'
+    | '/p/$userId'
     | '/trips/new'
     | '/_shell/'
     | '/_shell/t/$tripId'
@@ -268,6 +280,7 @@ export interface RootRouteChildren {
   GuideTokenRoute: typeof GuideTokenRoute
   JoinCodeRoute: typeof JoinCodeRoute
   LegalDocumentRoute: typeof LegalDocumentRoute
+  PUserIdRoute: typeof PUserIdRoute
   TripsNewRoute: typeof TripsNewRoute
   ApiPublicNotifyRoute: typeof ApiPublicNotifyRoute
   ApiPublicPurgePhotosRoute: typeof ApiPublicPurgePhotosRoute
@@ -358,6 +371,13 @@ declare module '@tanstack/react-router' {
       path: '/legal/$document'
       fullPath: '/legal/$document'
       preLoaderRoute: typeof LegalDocumentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$userId': {
+      id: '/p/$userId'
+      path: '/p/$userId'
+      fullPath: '/p/$userId'
+      preLoaderRoute: typeof PUserIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trips/new': {
@@ -463,6 +483,7 @@ const rootRouteChildren: RootRouteChildren = {
   GuideTokenRoute: GuideTokenRoute,
   JoinCodeRoute: JoinCodeRoute,
   LegalDocumentRoute: LegalDocumentRoute,
+  PUserIdRoute: PUserIdRoute,
   TripsNewRoute: TripsNewRoute,
   ApiPublicNotifyRoute: ApiPublicNotifyRoute,
   ApiPublicPurgePhotosRoute: ApiPublicPurgePhotosRoute,

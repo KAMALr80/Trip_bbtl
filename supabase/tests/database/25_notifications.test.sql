@@ -64,7 +64,7 @@ SELECT is((SELECT send_after FROM public.notification_queue WHERE type = 'night_
 
 -- ---------------------------------------------------------------- settings
 SELECT tests.authenticate_as(tests.user_id('p1'));
-SELECT is((SELECT count(*)::int FROM public.my_notification_settings()), 12, 'every reminder type is listed');
+SELECT is((SELECT count(*)::int FROM public.my_notification_settings()), 13, 'every reminder type is listed (wrap-up added in M5-02)');
 SELECT public.set_notification_pref('daily', false, false);
 SELECT is(pg_temp.queued('p1', 'daily'), 0, 'muting a type drops what was queued');
 SELECT ok(pg_temp.queued('p2', 'daily') > 0, 'only for that player');

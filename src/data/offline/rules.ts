@@ -6,7 +6,9 @@ import type { QueryKey } from "@tanstack/react-query";
  * Per-trip queries kept for offline use (the third part of ["trip", tripId, part, ...]). Only the
  * player's own view of the trip: the server already hides what they may not see (sealed text,
  * other players' answers), so the snapshot can't show more than the app did online. The crew's
- * proof photos (`crew-check`), live session counts and the shared guide stay online-only.
+ * proof photos (`crew-check`), live session counts and the shared guide stay online-only, as do
+ * the wrap-up board and the Captain's postcard ranking. The locked postcard is kept (its photo
+ * links expire, so offline it shows its words with blank photos).
  */
 const TRIP_PARTS = new Set([
   "members",
@@ -17,6 +19,10 @@ const TRIP_PARTS = new Set([
   "call-nights",
   "crowns",
   "journal",
+  "postcard-info",
+  "postcard-picks",
+  "wrapup-answers",
+  "postcard",
 ]);
 
 /** Is this query saved in the snapshot? `userId` is the signed-in player. */

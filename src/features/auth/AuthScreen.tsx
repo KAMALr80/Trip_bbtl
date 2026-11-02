@@ -60,6 +60,12 @@ export function AuthScreen({
       return;
     }
     const isTeen = mode === "signup" && !ageAt(18);
+    // R-904, Q12: under 18 only through a Captain's teen invite (a 10-letter link code).
+    // display-only; server: trip_private.guard_auth_signup_age.
+    if (isTeen && !(teenInvite && teenInvite.length === 10)) {
+      setMessage(t("auth.error.teenNoInvite"));
+      return;
+    }
     e.preventDefault();
     setBusy(true);
     setMessage("");

@@ -25,18 +25,35 @@ The deck is the **source of truth for product rules**. It says so itself: *"This
 
 ---
 
-## Where we are and what's next (Oct 31, 2026)
+## Where we are and what's next (Nov 2, 2026)
 
-**Done:** M1 and M2 (small leftovers in their status tables), M3 mostly done. The ledger is the only
-scoring source; the leftovers are listed below. M0's code side is done; **nothing is deployed yet**
-because the staging accounts don't exist ([owner-go-live-steps.md](owner-go-live-steps.md) §1).
+**Done:** M1 and M2 (small leftovers in their status tables), M3 mostly done, M4's code (M4-01 –
+M4-09). M0's code side is done; **nothing is deployed yet** because the staging accounts don't exist
+([owner-go-live-steps.md](owner-go-live-steps.md) §1).
+
+**M5 — memories & Passport** ([M5](milestones/M5-memories-and-passport.md)) is built with the
+founder's defaults for Q11, Q13, Q23 and Q28: Postcard Picks, wrap-up week, the Day 7 lock, the Trip
+Postcard, the Captain's tie-break and swap, the photo purge, stamps v2, levels, badges, the
+after-trip view, the Passport Junkie profile, the Me tab and the 7-card tour. Its leftovers: a
+server-rendered postcard image and the designer's art (M5-04, M5-13), hiding single photos once
+something public shows them (M5-10), and running the lock on staging.
+
+**M6 — trust, safety & web launch** ([M6](milestones/M6-trust-safety-and-launch.md)): the code
+tasks are done with the founder's defaults for Q12 and Q24: age rules to the deck (teens only by
+teen invite), the security review and photo-privacy audit ([write-up](m6-security-and-privacy-audit.md)),
+image moderation, AI proof checks (waiting for `AI_API_KEY`), the admin area and the Test Lab for
+the new engine. What's left of M6 needs staging, production, real crews or a lawyer (M6-08 – M6-11).
 
 **Next in development, in order:**
-1. **M4 — web app: install, offline, notifications** ([M4](milestones/M4-web-offline-notifications.md)). It's the last ★ priority left (★02 offline on flights), and several M3 leftovers wait on its notifications (proof expired, drop ending soon). M4-01 – M4-09 are done (install, service worker, offline snapshot and outbox, flight games, photos, reminders); M4-10 is the real-phone checklist once staging exists, then notifications (M4-07 → M4-09). It needs no new accounts. Email reminders need the email sender (owner step 2.3), and real-phone checks (M4-10) need staging.
-2. **M3 leftovers, alongside M4:** "present live" as Surprise Drop proof (R-343); the content admin list/edit screen (M3-02). AI tailoring of content waits for `AI_API_KEY`. The ticket-stub card designs (M3-05, M3-09) and the luggage-tag crown celebration (M3-11) wait for the designer.
-3. **M5 — memories & Passport** ([M5](milestones/M5-memories-and-passport.md)), which a second dev can start in parallel with M4. Order: Postcard Picks → wrap-up week → Day 7 lock → collage → stamps, levels, badges → Passport profile and Me tab. Its wrap-up reminders use M4's queue. The founder's answers for Q11, Q13, Q23 and Q28 are needed first, or the defaults apply.
-4. **Cleanup that can be slotted in anywhere:** move the 52 retired tables to `legacy_archive` (M1-08, M3-16), delete the unreachable old setup code (M2-05), and move the remaining strings into the translation catalog as screens are touched (M1-07).
-5. **M6 — trust, safety & web launch**, after M4 and M5.
+1. **Staging first** (owner steps §1): then M4-10, M6-01's labelled-photo run, M6-06's full-trip run,
+   M6-08 performance and monitoring, and M6-10 regression + crew beta.
+2. **M4-10**, the real-phone checklist, once staging exists (step 12 covers wrap-up week and the postcard).
+3. **M3 leftovers:** "present live" as Surprise Drop proof (R-343); the content admin list/edit
+   screen (M3-02). AI tailoring of content waits for `AI_API_KEY`. The ticket-stub card designs
+   (M3-05, M3-09) and the luggage-tag crown celebration (M3-11) wait for the designer.
+4. **Cleanup that can be slotted in anywhere:** move the 52 retired tables to `legacy_archive` (M1-08,
+   M3-16), delete the unreachable old setup code (M2-05), and move the remaining strings into the
+   translation catalog as screens are touched (M1-07).
 
 ---
 

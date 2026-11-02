@@ -916,16 +916,17 @@ export function TeenJoinGate({ onJoined }: { onJoined: () => void }) {
           }}
         >
           <p className="text-sm text-muted-foreground">
-            Ask your trip's Captain for the join code. They approve you before you can play.
+            Enter the teen invite code from your trip's Captain. They approve you before you can
+            play.
           </p>
           <input
             aria-label="Join code"
             required
-            minLength={6}
+            minLength={10}
             maxLength={10}
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
-            placeholder="JOIN CODE"
+            placeholder="TEEN INVITE"
             className="w-full h-14 rounded-2xl border border-border bg-card text-center font-display text-2xl tracking-widest"
           />
           {msg && (

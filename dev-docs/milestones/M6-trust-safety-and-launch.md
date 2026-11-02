@@ -23,6 +23,27 @@
 | M6-10 | Full regression + beta round with real crews | L |
 | M6-11 | Web launch checklist | S |
 
+## Status (Nov 2, 2026)
+
+Built with the founder's defaults for Q12 and Q24 (06). Database tests: `02_age_gates` (now the age ×
+action matrix), `30_security`, `31_moderation`, `32_test_lab`, `33_admin`; browser tests:
+`e2e/moderation`, `e2e/admin`; CI also runs `scripts/security/check-bundle.ts`. The audit write-up is
+[m6-security-and-privacy-audit.md](../m6-security-and-privacy-audit.md).
+
+| ID | State | What's done · what's left |
+|---|---|---|
+| M6-01 | 🟡 | Vision checker behind the M3-14 interface (`visionProofChecker`): Bingo / Scavenger / Photo Challenge proofs get pass / unsure / fail against their square, find or prompt (`proof_challenge`); every other proof photo gets the safety check once. Small image, JSON answer parsed with zod; only the verdict, a short reason and flag names are stored. Behind `ai_gate` (kill switch, daily caps, logged as `proof_check`); AI off or any error = unsure. **Left:** the labelled ~100-photo run (`bun scripts/ai/eval-proof-checks.ts labels.json`) once `AI_API_KEY` exists. |
+| M6-02 | ✅ | `photo_moderation`: an AI safety flag hides a proof photo from everyone but its uploader and admins (also off the postcard and the guide) and stops an AI pass from approving it; players Report a crew photo (Crew Check, wrap-up week) into the queue without hiding it. Me → founder tools → Photo review: approve, remove (hidden for good, no points, never deleted) or warn; every step in `moderation_log`. **Left:** custom photo avatars aren't checked yet (proof photos only); "warn" is logged but doesn't notify the player yet. |
+| M6-03 | ✅ | Q12 default: email self sign-up 18+; 13–17 only with a Captain's teen invite (in the sign-up data, or `set_teen_dob` after Google); the plain join code never admits a teen (finding T1 closed); Captains 21+; no alcohol content; Family vibe + `has_minors` when a teen is approved. **Left:** the Terms / Privacy text still describes the older 13+ sign-up (M6-09, lawyer); E16 on staging. |
+| M6-04 | ✅ | Audit written; fixes merged: buckets images-only ≤ 5 MB, account deletion also removes proof and guide photos, the 12-month backstop covers proof photos and never touches a locked trip. **Tickets:** teen photo avatars (legal question), older culture-room photos on account deletion, P8 (moving trip dates after proofs exist deletes them). |
+| M6-05 | ✅ | Founder tools: Users & trips (find; disable / enable with a reason, logged, banned in Auth; archive / unarchive), Photo review, plus the existing bug inbox, beta codes, AI guard, founding members and launch switch; all admin-checked on the server. **Left:** the content library list/edit screen (M3-02). |
+| M6-06 | ✅ | New-engine sandboxes for every room × mode with bots; Jump to phase (moves the sandbox's dates; sandboxes only); Bots play now; reset / delete. **Left:** the founder's 15-minute full-trip run on staging. |
+| M6-07 | ✅ | RLS, definer `search_path`, `anon` reach and buckets are checked by `30_security`; `anon` lost its default grants (least privilege); server functions reviewed; bundle secret scan in CI; `bun audit fix` (24 advisories). **Tickets:** zod 4 upgrade and remaining dev-tool advisories; optional external pen test. |
+| M6-08 | ⬜ | Needs staging: Lighthouse on Slow 4G, the 500-player load test, cron monitoring and alerts. |
+| M6-09 | ⬜ | Needs the owner and a lawyer: Terms / Privacy for teen invites only, photo deletion after Day 7, AI photo checks, notifications, retention; then bump the legal version (re-consent). |
+| M6-10 | ⬜ | Needs staging and real crews. |
+| M6-11 | ⬜ | Needs production. |
+
 ---
 
 ### M6-01 · AI vision proof checks

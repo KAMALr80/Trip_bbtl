@@ -45,7 +45,7 @@ SELECT is((SELECT count(*)::int FROM public.trip_members WHERE trip_id = (SELECT
           'a pending member cannot see the rest of the crew yet');
 
 SELECT tests.authenticate_as_anon();
-SELECT is((SELECT count(*)::int FROM public.trips), 0, 'signed-out visitors cannot read any trip');
+SELECT throws_ok($$SELECT count(*) FROM public.trips$$, '42501', NULL, 'signed-out visitors cannot read any trip (no table grant since M6-07)');
 SELECT tests.clear_authentication();
 
 -- ---------------------------------------------------------------- no direct writes
