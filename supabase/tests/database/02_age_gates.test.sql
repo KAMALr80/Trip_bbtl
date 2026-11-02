@@ -1,9 +1,9 @@
 -- M0-11 characterisation: age gates at sign-up, birthday entry, joining and approval.
 -- Deck R-904: sign-up 18+, 13–17 only by Captain invite, 18–20 can't be Captain, alcohol 21+.
--- Where today's code differs, the test name says "today" and points at the task that changes it.
+-- M6-03 (Q12 default): self sign-up is 18+; 13–17 only through a Captain's teen invite.
 BEGIN;
 \ir ../_helpers.psql
-SELECT plan(18);
+SELECT plan(24);
 
 -- ---------------------------------------------------------------- sign-up trigger on auth.users
 -- Supabase Auth always sets created_at; the trigger skips rows without it.
@@ -18,11 +18,17 @@ SELECT throws_like(format($$
   (current_date - interval '12 years')::date),
   'Family Mode is coming soon%', 'email sign-up under 13 is refused');
 
-SELECT lives_ok(format($$
+SELECT throws_like(format($$
   INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data, created_at)
   VALUES (gen_random_uuid(), 'c@x.test', '{"provider":"email"}', '{"legal_version":"2026-10-03","birthday":"%s"}', now())$$,
   (current_date - interval '15 years')::date),
-  'email sign-up at 15 is allowed (today; deck R-904 says self sign-up is 18+ — M6-03 / Q12)');
+  'TripJunkies accounts are for ages 18 and up%', 'email sign-up at 15 without a teen invite is refused (R-904, Q12)');
+
+SELECT lives_ok(format($$
+  INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data, created_at)
+  VALUES (gen_random_uuid(), 'c2@x.test', '{"provider":"email"}', '{"legal_version":"2026-10-03","birthday":"%s"}', now())$$,
+  (current_date - interval '18 years 1 day')::date),
+  'email sign-up at 18 is allowed');
 
 SELECT throws_like($$
   INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data, created_at)
@@ -63,12 +69,36 @@ SELECT tests.authenticate_as(tests.user_id('teen'));
 SELECT throws_like($$SELECT public.join_trip(tests.join_code((SELECT legacy_trip FROM trips_)))$$,
                    'Under 18? Ask your trip''s Captain for a teen invite link.',
                    'a teen cannot join a legacy trip with the plain code');
-SELECT throws_like($$SELECT public.join_trip(tests.join_code((SELECT party_trip FROM trips_)))$$,
-                   'This trip isn''t open to players under 18', 'a teen cannot join a party-vibe trip');
-SELECT is(public.join_trip(tests.join_code((SELECT a2c_trip FROM trips_))), (SELECT a2c_trip FROM trips_),
-          'a teen CAN join an a2c trip with the plain code (today; deck R-904 says Captain invite only — M6-03)');
-SELECT throws_like($$SELECT public.join_trip(tests.join_code((SELECT a2c_trip2 FROM trips_)))$$,
+SELECT tests.authenticate_as(tests.user_id('cap'));
+SELECT throws_like($$SELECT public.create_teen_invite((SELECT party_trip FROM trips_), true)$$,
+                   'Teens can''t join Party trips%', 'there are no teen invites to a party-vibe trip');
+SELECT tests.authenticate_as(tests.user_id('teen'));
+SELECT throws_like($$SELECT public.join_trip(tests.join_code((SELECT a2c_trip FROM trips_)))$$,
+                   'Under 18? Ask your trip''s Captain for a teen invite link.',
+                   'a teen cannot join any trip with the plain code (R-904, Q12)');
+SELECT tests.authenticate_as(tests.user_id('cap'));
+CREATE TEMP TABLE inv AS SELECT public.create_teen_invite((SELECT a2c_trip FROM trips_), true) AS one,
+                                public.create_teen_invite((SELECT a2c_trip2 FROM trips_), true) AS two;
+GRANT SELECT ON inv TO PUBLIC;
+SELECT tests.authenticate_as(tests.user_id('teen'));
+SELECT is(public.join_trip((SELECT one FROM inv)), (SELECT a2c_trip FROM trips_), 'the teen joins with the Captain''s teen invite');
+SELECT throws_like($$SELECT public.join_trip((SELECT two FROM inv))$$,
                    'Players under 18 can be in one trip at a time', 'a teen can be in one trip at a time');
+SELECT tests.clear_authentication();
+-- The invite carries the sign-up: a 15-year-old with a valid teen invite can create an account.
+SELECT lives_ok(format($$
+  INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data, created_at)
+  VALUES (gen_random_uuid(), 'f@x.test', '{"provider":"email"}', '{"legal_version":"2026-10-03","birthday":"%s","teen_invite":"%s"}', now())$$,
+  (current_date - interval '15 years')::date, (SELECT two FROM inv)),
+  'email sign-up at 15 WITH a teen invite is allowed');
+SELECT tests.create_user('gteen', NULL);
+SELECT tests.authenticate_as(tests.user_id('gteen'));
+SELECT throws_like($$SELECT public.set_my_dob((current_date - interval '16 years')::date, true)$$,
+                   'TripJunkies accounts are for ages 18 and up%', 'a Google sign-up under 18 can''t save a birthday without an invite');
+SELECT throws_like($$SELECT public.set_teen_dob((current_date - interval '16 years')::date, true, 'NOPENOPENO')$$,
+                   'TripJunkies accounts are for ages 18 and up%', 'or with an invite that doesn''t exist');
+SELECT is(public.set_teen_dob((current_date - interval '16 years')::date, true, (SELECT two FROM inv)), 'Teen 13–17',
+          'with the Captain''s teen invite it can');
 SELECT tests.clear_authentication();
 
 SELECT is((SELECT status FROM public.trip_members WHERE trip_id = (SELECT a2c_trip FROM trips_) AND user_id = tests.user_id('teen')),

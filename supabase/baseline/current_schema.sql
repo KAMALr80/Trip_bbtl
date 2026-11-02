@@ -7824,6 +7824,9 @@ BEGIN
    IF v_dob > current_date OR v_dob < date '1900-01-01' THEN RAISE EXCEPTION 'Check your birthday'; END IF;
    v_age := extract(year FROM age(current_date,v_dob))::int;
    IF v_age < 13 THEN RAISE EXCEPTION 'Family Mode is coming soon. TripJunkies accounts are for ages 13 and up.'; END IF;
+   IF v_age < 18 AND NOT trip_private.teen_invite_ok(NEW.raw_user_meta_data->>'teen_invite') THEN
+     RAISE EXCEPTION 'TripJunkies accounts are for ages 18 and up. Under 18? Ask your trip''s Captain for a teen invite link.';
+   END IF;
  ELSIF NEW.raw_app_meta_data->>'provider' = 'email' AND NEW.created_at >= timestamptz '2026-10-02 22:00:00+00' THEN
    RAISE EXCEPTION 'Please provide your birthday and accept the current Terms';
  END IF;
@@ -8351,7 +8354,7 @@ DECLARE t public.trips%ROWTYPE; inv public.trip_invites%ROWTYPE; v_count integer
   END IF;
   IF t.join_locked THEN RAISE EXCEPTION 'This trip isn''t taking new members right now'; END IF;
   IF v_age < 18 THEN
-    IF NOT v_teen_invite AND t.season_rule IS DISTINCT FROM 'a2c' THEN RAISE EXCEPTION 'Under 18? Ask your trip''s Captain for a teen invite link.'; END IF;
+    IF NOT v_teen_invite THEN RAISE EXCEPTION 'Under 18? Ask your trip''s Captain for a teen invite link.'; END IF;
     IF t.vibe='party' THEN RAISE EXCEPTION 'This trip isn''t open to players under 18'; END IF;
     IF EXISTS (SELECT 1 FROM public.trip_members m WHERE m.user_id=auth.uid()) THEN RAISE EXCEPTION 'Players under 18 can be in one trip at a time'; END IF;
   END IF;
@@ -13581,9 +13584,10 @@ BEGIN
  IF p_dob IS NULL OR p_dob > current_date OR p_dob < date '1900-01-01' THEN RAISE EXCEPTION 'Check your date of birth'; END IF;
  a := extract(year FROM age(current_date,p_dob))::int;
  IF a < 13 THEN RAISE EXCEPTION 'Family Mode is coming soon. TripJunkies accounts are for ages 13 and up.'; END IF;
+ IF a < 18 THEN RAISE EXCEPTION 'TripJunkies accounts are for ages 18 and up. Under 18? Ask your trip''s Captain for a teen invite link.'; END IF;
  IF EXISTS (SELECT 1 FROM public.player_private WHERE user_id=auth.uid()) THEN RAISE EXCEPTION 'Your birthday is already saved; contact support for corrections'; END IF;
  INSERT INTO public.player_private(user_id,dob) VALUES(auth.uid(),p_dob);
- IF a >= 18 AND (SELECT public_launch FROM public.app_settings LIMIT 1) THEN INSERT INTO public.beta_access(user_id,source) VALUES(auth.uid(),'launch') ON CONFLICT DO NOTHING; END IF;
+ IF (SELECT public_launch FROM public.app_settings LIMIT 1) THEN INSERT INTO public.beta_access(user_id,source) VALUES(auth.uid(),'launch') ON CONFLICT DO NOTHING; END IF;
  RETURN trip_private.age_range(a);
 END $$;
 
@@ -13992,11 +13996,12 @@ BEGIN
  IF a < 13 THEN RAISE EXCEPTION 'Family Mode is coming soon. TripJunkies accounts are for ages 13 and up.'; END IF;
  IF a >= 18 THEN RETURN trip_private.set_my_dob(p_dob, p_agree); END IF;
  IF EXISTS (SELECT 1 FROM public.player_private WHERE user_id=auth.uid()) THEN RAISE EXCEPTION 'Your birthday is already saved; contact support for corrections'; END IF;
- SELECT * INTO inv FROM public.trip_invites WHERE token=upper(trim(coalesce(p_invite,''))) FOR UPDATE;
- INSERT INTO public.player_private(user_id,dob) VALUES(auth.uid(),p_dob);
- IF FOUND AND inv.teen AND inv.guardian_confirmed_at IS NOT NULL AND inv.used_at IS NULL AND inv.cancelled_at IS NULL AND inv.expires_at > now() THEN
-   INSERT INTO trip_private.teen_accounts(user_id,invite_id,trip_id) VALUES(auth.uid(),inv.id,inv.trip_id) ON CONFLICT DO NOTHING;
+ IF NOT trip_private.teen_invite_ok(p_invite) THEN
+   RAISE EXCEPTION 'TripJunkies accounts are for ages 18 and up. Under 18? Ask your trip''s Captain for a teen invite link.';
  END IF;
+ SELECT * INTO inv FROM public.trip_invites WHERE token=upper(btrim(p_invite)) FOR UPDATE;
+ INSERT INTO public.player_private(user_id,dob) VALUES(auth.uid(),p_dob);
+ INSERT INTO trip_private.teen_accounts(user_id,invite_id,trip_id) VALUES(auth.uid(),inv.id,inv.trip_id) ON CONFLICT DO NOTHING;
  RETURN trip_private.age_range(a);
 END $$;
 
@@ -15102,6 +15107,20 @@ CREATE FUNCTION trip_private.teen_block(p_what text) RETURNS void
     SET search_path TO 'public'
     AS $$ BEGIN
  IF auth.uid() IS NULL OR coalesce(trip_private.age_of(auth.uid()),0) < 18 THEN RAISE EXCEPTION '% is for players 18 and older.', p_what; END IF; END $$;
+
+
+--
+-- Name: teen_invite_ok(text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.teen_invite_ok(p_token text) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT EXISTS (SELECT 1 FROM public.trip_invites i
+                 WHERE i.token = upper(btrim(coalesce(p_token, ''))) AND i.teen AND i.guardian_confirmed_at IS NOT NULL
+                   AND i.used_at IS NULL AND i.cancelled_at IS NULL AND i.expires_at > now())
+$$;
 
 
 --
@@ -33382,6 +33401,15 @@ GRANT ALL ON FUNCTION trip_private.team_capacity(p_team uuid) TO service_role;
 REVOKE ALL ON FUNCTION trip_private.teen_block(p_what text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.teen_block(p_what text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.teen_block(p_what text) TO service_role;
+
+
+--
+-- Name: FUNCTION teen_invite_ok(p_token text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.teen_invite_ok(p_token text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.teen_invite_ok(p_token text) TO service_role;
+GRANT ALL ON FUNCTION trip_private.teen_invite_ok(p_token text) TO supabase_auth_admin;
 
 
 --

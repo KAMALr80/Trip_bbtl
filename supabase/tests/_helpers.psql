@@ -29,7 +29,10 @@ BEGIN
                 ELSE (current_date - make_interval(years => p_age_years) - interval '30 days')::date END;
   INSERT INTO auth.users (id, email, raw_app_meta_data, raw_user_meta_data, created_at)
   VALUES (v_id, p_handle || '@test.tripjunkies.local',
-          jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email')),
+          -- Teens can't self sign-up by email (M6-03); a fixture teen signs in with Google and gets
+          -- their birthday below, the way an invited teen account ends up.
+          CASE WHEN p_age_years < 18 THEN jsonb_build_object('provider', 'google', 'providers', jsonb_build_array('google'))
+               ELSE jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email')) END,
           jsonb_build_object('legal_version', '2026-10-03',
                              'birthday', coalesce(v_dob, date '1990-01-01')::text),
           now());
