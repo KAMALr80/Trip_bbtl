@@ -149,4 +149,4 @@ Enqueue when `plan_trip` runs and on events:
 | 9 | Mute "A crew proof needs your 👍"; repeat 8 | Nothing arrives |
 | 10 | Deploy a new build while the app is open | "New version available" once; Refresh switches; play isn't interrupted before that |
 | 11 | iPhone: leave the installed app unopened for 7+ days, then open offline | The snapshot is still there |
-| 12 | In a Test Lab trip in Baggage Claim: heart a pick, answer the 3 questions, Download my photos, then lock it (M5) | The wrap-up reminder arrives; the zip opens on the phone; after the lock "Your Trip Postcard is ready" arrives and Download or share opens the share sheet |
+| 12 | In a Test Lab trip in Baggage Claim: heart a pick, answer the 3 questions, Download my photos, then time-travel past Day 7 and wait up to 15 minutes for the lock (M5) | The wrap-up reminder arrives; the zip opens on the phone; after the lock "Your Trip Postcard is ready" arrives and Download or share opens the share sheet |
