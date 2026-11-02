@@ -916,7 +916,8 @@ export function TeenJoinGate({ onJoined }: { onJoined: () => void }) {
           }}
         >
           <p className="text-sm text-muted-foreground">
-            Enter the teen invite code from your trip's Captain. They approve you before you can play.
+            Enter the teen invite code from your trip's Captain. They approve you before you can
+            play.
           </p>
           <input
             aria-label="Join code"

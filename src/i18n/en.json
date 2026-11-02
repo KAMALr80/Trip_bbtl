@@ -734,5 +734,30 @@
         "line": "Win a crown, collect the world, and keep every trip in your passport. TripJunkies began with one crew who wanted the trip to start before takeoff."
       }
     }
+  },
+  "moderation": {
+    "report": "Report",
+    "reason": "What's wrong? (optional)",
+    "send": "Send",
+    "reported": "Thanks. A reviewer will look at it.",
+    "queueTitle": "Photo review",
+    "queueIntro": "Photos the safety check flagged are hidden from the crew until you decide. Reported photos stay visible until you decide. Nothing is deleted.",
+    "showClosed": "Show decided photos too",
+    "empty": "Nothing to review.",
+    "status": {
+      "flagged": "Flagged by the safety check · hidden",
+      "reported": "Reported by a player",
+      "approved": "Approved",
+      "removed": "Removed"
+    },
+    "minors": "trip with minors",
+    "challenge": "Challenge: {{text}}",
+    "aiFlags": "Safety check: {{flags}}",
+    "reports_one": "{{count}} report",
+    "reports_other": "{{count}} reports",
+    "note": "Note for the log (optional)",
+    "approve": "Approve",
+    "remove": "Remove",
+    "warn": "Warn"
   }
 }

@@ -1694,6 +1694,26 @@ CREATE FUNCTION public.moderate_inspiration(p_card uuid, p_action text) RETURNS 
 
 
 --
+-- Name: moderate_photo(uuid, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.moderate_photo(p_id uuid, p_action text, p_note text DEFAULT NULL::text) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.moderate_photo(p_id, p_action, p_note) $$;
+
+
+--
+-- Name: moderation_queue(boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.moderation_queue(p_include_closed boolean DEFAULT false) RETURNS TABLE(id uuid, proof_id uuid, trip_id uuid, trip_name text, uploader_id uuid, uploader_name text, photo_path text, challenge text, body text, ai_flags text[], reports integer, report_reasons text[], status text, created_at timestamp with time zone, has_minors boolean)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.moderation_queue(p_include_closed) $$;
+
+
+--
 -- Name: my_access(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2175,6 +2195,16 @@ CREATE FUNCTION public.price_list() RETURNS TABLE(key text, label text, cents in
 
 
 --
+-- Name: proof_challenge(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.proof_challenge(p_proof uuid) RETURNS TABLE(challenge text, needs_verdict boolean, trip_id uuid, user_id uuid)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.proof_challenge(p_proof) $$;
+
+
+--
 -- Name: public_guide(text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2305,6 +2335,16 @@ CREATE FUNCTION public.reclaim_captain(p_trip uuid) RETURNS void
 
 
 --
+-- Name: record_photo_safety(uuid, text[]); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.record_photo_safety(p_proof uuid, p_flags text[]) RETURNS boolean
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.record_photo_safety(p_proof, p_flags) $$;
+
+
+--
 -- Name: record_proof_check(uuid, text, text, jsonb); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2382,6 +2422,16 @@ CREATE FUNCTION public.report_cost_payment(p_item uuid, p_amount_cents bigint, p
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.report_cost_payment(p_item,p_amount_cents,p_note) $$;
+
+
+--
+-- Name: report_proof_photo(uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.report_proof_photo(p_proof uuid, p_reason text DEFAULT NULL::text) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.report_proof_photo(p_proof, p_reason) $$;
 
 
 --
@@ -7935,7 +7985,7 @@ CREATE FUNCTION trip_private.guide_items(p_trip uuid, p_public boolean) RETURNS 
   JOIN public.trip_schedule s ON s.id = p.schedule_id
   JOIN names n ON n.user_id = p.user_id
   CROSS JOIN t
-  WHERE p.trip_id = p_trip AND p.photo_path IS NOT NULL AND p.photo_removed_at IS NULL
+  WHERE p.trip_id = p_trip AND p.photo_path IS NOT NULL AND p.photo_removed_at IS NULL AND NOT trip_private.photo_hidden(p.id)
     AND p.crew_status IN ('approved', 'not_needed')
     AND s.kind IN ('ws_quest', 'home_mission', 'airport_mission', 'surprise_drop', 'trip_quest')
     AND (NOT p_public OR (n.share_photos AND NOT t.has_minors))
@@ -9791,6 +9841,62 @@ END $$;
 
 
 --
+-- Name: moderate_photo(uuid, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.moderate_photo(p_id uuid, p_action text, p_note text DEFAULT NULL::text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE m public.photo_moderation; p public.proofs;
+BEGIN
+  IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Admins only'; END IF;
+  IF p_action NOT IN ('approve', 'remove', 'warn') THEN RAISE EXCEPTION 'Pick approve, remove or warn'; END IF;
+  SELECT * INTO m FROM public.photo_moderation WHERE id = p_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Not in the queue'; END IF;
+  IF p_action IN ('approve', 'remove') THEN
+    UPDATE public.photo_moderation
+    SET status = CASE p_action WHEN 'approve' THEN 'approved' ELSE 'removed' END,
+        reviewed_by = auth.uid(), reviewed_at = now(), updated_at = now()
+    WHERE id = p_id;
+  END IF;
+  IF p_action = 'remove' THEN
+    SELECT * INTO p FROM public.proofs WHERE id = m.proof_id;
+    PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'rejected');
+    DELETE FROM public.postcard_picks WHERE proof_id = m.proof_id;
+  END IF;
+  INSERT INTO public.moderation_log (moderation_id, actor, action, note, subject_user)
+  VALUES (p_id, auth.uid(), p_action, left(p_note, 500), m.uploader_id);
+END
+$$;
+
+
+--
+-- Name: moderation_queue(boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.moderation_queue(p_include_closed boolean DEFAULT false) RETURNS TABLE(id uuid, proof_id uuid, trip_id uuid, trip_name text, uploader_id uuid, uploader_name text, photo_path text, challenge text, body text, ai_flags text[], reports integer, report_reasons text[], status text, created_at timestamp with time zone, has_minors boolean)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Admins only'; END IF;
+  RETURN QUERY
+    SELECT m.id, m.proof_id, m.trip_id, t.name, m.uploader_id, coalesce(pp.game_name, 'Traveler'),
+           p.photo_path, (SELECT ch.challenge FROM trip_private.proof_challenge(p.id) ch), p.body,
+           m.ai_flags, m.reports, m.report_reasons, m.status, m.created_at, t.has_minors
+    FROM public.photo_moderation m
+    JOIN public.proofs p ON p.id = m.proof_id
+    JOIN public.trips t ON t.id = m.trip_id
+    LEFT JOIN public.player_profiles pp ON pp.user_id = m.uploader_id
+    WHERE p_include_closed OR m.status IN ('flagged', 'reported')
+    ORDER BY (m.status = 'flagged') DESC, m.created_at
+    LIMIT 200;
+END
+$$;
+
+
+--
 -- Name: my_access(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -10540,6 +10646,18 @@ $$;
 
 
 --
+-- Name: photo_hidden(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.photo_hidden(p_proof uuid) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT EXISTS (SELECT 1 FROM public.photo_moderation m WHERE m.proof_id = p_proof AND m.status IN ('flagged', 'removed'))
+$$;
+
+
+--
 -- Name: photo_quota_ok(text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -11278,6 +11396,7 @@ CREATE FUNCTION trip_private.postcard_rank(p_trip uuid) RETURNS TABLE(proof_id u
     JOIN public.proofs p ON p.id = k.proof_id
     LEFT JOIN public.postcard_choices c ON c.trip_id = p_trip
     WHERE k.trip_id = p_trip AND p.photo_path IS NOT NULL AND p.photo_removed_at IS NULL AND p.crew_status <> 'expired'
+      AND NOT trip_private.photo_hidden(p.id)
   ) x
 $$;
 
@@ -11479,6 +11598,24 @@ $$;
 
 
 --
+-- Name: proof_challenge(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.proof_challenge(p_proof uuid) RETURNS TABLE(challenge text, needs_verdict boolean, trip_id uuid, user_id uuid)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT coalesce(CASE WHEN s.variant IN ('bingo', 'scavenger') AND cardinality(c.items) > p.part THEN c.items[p.part + 1] END,
+                  s.tailored_text, c.title, ''),
+         p.ai_status = 'pending', p.trip_id, p.user_id
+  FROM public.proofs p
+  JOIN public.trip_schedule s ON s.id = p.schedule_id
+  LEFT JOIN public.content_items c ON c.id = s.content_item_id
+  WHERE p.id = p_proof
+$$;
+
+
+--
 -- Name: proof_kind(text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -11538,10 +11675,14 @@ CREATE FUNCTION trip_private.proof_photo_ok(p_proof uuid, p_viewer uuid) RETURNS
     AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.proofs p JOIN public.trips t ON t.id = p.trip_id
-    WHERE p.id = p_proof AND trip_private.is_trip_member(p.trip_id, p_viewer)
-      AND (p.user_id = p_viewer OR p.approved_by = p_viewer OR NOT t.has_minors
-           OR EXISTS (SELECT 1 FROM public.trip_members m WHERE m.trip_id = p.trip_id AND m.user_id = p_viewer
-                      AND m.role IN ('captain', 'co_captain'))))
+    WHERE p.id = p_proof AND (
+      (p_viewer = auth.uid() AND trip_private.is_app_admin())
+      OR (trip_private.is_trip_member(p.trip_id, p_viewer)
+          AND (p.user_id = p_viewer
+               OR (NOT trip_private.photo_hidden(p.id)
+                   AND (p.approved_by = p_viewer OR NOT t.has_minors
+                        OR EXISTS (SELECT 1 FROM public.trip_members m WHERE m.trip_id = p.trip_id AND m.user_id = p_viewer
+                                   AND m.role IN ('captain', 'co_captain'))))))))
 $$;
 
 
@@ -11947,6 +12088,34 @@ END $$;
 
 
 --
+-- Name: record_photo_safety(uuid, text[]); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.record_photo_safety(p_proof uuid, p_flags text[]) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE p public.proofs; v_id uuid; v_flags text[] := ARRAY(SELECT DISTINCT left(f, 40) FROM unnest(coalesce(p_flags, '{}')) f WHERE f <> '');
+BEGIN
+  IF cardinality(v_flags) = 0 THEN RETURN false; END IF;
+  SELECT * INTO p FROM public.proofs WHERE id = p_proof;
+  IF NOT FOUND OR p.photo_path IS NULL THEN RETURN false; END IF;
+  INSERT INTO public.photo_moderation (proof_id, trip_id, uploader_id, ai_flags, status)
+  VALUES (p.id, p.trip_id, p.user_id, v_flags, 'flagged')
+  ON CONFLICT (proof_id) DO UPDATE
+    SET ai_flags = ARRAY(SELECT DISTINCT unnest(public.photo_moderation.ai_flags || excluded.ai_flags)),
+        -- a reviewer's decision stands; a new flag re-opens only a reported or unreviewed photo
+        status = CASE WHEN public.photo_moderation.status IN ('approved', 'removed') THEN public.photo_moderation.status ELSE 'flagged' END,
+        updated_at = now()
+  RETURNING id INTO v_id;
+  INSERT INTO public.moderation_log (moderation_id, action, note, subject_user)
+  VALUES (v_id, 'ai_flag', array_to_string(v_flags, ', '), p.user_id);
+  RETURN trip_private.photo_hidden(p.id);
+END
+$$;
+
+
+--
 -- Name: record_speed_finish(); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -12165,6 +12334,38 @@ DECLARE s public.cost_shares; v bigint; BEGIN
     WHERE item_id=p_item AND user_id=auth.uid();
   PERFORM trip_private.log_cost(s.trip_id, p_item, auth.uid(), 'reported payment', v, NULL);
 END $$;
+
+
+--
+-- Name: report_proof_photo(uuid, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.report_proof_photo(p_proof uuid, p_reason text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE p public.proofs; v_id uuid; v_reason text := left(trip_private.trim_answer(p_reason), 200);
+BEGIN
+  SELECT * INTO p FROM public.proofs WHERE id = p_proof;
+  IF NOT FOUND OR p.photo_path IS NULL OR NOT trip_private.proof_photo_ok(p_proof, auth.uid()) OR p.user_id = auth.uid() THEN
+    RAISE EXCEPTION 'You can report a crew photo you can see';
+  END IF;
+  INSERT INTO public.photo_moderation (proof_id, trip_id, uploader_id, status)
+  VALUES (p.id, p.trip_id, p.user_id, 'reported')
+  ON CONFLICT (proof_id) DO NOTHING;
+  SELECT id INTO v_id FROM public.photo_moderation WHERE proof_id = p_proof;
+  INSERT INTO public.photo_moderation_reports (moderation_id, reporter_id) VALUES (v_id, auth.uid()) ON CONFLICT DO NOTHING;
+  IF NOT FOUND THEN RETURN; END IF;
+  UPDATE public.photo_moderation
+  SET reports = reports + 1,
+      report_reasons = CASE WHEN v_reason <> '' THEN (report_reasons || v_reason)[1:20] ELSE report_reasons END,
+      status = CASE WHEN status = 'approved' THEN 'reported' ELSE status END,
+      updated_at = now()
+  WHERE id = v_id;
+  INSERT INTO public.moderation_log (moderation_id, actor, action, note, subject_user)
+  VALUES (v_id, auth.uid(), 'report', nullif(v_reason, ''), p.user_id);
+END
+$$;
 
 
 --
@@ -13825,17 +14026,18 @@ CREATE FUNCTION trip_private.set_proof_ai(p_proof uuid, p_verdict text, p_reason
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO ''
     AS $$
-DECLARE p public.proofs;
+DECLARE p public.proofs; v_safety text[];
 BEGIN
   IF p_verdict NOT IN ('pass', 'unsure', 'fail', 'error') THEN RAISE EXCEPTION 'Unknown verdict %', p_verdict; END IF;
+  v_safety := ARRAY(SELECT jsonb_array_elements_text(coalesce(p_flags->'safety', '[]'::jsonb)));
+  IF cardinality(v_safety) > 0 AND p_verdict = 'pass' THEN p_verdict := 'unsure'; END IF;
   UPDATE public.proofs SET ai_status = p_verdict, ai_reason = left(p_reason, 300), ai_flags = p_flags
   WHERE id = p_proof RETURNING * INTO p;
   IF NOT FOUND THEN RETURN; END IF;
+  PERFORM trip_private.record_photo_safety(p_proof, v_safety);
   IF p_verdict = 'pass' AND p.crew_status = 'waiting' THEN
     UPDATE public.proofs SET crew_status = 'approved', approved_at = now() WHERE id = p_proof;
-    IF p.source <> 'surprise_drop' THEN
-      PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'approved');
-    END IF;
+    PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'approved');
   END IF;
 END
 $$;
@@ -17196,6 +17398,37 @@ CREATE TABLE public.mission_votes (
 
 
 --
+-- Name: moderation_log; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.moderation_log (
+    id bigint NOT NULL,
+    moderation_id uuid,
+    actor uuid,
+    action text NOT NULL,
+    note text,
+    subject_user uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT moderation_log_action_check CHECK ((action = ANY (ARRAY['ai_flag'::text, 'report'::text, 'approve'::text, 'remove'::text, 'warn'::text]))),
+    CONSTRAINT moderation_log_note_check CHECK ((length(note) <= 500))
+);
+
+
+--
+-- Name: moderation_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+ALTER TABLE public.moderation_log ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.moderation_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
 -- Name: notification_prefs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -17307,6 +17540,38 @@ CREATE TABLE public.passport_stamps (
 --
 
 COMMENT ON COLUMN public.passport_stamps.kind IS 'international = passport stamp (abroad), road_trip = state stamp (home country), postcard = at-home culture room (R-366)';
+
+
+--
+-- Name: photo_moderation; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.photo_moderation (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    proof_id uuid NOT NULL,
+    trip_id uuid NOT NULL,
+    uploader_id uuid NOT NULL,
+    ai_flags text[] DEFAULT '{}'::text[] NOT NULL,
+    reports integer DEFAULT 0 NOT NULL,
+    report_reasons text[] DEFAULT '{}'::text[] NOT NULL,
+    status text DEFAULT 'flagged'::text NOT NULL,
+    reviewed_by uuid,
+    reviewed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT photo_moderation_status_check CHECK ((status = ANY (ARRAY['flagged'::text, 'reported'::text, 'approved'::text, 'removed'::text])))
+);
+
+
+--
+-- Name: photo_moderation_reports; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.photo_moderation_reports (
+    moderation_id uuid NOT NULL,
+    reporter_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
 
 
 --
@@ -19642,6 +19907,14 @@ ALTER TABLE ONLY public.mission_votes
 
 
 --
+-- Name: moderation_log moderation_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.moderation_log
+    ADD CONSTRAINT moderation_log_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: notification_prefs notification_prefs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -19687,6 +19960,30 @@ ALTER TABLE ONLY public.passport_progress
 
 ALTER TABLE ONLY public.passport_stamps
     ADD CONSTRAINT passport_stamps_pkey PRIMARY KEY (user_id, trip_id);
+
+
+--
+-- Name: photo_moderation photo_moderation_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_moderation
+    ADD CONSTRAINT photo_moderation_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: photo_moderation photo_moderation_proof_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_moderation
+    ADD CONSTRAINT photo_moderation_proof_id_key UNIQUE (proof_id);
+
+
+--
+-- Name: photo_moderation_reports photo_moderation_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_moderation_reports
+    ADD CONSTRAINT photo_moderation_reports_pkey PRIMARY KEY (moderation_id, reporter_id);
 
 
 --
@@ -20724,6 +21021,13 @@ CREATE UNIQUE INDEX one_co_captain_per_trip ON public.trip_members USING btree (
 
 
 --
+-- Name: photo_moderation_open_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX photo_moderation_open_idx ON public.photo_moderation USING btree (created_at) WHERE (status = ANY (ARRAY['flagged'::text, 'reported'::text]));
+
+
+--
 -- Name: player_profiles_game_name_norm_uq; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -21561,6 +21865,13 @@ CREATE TRIGGER passport_stamp_updated BEFORE UPDATE ON public.passport_stamps FO
 --
 
 CREATE TRIGGER passport_stamps_archive_guard BEFORE INSERT OR UPDATE ON public.passport_stamps FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
+
+
+--
+-- Name: photo_moderation photo_moderation_archive_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER photo_moderation_archive_guard BEFORE INSERT OR UPDATE ON public.photo_moderation FOR EACH ROW EXECUTE FUNCTION trip_private.guard_archived_trip();
 
 
 --
@@ -22999,6 +23310,14 @@ ALTER TABLE ONLY public.mission_votes
 
 
 --
+-- Name: moderation_log moderation_log_moderation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.moderation_log
+    ADD CONSTRAINT moderation_log_moderation_id_fkey FOREIGN KEY (moderation_id) REFERENCES public.photo_moderation(id) ON DELETE SET NULL;
+
+
+--
 -- Name: notification_prefs notification_prefs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -23044,6 +23363,30 @@ ALTER TABLE ONLY public.passport_progress
 
 ALTER TABLE ONLY public.passport_stamps
     ADD CONSTRAINT passport_stamps_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
+-- Name: photo_moderation photo_moderation_proof_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_moderation
+    ADD CONSTRAINT photo_moderation_proof_id_fkey FOREIGN KEY (proof_id) REFERENCES public.proofs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: photo_moderation_reports photo_moderation_reports_moderation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_moderation_reports
+    ADD CONSTRAINT photo_moderation_reports_moderation_id_fkey FOREIGN KEY (moderation_id) REFERENCES public.photo_moderation(id) ON DELETE CASCADE;
+
+
+--
+-- Name: photo_moderation photo_moderation_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.photo_moderation
+    ADD CONSTRAINT photo_moderation_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
 
 
 --
@@ -25348,6 +25691,12 @@ ALTER TABLE public.mission_claims ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mission_votes ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: moderation_log; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.moderation_log ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: notification_prefs; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -25390,6 +25739,18 @@ ALTER TABLE public.passport_progress ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.passport_stamps ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: photo_moderation; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.photo_moderation ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: photo_moderation_reports; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.photo_moderation_reports ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: photo_posts; Type: ROW SECURITY; Schema: public; Owner: -
@@ -27436,6 +27797,24 @@ GRANT ALL ON FUNCTION public.moderate_inspiration(p_card uuid, p_action text) TO
 
 
 --
+-- Name: FUNCTION moderate_photo(p_id uuid, p_action text, p_note text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.moderate_photo(p_id uuid, p_action text, p_note text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.moderate_photo(p_id uuid, p_action text, p_note text) TO service_role;
+GRANT ALL ON FUNCTION public.moderate_photo(p_id uuid, p_action text, p_note text) TO authenticated;
+
+
+--
+-- Name: FUNCTION moderation_queue(p_include_closed boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.moderation_queue(p_include_closed boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.moderation_queue(p_include_closed boolean) TO service_role;
+GRANT ALL ON FUNCTION public.moderation_queue(p_include_closed boolean) TO authenticated;
+
+
+--
 -- Name: FUNCTION my_access(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -27849,6 +28228,14 @@ GRANT ALL ON FUNCTION public.price_list() TO anon;
 
 
 --
+-- Name: FUNCTION proof_challenge(p_proof uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.proof_challenge(p_proof uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.proof_challenge(p_proof uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION public_guide(p_token text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -27961,6 +28348,14 @@ GRANT ALL ON FUNCTION public.reclaim_captain(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION record_photo_safety(p_proof uuid, p_flags text[]); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.record_photo_safety(p_proof uuid, p_flags text[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.record_photo_safety(p_proof uuid, p_flags text[]) TO service_role;
+
+
+--
 -- Name: FUNCTION record_proof_check(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb); Type: ACL; Schema: public; Owner: -
 --
 
@@ -28026,6 +28421,15 @@ GRANT ALL ON FUNCTION public.reopen_live(p_session uuid) TO service_role;
 REVOKE ALL ON FUNCTION public.report_cost_payment(p_item uuid, p_amount_cents bigint, p_note text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.report_cost_payment(p_item uuid, p_amount_cents bigint, p_note text) TO authenticated;
 GRANT ALL ON FUNCTION public.report_cost_payment(p_item uuid, p_amount_cents bigint, p_note text) TO service_role;
+
+
+--
+-- Name: FUNCTION report_proof_photo(p_proof uuid, p_reason text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.report_proof_photo(p_proof uuid, p_reason text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.report_proof_photo(p_proof uuid, p_reason text) TO service_role;
+GRANT ALL ON FUNCTION public.report_proof_photo(p_proof uuid, p_reason text) TO authenticated;
 
 
 --
@@ -31317,6 +31721,24 @@ GRANT ALL ON FUNCTION trip_private.moderate_inspiration(p_card uuid, p_action te
 
 
 --
+-- Name: FUNCTION moderate_photo(p_id uuid, p_action text, p_note text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.moderate_photo(p_id uuid, p_action text, p_note text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.moderate_photo(p_id uuid, p_action text, p_note text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.moderate_photo(p_id uuid, p_action text, p_note text) TO service_role;
+
+
+--
+-- Name: FUNCTION moderation_queue(p_include_closed boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.moderation_queue(p_include_closed boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.moderation_queue(p_include_closed boolean) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.moderation_queue(p_include_closed boolean) TO service_role;
+
+
+--
 -- Name: FUNCTION my_access(); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -31639,6 +32061,15 @@ GRANT ALL ON FUNCTION trip_private.phase_windows(p_room text, p_start date, p_en
 
 
 --
+-- Name: FUNCTION photo_hidden(p_proof uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.photo_hidden(p_proof uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.photo_hidden(p_proof uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.photo_hidden(p_proof uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION photo_quota_ok(p_name text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -31918,6 +32349,14 @@ REVOKE ALL ON FUNCTION trip_private.profile_prefs_guard() FROM PUBLIC;
 
 
 --
+-- Name: FUNCTION proof_challenge(p_proof uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.proof_challenge(p_proof uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.proof_challenge(p_proof uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION proof_notify(); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -32112,6 +32551,14 @@ GRANT ALL ON FUNCTION trip_private.reclaim_captain(p_trip uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION record_photo_safety(p_proof uuid, p_flags text[]); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.record_photo_safety(p_proof uuid, p_flags text[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.record_photo_safety(p_proof uuid, p_flags text[]) TO service_role;
+
+
+--
 -- Name: FUNCTION record_speed_finish(); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -32198,6 +32645,15 @@ REVOKE ALL ON FUNCTION trip_private.replan_trip() FROM PUBLIC;
 REVOKE ALL ON FUNCTION trip_private.report_cost_payment(p_item uuid, p_amount_cents bigint, p_note text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.report_cost_payment(p_item uuid, p_amount_cents bigint, p_note text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.report_cost_payment(p_item uuid, p_amount_cents bigint, p_note text) TO service_role;
+
+
+--
+-- Name: FUNCTION report_proof_photo(p_proof uuid, p_reason text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.report_proof_photo(p_proof uuid, p_reason text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.report_proof_photo(p_proof uuid, p_reason text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.report_proof_photo(p_proof uuid, p_reason text) TO service_role;
 
 
 --
@@ -34585,6 +35041,21 @@ GRANT ALL ON TABLE public.mission_votes TO service_role;
 
 
 --
+-- Name: TABLE moderation_log; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.moderation_log TO service_role;
+
+
+--
+-- Name: SEQUENCE moderation_log_id_seq; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON SEQUENCE public.moderation_log_id_seq TO authenticated;
+GRANT ALL ON SEQUENCE public.moderation_log_id_seq TO service_role;
+
+
+--
 -- Name: TABLE notification_prefs; Type: ACL; Schema: public; Owner: -
 --
 
@@ -34621,6 +35092,20 @@ GRANT SELECT ON TABLE public.passport_progress TO authenticated;
 
 GRANT ALL ON TABLE public.passport_stamps TO authenticated;
 GRANT ALL ON TABLE public.passport_stamps TO service_role;
+
+
+--
+-- Name: TABLE photo_moderation; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.photo_moderation TO service_role;
+
+
+--
+-- Name: TABLE photo_moderation_reports; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.photo_moderation_reports TO service_role;
 
 
 --

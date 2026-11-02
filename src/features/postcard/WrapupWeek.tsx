@@ -15,6 +15,7 @@ import {
   type WrapupQuestion,
 } from "@/data/postcard";
 import { roomOf } from "@/features/trip/rooms";
+import { ReportPhoto } from "@/features/moderation/ReportPhoto";
 import { useT } from "@/i18n";
 import { friendlyError } from "@/lib/friendly-error";
 import type { TripWithRole } from "@/lib/trips";
@@ -80,6 +81,7 @@ export function WrapupWeek({
                       aria-hidden
                     />
                   </button>
+                  {!viewOnly && <ReportPhoto proofId={p.proof_id} />}
                 </li>
               ))}
             </ul>

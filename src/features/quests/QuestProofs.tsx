@@ -17,6 +17,7 @@ import {
 import { usePendingAction, useOutbox } from "@/data/offline/outbox";
 import { useMinute } from "@/features/play/PhaseNotice";
 import { useAuth } from "@/lib/auth-context";
+import { ReportPhoto } from "@/features/moderation/ReportPhoto";
 import { useT } from "@/i18n";
 import { friendlyError } from "@/lib/friendly-error";
 import type { Member, TripWithRole } from "@/lib/trips";
@@ -297,6 +298,7 @@ function CrewProofRow({
       ) : (
         !proof.body && <p className="text-xs mt-2">{t("crewCheck.photoHidden")}</p>
       )}
+      {proof.photoUrl && !viewOnly && <ReportPhoto proofId={proof.id} />}
       {proof.body && <p className="text-sm mt-2">{proof.body}</p>}
       {proof.ai_status === "fail" && (
         <p className="text-xs font-bold text-destructive mt-1">{t("crewCheck.aiFlag")}</p>

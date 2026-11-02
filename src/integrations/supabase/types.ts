@@ -3263,6 +3263,45 @@ export type Database = {
           },
         ];
       };
+      moderation_log: {
+        Row: {
+          action: string;
+          actor: string | null;
+          created_at: string;
+          id: number;
+          moderation_id: string | null;
+          note: string | null;
+          subject_user: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor?: string | null;
+          created_at?: string;
+          id?: never;
+          moderation_id?: string | null;
+          note?: string | null;
+          subject_user?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor?: string | null;
+          created_at?: string;
+          id?: never;
+          moderation_id?: string | null;
+          note?: string | null;
+          subject_user?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "moderation_log_moderation_id_fkey";
+            columns: ["moderation_id"];
+            isOneToOne: false;
+            referencedRelation: "photo_moderation";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       notification_prefs: {
         Row: {
           email: boolean;
@@ -3498,6 +3537,94 @@ export type Database = {
             columns: ["trip_id"];
             isOneToOne: false;
             referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      photo_moderation: {
+        Row: {
+          ai_flags: string[];
+          created_at: string;
+          id: string;
+          proof_id: string;
+          report_reasons: string[];
+          reports: number;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          status: string;
+          trip_id: string;
+          updated_at: string;
+          uploader_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          ai_flags?: string[];
+          created_at?: string;
+          id?: string;
+          proof_id: string;
+          report_reasons?: string[];
+          reports?: number;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          trip_id: string;
+          updated_at?: string;
+          uploader_id: string;
+        };
+        Update: {
+          ai_flags?: string[];
+          created_at?: string;
+          id?: string;
+          proof_id?: string;
+          report_reasons?: string[];
+          reports?: number;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          trip_id?: string;
+          updated_at?: string;
+          uploader_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "photo_moderation_proof_id_fkey";
+            columns: ["proof_id"];
+            isOneToOne: true;
+            referencedRelation: "proofs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "photo_moderation_trip_id_fkey";
+            columns: ["trip_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      photo_moderation_reports: {
+        Row: {
+          created_at: string;
+          moderation_id: string;
+          reporter_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          moderation_id: string;
+          reporter_id: string;
+        };
+        Update: {
+          created_at?: string;
+          moderation_id?: string;
+          reporter_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "photo_moderation_reports_moderation_id_fkey";
+            columns: ["moderation_id"];
+            isOneToOne: false;
+            referencedRelation: "photo_moderation";
             referencedColumns: ["id"];
           },
         ];
@@ -7645,6 +7772,30 @@ export type Database = {
       };
       mix_ai_quota: { Args: { p_trip: string }; Returns: string };
       moderate_inspiration: { Args: { p_action: string; p_card: string }; Returns: undefined };
+      moderate_photo: {
+        Args: { p_action: string; p_id: string; p_note?: string };
+        Returns: undefined;
+      };
+      moderation_queue: {
+        Args: { p_include_closed?: boolean };
+        Returns: {
+          ai_flags: string[];
+          body: string;
+          challenge: string;
+          created_at: string;
+          has_minors: boolean;
+          id: string;
+          photo_path: string;
+          proof_id: string;
+          report_reasons: string[];
+          reports: number;
+          status: string;
+          trip_id: string;
+          trip_name: string;
+          uploader_id: string;
+          uploader_name: string;
+        }[];
+      };
       my_access: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -7922,6 +8073,15 @@ export type Database = {
           label: string;
         }[];
       };
+      proof_challenge: {
+        Args: { p_proof: string };
+        Returns: {
+          challenge: string;
+          needs_verdict: boolean;
+          trip_id: string;
+          user_id: string;
+        }[];
+      };
       public_guide: {
         Args: { p_token: string };
         Returns: {
@@ -7986,6 +8146,7 @@ export type Database = {
         Returns: undefined;
       };
       reclaim_captain: { Args: { p_trip: string }; Returns: undefined };
+      record_photo_safety: { Args: { p_flags: string[]; p_proof: string }; Returns: boolean };
       record_proof_check: {
         Args: { p_flags?: Json; p_proof: string; p_reason: string; p_verdict: string };
         Returns: undefined;
@@ -8001,6 +8162,7 @@ export type Database = {
         Args: { p_amount_cents: number; p_item: string; p_note: string };
         Returns: undefined;
       };
+      report_proof_photo: { Args: { p_proof: string; p_reason?: string }; Returns: undefined };
       request_host_swap: {
         Args: { p_to: string; p_trip: string; p_week: number };
         Returns: string;

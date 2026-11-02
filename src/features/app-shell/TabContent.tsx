@@ -6,6 +6,7 @@ import { SquadView } from "@/features/trip/SquadView";
 import { ArchivedTrip } from "@/features/trip/ArchivedTrip";
 import { AfterTrip } from "@/features/postcard/AfterTrip";
 import { MeHome } from "@/features/me/MeHome";
+import { ModerationQueue } from "@/features/moderation/ModerationQueue";
 
 import gameOptionA from "@/assets/game-tile-option-a.webp";
 import tripCoast from "@/assets/journey-coast-top.jpg";
@@ -423,7 +424,8 @@ export function TabContent({
               key === "beta-codes" ||
               key === "ai-guard" ||
               key === "icon-options" ||
-              key === "me-explore"
+              key === "me-explore" ||
+              key === "moderation"
                 ? setMeSection(key)
                 : onMe(key as "reports" | "feedback" | "lab")
             }
@@ -452,6 +454,7 @@ export function TabContent({
               "beta-codes": "Beta codes",
               "ai-guard": "AI",
               "icon-options": "Icon options",
+              moderation: "Photo review",
             } as Record<string, string>
           )[meSection]
         }
@@ -473,6 +476,7 @@ export function TabContent({
       {meSection === "founding-members" && isAdmin && <FoundingControls />}
       {meSection === "beta-codes" && isAdmin && <BetaCodesDoor />}
       {meSection === "ai-guard" && isAdmin && <AiGuardDoor />}
+      {meSection === "moderation" && isAdmin && <ModerationQueue />}
       {meSection === "me-passport" && (
         <MyPassport
           trips={trips}
