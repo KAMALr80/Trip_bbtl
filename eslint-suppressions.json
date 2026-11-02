@@ -363,7 +363,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 32
+      "count": 31
     }
   },
   "src/features/players/PlayerCards.tsx": {

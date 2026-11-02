@@ -1,11 +1,13 @@
 // Captain tools, one tile per phase (M2-11, R-209 / R-210). Pre-Flight: days and call nights ·
-// Takeoff: "We've arrived" · Trip Season: the crowning night · Baggage Claim: photo ties (M5).
+// Takeoff: "We've arrived" · Trip Season: the crowning night · Baggage Claim: photo ties and
+// the one swap (M5-06).
 // The editors are the setup wizard's own screens and checks; the server checks again.
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { rpc } from "@/data/rpc";
 import { setCallNights, useCallNights } from "@/data/schedule";
+import { PostcardCaptainTile } from "@/features/postcard/PostcardCaptainTile";
 import { PreflightScreen, SeasonScreen } from "@/features/setup/WizardScreens";
 import {
   problem,
@@ -173,9 +175,7 @@ export function PhaseTiles({
                   : t("tiles.arrivalLater")}
               </p>
             ))}
-          {open === "baggage_claim" && (
-            <p className="mt-2 text-sm text-muted-foreground">{t("tiles.baggageSoon")}</p>
-          )}
+          {open === "baggage_claim" && room.pointsEnabled && <PostcardCaptainTile trip={trip} />}
           {message && (
             <p role="status" className="mt-3 text-sm font-bold">
               {message}

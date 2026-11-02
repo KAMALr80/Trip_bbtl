@@ -11,7 +11,6 @@ import {
   ChevronRight,
   Crown,
   Gamepad2,
-  Image,
   LockKeyhole,
   Plane,
   ScanLine,
@@ -29,6 +28,8 @@ import { OnePhoneNight } from "@/features/play/OnePhoneNight";
 import { SoloGuide } from "@/features/window-seat/SoloGuide";
 import { TripGuide, isShowcase } from "@/features/guide/TripGuide";
 import { JournalPrompt } from "@/features/guide/JournalPrompt";
+import { PostcardPicks } from "@/features/postcard/PostcardPicks";
+import { WrapupWeek } from "@/features/postcard/WrapupWeek";
 import { AtHomePlay, isAtHome } from "@/features/at-home/AtHome";
 import { HomeDayFlow } from "@/features/play/HomeDayFlow";
 import { DailyCard } from "@/features/daily/DailyPlay";
@@ -799,6 +800,8 @@ function PhasePage(
           <SurpriseDrop trip={trip} userId={userId} viewOnly={props.viewOnly} />
           <JournalPrompt trip={trip} userId={userId} viewOnly={props.viewOnly} />
           <QuestProofs trip={trip} userId={userId} viewOnly={props.viewOnly} />
+          {phase === "trip" && <PostcardPicks trip={trip} viewOnly={props.viewOnly} />}
+          {phase === "wrapped" && <WrapupWeek trip={trip} viewOnly={props.viewOnly} />}
         </>
       )}
       <header className="play-phase-art">
@@ -1026,12 +1029,6 @@ function PhasePage(
               title="Surprise Drops"
               line="Bingo, Scavenger Hunt, Speed or Photo Challenge on random days"
             />
-            <ComingCard
-              icon={<Image />}
-              tone="pink"
-              title="Postcard Picks"
-              line="Pick your 2 favourite photos for the trip postcard"
-            />
             {!local && phase === props.current && (
               <GameNightLive
                 trip={trip}
@@ -1146,13 +1143,6 @@ function WrappedSummary({
           me > 0 ? `You finished #${me} of ${sorted.length}` : "Final places appear after crowning"
         }
         points={`${(preRows.find((r) => r.user_id === userId)?.total ?? 0) + (tripRows.find((r) => r.user_id === userId)?.total ?? 0)} pts`}
-      />
-      <FaceCard
-        icon={<Image />}
-        tone="pink"
-        title="Trip Postcard"
-        line="Captain collage and sharing are queued separately"
-        pill="Soon"
       />
       <div className="play-stamp-row">
         <span>TRIP</span>

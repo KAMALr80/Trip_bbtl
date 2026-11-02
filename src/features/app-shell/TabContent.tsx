@@ -5,6 +5,7 @@ import { MaskedEmail } from "@/features/auth/AuthScreen";
 import { SquadView } from "@/features/trip/SquadView";
 
 import { ArchivedTrip } from "@/features/trip/ArchivedTrip";
+import { AfterTrip } from "@/features/postcard/AfterTrip";
 
 import gameOptionA from "@/assets/game-tile-option-a.webp";
 import tripCoast from "@/assets/journey-coast-top.jpg";
@@ -152,6 +153,9 @@ export function TabContent({
   // M1-01: trips archived at the new-engine cutover get one read-only view instead of their tabs.
   if (active && active.rules_version === 1 && tab !== "Me")
     return <ArchivedTrip trip={active} cards={cards} userId={userId} onMember={onMember} />;
+  // M5-12 (R-609): after the Day 7 lock a trip shows its overview, answers and kept photos only.
+  if (active && active.locked_at && tab !== "Me")
+    return <AfterTrip trip={active} cards={cards} onMember={onMember} />;
   if (tab === "Home" && active && isAtHome(active)) return <AtHomeHome trip={active} open={open} />;
   if (tab === "Home" && active) {
     const days = Math.ceil(
