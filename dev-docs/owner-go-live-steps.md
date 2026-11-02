@@ -15,9 +15,8 @@ Tick these off in order. Everything else in the milestones is code work. Details
 numbered sections below.
 
 **Now: unblocks staging and the M4 phone checks**
-- [ ] Review and merge [PR #6](https://github.com/jay-brainbean/trip/pull/6) (no native apps; M4
-      install, offline, reminders). Its CI run is the first one of the new offline browser tests
-      (`playwright.pwa.config.ts`); if that step fails, tell Claude.
+- [x] Merge [PR #6](https://github.com/jay-brainbean/trip/pull/6) (M4) and
+      [PR #7](https://github.com/jay-brainbean/trip/pull/7) (M5, M6 code): both merged, CI green.
 - [ ] Turn on branch protection for `main` and make CI required (GitHub → Settings → Branches).
 - [ ] Create the staging accounts: Supabase (1.1), Cloudflare (1.2); AI key optional (1.3).
 - [ ] Make the web push keys: `bun scripts/pwa/vapid-keys.ts`, then add `VAPID_PUBLIC_KEY` and
