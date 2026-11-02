@@ -31,24 +31,23 @@ The deck is the **source of truth for product rules**. It says so itself: *"This
 M4-09). M0's code side is done; **nothing is deployed yet** because the staging accounts don't exist
 ([owner-go-live-steps.md](owner-go-live-steps.md) §1).
 
-**In progress: M5 — memories & Passport** ([M5](milestones/M5-memories-and-passport.md)), with the
-founder's defaults for Q11, Q13, Q23 and Q28. Done: Postcard Picks, wrap-up week (hearts + 3
-questions), the Day 7 lock, the Trip Postcard (drawn on the device for download / share), the
-Captain's tie-break and swap, the photo purge after the lock, stamps v2, levels, badges and the
-after-trip view.
+**M5 — memories & Passport** ([M5](milestones/M5-memories-and-passport.md)) is built with the
+founder's defaults for Q11, Q13, Q23 and Q28: Postcard Picks, wrap-up week, the Day 7 lock, the Trip
+Postcard, the Captain's tie-break and swap, the photo purge, stamps v2, levels, badges, the
+after-trip view, the Passport Junkie profile, the Me tab and the 7-card tour. Its leftovers: a
+server-rendered postcard image and the designer's art (M5-04, M5-13), hiding single photos once
+something public shows them (M5-10), and running the lock on staging.
 
 **Next in development, in order:**
-1. **M5's rest:** the Passport Junkie profile at `/p/$userId` with public / private (M5-10), the Me
-   tab rebuild with "From" filled from the device (M5-11), and the 7-card tour (M5-13). A server-
-   rendered postcard image (M5-04) can follow once the designer's Airline Look is in.
-2. **M4-10**, the real-phone checklist, once staging exists; it now includes the wrap-up reminders.
+1. **M6 — trust, safety & web launch** ([M6](milestones/M6-trust-safety-and-launch.md)): its code can
+   start now; launch itself waits for staging and the owner steps.
+2. **M4-10**, the real-phone checklist, once staging exists (step 12 covers wrap-up week and the postcard).
 3. **M3 leftovers:** "present live" as Surprise Drop proof (R-343); the content admin list/edit
    screen (M3-02). AI tailoring of content waits for `AI_API_KEY`. The ticket-stub card designs
    (M3-05, M3-09) and the luggage-tag crown celebration (M3-11) wait for the designer.
 4. **Cleanup that can be slotted in anywhere:** move the 52 retired tables to `legacy_archive` (M1-08,
    M3-16), delete the unreachable old setup code (M2-05), and move the remaining strings into the
    translation catalog as screens are touched (M1-07).
-5. **M6 — trust, safety & web launch**, after M4 and M5.
 
 ---
 
