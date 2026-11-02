@@ -23,7 +23,10 @@ INSERT INTO public.player_profiles (user_id, real_name, game_name, home_country)
   (tests.user_id('p1'), 'P One', 'p1', 'Portugal'), (tests.user_id('p2'), 'P Two', 'p2', 'USA');
 INSERT INTO public.trip_player_cards (trip_id, user_id, game_name, most_excited)
 VALUES (pg_temp.id('trip'), tests.user_id('p2'), 'Twosie', 'Pastéis de nata');
-INSERT INTO ids SELECT 'item', id FROM public.trip_schedule WHERE trip_id = pg_temp.id('trip') LIMIT 1;
+-- An item that survives re-planning when the test moves the dates (keyed by kind, slot and player):
+-- re-planning deletes items that no longer fit, and their proofs with them.
+INSERT INTO ids SELECT 'item', id FROM public.trip_schedule
+WHERE trip_id = pg_temp.id('trip') AND kind = 'airport_mission' AND user_id = tests.user_id('cap') ORDER BY slot LIMIT 1;
 
 -- Two photos each (proofs), uploaded in order: cap c1 c2, p1 a1 a2, p2 b1 b2, p3 d1 d2; and one more of
 -- p1's (a3), and one of p1's that expired (ax).

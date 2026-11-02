@@ -4,6 +4,22 @@ import { rpcOn } from "@/data/rpc-core";
 import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 import type { Database } from "@/integrations/supabase/types";
 
+/** Every object under a folder, any depth. */
+async function listTree(
+  admin: SupabaseClient<Database>,
+  bucket: string,
+  prefix: string,
+): Promise<string[]> {
+  const { data } = await admin.storage.from(bucket).list(prefix, { limit: 1000 });
+  const out: string[] = [];
+  for (const item of data ?? []) {
+    const path = `${prefix}/${item.name}`;
+    if (item.id) out.push(path);
+    else out.push(...(await listTree(admin, bucket, path)));
+  }
+  return out;
+}
+
 /** Delete what the lock left behind, trip by trip. Returns the trips finished and objects removed. */
 async function purgeAfterLock(admin: SupabaseClient<Database>) {
   const { data, error } = await rpcOn(admin, "photos_to_purge", { p_limit: 20 });
@@ -60,8 +76,10 @@ export const Route = createFileRoute("/api/public/purge-photos")({
         const cutoff = new Date(Date.now() - 365 * 86400000);
         const { data: trips, error } = await supabaseAdmin
           .from("trips")
-          .select("id, end_date, ended_at")
+          .select("id, end_date, ended_at, locked_at")
           .is("photos_purged_at", null)
+          // Locked trips keep their postcard photos for good; purgeAfterLock handles the rest.
+          .is("locked_at", null)
           .lte("end_date", cutoff.toISOString().slice(0, 10))
           .limit(50);
         if (error) return new Response("error", { status: 500 });
@@ -71,15 +89,12 @@ export const Route = createFileRoute("/api/public/purge-photos")({
             ? new Date(t.ended_at)
             : new Date(new Date(`${t.end_date}T00:00:00Z`).getTime() + 2 * 86400000);
           if (closedAt.getTime() + 365 * 86400000 > Date.now()) continue;
-          const { data: folders } = await supabaseAdmin.storage
-            .from("trip-photos")
-            .list(t.id, { limit: 1000 });
-          for (const f of folders ?? []) {
-            const { data: files } = await supabaseAdmin.storage
-              .from("trip-photos")
-              .list(`${t.id}/${f.name}`, { limit: 1000 });
-            const paths = (files ?? []).map((x) => `${t.id}/${f.name}/${x.name}`);
-            if (paths.length) await supabaseAdmin.storage.from("trip-photos").remove(paths);
+          // M6-04: the backstop also covers proof photos (trip/user/item/file), not only the
+          // older photo wall (trip/user/file).
+          for (const bucket of ["trip-photos", "quest-proofs"]) {
+            const paths = await listTree(supabaseAdmin, bucket, t.id);
+            for (let i = 0; i < paths.length; i += 500)
+              await supabaseAdmin.storage.from(bucket).remove(paths.slice(i, i + 500));
           }
           await supabaseAdmin
             .from("trips")

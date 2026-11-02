@@ -63,6 +63,15 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
         bucket: "player-avatars",
         paths: await listAll(supabaseAdmin as never, "player-avatars", `${t}/${userId}`),
       });
+      // M6-04: the new engine's proof photos and Window Seat guide photos go too.
+      files.push({
+        bucket: "quest-proofs",
+        paths: await listAll(supabaseAdmin as never, "quest-proofs", `${t}/${userId}`),
+      });
+      files.push({
+        bucket: "window-guide",
+        paths: await listAll(supabaseAdmin as never, "window-guide", `${t}/${userId}`),
+      });
     }
     for (const f of files)
       if (f.paths.length) await supabaseAdmin.storage.from(f.bucket).remove(f.paths);

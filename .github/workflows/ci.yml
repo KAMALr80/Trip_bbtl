@@ -37,6 +37,8 @@ jobs:
       - run: npx eslint . --quiet
       - run: bun run test
       - run: bun run build
+      # M6-07: no server secret or server-only module in the browser bundle.
+      - run: bun scripts/security/check-bundle.ts
       # The ubuntu-24.04 image already has Chrome's system libraries, so skip --with-deps (its
       # apt-get install took ~11 of the job's 14 minutes) and cache the browser download.
       - uses: actions/cache@v4

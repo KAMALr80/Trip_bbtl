@@ -59,23 +59,13 @@ M6-07 against the rule that game tables take no direct client writes (09 §2).
 
 None.
 
-### Public functions executable by `anon` (signed-out): 13
+### Public functions executable by `anon` (signed-out): 3
 
 Each should be deliberately public (legal pages, invite preview, version). Anything else should
 revoke `anon` (09 §2).
 
-- `create_trip(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text)`
-- `edit_trip(p_trip uuid, p_name text, p_destination text, p_start_date date, p_end_date date)`
-- `is_trip_member(p_trip uuid, p_user uuid)`
-- `leave_trip(p_trip uuid)`
-- `manage_trip_member(p_trip uuid, p_user uuid, p_action text)`
-- `new_trip_code()`
-- `normalize_game_name(p text)`
 - `price_list()`
 - `public_launch()`
-- `reset_trip_code(p_trip uuid)`
-- `set_welcome_copy(p_intro text, p_faq jsonb)`
-- `trip_roster(p_trip uuid)`
 - `welcome_copy()`
 
 ## Client usage

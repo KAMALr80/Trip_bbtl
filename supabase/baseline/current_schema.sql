@@ -26567,7 +26567,6 @@ GRANT ALL ON FUNCTION public.create_teen_invite(p_trip uuid, p_guardian boolean)
 --
 
 REVOKE ALL ON FUNCTION public.create_trip(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.create_trip(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text) TO anon;
 GRANT ALL ON FUNCTION public.create_trip(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text) TO authenticated;
 GRANT ALL ON FUNCTION public.create_trip(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text) TO service_role;
 
@@ -26692,7 +26691,6 @@ GRANT ALL ON FUNCTION public.culture_creator_badge(p_user uuid) TO service_role;
 -- Name: TABLE culture_exp_days; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_exp_days TO anon;
 GRANT ALL ON TABLE public.culture_exp_days TO authenticated;
 GRANT ALL ON TABLE public.culture_exp_days TO service_role;
 
@@ -26852,7 +26850,6 @@ GRANT ALL ON FUNCTION public.draw_game_card(p_trip uuid, p_category text) TO ser
 --
 
 REVOKE ALL ON FUNCTION public.edit_trip(p_trip uuid, p_name text, p_destination text, p_start_date date, p_end_date date) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.edit_trip(p_trip uuid, p_name text, p_destination text, p_start_date date, p_end_date date) TO anon;
 GRANT ALL ON FUNCTION public.edit_trip(p_trip uuid, p_name text, p_destination text, p_start_date date, p_end_date date) TO authenticated;
 GRANT ALL ON FUNCTION public.edit_trip(p_trip uuid, p_name text, p_destination text, p_start_date date, p_end_date date) TO service_role;
 
@@ -27007,7 +27004,7 @@ GRANT ALL ON FUNCTION public.game_day_status(p_trip uuid, p_date date) TO servic
 -- Name: FUNCTION game_format_prompts_updated_at(); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.game_format_prompts_updated_at() TO anon;
+REVOKE ALL ON FUNCTION public.game_format_prompts_updated_at() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.game_format_prompts_updated_at() TO authenticated;
 GRANT ALL ON FUNCTION public.game_format_prompts_updated_at() TO service_role;
 
@@ -27150,7 +27147,6 @@ GRANT ALL ON FUNCTION public.is_app_admin() TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.is_trip_member(p_trip uuid, p_user uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.is_trip_member(p_trip uuid, p_user uuid) TO anon;
 GRANT ALL ON FUNCTION public.is_trip_member(p_trip uuid, p_user uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.is_trip_member(p_trip uuid, p_user uuid) TO service_role;
 
@@ -27285,7 +27281,6 @@ GRANT ALL ON FUNCTION public.lab_view(p_trip uuid, p_view text) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.leave_trip(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.leave_trip(p_trip uuid) TO anon;
 GRANT ALL ON FUNCTION public.leave_trip(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.leave_trip(p_trip uuid) TO service_role;
 
@@ -27349,7 +27344,6 @@ GRANT ALL ON FUNCTION public.log_ai_call(p_usage uuid, p_model text, p_in intege
 --
 
 REVOKE ALL ON FUNCTION public.manage_trip_member(p_trip uuid, p_user uuid, p_action text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.manage_trip_member(p_trip uuid, p_user uuid, p_action text) TO anon;
 GRANT ALL ON FUNCTION public.manage_trip_member(p_trip uuid, p_user uuid, p_action text) TO authenticated;
 GRANT ALL ON FUNCTION public.manage_trip_member(p_trip uuid, p_user uuid, p_action text) TO service_role;
 
@@ -27581,7 +27575,6 @@ GRANT ALL ON FUNCTION public.my_waiting_trips() TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.new_trip_code() FROM PUBLIC;
-GRANT ALL ON FUNCTION public.new_trip_code() TO anon;
 GRANT ALL ON FUNCTION public.new_trip_code() TO authenticated;
 GRANT ALL ON FUNCTION public.new_trip_code() TO service_role;
 
@@ -27630,7 +27623,7 @@ GRANT ALL ON FUNCTION public.night_format_action(p_trip uuid, p_week integer, p_
 -- Name: FUNCTION normalize_game_name(p text); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.normalize_game_name(p text) TO anon;
+REVOKE ALL ON FUNCTION public.normalize_game_name(p text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.normalize_game_name(p text) TO authenticated;
 GRANT ALL ON FUNCTION public.normalize_game_name(p text) TO service_role;
 
@@ -27850,9 +27843,9 @@ GRANT ALL ON FUNCTION public.preview_ten_day_drops(p_trip uuid) TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.price_list() FROM PUBLIC;
-GRANT ALL ON FUNCTION public.price_list() TO anon;
 GRANT ALL ON FUNCTION public.price_list() TO authenticated;
 GRANT ALL ON FUNCTION public.price_list() TO service_role;
+GRANT ALL ON FUNCTION public.price_list() TO anon;
 
 
 --
@@ -27876,9 +27869,10 @@ GRANT ALL ON FUNCTION public.public_inspiration_queue() TO service_role;
 -- Name: FUNCTION public_launch(); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.public_launch() TO anon;
+REVOKE ALL ON FUNCTION public.public_launch() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.public_launch() TO authenticated;
 GRANT ALL ON FUNCTION public.public_launch() TO service_role;
+GRANT ALL ON FUNCTION public.public_launch() TO anon;
 
 
 --
@@ -27910,7 +27904,7 @@ GRANT ALL ON FUNCTION public.qotw_answers(p_trip uuid, p_week integer) TO servic
 -- Name: FUNCTION quest_challenge_update_time(); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.quest_challenge_update_time() TO anon;
+REVOKE ALL ON FUNCTION public.quest_challenge_update_time() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.quest_challenge_update_time() TO authenticated;
 GRANT ALL ON FUNCTION public.quest_challenge_update_time() TO service_role;
 
@@ -28064,7 +28058,6 @@ GRANT ALL ON FUNCTION public.reschedule_preview(p_trip uuid, p_every integer, p_
 --
 
 REVOKE ALL ON FUNCTION public.reset_trip_code(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.reset_trip_code(p_trip uuid) TO anon;
 GRANT ALL ON FUNCTION public.reset_trip_code(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.reset_trip_code(p_trip uuid) TO service_role;
 
@@ -28571,7 +28564,7 @@ GRANT ALL ON FUNCTION public.set_profile(p_public boolean, p_about text, p_from 
 -- Name: FUNCTION set_profile_updated_at(); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.set_profile_updated_at() TO anon;
+REVOKE ALL ON FUNCTION public.set_profile_updated_at() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.set_profile_updated_at() TO authenticated;
 GRANT ALL ON FUNCTION public.set_profile_updated_at() TO service_role;
 
@@ -28729,7 +28722,7 @@ GRANT ALL ON FUNCTION public.set_trip_timezone(p_trip uuid, p_tz text) TO servic
 -- Name: FUNCTION set_trip_updated_at(); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.set_trip_updated_at() TO anon;
+REVOKE ALL ON FUNCTION public.set_trip_updated_at() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.set_trip_updated_at() TO authenticated;
 GRANT ALL ON FUNCTION public.set_trip_updated_at() TO service_role;
 
@@ -28756,7 +28749,6 @@ GRANT ALL ON FUNCTION public.set_weekly_question(p_trip uuid, p_week integer, p_
 --
 
 REVOKE ALL ON FUNCTION public.set_welcome_copy(p_intro text, p_faq jsonb) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.set_welcome_copy(p_intro text, p_faq jsonb) TO anon;
 GRANT ALL ON FUNCTION public.set_welcome_copy(p_intro text, p_faq jsonb) TO authenticated;
 GRANT ALL ON FUNCTION public.set_welcome_copy(p_intro text, p_faq jsonb) TO service_role;
 
@@ -29037,7 +29029,6 @@ GRANT ALL ON FUNCTION public.trip_price(p_trip uuid, p_headcount integer) TO ser
 --
 
 REVOKE ALL ON FUNCTION public.trip_roster(p_trip uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.trip_roster(p_trip uuid) TO anon;
 GRANT ALL ON FUNCTION public.trip_roster(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.trip_roster(p_trip uuid) TO service_role;
 
@@ -29211,9 +29202,9 @@ GRANT ALL ON FUNCTION public.weekly_question_status(p_trip uuid) TO service_role
 --
 
 REVOKE ALL ON FUNCTION public.welcome_copy() FROM PUBLIC;
-GRANT ALL ON FUNCTION public.welcome_copy() TO anon;
 GRANT ALL ON FUNCTION public.welcome_copy() TO authenticated;
 GRANT ALL ON FUNCTION public.welcome_copy() TO service_role;
+GRANT ALL ON FUNCTION public.welcome_copy() TO anon;
 
 
 --
@@ -29942,7 +29933,6 @@ GRANT ALL ON TABLE public.content_items TO service_role;
 -- Name: TABLE trips; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trips TO anon;
 GRANT ALL ON TABLE public.trips TO authenticated;
 GRANT ALL ON TABLE public.trips TO service_role;
 
@@ -31758,7 +31748,6 @@ GRANT ALL ON FUNCTION trip_private.plan_trip(p_trip uuid) TO service_role;
 -- Name: TABLE trip_day_games; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_day_games TO anon;
 GRANT ALL ON TABLE public.trip_day_games TO authenticated;
 GRANT ALL ON TABLE public.trip_day_games TO service_role;
 
@@ -33762,7 +33751,6 @@ GRANT ALL ON FUNCTION trip_private.write_journal(p_item uuid, p_body text, p_cho
 -- Name: TABLE account_consents; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.account_consents TO anon;
 GRANT ALL ON TABLE public.account_consents TO authenticated;
 GRANT ALL ON TABLE public.account_consents TO service_role;
 
@@ -33771,7 +33759,6 @@ GRANT ALL ON TABLE public.account_consents TO service_role;
 -- Name: TABLE age_guesses; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.age_guesses TO anon;
 GRANT ALL ON TABLE public.age_guesses TO authenticated;
 GRANT ALL ON TABLE public.age_guesses TO service_role;
 
@@ -33780,7 +33767,6 @@ GRANT ALL ON TABLE public.age_guesses TO service_role;
 -- Name: TABLE ai_credit_purchases; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.ai_credit_purchases TO anon;
 GRANT ALL ON TABLE public.ai_credit_purchases TO authenticated;
 GRANT ALL ON TABLE public.ai_credit_purchases TO service_role;
 
@@ -33789,7 +33775,6 @@ GRANT ALL ON TABLE public.ai_credit_purchases TO service_role;
 -- Name: TABLE ai_usage; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.ai_usage TO anon;
 GRANT ALL ON TABLE public.ai_usage TO authenticated;
 GRANT ALL ON TABLE public.ai_usage TO service_role;
 
@@ -33798,7 +33783,6 @@ GRANT ALL ON TABLE public.ai_usage TO service_role;
 -- Name: TABLE airport_claims; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.airport_claims TO anon;
 GRANT ALL ON TABLE public.airport_claims TO authenticated;
 GRANT ALL ON TABLE public.airport_claims TO service_role;
 
@@ -33807,7 +33791,6 @@ GRANT ALL ON TABLE public.airport_claims TO service_role;
 -- Name: TABLE app_admins; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.app_admins TO anon;
 GRANT ALL ON TABLE public.app_admins TO authenticated;
 GRANT ALL ON TABLE public.app_admins TO service_role;
 
@@ -33816,9 +33799,43 @@ GRANT ALL ON TABLE public.app_admins TO service_role;
 -- Name: TABLE app_settings; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.app_settings TO anon;
 GRANT ALL ON TABLE public.app_settings TO authenticated;
 GRANT ALL ON TABLE public.app_settings TO service_role;
+
+
+--
+-- Name: COLUMN app_settings.id; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(id) ON TABLE public.app_settings TO anon;
+
+
+--
+-- Name: COLUMN app_settings.public_launch; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(public_launch) ON TABLE public.app_settings TO anon;
+
+
+--
+-- Name: COLUMN app_settings.founder_intro; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(founder_intro) ON TABLE public.app_settings TO anon;
+
+
+--
+-- Name: COLUMN app_settings.welcome_faq; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(welcome_faq) ON TABLE public.app_settings TO anon;
+
+
+--
+-- Name: COLUMN app_settings.boarding_tile; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(boarding_tile) ON TABLE public.app_settings TO anon;
 
 
 --
@@ -33832,7 +33849,6 @@ GRANT ALL ON TABLE public.at_home_answers TO service_role;
 -- Name: TABLE at_home_pack_items; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.at_home_pack_items TO anon;
 GRANT ALL ON TABLE public.at_home_pack_items TO authenticated;
 GRANT ALL ON TABLE public.at_home_pack_items TO service_role;
 
@@ -33841,7 +33857,6 @@ GRANT ALL ON TABLE public.at_home_pack_items TO service_role;
 -- Name: SEQUENCE at_home_pack_items_id_seq; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON SEQUENCE public.at_home_pack_items_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.at_home_pack_items_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.at_home_pack_items_id_seq TO service_role;
 
@@ -33850,7 +33865,6 @@ GRANT ALL ON SEQUENCE public.at_home_pack_items_id_seq TO service_role;
 -- Name: TABLE at_home_packs; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.at_home_packs TO anon;
 GRANT ALL ON TABLE public.at_home_packs TO authenticated;
 GRANT ALL ON TABLE public.at_home_packs TO service_role;
 
@@ -33859,7 +33873,6 @@ GRANT ALL ON TABLE public.at_home_packs TO service_role;
 -- Name: TABLE at_home_song_winners; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.at_home_song_winners TO anon;
 GRANT ALL ON TABLE public.at_home_song_winners TO authenticated;
 GRANT ALL ON TABLE public.at_home_song_winners TO service_role;
 
@@ -33875,7 +33888,6 @@ GRANT ALL ON TABLE public.at_home_votes TO service_role;
 -- Name: TABLE beta_access; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.beta_access TO anon;
 GRANT ALL ON TABLE public.beta_access TO authenticated;
 GRANT ALL ON TABLE public.beta_access TO service_role;
 
@@ -33884,7 +33896,6 @@ GRANT ALL ON TABLE public.beta_access TO service_role;
 -- Name: TABLE beta_codes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.beta_codes TO anon;
 GRANT ALL ON TABLE public.beta_codes TO authenticated;
 GRANT ALL ON TABLE public.beta_codes TO service_role;
 
@@ -33893,7 +33904,6 @@ GRANT ALL ON TABLE public.beta_codes TO service_role;
 -- Name: TABLE bingo_marks; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.bingo_marks TO anon;
 GRANT ALL ON TABLE public.bingo_marks TO authenticated;
 GRANT ALL ON TABLE public.bingo_marks TO service_role;
 
@@ -33902,7 +33912,6 @@ GRANT ALL ON TABLE public.bingo_marks TO service_role;
 -- Name: TABLE bug_issues; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.bug_issues TO anon;
 GRANT ALL ON TABLE public.bug_issues TO authenticated;
 GRANT ALL ON TABLE public.bug_issues TO service_role;
 
@@ -33911,7 +33920,6 @@ GRANT ALL ON TABLE public.bug_issues TO service_role;
 -- Name: TABLE bug_reports; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.bug_reports TO anon;
 GRANT ALL ON TABLE public.bug_reports TO authenticated;
 GRANT ALL ON TABLE public.bug_reports TO service_role;
 
@@ -33928,7 +33936,6 @@ GRANT SELECT ON TABLE public.call_nights TO authenticated;
 -- Name: TABLE checkin_responses; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.checkin_responses TO anon;
 GRANT ALL ON TABLE public.checkin_responses TO authenticated;
 GRANT ALL ON TABLE public.checkin_responses TO service_role;
 
@@ -33965,7 +33972,6 @@ GRANT ALL ON TABLE public.content_variants TO service_role;
 -- Name: TABLE cost_items; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cost_items TO anon;
 GRANT ALL ON TABLE public.cost_items TO authenticated;
 GRANT ALL ON TABLE public.cost_items TO service_role;
 
@@ -33974,7 +33980,6 @@ GRANT ALL ON TABLE public.cost_items TO service_role;
 -- Name: TABLE cost_log; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cost_log TO anon;
 GRANT ALL ON TABLE public.cost_log TO authenticated;
 GRANT ALL ON TABLE public.cost_log TO service_role;
 
@@ -33983,7 +33988,6 @@ GRANT ALL ON TABLE public.cost_log TO service_role;
 -- Name: TABLE cost_notes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cost_notes TO anon;
 GRANT ALL ON TABLE public.cost_notes TO authenticated;
 GRANT ALL ON TABLE public.cost_notes TO service_role;
 
@@ -33992,7 +33996,6 @@ GRANT ALL ON TABLE public.cost_notes TO service_role;
 -- Name: TABLE cost_shares; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cost_shares TO anon;
 GRANT ALL ON TABLE public.cost_shares TO authenticated;
 GRANT ALL ON TABLE public.cost_shares TO service_role;
 
@@ -34001,7 +34004,6 @@ GRANT ALL ON TABLE public.cost_shares TO service_role;
 -- Name: TABLE cultural_inspirations; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cultural_inspirations TO anon;
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE ON TABLE public.cultural_inspirations TO authenticated;
 GRANT ALL ON TABLE public.cultural_inspirations TO service_role;
 
@@ -34087,7 +34089,6 @@ GRANT UPDATE(feature_later) ON TABLE public.cultural_inspirations TO authenticat
 -- Name: TABLE culture_exp_hidden; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_exp_hidden TO anon;
 GRANT ALL ON TABLE public.culture_exp_hidden TO authenticated;
 GRANT ALL ON TABLE public.culture_exp_hidden TO service_role;
 
@@ -34096,7 +34097,6 @@ GRANT ALL ON TABLE public.culture_exp_hidden TO service_role;
 -- Name: TABLE culture_exp_likes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_exp_likes TO anon;
 GRANT ALL ON TABLE public.culture_exp_likes TO authenticated;
 GRANT ALL ON TABLE public.culture_exp_likes TO service_role;
 
@@ -34105,7 +34105,6 @@ GRANT ALL ON TABLE public.culture_exp_likes TO service_role;
 -- Name: TABLE culture_experiences; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_experiences TO anon;
 GRANT ALL ON TABLE public.culture_experiences TO authenticated;
 GRANT ALL ON TABLE public.culture_experiences TO service_role;
 
@@ -34114,7 +34113,6 @@ GRANT ALL ON TABLE public.culture_experiences TO service_role;
 -- Name: TABLE culture_layer_stamps; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_layer_stamps TO anon;
 GRANT ALL ON TABLE public.culture_layer_stamps TO authenticated;
 GRANT ALL ON TABLE public.culture_layer_stamps TO service_role;
 
@@ -34123,7 +34121,6 @@ GRANT ALL ON TABLE public.culture_layer_stamps TO service_role;
 -- Name: TABLE culture_quest_answers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_quest_answers TO anon;
 GRANT ALL ON TABLE public.culture_quest_answers TO authenticated;
 GRANT ALL ON TABLE public.culture_quest_answers TO service_role;
 
@@ -34132,7 +34129,6 @@ GRANT ALL ON TABLE public.culture_quest_answers TO service_role;
 -- Name: TABLE culture_quest_items; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_quest_items TO anon;
 GRANT ALL ON TABLE public.culture_quest_items TO authenticated;
 GRANT ALL ON TABLE public.culture_quest_items TO service_role;
 
@@ -34141,7 +34137,6 @@ GRANT ALL ON TABLE public.culture_quest_items TO service_role;
 -- Name: TABLE culture_quest_players; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_quest_players TO anon;
 GRANT ALL ON TABLE public.culture_quest_players TO authenticated;
 GRANT ALL ON TABLE public.culture_quest_players TO service_role;
 
@@ -34150,7 +34145,6 @@ GRANT ALL ON TABLE public.culture_quest_players TO service_role;
 -- Name: TABLE culture_quest_sessions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_quest_sessions TO anon;
 GRANT ALL ON TABLE public.culture_quest_sessions TO authenticated;
 GRANT ALL ON TABLE public.culture_quest_sessions TO service_role;
 
@@ -34159,7 +34153,6 @@ GRANT ALL ON TABLE public.culture_quest_sessions TO service_role;
 -- Name: TABLE culture_showcase_ballots; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_showcase_ballots TO anon;
 GRANT ALL ON TABLE public.culture_showcase_ballots TO authenticated;
 GRANT ALL ON TABLE public.culture_showcase_ballots TO service_role;
 
@@ -34168,7 +34161,6 @@ GRANT ALL ON TABLE public.culture_showcase_ballots TO service_role;
 -- Name: TABLE culture_showcase_rewards; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_showcase_rewards TO anon;
 GRANT ALL ON TABLE public.culture_showcase_rewards TO authenticated;
 GRANT ALL ON TABLE public.culture_showcase_rewards TO service_role;
 
@@ -34177,7 +34169,6 @@ GRANT ALL ON TABLE public.culture_showcase_rewards TO service_role;
 -- Name: TABLE culture_showcase_viewers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_showcase_viewers TO anon;
 GRANT ALL ON TABLE public.culture_showcase_viewers TO authenticated;
 GRANT ALL ON TABLE public.culture_showcase_viewers TO service_role;
 
@@ -34186,7 +34177,6 @@ GRANT ALL ON TABLE public.culture_showcase_viewers TO service_role;
 -- Name: TABLE culture_stamps; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_stamps TO anon;
 GRANT ALL ON TABLE public.culture_stamps TO authenticated;
 GRANT ALL ON TABLE public.culture_stamps TO service_role;
 
@@ -34203,7 +34193,6 @@ GRANT SELECT ON TABLE public.daily_answers TO authenticated;
 -- Name: TABLE day_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.day_votes TO anon;
 GRANT ALL ON TABLE public.day_votes TO authenticated;
 GRANT ALL ON TABLE public.day_votes TO service_role;
 
@@ -34212,7 +34201,6 @@ GRANT ALL ON TABLE public.day_votes TO service_role;
 -- Name: TABLE experience_previews; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.experience_previews TO anon;
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.experience_previews TO authenticated;
 GRANT ALL ON TABLE public.experience_previews TO service_role;
 
@@ -34354,7 +34342,6 @@ GRANT SELECT(updated_at) ON TABLE public.experience_previews TO authenticated;
 -- Name: TABLE game_cards; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.game_cards TO anon;
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.game_cards TO authenticated;
 GRANT ALL ON TABLE public.game_cards TO service_role;
 
@@ -34363,7 +34350,6 @@ GRANT ALL ON TABLE public.game_cards TO service_role;
 -- Name: SEQUENCE game_cards_id_seq; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON SEQUENCE public.game_cards_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.game_cards_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.game_cards_id_seq TO service_role;
 
@@ -34372,7 +34358,6 @@ GRANT ALL ON SEQUENCE public.game_cards_id_seq TO service_role;
 -- Name: TABLE game_catalog; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_catalog TO anon;
 GRANT ALL ON TABLE public.game_catalog TO authenticated;
 GRANT ALL ON TABLE public.game_catalog TO service_role;
 
@@ -34381,7 +34366,6 @@ GRANT ALL ON TABLE public.game_catalog TO service_role;
 -- Name: TABLE game_format_prompts; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_format_prompts TO anon;
 GRANT ALL ON TABLE public.game_format_prompts TO authenticated;
 GRANT ALL ON TABLE public.game_format_prompts TO service_role;
 
@@ -34390,7 +34374,6 @@ GRANT ALL ON TABLE public.game_format_prompts TO service_role;
 -- Name: SEQUENCE game_format_prompts_id_seq; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON SEQUENCE public.game_format_prompts_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.game_format_prompts_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.game_format_prompts_id_seq TO service_role;
 
@@ -34399,7 +34382,6 @@ GRANT ALL ON SEQUENCE public.game_format_prompts_id_seq TO service_role;
 -- Name: TABLE game_night_card_skips; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_card_skips TO anon;
 GRANT ALL ON TABLE public.game_night_card_skips TO authenticated;
 GRANT ALL ON TABLE public.game_night_card_skips TO service_role;
 
@@ -34408,7 +34390,6 @@ GRANT ALL ON TABLE public.game_night_card_skips TO service_role;
 -- Name: TABLE game_night_flow; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_flow TO anon;
 GRANT ALL ON TABLE public.game_night_flow TO authenticated;
 GRANT ALL ON TABLE public.game_night_flow TO service_role;
 
@@ -34417,7 +34398,6 @@ GRANT ALL ON TABLE public.game_night_flow TO service_role;
 -- Name: TABLE game_night_moments; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_moments TO anon;
 GRANT ALL ON TABLE public.game_night_moments TO authenticated;
 GRANT ALL ON TABLE public.game_night_moments TO service_role;
 
@@ -34426,7 +34406,6 @@ GRANT ALL ON TABLE public.game_night_moments TO service_role;
 -- Name: TABLE game_night_polls; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_polls TO anon;
 GRANT SELECT ON TABLE public.game_night_polls TO authenticated;
 GRANT ALL ON TABLE public.game_night_polls TO service_role;
 
@@ -34435,7 +34414,6 @@ GRANT ALL ON TABLE public.game_night_polls TO service_role;
 -- Name: TABLE game_night_reactions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_reactions TO anon;
 GRANT ALL ON TABLE public.game_night_reactions TO authenticated;
 GRANT ALL ON TABLE public.game_night_reactions TO service_role;
 
@@ -34444,7 +34422,6 @@ GRANT ALL ON TABLE public.game_night_reactions TO service_role;
 -- Name: TABLE game_night_turns; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_turns TO anon;
 GRANT ALL ON TABLE public.game_night_turns TO authenticated;
 GRANT ALL ON TABLE public.game_night_turns TO service_role;
 
@@ -34453,7 +34430,6 @@ GRANT ALL ON TABLE public.game_night_turns TO service_role;
 -- Name: TABLE game_night_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_votes TO anon;
 GRANT ALL ON TABLE public.game_night_votes TO authenticated;
 GRANT ALL ON TABLE public.game_night_votes TO service_role;
 
@@ -34462,7 +34438,6 @@ GRANT ALL ON TABLE public.game_night_votes TO service_role;
 -- Name: TABLE game_nights; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_nights TO anon;
 GRANT SELECT ON TABLE public.game_nights TO authenticated;
 GRANT ALL ON TABLE public.game_nights TO service_role;
 
@@ -34471,7 +34446,6 @@ GRANT ALL ON TABLE public.game_nights TO service_role;
 -- Name: TABLE game_pick_log; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_pick_log TO anon;
 GRANT ALL ON TABLE public.game_pick_log TO authenticated;
 GRANT ALL ON TABLE public.game_pick_log TO service_role;
 
@@ -34480,7 +34454,6 @@ GRANT ALL ON TABLE public.game_pick_log TO service_role;
 -- Name: SEQUENCE game_pick_log_id_seq; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON SEQUENCE public.game_pick_log_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.game_pick_log_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.game_pick_log_id_seq TO service_role;
 
@@ -34489,7 +34462,6 @@ GRANT ALL ON SEQUENCE public.game_pick_log_id_seq TO service_role;
 -- Name: TABLE game_scores; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_scores TO anon;
 GRANT ALL ON TABLE public.game_scores TO authenticated;
 GRANT ALL ON TABLE public.game_scores TO service_role;
 
@@ -34506,7 +34478,6 @@ GRANT SELECT ON TABLE public.guide_prefs TO authenticated;
 -- Name: TABLE home_day_results; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.home_day_results TO anon;
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.home_day_results TO authenticated;
 GRANT ALL ON TABLE public.home_day_results TO service_role;
 
@@ -34515,7 +34486,6 @@ GRANT ALL ON TABLE public.home_day_results TO service_role;
 -- Name: TABLE home_day_sessions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.home_day_sessions TO anon;
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.home_day_sessions TO authenticated;
 GRANT ALL ON TABLE public.home_day_sessions TO service_role;
 
@@ -34524,7 +34494,6 @@ GRANT ALL ON TABLE public.home_day_sessions TO service_role;
 -- Name: TABLE host_penalties; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.host_penalties TO anon;
 GRANT ALL ON TABLE public.host_penalties TO authenticated;
 GRANT ALL ON TABLE public.host_penalties TO service_role;
 
@@ -34533,7 +34502,6 @@ GRANT ALL ON TABLE public.host_penalties TO service_role;
 -- Name: TABLE host_swaps; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.host_swaps TO anon;
 GRANT ALL ON TABLE public.host_swaps TO authenticated;
 GRANT ALL ON TABLE public.host_swaps TO service_role;
 
@@ -34542,7 +34510,6 @@ GRANT ALL ON TABLE public.host_swaps TO service_role;
 -- Name: TABLE inspiration_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.inspiration_votes TO anon;
 GRANT ALL ON TABLE public.inspiration_votes TO authenticated;
 GRANT ALL ON TABLE public.inspiration_votes TO service_role;
 
@@ -34559,7 +34526,6 @@ GRANT SELECT ON TABLE public.journal_entries TO authenticated;
 -- Name: TABLE junkie_ranks; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.junkie_ranks TO anon;
 GRANT ALL ON TABLE public.junkie_ranks TO authenticated;
 GRANT ALL ON TABLE public.junkie_ranks TO service_role;
 
@@ -34590,7 +34556,6 @@ GRANT SELECT ON TABLE public.live_sessions TO authenticated;
 -- Name: TABLE live_vote_ballots; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.live_vote_ballots TO anon;
 GRANT ALL ON TABLE public.live_vote_ballots TO authenticated;
 GRANT ALL ON TABLE public.live_vote_ballots TO service_role;
 
@@ -34599,7 +34564,6 @@ GRANT ALL ON TABLE public.live_vote_ballots TO service_role;
 -- Name: TABLE live_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.live_votes TO anon;
 GRANT ALL ON TABLE public.live_votes TO authenticated;
 GRANT ALL ON TABLE public.live_votes TO service_role;
 
@@ -34608,7 +34572,6 @@ GRANT ALL ON TABLE public.live_votes TO service_role;
 -- Name: TABLE mission_claims; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.mission_claims TO anon;
 GRANT ALL ON TABLE public.mission_claims TO authenticated;
 GRANT ALL ON TABLE public.mission_claims TO service_role;
 
@@ -34617,7 +34580,6 @@ GRANT ALL ON TABLE public.mission_claims TO service_role;
 -- Name: TABLE mission_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.mission_votes TO anon;
 GRANT ALL ON TABLE public.mission_votes TO authenticated;
 GRANT ALL ON TABLE public.mission_votes TO service_role;
 
@@ -34641,7 +34603,6 @@ GRANT ALL ON TABLE public.notification_queue TO service_role;
 -- Name: TABLE orders; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.orders TO anon;
 GRANT ALL ON TABLE public.orders TO authenticated;
 GRANT ALL ON TABLE public.orders TO service_role;
 
@@ -34658,7 +34619,6 @@ GRANT SELECT ON TABLE public.passport_progress TO authenticated;
 -- Name: TABLE passport_stamps; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.passport_stamps TO anon;
 GRANT ALL ON TABLE public.passport_stamps TO authenticated;
 GRANT ALL ON TABLE public.passport_stamps TO service_role;
 
@@ -34667,7 +34627,6 @@ GRANT ALL ON TABLE public.passport_stamps TO service_role;
 -- Name: TABLE photo_posts; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.photo_posts TO anon;
 GRANT ALL ON TABLE public.photo_posts TO authenticated;
 GRANT ALL ON TABLE public.photo_posts TO service_role;
 
@@ -34683,7 +34642,6 @@ GRANT ALL ON TABLE public.photo_purge_log TO service_role;
 -- Name: SEQUENCE photo_purge_log_id_seq; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON SEQUENCE public.photo_purge_log_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.photo_purge_log_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.photo_purge_log_id_seq TO service_role;
 
@@ -34692,7 +34650,6 @@ GRANT ALL ON SEQUENCE public.photo_purge_log_id_seq TO service_role;
 -- Name: TABLE photo_reactions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.photo_reactions TO anon;
 GRANT ALL ON TABLE public.photo_reactions TO authenticated;
 GRANT ALL ON TABLE public.photo_reactions TO service_role;
 
@@ -34701,7 +34658,6 @@ GRANT ALL ON TABLE public.photo_reactions TO service_role;
 -- Name: TABLE photo_removed; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.photo_removed TO anon;
 GRANT ALL ON TABLE public.photo_removed TO authenticated;
 GRANT ALL ON TABLE public.photo_removed TO service_role;
 
@@ -34710,7 +34666,6 @@ GRANT ALL ON TABLE public.photo_removed TO service_role;
 -- Name: TABLE photo_reports; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.photo_reports TO anon;
 GRANT ALL ON TABLE public.photo_reports TO authenticated;
 GRANT ALL ON TABLE public.photo_reports TO service_role;
 
@@ -34719,7 +34674,6 @@ GRANT ALL ON TABLE public.photo_reports TO service_role;
 -- Name: TABLE player_birthdays; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.player_birthdays TO anon;
 GRANT SELECT,REFERENCES,TRIGGER,TRUNCATE ON TABLE public.player_birthdays TO authenticated;
 GRANT ALL ON TABLE public.player_birthdays TO service_role;
 
@@ -34728,7 +34682,6 @@ GRANT ALL ON TABLE public.player_birthdays TO service_role;
 -- Name: TABLE player_private; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.player_private TO anon;
 GRANT ALL ON TABLE public.player_private TO authenticated;
 GRANT ALL ON TABLE public.player_private TO service_role;
 
@@ -34737,7 +34690,6 @@ GRANT ALL ON TABLE public.player_private TO service_role;
 -- Name: TABLE player_profiles; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.player_profiles TO anon;
 GRANT ALL ON TABLE public.player_profiles TO authenticated;
 GRANT ALL ON TABLE public.player_profiles TO service_role;
 
@@ -34754,7 +34706,6 @@ GRANT SELECT ON TABLE public.points_ledger TO authenticated;
 -- Name: SEQUENCE points_ledger_id_seq; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON SEQUENCE public.points_ledger_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.points_ledger_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.points_ledger_id_seq TO service_role;
 
@@ -34794,7 +34745,6 @@ GRANT SELECT ON TABLE public.postcard_picks TO authenticated;
 -- Name: TABLE postcard_stickers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.postcard_stickers TO anon;
 GRANT ALL ON TABLE public.postcard_stickers TO authenticated;
 GRANT ALL ON TABLE public.postcard_stickers TO service_role;
 
@@ -34803,7 +34753,6 @@ GRANT ALL ON TABLE public.postcard_stickers TO service_role;
 -- Name: TABLE preview_hidden; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.preview_hidden TO anon;
 GRANT ALL ON TABLE public.preview_hidden TO authenticated;
 GRANT ALL ON TABLE public.preview_hidden TO service_role;
 
@@ -34812,9 +34761,9 @@ GRANT ALL ON TABLE public.preview_hidden TO service_role;
 -- Name: TABLE price_rules; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.price_rules TO anon;
 GRANT ALL ON TABLE public.price_rules TO authenticated;
 GRANT ALL ON TABLE public.price_rules TO service_role;
+GRANT SELECT ON TABLE public.price_rules TO anon;
 
 
 --
@@ -34829,7 +34778,6 @@ GRANT SELECT ON TABLE public.profile_prefs TO authenticated;
 -- Name: TABLE profiles; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.profiles TO anon;
 GRANT ALL ON TABLE public.profiles TO authenticated;
 GRANT ALL ON TABLE public.profiles TO service_role;
 
@@ -34902,7 +34850,6 @@ GRANT SELECT(updated_at) ON TABLE public.push_subscriptions TO authenticated;
 -- Name: TABLE quest_challenges; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.quest_challenges TO anon;
 GRANT ALL ON TABLE public.quest_challenges TO authenticated;
 GRANT ALL ON TABLE public.quest_challenges TO service_role;
 
@@ -34911,7 +34858,6 @@ GRANT ALL ON TABLE public.quest_challenges TO service_role;
 -- Name: TABLE quest_posts; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.quest_posts TO anon;
 GRANT ALL ON TABLE public.quest_posts TO authenticated;
 GRANT ALL ON TABLE public.quest_posts TO service_role;
 
@@ -34920,7 +34866,6 @@ GRANT ALL ON TABLE public.quest_posts TO service_role;
 -- Name: TABLE quest_thumbs; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.quest_thumbs TO anon;
 GRANT ALL ON TABLE public.quest_thumbs TO authenticated;
 GRANT ALL ON TABLE public.quest_thumbs TO service_role;
 
@@ -34929,7 +34874,6 @@ GRANT ALL ON TABLE public.quest_thumbs TO service_role;
 -- Name: TABLE reward_codes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.reward_codes TO anon;
 GRANT ALL ON TABLE public.reward_codes TO authenticated;
 GRANT ALL ON TABLE public.reward_codes TO service_role;
 
@@ -34938,7 +34882,6 @@ GRANT ALL ON TABLE public.reward_codes TO service_role;
 -- Name: TABLE room_blocks; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.room_blocks TO anon;
 GRANT ALL ON TABLE public.room_blocks TO authenticated;
 GRANT ALL ON TABLE public.room_blocks TO service_role;
 
@@ -34947,7 +34890,6 @@ GRANT ALL ON TABLE public.room_blocks TO service_role;
 -- Name: TABLE room_requests; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.room_requests TO anon;
 GRANT ALL ON TABLE public.room_requests TO authenticated;
 GRANT ALL ON TABLE public.room_requests TO service_role;
 
@@ -34956,7 +34898,6 @@ GRANT ALL ON TABLE public.room_requests TO service_role;
 -- Name: TABLE sandbox_bots; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.sandbox_bots TO anon;
 GRANT ALL ON TABLE public.sandbox_bots TO authenticated;
 GRANT ALL ON TABLE public.sandbox_bots TO service_role;
 
@@ -34965,7 +34906,6 @@ GRANT ALL ON TABLE public.sandbox_bots TO service_role;
 -- Name: TABLE sandbox_trips; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.sandbox_trips TO anon;
 GRANT ALL ON TABLE public.sandbox_trips TO authenticated;
 GRANT ALL ON TABLE public.sandbox_trips TO service_role;
 
@@ -34974,7 +34914,6 @@ GRANT ALL ON TABLE public.sandbox_trips TO service_role;
 -- Name: TABLE season_champions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.season_champions TO anon;
 GRANT ALL ON TABLE public.season_champions TO authenticated;
 GRANT ALL ON TABLE public.season_champions TO service_role;
 
@@ -34983,7 +34922,6 @@ GRANT ALL ON TABLE public.season_champions TO service_role;
 -- Name: TABLE season_quests; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.season_quests TO anon;
 GRANT ALL ON TABLE public.season_quests TO authenticated;
 GRANT ALL ON TABLE public.season_quests TO service_role;
 
@@ -34992,7 +34930,6 @@ GRANT ALL ON TABLE public.season_quests TO service_role;
 -- Name: TABLE season_settings; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.season_settings TO anon;
 GRANT ALL ON TABLE public.season_settings TO authenticated;
 GRANT ALL ON TABLE public.season_settings TO service_role;
 
@@ -35001,7 +34938,6 @@ GRANT ALL ON TABLE public.season_settings TO service_role;
 -- Name: TABLE secret_missions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.secret_missions TO anon;
 GRANT ALL ON TABLE public.secret_missions TO authenticated;
 GRANT ALL ON TABLE public.secret_missions TO service_role;
 
@@ -35010,7 +34946,6 @@ GRANT ALL ON TABLE public.secret_missions TO service_role;
 -- Name: TABLE security_missions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.security_missions TO anon;
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.security_missions TO authenticated;
 GRANT ALL ON TABLE public.security_missions TO service_role;
 
@@ -35019,7 +34954,6 @@ GRANT ALL ON TABLE public.security_missions TO service_role;
 -- Name: TABLE skip_passes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.skip_passes TO anon;
 GRANT ALL ON TABLE public.skip_passes TO authenticated;
 GRANT ALL ON TABLE public.skip_passes TO service_role;
 
@@ -35036,7 +34970,6 @@ GRANT ALL ON TABLE public.solo_quests TO service_role;
 -- Name: TABLE song_discs; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.song_discs TO anon;
 GRANT ALL ON TABLE public.song_discs TO authenticated;
 GRANT ALL ON TABLE public.song_discs TO service_role;
 
@@ -35045,7 +34978,6 @@ GRANT ALL ON TABLE public.song_discs TO service_role;
 -- Name: TABLE stamp_settings; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.stamp_settings TO anon;
 GRANT ALL ON TABLE public.stamp_settings TO authenticated;
 GRANT ALL ON TABLE public.stamp_settings TO service_role;
 
@@ -35054,7 +34986,6 @@ GRANT ALL ON TABLE public.stamp_settings TO service_role;
 -- Name: TABLE trip_adult_activities; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_adult_activities TO anon;
 GRANT ALL ON TABLE public.trip_adult_activities TO authenticated;
 GRANT ALL ON TABLE public.trip_adult_activities TO service_role;
 
@@ -35063,7 +34994,6 @@ GRANT ALL ON TABLE public.trip_adult_activities TO service_role;
 -- Name: TABLE trip_adult_approvals; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_adult_approvals TO anon;
 GRANT ALL ON TABLE public.trip_adult_approvals TO authenticated;
 GRANT ALL ON TABLE public.trip_adult_approvals TO service_role;
 
@@ -35072,7 +35002,6 @@ GRANT ALL ON TABLE public.trip_adult_approvals TO service_role;
 -- Name: TABLE trip_adult_settings; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_adult_settings TO anon;
 GRANT ALL ON TABLE public.trip_adult_settings TO authenticated;
 GRANT ALL ON TABLE public.trip_adult_settings TO service_role;
 
@@ -35097,7 +35026,6 @@ GRANT SELECT ON TABLE public.trip_crowns TO authenticated;
 -- Name: TABLE trip_day_tags; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_day_tags TO anon;
 GRANT ALL ON TABLE public.trip_day_tags TO authenticated;
 GRANT ALL ON TABLE public.trip_day_tags TO service_role;
 
@@ -35106,7 +35034,6 @@ GRANT ALL ON TABLE public.trip_day_tags TO service_role;
 -- Name: TABLE trip_day_trivia_keys; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_day_trivia_keys TO anon;
 GRANT ALL ON TABLE public.trip_day_trivia_keys TO authenticated;
 GRANT ALL ON TABLE public.trip_day_trivia_keys TO service_role;
 
@@ -35115,7 +35042,6 @@ GRANT ALL ON TABLE public.trip_day_trivia_keys TO service_role;
 -- Name: TABLE trip_deletion_log; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_deletion_log TO anon;
 GRANT ALL ON TABLE public.trip_deletion_log TO authenticated;
 GRANT ALL ON TABLE public.trip_deletion_log TO service_role;
 
@@ -35124,7 +35050,6 @@ GRANT ALL ON TABLE public.trip_deletion_log TO service_role;
 -- Name: TABLE trip_deletion_notes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_deletion_notes TO anon;
 GRANT ALL ON TABLE public.trip_deletion_notes TO authenticated;
 GRANT ALL ON TABLE public.trip_deletion_notes TO service_role;
 
@@ -35141,7 +35066,6 @@ GRANT SELECT ON TABLE public.trip_drafts TO authenticated;
 -- Name: TABLE trip_feedback; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_feedback TO anon;
 GRANT ALL ON TABLE public.trip_feedback TO authenticated;
 GRANT ALL ON TABLE public.trip_feedback TO service_role;
 
@@ -35158,7 +35082,6 @@ GRANT SELECT ON TABLE public.trip_guides TO authenticated;
 -- Name: TABLE trip_invites; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_invites TO anon;
 GRANT ALL ON TABLE public.trip_invites TO authenticated;
 GRANT ALL ON TABLE public.trip_invites TO service_role;
 
@@ -35167,7 +35090,6 @@ GRANT ALL ON TABLE public.trip_invites TO service_role;
 -- Name: TABLE trip_item_alternatives; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_item_alternatives TO anon;
 GRANT ALL ON TABLE public.trip_item_alternatives TO authenticated;
 GRANT ALL ON TABLE public.trip_item_alternatives TO service_role;
 
@@ -35176,7 +35098,6 @@ GRANT ALL ON TABLE public.trip_item_alternatives TO service_role;
 -- Name: TABLE trip_itineraries; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_itineraries TO anon;
 GRANT ALL ON TABLE public.trip_itineraries TO authenticated;
 GRANT ALL ON TABLE public.trip_itineraries TO service_role;
 
@@ -35185,7 +35106,6 @@ GRANT ALL ON TABLE public.trip_itineraries TO service_role;
 -- Name: TABLE trip_members; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_members TO anon;
 GRANT ALL ON TABLE public.trip_members TO authenticated;
 GRANT ALL ON TABLE public.trip_members TO service_role;
 
@@ -35194,7 +35114,6 @@ GRANT ALL ON TABLE public.trip_members TO service_role;
 -- Name: TABLE trip_play_state; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_play_state TO anon;
 GRANT ALL ON TABLE public.trip_play_state TO authenticated;
 GRANT ALL ON TABLE public.trip_play_state TO service_role;
 
@@ -35203,7 +35122,6 @@ GRANT ALL ON TABLE public.trip_play_state TO service_role;
 -- Name: TABLE trip_player_cards; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_player_cards TO anon;
 GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE ON TABLE public.trip_player_cards TO authenticated;
 GRANT ALL ON TABLE public.trip_player_cards TO service_role;
 
@@ -35297,7 +35215,6 @@ GRANT SELECT ON TABLE public.trip_postcards TO authenticated;
 -- Name: TABLE trip_role_changes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_role_changes TO anon;
 GRANT ALL ON TABLE public.trip_role_changes TO authenticated;
 GRANT ALL ON TABLE public.trip_role_changes TO service_role;
 
@@ -35425,7 +35342,6 @@ GRANT SELECT(settled_at) ON TABLE public.trip_schedule TO authenticated;
 -- Name: TABLE trip_season_finds; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_season_finds TO anon;
 GRANT ALL ON TABLE public.trip_season_finds TO authenticated;
 GRANT ALL ON TABLE public.trip_season_finds TO service_role;
 
@@ -35434,7 +35350,6 @@ GRANT ALL ON TABLE public.trip_season_finds TO service_role;
 -- Name: TABLE trip_season_games; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_season_games TO anon;
 GRANT ALL ON TABLE public.trip_season_games TO authenticated;
 GRANT ALL ON TABLE public.trip_season_games TO service_role;
 
@@ -35443,7 +35358,6 @@ GRANT ALL ON TABLE public.trip_season_games TO service_role;
 -- Name: TABLE trip_season_reveals; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_season_reveals TO anon;
 GRANT ALL ON TABLE public.trip_season_reveals TO authenticated;
 GRANT ALL ON TABLE public.trip_season_reveals TO service_role;
 
@@ -35452,7 +35366,6 @@ GRANT ALL ON TABLE public.trip_season_reveals TO service_role;
 -- Name: TABLE trip_team_members; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_team_members TO anon;
 GRANT ALL ON TABLE public.trip_team_members TO authenticated;
 GRANT ALL ON TABLE public.trip_team_members TO service_role;
 
@@ -35461,7 +35374,6 @@ GRANT ALL ON TABLE public.trip_team_members TO service_role;
 -- Name: TABLE trip_teams; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_teams TO anon;
 GRANT ALL ON TABLE public.trip_teams TO authenticated;
 GRANT ALL ON TABLE public.trip_teams TO service_role;
 
@@ -35470,7 +35382,6 @@ GRANT ALL ON TABLE public.trip_teams TO service_role;
 -- Name: TABLE trivia_answers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trivia_answers TO anon;
 GRANT ALL ON TABLE public.trivia_answers TO authenticated;
 GRANT ALL ON TABLE public.trivia_answers TO service_role;
 
@@ -35495,7 +35406,6 @@ GRANT ALL ON TABLE public.user_credits TO service_role;
 -- Name: TABLE waitlist; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.waitlist TO anon;
 GRANT ALL ON TABLE public.waitlist TO authenticated;
 GRANT ALL ON TABLE public.waitlist TO service_role;
 
@@ -35504,7 +35414,6 @@ GRANT ALL ON TABLE public.waitlist TO service_role;
 -- Name: TABLE weekly_answer_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.weekly_answer_votes TO anon;
 GRANT ALL ON TABLE public.weekly_answer_votes TO authenticated;
 GRANT ALL ON TABLE public.weekly_answer_votes TO service_role;
 
@@ -35513,7 +35422,6 @@ GRANT ALL ON TABLE public.weekly_answer_votes TO service_role;
 -- Name: TABLE weekly_answers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.weekly_answers TO anon;
 GRANT ALL ON TABLE public.weekly_answers TO authenticated;
 GRANT ALL ON TABLE public.weekly_answers TO service_role;
 
@@ -35522,7 +35430,6 @@ GRANT ALL ON TABLE public.weekly_answers TO service_role;
 -- Name: TABLE weekly_question_pool; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.weekly_question_pool TO anon;
 GRANT ALL ON TABLE public.weekly_question_pool TO authenticated;
 GRANT ALL ON TABLE public.weekly_question_pool TO service_role;
 
@@ -35531,7 +35438,6 @@ GRANT ALL ON TABLE public.weekly_question_pool TO service_role;
 -- Name: SEQUENCE weekly_question_pool_id_seq; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON SEQUENCE public.weekly_question_pool_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.weekly_question_pool_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.weekly_question_pool_id_seq TO service_role;
 
@@ -35540,7 +35446,6 @@ GRANT ALL ON SEQUENCE public.weekly_question_pool_id_seq TO service_role;
 -- Name: TABLE weekly_questions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.weekly_questions TO anon;
 GRANT ALL ON TABLE public.weekly_questions TO authenticated;
 GRANT ALL ON TABLE public.weekly_questions TO service_role;
 
@@ -35549,7 +35454,6 @@ GRANT ALL ON TABLE public.weekly_questions TO service_role;
 -- Name: TABLE window_guide_items; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.window_guide_items TO anon;
 GRANT ALL ON TABLE public.window_guide_items TO authenticated;
 GRANT ALL ON TABLE public.window_guide_items TO service_role;
 
@@ -35580,7 +35484,6 @@ GRANT ALL ON TABLE trip_private.trip_speed_finishes TO service_role;
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO anon;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;
 
@@ -35589,7 +35492,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENC
 -- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO service_role;
 
@@ -35598,7 +35500,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIO
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO anon;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO service_role;
 
