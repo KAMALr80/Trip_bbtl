@@ -174,7 +174,10 @@ SELECT tests.clear_authentication();
 SELECT is((SELECT count(*)::int FROM trip_private.photos_to_purge(50) WHERE trip_id = pg_temp.id('trip')), 5,
           'everything but the six postcard photos is listed: 4 photos and the orphan upload');
 SELECT is(trip_private.finish_photo_purge(pg_temp.id('trip'), 0), 5, 'nothing deleted yet: 5 left, the trip stays queued');
-DELETE FROM storage.objects o USING trip_private.photos_to_purge(50) p WHERE o.bucket_id = p.bucket AND o.name = p.path;
+-- The route deletes through the Storage API; real Supabase forbids deleting storage rows directly
+-- (storage.protect_delete), so the test moves them out of the trip's folder instead.
+UPDATE storage.objects o SET name = 'deleted-by-test/' || o.name
+FROM trip_private.photos_to_purge(50) p WHERE o.bucket_id = p.bucket AND o.name = p.path;
 SELECT is(trip_private.finish_photo_purge(pg_temp.id('trip'), 5), 0, 'after the route deletes them nothing is left');
 SELECT ok((SELECT photos_purged_at IS NOT NULL FROM public.trips WHERE id = pg_temp.id('trip')), 'and the trip is marked purged');
 SELECT is((SELECT count(*)::int FROM public.proofs WHERE trip_id = pg_temp.id('trip') AND photo_removed_at IS NOT NULL), 4,
