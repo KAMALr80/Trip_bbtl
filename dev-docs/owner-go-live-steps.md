@@ -9,7 +9,7 @@ environment variables) under the name shown, then start a new session.
 
 ---
 
-## Your to-do list (updated Oct 31, 2026)
+## Your to-do list (updated Nov 2, 2026)
 
 Tick these off in order. Everything else in the milestones is code work. Details are in the
 numbered sections below.
@@ -33,8 +33,9 @@ numbered sections below.
 - [ ] Install material: a 1024×1024 master app icon and 3–5 phone screenshots (6.3).
 
 **Decisions (write `**Answer:** …` in `06-open-questions.md`; the defaults apply if you don't)**
-- [ ] For M5, which comes next: Q11 (deleting photos after Day 7), Q13 (Window Seat stamps), Q23
-      (world map, badges and levels in Phase 1), Q28 (what "hide a trip or photo" hides).
+- [x] For M5: Q11, Q13, Q23, Q28 take the defaults (Nov 2, 2026).
+- [ ] Privacy Policy wording for deleting trip photos after Baggage Claim Day 7 (Q11, M5-05): the
+      app already does it; the policy text in `/legal/privacy` should say so before launch.
 - [ ] For M6: Q12 (teen rules), Q24 (admin area). Q17 (sign-in methods; default email code +
       Google). Later: Q18 (payments).
 - [ ] Review and tag the content library: `supabase/seed/content_candidates.csv` (2,938 lines). Most
@@ -118,10 +119,10 @@ them to the developer).
 ## 4. Founder decisions
 Open `dev-docs/06-open-questions.md` and write `**Answer:** …` under each question still open.
 Defaults are used if you don't. The ones needed next:
-- **M3 (core game):** answered Oct 30 (defaults). Q13 Window Seat stamps is still open.
+- **M3 (core game):** answered Oct 30 (defaults).
 - **M4 (web app):** Q17 sign-in methods (default: email code + Google; Apple optional now). Q16 is
   answered: no native apps.
-- **M5 (memories):** Q11 photo deletion after Day 7, Q23 world map / badges in Phase 1, Q28 hide trip/photo.
+- **M5 (memories):** answered Nov 2 (defaults: Q11, Q13, Q23, Q28).
 - **M6 (launch):** Q12 teen rules, Q24 admin area.
 - **Later:** Q18 payments.
 

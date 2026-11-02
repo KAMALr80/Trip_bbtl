@@ -24,6 +24,34 @@
 | M5-12 | After-trip view (overview, answers, kept photos) | S |
 | M5-13 | Explore tour: 7 swipe cards | S |
 
+## Status (Nov 2, 2026)
+
+Built with the founder's defaults for Q11, Q13, Q23 and Q28 (06). Database tests: `26_postcards`,
+`27_wrapup_answers` (generated from `supabase/tests/fixtures/wrapup.json`), `28_passport`; browser
+tests: `e2e/postcard`.
+
+| ID | State | What's done · what's left |
+|---|---|---|
+| M5-01 | ✅ | `postcard_picks` via `pick_postcard`: your own proof photos only (not expired), 2 each, 5 in a Window Seat crew, 10 when truly solo (Just me, one phone, or a crew of one); a 3rd pick is refused; picks freeze when Trip Season ends (end of the last trip day, trip time). Card on Play in Trip Season (`PostcardPicks`). |
+| M5-02 | ✅ | `postcard_hearts` / `wrapup_answers` via `heart_photo` / `answer_wrapup`, Baggage Claim only and until the lock. Not your own photo (default). Players see only their own hearts; counts reach leaders only. "Moment you'll never forget" + 2 pool questions per trip (the same 2 for the whole crew, so the postcard can group by question). ≤ 60 characters (code points); the emoji question takes exactly 3 emojis: `is_three_emojis` and `src/features/postcard/wrapup.ts` run the same fixture. Words stored as typed (R-604). Wrap-up reminders on Baggage Claim days 1, 5 ("download your photos") and 7. |
+| M5-03 | ✅ | `lock_trip`, called by `postcards_due` (cron `lock-postcards`, every 15 min) once Baggage Claim ends: top photos by hearts → Captain's tie-break → earliest upload, with the one swap applied; answers grouped with no names in a shuffled order; crowns with names; everyone's "most excited for". Writes `trip_postcards`, stamps every member, sets `trips.locked_at`, tells everyone the postcard is ready. Idempotent; a trip with no picks or hearts still gets a postcard. **Left:** run it unattended on staging. |
+| M5-04 | 🟡 | `TripPostcard`: photos down both sides (3 + 3, solo 5 + 5), answers grouped in the middle, crowns and hopes below; Download / share sheet as a PNG drawn on the device from the same layout (`layout.ts`, unit-tested for 1–10 photos, 1–12 players, long emoji, right-to-left text). **Left:** a server-rendered image in Storage (`trip_postcards.image_path` is ready for it) and the Airline Look styling from the designer. |
+| M5-05 | ✅ | After the lock, `/api/public/purge-photos` (daily) deletes every object of the trip in `quest-proofs` and `trip-photos` that isn't a postcard photo (`photos_to_purge`), then `finish_photo_purge` marks the proofs (`photo_removed_at`), logs the run (`photo_purge_log`) and closes the trip once nothing is left. Postcard photos are never listed. "Download my photos" (zip) on the wrap-up page. The 12-month backstop stays. **Left:** the Privacy Policy text (`src/lib/legal.ts`) needs the founder's / lawyer's wording for the Day 7 deletion (owner step). |
+| M5-06 | ✅ | Captain tools → Baggage Claim tile (`PostcardCaptainTile`, leaders): ranking with hearts and the cut, break a tie at the cut (`break_postcard_tie`), swap one photo once per trip (`swap_postcard_photo`), wrap-up week only. |
+| M5-07 | ✅ | `stamp_trip` at the lock: passport stamp abroad / state stamp at home by the player's "From" (any home country), postcard for at-home culture rooms, none for Game Night; room, crowns, solo marker (truly solo only, Q13), season + year. Passport → Trip stamps; a stamp opens its postcard. The older `sync_passport` only touches archived trips. **Left:** filling "From" from the device region on the profile screen (M5-10 / M5-11). |
+| M5-08 | ✅ | `passport_progress` from distinct countries of passport and state stamps (culture postcards don't count), recomputed in the same call that adds a stamp (`refresh_passport`); every boundary in pgTAP. The app reads it (`TravelerLevel`). |
+| M5-09 | ✅ | `user_badges`: U.S. Explorer (states), Culture Collector (cultures), Storyteller (every contributor to a finished Window Seat guide, Q13); tiers never drop; a one-time tier-up note on the Passport (`mark_badges_seen`). |
+| M5-10 | ⬜ | Next: `/p/$userId` pages 1 and 2, public / private read function, hide a trip or photo (Q28: public profile and map only), pick top stamps. |
+| M5-11 | ⬜ | Next: Me tab rebuild (profile with From auto-fill, current trip, passport shortcuts, privacy, notifications, Captain tools, help/legal). |
+| M5-12 | ✅ | A locked trip's Play / Trip / Home show `AfterTrip`: overview, crew avatars and the postcard (answers + kept photos) only. |
+| M5-13 | ⬜ | Next: the 7-card swipe tour (Q23 default: Phase 1). |
+
+**Defaults used:** Q11 (delete every other photo after Day 7, Day 1/5/7 reminders, zip download),
+Q13 (own stamp each; the shared guide counts for every contributor), Q23 (levels + badges + new tour
+in Phase 1; world map later), Q28 (hiding affects the public profile and map only; built with M5-10).
+A trip with minors keeps the teen photo rule on the postcard: its photos are seen by the uploader
+and leaders only (`proof_photo_ok`); M6-03 reviews this with the other age rules.
+
 ---
 
 ### M5-01 · Postcard Picks
