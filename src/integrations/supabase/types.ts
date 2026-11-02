@@ -4078,6 +4078,34 @@ export type Database = {
         };
         Relationships: [];
       };
+      profile_prefs: {
+        Row: {
+          about_me: string | null;
+          hidden_trips: string[];
+          is_public: boolean;
+          top_stamps: string[];
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          about_me?: string | null;
+          hidden_trips?: string[];
+          is_public?: boolean;
+          top_stamps?: string[];
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          about_me?: string | null;
+          hidden_trips?: string[];
+          is_public?: boolean;
+          top_stamps?: string[];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           appearance: string | null;
@@ -7839,6 +7867,7 @@ export type Database = {
         }[];
       };
       player_card_read: { Args: { p_trip: string; p_user: string }; Returns: Json };
+      player_profile: { Args: { p_trip?: string; p_user: string }; Returns: Json };
       post_game_night_poll: { Args: { p_options: Json; p_trip: string }; Returns: undefined };
       post_live_vote: {
         Args: { p_kind: string; p_options: Json; p_prompt: string; p_trip: string; p_week: number };
@@ -8268,6 +8297,10 @@ export type Database = {
         Returns: number;
       };
       set_price_rule: { Args: { p_cents: number; p_key: string }; Returns: undefined };
+      set_profile: {
+        Args: { p_about: string; p_from?: string; p_public: boolean };
+        Returns: undefined;
+      };
       set_public_launch: { Args: { p_on: boolean }; Returns: undefined };
       set_public_leaderboard: { Args: { p_public: boolean }; Returns: boolean };
       set_quiet_hours: { Args: { p_end: string; p_start: string }; Returns: undefined };
@@ -8312,6 +8345,7 @@ export type Database = {
         Args: { p_agree: boolean; p_dob: string; p_invite: string };
         Returns: string;
       };
+      set_top_stamps: { Args: { p_trips: string[] }; Returns: undefined };
       set_trip_access: {
         Args: { p_code_enabled: boolean; p_require_approval: boolean; p_trip: string };
         Returns: undefined;
@@ -8324,6 +8358,7 @@ export type Database = {
         Args: { p_backup: string; p_call: string; p_motto: string; p_trip: string };
         Returns: undefined;
       };
+      set_trip_hidden: { Args: { p_hidden?: boolean; p_trip: string }; Returns: undefined };
       set_trip_minors: { Args: { p_has: boolean; p_trip: string }; Returns: undefined };
       set_trip_timezone: { Args: { p_trip: string; p_tz: string }; Returns: undefined };
       set_trip_vibe: { Args: { p_trip: string; p_vibe: string }; Returns: undefined };

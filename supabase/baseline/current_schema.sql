@@ -2055,6 +2055,16 @@ $$;
 
 
 --
+-- Name: player_profile(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.player_profile(p_user uuid, p_trip uuid DEFAULT NULL::uuid) RETURNS jsonb
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT trip_private.player_profile(p_user, p_trip) $$;
+
+
+--
 -- Name: post_game_night_poll(uuid, jsonb); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2997,6 +3007,16 @@ END $$;
 
 
 --
+-- Name: set_profile(boolean, text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_profile(p_public boolean, p_about text, p_from text DEFAULT NULL::text) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.set_profile(p_public, p_about, p_from) $$;
+
+
+--
 -- Name: set_profile_updated_at(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3107,6 +3127,16 @@ CREATE FUNCTION public.set_teen_dob(p_dob date, p_agree boolean, p_invite text) 
 
 
 --
+-- Name: set_top_stamps(uuid[]); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_top_stamps(p_trips uuid[]) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.set_top_stamps(p_trips) $$;
+
+
+--
 -- Name: set_trip_access(uuid, boolean, boolean); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3136,6 +3166,16 @@ CREATE FUNCTION public.set_trip_extras(p_trip uuid, p_motto text, p_call text, p
     LANGUAGE sql
     SET search_path TO 'public'
     AS $$ SELECT trip_private.set_trip_extras(p_trip,p_motto,p_call,p_backup) $$;
+
+
+--
+-- Name: set_trip_hidden(uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_trip_hidden(p_trip uuid, p_hidden boolean DEFAULT true) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.set_trip_hidden(p_trip, p_hidden) $$;
 
 
 --
@@ -11046,6 +11086,82 @@ $$;
 
 
 --
+-- Name: player_profile(uuid, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.player_profile(p_user uuid, p_trip uuid DEFAULT NULL::uuid) RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE
+  me uuid := auth.uid();
+  pp public.player_profiles;
+  pr public.profile_prefs;
+  prog public.passport_progress;
+  v_self boolean;
+  v_crew boolean;
+  v_public boolean;
+  v_base jsonb;
+  v_this jsonb;
+BEGIN
+  IF me IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  SELECT * INTO pp FROM public.player_profiles WHERE user_id = p_user;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  SELECT * INTO pr FROM public.profile_prefs WHERE user_id = p_user;
+  SELECT * INTO prog FROM public.passport_progress WHERE user_id = p_user;
+  v_self := me = p_user;
+  v_crew := v_self OR EXISTS (SELECT 1 FROM public.trip_members a JOIN public.trip_members b ON a.trip_id = b.trip_id
+                              WHERE a.user_id = me AND b.user_id = p_user AND a.status = 'approved' AND b.status = 'approved');
+  v_public := coalesce(pr.is_public, false) AND coalesce(trip_private.age_of(p_user), 0) >= 18;
+  v_base := jsonb_build_object(
+    'user_id', p_user, 'game_name', pp.game_name,
+    'avatar_style', pp.avatar_style, 'avatar_seed', pp.avatar_seed,
+    -- A photo avatar is only signed for the crew (storage policy); others get the seed avatar.
+    'avatar_path', CASE WHEN v_crew THEN pp.avatar_path END,
+    'level', coalesce(prog.level, 'none'), 'stars', coalesce(prog.stars, 0), 'countries', coalesce(prog.countries, 0),
+    'is_public', v_public, 'self', v_self, 'crew', v_crew);
+  IF NOT (v_crew OR v_public) THEN
+    RETURN v_base || jsonb_build_object('private', true);
+  END IF;
+
+  IF p_trip IS NOT NULL THEN
+    SELECT jsonb_build_object('trip_id', t.id, 'trip_name', t.name, 'role', b.role,
+                              'persona', coalesce(c.trip_persona, pp.trip_persona), 'most_excited', c.most_excited)
+    INTO v_this
+    FROM public.trips t
+    JOIN public.trip_members b ON b.trip_id = t.id AND b.user_id = p_user AND b.status = 'approved'
+    JOIN public.trip_members a ON a.trip_id = t.id AND a.user_id = me AND a.status = 'approved'
+    LEFT JOIN public.trip_player_cards c ON c.trip_id = t.id AND c.user_id = p_user
+    WHERE t.id = p_trip;
+  END IF;
+
+  RETURN v_base || jsonb_build_object(
+    'private', false,
+    'about_me', pr.about_me,
+    'from', pp.home_country,
+    'this_trip', v_this,
+    'badges', coalesce((SELECT jsonb_agg(jsonb_build_object('badge', b.badge, 'tier', b.tier) ORDER BY b.badge)
+                        FROM public.user_badges b WHERE b.user_id = p_user), '[]'),
+    'stamps', coalesce((
+      SELECT jsonb_agg(jsonb_build_object(
+               'trip_id', s.trip_id, 'kind', s.kind, 'country', s.country, 'state', s.state, 'city', s.city,
+               'culture', s.culture, 'stamped_on', s.stamped_on,
+               'season_label', coalesce(s.season_label, trip_private.season_label(s.stamped_on)),
+               'room', coalesce(s.room, 'trip'), 'solo', s.solo, 'crowns', s.crowns, 'trip_name', t.name,
+               'top', s.trip_id = ANY (coalesce(pr.top_stamps, '{}')),
+               'hidden', s.trip_id = ANY (coalesce(pr.hidden_trips, '{}')),
+               -- the postcard opens for members of that trip only (trip_postcards RLS)
+               'has_postcard', EXISTS (SELECT 1 FROM public.trip_postcards pc WHERE pc.trip_id = s.trip_id)
+                               AND trip_private.is_trip_member(s.trip_id, me))
+             ORDER BY (s.trip_id = ANY (coalesce(pr.top_stamps, '{}'))) DESC, s.stamped_on DESC)
+      FROM public.passport_stamps s JOIN public.trips t ON t.id = s.trip_id
+      WHERE s.user_id = p_user AND NOT t.is_sandbox
+        AND (v_crew OR NOT (s.trip_id = ANY (coalesce(pr.hidden_trips, '{}'))))), '[]'));
+END
+$$;
+
+
+--
 -- Name: post_game_night_poll(uuid, jsonb); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -11341,6 +11457,22 @@ CREATE FUNCTION trip_private.price(p_key text) RETURNS integer
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$ SELECT cents FROM public.price_rules WHERE key=p_key $$;
+
+
+--
+-- Name: profile_prefs_guard(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.profile_prefs_guard() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF NEW.is_public AND coalesce(trip_private.age_of(NEW.user_id), 0) < 18 THEN NEW.is_public := false; END IF;
+  NEW.updated_at := now();
+  RETURN NEW;
+END
+$$;
 
 
 --
@@ -13655,6 +13787,33 @@ END $$;
 
 
 --
+-- Name: set_profile(boolean, text, text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_profile(p_public boolean, p_about text, p_from text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v_about text := nullif(trip_private.trim_answer(p_about), ''); v_from text := nullif(trip_private.trim_answer(p_from), '');
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  IF coalesce(p_public, false) AND coalesce(trip_private.age_of(auth.uid()), 0) < 18 THEN
+    RAISE EXCEPTION 'Profiles of players under 18 stay private';
+  END IF;
+  IF char_length(v_about) > 160 THEN RAISE EXCEPTION 'Keep About me to 160 characters'; END IF;
+  IF v_about IS NOT NULL AND NOT trip_private.content_text_safe(v_about) THEN RAISE EXCEPTION 'Please reword that'; END IF;
+  IF char_length(v_from) > 60 THEN RAISE EXCEPTION 'Pick a country'; END IF;
+  INSERT INTO public.profile_prefs (user_id, is_public, about_me)
+  VALUES (auth.uid(), coalesce(p_public, false), v_about)
+  ON CONFLICT (user_id) DO UPDATE SET is_public = excluded.is_public, about_me = excluded.about_me;
+  IF p_from IS NOT NULL THEN
+    UPDATE public.player_profiles SET home_country = v_from WHERE user_id = auth.uid();
+  END IF;
+END
+$$;
+
+
+--
 -- Name: set_proof_ai(uuid, text, text, jsonb); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -13843,6 +14002,28 @@ END $$;
 
 
 --
+-- Name: set_top_stamps(uuid[]); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_top_stamps(p_trips uuid[]) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE v uuid[] := ARRAY(SELECT DISTINCT unnest(coalesce(p_trips, '{}')));
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  IF cardinality(v) > 3 THEN RAISE EXCEPTION 'Pick up to 3 top stamps'; END IF;
+  IF EXISTS (SELECT 1 FROM unnest(v) t
+             WHERE NOT EXISTS (SELECT 1 FROM public.passport_stamps s WHERE s.user_id = auth.uid() AND s.trip_id = t)) THEN
+    RAISE EXCEPTION 'Pick from your own stamps';
+  END IF;
+  INSERT INTO public.profile_prefs (user_id, top_stamps) VALUES (auth.uid(), v)
+  ON CONFLICT (user_id) DO UPDATE SET top_stamps = excluded.top_stamps;
+END
+$$;
+
+
+--
 -- Name: set_trip_access(uuid, boolean, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -13888,6 +14069,30 @@ BEGIN
   IF nullif(trim(coalesce(p_backup,'')),'') IS NOT NULL AND trim(p_backup) !~* '^https://' THEN RAISE EXCEPTION 'Call links should start with https://'; END IF;
   UPDATE public.trips SET motto=nullif(trim(coalesce(p_motto,'')),''), call_link=nullif(trim(coalesce(p_call,'')),''), backup_call_link=nullif(trim(coalesce(p_backup,'')),'') WHERE id=p_trip;
 END $$;
+
+
+--
+-- Name: set_trip_hidden(uuid, boolean); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.set_trip_hidden(p_trip uuid, p_hidden boolean) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.passport_stamps s WHERE s.user_id = auth.uid() AND s.trip_id = p_trip)
+     AND NOT EXISTS (SELECT 1 FROM public.trip_members m WHERE m.user_id = auth.uid() AND m.trip_id = p_trip) THEN
+    RAISE EXCEPTION 'That isn''t one of your trips';
+  END IF;
+  INSERT INTO public.profile_prefs (user_id, hidden_trips)
+  VALUES (auth.uid(), CASE WHEN coalesce(p_hidden, true) THEN ARRAY[p_trip] ELSE '{}' END)
+  ON CONFLICT (user_id) DO UPDATE
+    SET hidden_trips = CASE WHEN coalesce(p_hidden, true)
+                            THEN array_append(array_remove(public.profile_prefs.hidden_trips, p_trip), p_trip)
+                            ELSE array_remove(public.profile_prefs.hidden_trips, p_trip) END;
+END
+$$;
 
 
 --
@@ -17359,6 +17564,23 @@ CREATE TABLE public.price_rules (
 
 
 --
+-- Name: profile_prefs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.profile_prefs (
+    user_id uuid NOT NULL,
+    is_public boolean DEFAULT false NOT NULL,
+    about_me text,
+    top_stamps uuid[] DEFAULT '{}'::uuid[] NOT NULL,
+    hidden_trips uuid[] DEFAULT '{}'::uuid[] NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT profile_prefs_about_me_check CHECK ((char_length(about_me) <= 160)),
+    CONSTRAINT profile_prefs_hidden_trips_check CHECK ((cardinality(hidden_trips) <= 500)),
+    CONSTRAINT profile_prefs_top_stamps_check CHECK ((cardinality(top_stamps) <= 3))
+);
+
+
+--
 -- Name: profiles; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -19601,6 +19823,14 @@ ALTER TABLE ONLY public.price_rules
 
 
 --
+-- Name: profile_prefs profile_prefs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_prefs
+    ADD CONSTRAINT profile_prefs_pkey PRIMARY KEY (user_id);
+
+
+--
 -- Name: profiles profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -21392,6 +21622,13 @@ CREATE TRIGGER price_rules_updated BEFORE UPDATE ON public.price_rules FOR EACH 
 
 
 --
+-- Name: profile_prefs profile_prefs_guard; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER profile_prefs_guard BEFORE INSERT OR UPDATE ON public.profile_prefs FOR EACH ROW EXECUTE FUNCTION trip_private.profile_prefs_guard();
+
+
+--
 -- Name: profiles profiles_founding_signup; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -22916,6 +23153,14 @@ ALTER TABLE ONLY public.postcard_stickers
 
 ALTER TABLE ONLY public.preview_hidden
     ADD CONSTRAINT preview_hidden_preview_id_fkey FOREIGN KEY (preview_id) REFERENCES public.experience_previews(id) ON DELETE CASCADE;
+
+
+--
+-- Name: profile_prefs profile_prefs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_prefs
+    ADD CONSTRAINT profile_prefs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -25253,6 +25498,13 @@ CREATE POLICY "players read their own points" ON public.points_ledger FOR SELECT
 
 
 --
+-- Name: profile_prefs players read their own profile settings; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "players read their own profile settings" ON public.profile_prefs FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
 -- Name: proofs players read their own proofs; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -25322,6 +25574,12 @@ CREATE POLICY "private days" ON public.culture_exp_days FOR SELECT TO authentica
    FROM public.culture_experiences e
   WHERE ((e.id = culture_exp_days.experience_id) AND (((e.a2e_kind IS NULL) AND ((e.creator_id = auth.uid()) OR trip_private.is_app_admin() OR ((e.trip_id IS NOT NULL) AND trip_private.is_trip_member(e.trip_id, auth.uid())))) OR ((e.a2e_kind IS NOT NULL) AND trip_private.a2e_culture_access(e.id)))))));
 
+
+--
+-- Name: profile_prefs; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.profile_prefs ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: profiles; Type: ROW SECURITY; Schema: public; Owner: -
@@ -27474,6 +27732,15 @@ GRANT ALL ON FUNCTION public.player_card_read(p_trip uuid, p_user uuid) TO servi
 
 
 --
+-- Name: FUNCTION player_profile(p_user uuid, p_trip uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.player_profile(p_user uuid, p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.player_profile(p_user uuid, p_trip uuid) TO service_role;
+GRANT ALL ON FUNCTION public.player_profile(p_user uuid, p_trip uuid) TO authenticated;
+
+
+--
 -- Name: FUNCTION post_game_night_poll(p_trip uuid, p_options jsonb); Type: ACL; Schema: public; Owner: -
 --
 
@@ -28273,6 +28540,15 @@ GRANT ALL ON FUNCTION public.set_price_rule(p_key text, p_cents integer) TO serv
 
 
 --
+-- Name: FUNCTION set_profile(p_public boolean, p_about text, p_from text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_profile(p_public boolean, p_about text, p_from text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_profile(p_public boolean, p_about text, p_from text) TO service_role;
+GRANT ALL ON FUNCTION public.set_profile(p_public boolean, p_about text, p_from text) TO authenticated;
+
+
+--
 -- Name: FUNCTION set_profile_updated_at(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -28368,6 +28644,15 @@ GRANT ALL ON FUNCTION public.set_teen_dob(p_dob date, p_agree boolean, p_invite 
 
 
 --
+-- Name: FUNCTION set_top_stamps(p_trips uuid[]); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_top_stamps(p_trips uuid[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_top_stamps(p_trips uuid[]) TO service_role;
+GRANT ALL ON FUNCTION public.set_top_stamps(p_trips uuid[]) TO authenticated;
+
+
+--
 -- Name: FUNCTION set_trip_access(p_trip uuid, p_code_enabled boolean, p_require_approval boolean); Type: ACL; Schema: public; Owner: -
 --
 
@@ -28392,6 +28677,15 @@ GRANT ALL ON FUNCTION public.set_trip_archived(p_trip uuid, p_archived boolean, 
 REVOKE ALL ON FUNCTION public.set_trip_extras(p_trip uuid, p_motto text, p_call text, p_backup text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.set_trip_extras(p_trip uuid, p_motto text, p_call text, p_backup text) TO authenticated;
 GRANT ALL ON FUNCTION public.set_trip_extras(p_trip uuid, p_motto text, p_call text, p_backup text) TO service_role;
+
+
+--
+-- Name: FUNCTION set_trip_hidden(p_trip uuid, p_hidden boolean); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.set_trip_hidden(p_trip uuid, p_hidden boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.set_trip_hidden(p_trip uuid, p_hidden boolean) TO service_role;
+GRANT ALL ON FUNCTION public.set_trip_hidden(p_trip uuid, p_hidden boolean) TO authenticated;
 
 
 --
@@ -31469,6 +31763,15 @@ GRANT ALL ON FUNCTION trip_private.player_card_read(p_trip uuid, p_user uuid) TO
 
 
 --
+-- Name: FUNCTION player_profile(p_user uuid, p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.player_profile(p_user uuid, p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.player_profile(p_user uuid, p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.player_profile(p_user uuid, p_trip uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION post_game_night_poll(p_trip uuid, p_options jsonb); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -31597,6 +31900,13 @@ GRANT ALL ON FUNCTION trip_private.preview_ten_day_drops(p_trip uuid) TO service
 REVOKE ALL ON FUNCTION trip_private.price(p_key text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.price(p_key text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.price(p_key text) TO service_role;
+
+
+--
+-- Name: FUNCTION profile_prefs_guard(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.profile_prefs_guard() FROM PUBLIC;
 
 
 --
@@ -32560,6 +32870,15 @@ GRANT ALL ON FUNCTION trip_private.set_preflight_a2c(p_trip uuid, p_start date, 
 
 
 --
+-- Name: FUNCTION set_profile(p_public boolean, p_about text, p_from text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_profile(p_public boolean, p_about text, p_from text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_profile(p_public boolean, p_about text, p_from text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.set_profile(p_public boolean, p_about text, p_from text) TO service_role;
+
+
+--
 -- Name: FUNCTION set_proof_ai(p_proof uuid, p_verdict text, p_reason text, p_flags jsonb); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -32656,6 +32975,15 @@ GRANT ALL ON FUNCTION trip_private.set_teen_dob(p_dob date, p_agree boolean, p_i
 
 
 --
+-- Name: FUNCTION set_top_stamps(p_trips uuid[]); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_top_stamps(p_trips uuid[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_top_stamps(p_trips uuid[]) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.set_top_stamps(p_trips uuid[]) TO service_role;
+
+
+--
 -- Name: FUNCTION set_trip_access(p_trip uuid, p_code_enabled boolean, p_require_approval boolean); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -32679,6 +33007,15 @@ GRANT ALL ON FUNCTION trip_private.set_trip_archived(p_trip uuid, p_archived boo
 REVOKE ALL ON FUNCTION trip_private.set_trip_extras(p_trip uuid, p_motto text, p_call text, p_backup text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.set_trip_extras(p_trip uuid, p_motto text, p_call text, p_backup text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.set_trip_extras(p_trip uuid, p_motto text, p_call text, p_backup text) TO service_role;
+
+
+--
+-- Name: FUNCTION set_trip_hidden(p_trip uuid, p_hidden boolean); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.set_trip_hidden(p_trip uuid, p_hidden boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.set_trip_hidden(p_trip uuid, p_hidden boolean) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.set_trip_hidden(p_trip uuid, p_hidden boolean) TO service_role;
 
 
 --
@@ -34450,6 +34787,14 @@ GRANT ALL ON TABLE public.preview_hidden TO service_role;
 GRANT ALL ON TABLE public.price_rules TO anon;
 GRANT ALL ON TABLE public.price_rules TO authenticated;
 GRANT ALL ON TABLE public.price_rules TO service_role;
+
+
+--
+-- Name: TABLE profile_prefs; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.profile_prefs TO service_role;
+GRANT SELECT ON TABLE public.profile_prefs TO authenticated;
 
 
 --
