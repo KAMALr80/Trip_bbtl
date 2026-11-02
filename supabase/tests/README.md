@@ -47,8 +47,8 @@ These are documented as today's behaviour in the tests; they are **not fixed** h
 
 | # | Finding | Rule | Where it gets fixed |
 |---|---|---|---|
-| T1 | **Teens can join any a2c trip with the plain join code** (pending Captain approval). Every new trip is a2c. Legacy trips require a teen invite. The published Terms and Privacy pages (`src/routes/legal/$document.tsx`) promise exactly this. The repo-root `AGENTS.md` ("13–17 only via guardian-confirmed teen invites") and the deck (R-904) say otherwise. Changing it needs new legal text and fresh consent. | R-904, Q12 | M6-03 + M6-09 |
-| T2 | Email self sign-up is allowed from **13**, and the Terms say 13+. The deck says self sign-up is 18+, and the sign-in screen's checkbox already reads "I'm 18 or older". | R-904, Q12 | M6-03 |
+| T1 | **Fixed in M6-03.** **Teens can join any a2c trip with the plain join code** (pending Captain approval). Every new trip is a2c. Legacy trips require a teen invite. The published Terms and Privacy pages (`src/routes/legal/$document.tsx`) promise exactly this. The repo-root `AGENTS.md` ("13–17 only via guardian-confirmed teen invites") and the deck (R-904) say otherwise. Changing it needs new legal text and fresh consent. | R-904, Q12 | M6-03 + M6-09 |
+| T2 | **Fixed in M6-03** (Q12: 18+, teens only with a teen invite; the legal text follows in M6-09). Email self sign-up is allowed from **13**, and the Terms say 13+. The deck says self sign-up is 18+, and the sign-in screen's checkbox already reads "I'm 18 or older". | R-904, Q12 | M6-03 |
 | T3 | Sealed-quest speed bonus is **+5 if proof is submitted within 3h of opening**. The deck says **+5 if opened within 3h of the drop**. | R-322 | M3-05 |
 | T4 | Sealed drops are worth **5 or 10** at random. The deck says 5–15 by difficulty. | R-322, Q4 | M3-05 |
 | T5 | Quests close at **00:00 home time the day before takeoff**. The deck's Pre-Flight closes at **23:59** that day. | R-101 | M2-03 |

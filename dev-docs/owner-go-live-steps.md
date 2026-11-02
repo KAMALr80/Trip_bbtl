@@ -36,8 +36,13 @@ numbered sections below.
 - [x] For M5: Q11, Q13, Q23, Q28 take the defaults (Nov 2, 2026).
 - [ ] Privacy Policy wording for deleting trip photos after Baggage Claim Day 7 (Q11, M5-05): the
       app already does it; the policy text in `/legal/privacy` should say so before launch.
-- [ ] For M6: Q12 (teen rules), Q24 (admin area). Q17 (sign-in methods; default email code +
-      Google). Later: Q18 (payments).
+- [x] For M6: Q12 (teen rules) and Q24 (admin area) take the defaults (Nov 2, 2026). Still open:
+      Q17 (sign-in methods; default email code + Google). Later: Q18 (payments).
+- [ ] Legal text (M6-09): the Terms and Privacy Policy still describe 13+ self sign-up. The app now
+      allows 18+ self sign-up and teens only through a Captain's teen invite; the text should also
+      cover deleting photos after Day 7, AI photo checks and moderation. Lawyer review, then the
+      developer bumps the legal version so everyone re-accepts.
+- [ ] Decide on an external pen test before public launch (M6-07, optional).
 - [ ] Review and tag the content library: `supabase/seed/content_candidates.csv` (2,938 lines). Most
       kinds are below the launch target of 30 items per mode.
 
@@ -123,7 +128,7 @@ Defaults are used if you don't. The ones needed next:
 - **M4 (web app):** Q17 sign-in methods (default: email code + Google; Apple optional now). Q16 is
   answered: no native apps.
 - **M5 (memories):** answered Nov 2 (defaults: Q11, Q13, Q23, Q28).
-- **M6 (launch):** Q12 teen rules, Q24 admin area.
+- **M6 (launch):** answered Nov 2 (defaults: Q12, Q24).
 - **Later:** Q18 payments.
 
 Also: review and tag `supabase/seed/content_candidates.csv` (2,938 content lines for the game).

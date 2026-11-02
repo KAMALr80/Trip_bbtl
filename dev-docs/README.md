@@ -38,9 +38,15 @@ after-trip view, the Passport Junkie profile, the Me tab and the 7-card tour. It
 server-rendered postcard image and the designer's art (M5-04, M5-13), hiding single photos once
 something public shows them (M5-10), and running the lock on staging.
 
+**M6 — trust, safety & web launch** ([M6](milestones/M6-trust-safety-and-launch.md)): the code
+tasks are done with the founder's defaults for Q12 and Q24: age rules to the deck (teens only by
+teen invite), the security review and photo-privacy audit ([write-up](m6-security-and-privacy-audit.md)),
+image moderation, AI proof checks (waiting for `AI_API_KEY`), the admin area and the Test Lab for
+the new engine. What's left of M6 needs staging, production, real crews or a lawyer (M6-08 – M6-11).
+
 **Next in development, in order:**
-1. **M6 — trust, safety & web launch** ([M6](milestones/M6-trust-safety-and-launch.md)): its code can
-   start now; launch itself waits for staging and the owner steps.
+1. **Staging first** (owner steps §1): then M4-10, M6-01's labelled-photo run, M6-06's full-trip run,
+   M6-08 performance and monitoring, and M6-10 regression + crew beta.
 2. **M4-10**, the real-phone checklist, once staging exists (step 12 covers wrap-up week and the postcard).
 3. **M3 leftovers:** "present live" as Surprise Drop proof (R-343); the content admin list/edit
    screen (M3-02). AI tailoring of content waits for `AI_API_KEY`. The ticket-stub card designs
