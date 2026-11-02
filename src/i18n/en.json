@@ -603,5 +603,36 @@
     "afterEyebrow": "Trip complete",
     "afterLine": "This trip is wrapped. Its postcard is in everyone's passport.",
     "crew": "Crew"
+  },
+  "passport": {
+    "badgesTitle": "Badges",
+    "tierUp": "{{badge}}: {{tier}}!",
+    "badge": {
+      "us_explorer": "U.S. Explorer",
+      "culture_collector": "Culture Collector",
+      "storyteller": "Storyteller"
+    },
+    "tier": {
+      "carry_on": "Carry-On",
+      "checked_bag": "Checked Bag",
+      "first_class": "First Class"
+    },
+    "badgeNext": {
+      "us_explorer_one": "{{count}} more state to the next tier",
+      "us_explorer_other": "{{count}} more states to the next tier",
+      "culture_collector_one": "{{count}} more culture to the next tier",
+      "culture_collector_other": "{{count}} more cultures to the next tier",
+      "storyteller_one": "{{count}} more Window Seat guide to the next tier",
+      "storyteller_other": "{{count}} more Window Seat guides to the next tier"
+    },
+    "badgeTop": "Top tier",
+    "stampsTitle": "Trip stamps",
+    "openPostcard": "Open the postcard for {{trip}}",
+    "kind": {
+      "international": "Passport stamp",
+      "road_trip": "State stamp",
+      "postcard": "Culture postcard"
+    },
+    "solo": "Solo"
   }
 }

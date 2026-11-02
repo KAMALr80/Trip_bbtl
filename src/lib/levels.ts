@@ -1,5 +1,5 @@
-// Passport levels by number of countries stamped (R-703). Display-only for now; M5-08 computes the
-// level on the server when a stamp is added (trip_private), and this mirrors those thresholds.
+// Passport level names by number of countries stamped (R-703). The server computes the count and the
+// level when a stamp is added (M5-08, trip_private.level_for); this mirrors those thresholds for display.
 export const LEVELS = [
   { name: "Tourist", at: 1 },
   { name: "Explorer", at: 3 },

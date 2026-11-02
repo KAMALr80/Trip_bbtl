@@ -134,3 +134,62 @@ test("After the Day 7 lock the trip shows its postcard only", async ({ page }) =
   await expect(postcard.getByText("👑 Jet Setter: Pal")).toBeVisible();
   await expect(postcard.getByRole("button", { name: /Download or share/ })).toBeVisible();
 });
+
+test("Passport: the server's level, a badge tier-up once, and a stamp opens its postcard", async ({
+  page,
+}) => {
+  const trip = { ...sampleTrip, start_date: day(-14), end_date: day(-10), locked_at: iso(-20) };
+  const calls = await signInWithMockBackend(page, {
+    trip,
+    rpc: {
+      my_passport_progress: {
+        countries: 3,
+        level: "explorer",
+        stars: 0,
+        next_at: 5,
+        badges: [{ badge: "us_explorer", tier: 1, progress: 2, earned_at: iso(-20), new: true }],
+      },
+      my_stamps: [
+        {
+          trip_id: trip.id,
+          kind: "international",
+          country: "Portugal",
+          state: null,
+          city: "Lisbon",
+          culture: null,
+          stamped_on: day(-10),
+          season_label: "Fall 2026",
+          room: "trip",
+          solo: false,
+          crowns: ["trip_season"],
+          trip_name: "Lisbon Crew",
+          has_postcard: true,
+          squad_count: 4,
+        },
+      ],
+      mark_badges_seen: null,
+    },
+    tables: {
+      trip_postcards: [
+        {
+          trip_id: trip.id,
+          locked_at: iso(-20),
+          photos: [],
+          answers: [{ key: "song", question: "Song of the trip", answers: ["Lisboa Menina"] }],
+          crowns: [],
+          excited: [],
+        },
+      ],
+    },
+  });
+  await page.goto("/me");
+  await page
+    .getByRole("button", { name: /Passport Junkie/ })
+    .first()
+    .click();
+  await expect(page.getByLabel("Level: Explorer").first()).toBeVisible();
+  await expect(page.getByText("U.S. Explorer: Carry-On!")).toBeVisible();
+  await expect.poll(() => calls.some((c) => c.fn === "mark_badges_seen")).toBe(true);
+  await page.getByRole("button", { name: "Open the postcard for Lisbon Crew" }).click();
+  await expect(page.getByRole("dialog").getByText("Lisboa Menina")).toBeVisible();
+});
