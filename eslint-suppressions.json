@@ -83,7 +83,7 @@
   },
   "src/features/app-shell/TabContent.tsx": {
     "no-restricted-syntax": {
-      "count": 59
+      "count": 47
     }
   },
   "src/features/at-home/AtHome.tsx": {
@@ -278,11 +278,6 @@
       "count": 7
     }
   },
-  "src/features/onboarding/ExploreTour.tsx": {
-    "no-restricted-syntax": {
-      "count": 9
-    }
-  },
   "src/features/onboarding/FirstRunWelcome.tsx": {
     "no-restricted-syntax": {
       "count": 8
@@ -363,7 +358,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 31
+      "count": 30
     }
   },
   "src/features/players/PlayerCards.tsx": {
@@ -371,7 +366,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 52
+      "count": 28
     }
   },
   "src/features/points/CrownCelebration.tsx": {

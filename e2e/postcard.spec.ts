@@ -183,10 +183,7 @@ test("Passport: the server's level, a badge tier-up once, and a stamp opens its 
     },
   });
   await page.goto("/me");
-  await page
-    .getByRole("button", { name: /Passport Junkie/ })
-    .first()
-    .click();
+  await page.getByRole("button", { name: /Open my passport/ }).click();
   await expect(page.getByLabel("Level: Explorer").first()).toBeVisible();
   await expect(page.getByText("U.S. Explorer: Carry-On!")).toBeVisible();
   await expect.poll(() => calls.some((c) => c.fn === "mark_badges_seen")).toBe(true);

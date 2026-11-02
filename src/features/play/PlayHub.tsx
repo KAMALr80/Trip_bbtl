@@ -20,7 +20,8 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AvatarButton, PlayerCardView } from "@/features/players/PlayerCards";
+import { AvatarButton } from "@/features/players/PlayerCards";
+import { ProfileSheet } from "@/features/profile/ProfilePage";
 import { PhaseNotice } from "@/features/play/PhaseNotice";
 import { GameArcade } from "@/features/play/GameArcade";
 import { gameSceneArt } from "@/features/play/GameScene";
@@ -726,13 +727,7 @@ function EnginePlayHub(props: Props) {
         </p>
       )}
       {passport && (
-        <PlayerCardView
-          tripId={trip.id}
-          userId={userId}
-          fallback={me}
-          initialPassport
-          onClose={() => setPassport(false)}
-        />
+        <ProfileSheet userId={userId} tripId={trip.id} onClose={() => setPassport(false)} />
       )}
     </div>
   );

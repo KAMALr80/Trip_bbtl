@@ -63,7 +63,6 @@ import {
 } from "@/data/account";
 import {
   PlayerCardEditor,
-  PlayerCardView,
   QuickJoinCard,
   type AccountProfile,
 } from "@/features/players/PlayerCards";
@@ -71,6 +70,7 @@ import { dicebearUrl, type PlayerWithAvatar } from "@/lib/player-cards";
 import { HelpPage, BugReport, DeleteAccount } from "@/features/me/MeExtras";
 
 import { ExploreTour } from "@/features/onboarding/ExploreTour";
+import { ProfileSheet } from "@/features/profile/ProfilePage";
 
 import { HomeDashboard } from "@/features/home/HomeDashboard";
 import { FirstRunWelcome } from "@/features/onboarding/FirstRunWelcome";
@@ -1094,11 +1094,11 @@ export function AppShell() {
       {active && !welcomeOpen && !tools && !viewAsPlayer && (
         <>{!sheet && <RoleTips key={`rt-${active.id}`} trip={active} userId={user.id} />}</>
       )}
-      {selectedMember && active && (
-        <PlayerCardView
-          tripId={active.id}
+      {selectedMember && (
+        // Any avatar tap opens the Passport Junkie profile (M5-10, R-722).
+        <ProfileSheet
           userId={selectedMember}
-          fallback={cards.find((c) => c.user_id === selectedMember)}
+          tripId={active?.id ?? null}
           onClose={() => setSelectedMember(null)}
         />
       )}

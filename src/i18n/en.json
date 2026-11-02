@@ -411,7 +411,7 @@
     "crowns": "Crowns",
     "pts": "{{count}} pts",
     "empty": "Points appear here as the crew plays.",
-    "openCard": "Open {{name}}'s player card",
+    "openCard": "Open {{name}}'s profile",
     "journey": "Your journey · two crowns",
     "journeyLine": "{{season}} · {{points}} pts · #{{rank}} of {{count}}"
   },
@@ -634,5 +634,104 @@
       "postcard": "Culture postcard"
     },
     "solo": "Solo"
+  },
+  "profile": {
+    "eyebrow": "Passport Junkie",
+    "close": "Close the profile",
+    "loading": "Opening the profile…",
+    "missing": "This player hasn't made a profile yet.",
+    "privateNote": "This profile is private. Only their crew sees their stamps and trips.",
+    "pages": "Profile pages",
+    "page1": "Profile",
+    "page2": "Stamps & trips",
+    "newTraveler": "New traveler",
+    "youArePublic": "Your profile is public.",
+    "youArePrivate": "Your profile is private: outsiders see your avatar, name and level.",
+    "from": "From",
+    "thisTrip": "This trip · {{trip}}",
+    "excited": "Most excited for:",
+    "emptyPage1": "Nothing here yet.",
+    "stamps": "Stamps",
+    "postcards": "Postcards",
+    "trips": "Trips",
+    "noStamps": "No stamps yet.",
+    "noPostcards": "No culture postcards yet.",
+    "noTrips": "No finished trips yet.",
+    "hiddenTag": "Hidden from the public",
+    "signIn": "Sign in to see Passport Junkie profiles.",
+    "signInLink": "Go to sign in"
+  },
+  "me": {
+    "profileTitle": "Your profile",
+    "viewProfile": "See my profile",
+    "editCard": "Edit",
+    "from": "From",
+    "fromHint": "Your home country. It decides passport or state stamps.",
+    "fromSuggested": "Filled in from your phone's region. Save to keep it.",
+    "about": "About TripJunkies",
+    "public": "Public profile",
+    "publicOn": "Anyone signed in sees your stamps and trips.",
+    "publicOff": "Outsiders see your avatar, name and level only. Your crew sees everything.",
+    "save": "Save profile",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "tripTitle": "This trip",
+    "excitedEmpty": "Not set yet",
+    "editTrip": "Edit role and most excited for",
+    "passportTitle": "Passport",
+    "openPassport": "Open my passport",
+    "stampsHint": "★ puts a stamp first on your profile (up to 3). The eye hides a trip from the public; your crew still sees it.",
+    "top": "Put {{trip}} first on my profile",
+    "unTop": "Take {{trip}} off the top",
+    "hide": "Hide {{trip}} from my public profile",
+    "unhide": "Show {{trip}} on my public profile",
+    "moreTitle": "Settings & help",
+    "notifications": "Notifications",
+    "notificationsHint": "Reminders, email backup and quiet hours",
+    "captainTools": "Captain tools",
+    "trips": "Your trips",
+    "help": "Help & FAQ",
+    "tour": "Replay the tour",
+    "feedback": "Send feedback",
+    "settings": "Account & legal",
+    "settingsHint": "Appearance, time zone, legal, delete account, sign out",
+    "aboutMe": "About me"
+  },
+  "tour": {
+    "label": "The TripJunkies tour",
+    "skip": "Skip",
+    "getStarted": "Get started",
+    "swipe": "Swipe to see more",
+    "position": "{{n}} of {{total}}",
+    "cards": {
+      "welcome": {
+        "title": "Welcome to TripJunkies",
+        "line": "Every trip is a game you play with your people."
+      },
+      "trip": {
+        "title": "Going on a Trip",
+        "line": "Play your way there, while you're there, and after you're home."
+      },
+      "window_seat": {
+        "title": "Window Seat",
+        "line": "Travelling solo or with a few friends? Turn it into a guide worth sharing."
+      },
+      "explore_culture": {
+        "title": "Explore a Culture",
+        "line": "Bring a culture home: cook it, learn it, play it together."
+      },
+      "show_culture": {
+        "title": "Show Your Culture",
+        "line": "Share where you come from with the people you love."
+      },
+      "game_night": {
+        "title": "Game Night",
+        "line": "One night, everyone in, phones out."
+      },
+      "crowns": {
+        "title": "Crowns + Our Story",
+        "line": "Win a crown, collect the world, and keep every trip in your passport. TripJunkies began with one crew who wanted the trip to start before takeoff."
+      }
+    }
   }
 }

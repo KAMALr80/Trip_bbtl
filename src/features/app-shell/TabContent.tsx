@@ -1,23 +1,15 @@
 import { FounderDashboard } from "@/features/admin/FounderDashboard";
 import { HomeSeasons } from "@/features/points/HomeSeasons";
 import { Tab } from "@/features/app-shell/tabs";
-import { MaskedEmail } from "@/features/auth/AuthScreen";
 import { SquadView } from "@/features/trip/SquadView";
 
 import { ArchivedTrip } from "@/features/trip/ArchivedTrip";
 import { AfterTrip } from "@/features/postcard/AfterTrip";
+import { MeHome } from "@/features/me/MeHome";
 
 import gameOptionA from "@/assets/game-tile-option-a.webp";
 import tripCoast from "@/assets/journey-coast-top.jpg";
 import tripCoastSmall from "@/assets/journey-coast-top-768.jpg";
-
-import iconPassport from "@/assets/icon-passport.webp";
-import iconTrophy from "@/assets/icon-trophy.webp";
-import iconMap from "@/assets/icon-map.webp";
-import iconBoarding from "@/assets/icon-boarding-pass.webp";
-import iconCompass from "@/assets/icon-compass.webp";
-
-import founderFeedbackIcon from "@/assets/founder-feedback.webp";
 
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -43,7 +35,6 @@ import { CaptainBadge, LockedNote, isUnlocked } from "@/features/trip/TripUnlock
 import { ReadOnlyBanner } from "@/features/points/Seasons";
 import { type TripWithRole, type Member } from "@/lib/trips";
 
-import { Avatar } from "@/features/players/PlayerCards";
 import { type PlayerWithAvatar } from "@/lib/player-cards";
 import {
   MyPassport,
@@ -56,12 +47,6 @@ import {
 import { TripList } from "@/features/trip/TripList";
 import { Bug, HelpCircle, PlayCircle, Trash2 } from "lucide-react";
 
-import {
-  TravelerLevel,
-  CultureCreatorBadge,
-  CulturePoints,
-} from "@/features/passport/PassportBook";
-
 import { RememberedSection } from "@/components/RememberedSection";
 
 import { AtHomeHome, AtHomeTrip, Rewards, isAtHome } from "@/features/at-home/AtHome";
@@ -72,7 +57,7 @@ import { AiGuardDoor, AiCapBanner } from "@/features/admin/AiGuard";
 import { FounderWelcomeEditor } from "@/features/onboarding/WelcomeCopy";
 
 import { AppearanceQuickToggle } from "@/features/me/MeExtras";
-import { FoundingBadge, FoundingControls } from "@/features/onboarding/LegalConsent";
+import { FoundingControls } from "@/features/onboarding/LegalConsent";
 import { legalLinks } from "@/lib/legal";
 import { Link } from "@tanstack/react-router";
 
@@ -411,64 +396,23 @@ export function TabContent({
         </div>
         <BugUpdates />
         <CaptainBadge />
-        <div className="cinematic-me-profile">
-          <Avatar
-            url={cards.find((c) => c.user_id === userId)?.avatarUrl}
-            name={name}
-            className="size-20"
-          />
-          <div className="min-w-0">
-            <strong className="font-display text-xl block truncate">{name}</strong>
-            <MaskedEmail email={email} />
-            <FoundingBadge userId={userId} straight />
-            <TravelerLevel userId={userId} />
-            <CultureCreatorBadge userId={userId} />
-            <CulturePoints userId={userId} />
-          </div>
-          <Button variant="outline" onClick={onEditCard}>
-            Edit
-          </Button>
-        </div>
-        <div className="cinematic-me-menu">
-          {[
-            ["Passport Junkie", iconPassport, "me-passport"],
-            ["Rewards", iconTrophy, "me-rewards"],
-            ["Your trips", iconMap, "me-trips"],
-            ["Your seasons", iconBoarding, "me-seasons"],
-            ["How it works", iconCompass, "how"],
-            ["Notifications", iconBoarding, "notifications"],
-            ["Help & FAQ", iconCompass, "help"],
-            ["About TripJunkies", iconTrophy, "about"],
-            ["Send feedback", founderFeedbackIcon, "feedback"],
-          ].map(([label, icon, key]) => (
-            <Button
-              key={key}
-              variant="outline"
-              onClick={() =>
-                key === "feedback"
-                  ? onMe("bug")
-                  : key === "help" || key === "notifications"
-                    ? onMe(key)
-                    : key === "how"
-                      ? onReplay()
-                      : key === "about"
-                        ? onAbout()
-                        : setMeSection(key ?? null)
-              }
-            >
-              <img src={icon} alt="" />
-              <span>{label}</span>
-              <ChevronRight size={18} />
-            </Button>
-          ))}
-        </div>
-        <div className="cinematic-me-switches">
-          <AppearanceToggle />
-          <PublicLeaderboardSetting userId={userId} />
-        </div>
-        <Button variant="ghost" className="w-full mt-4" onClick={() => setMeSection("me-settings")}>
-          All settings ›
-        </Button>
+        <MeHome
+          userId={userId}
+          name={name}
+          cards={cards}
+          active={active}
+          onEditCard={onEditCard}
+          onProfile={() => onMember(userId)}
+          onPassport={() => setMeSection("me-passport")}
+          onNotifications={() => onMe("notifications")}
+          onCaptainTools={() => onManage?.()}
+          onHelp={() => onMe("help")}
+          onTour={onReplay}
+          onAbout={onAbout}
+          onFeedback={() => onMe("bug")}
+          onTrips={() => setMeSection("me-trips")}
+          onSettings={() => setMeSection("me-settings")}
+        />
         {isAdmin && <AiCapBanner onOpen={() => setMeSection("ai-guard")} />}
         {isAdmin && (
           <FounderDashboard
@@ -486,133 +430,6 @@ export function TabContent({
           />
         )}
       </div>
-    );
-  if (!meSection)
-    return (
-      <>
-        <div className="flex items-start justify-between">
-          <PageHeading
-            eyebrow="YOUR CORNER"
-            title="It's you!"
-            emoji="✨"
-            copy="Ready for the next story?"
-          />
-          <AppearanceQuickToggle />
-        </div>
-        <BugUpdates />
-        <CaptainBadge />
-        <div className="mt-5 bg-card rounded-[1.5rem] p-5 border border-border flex gap-4 items-center">
-          <Avatar
-            url={cards.find((c) => c.user_id === userId)?.avatarUrl}
-            name={name}
-            className="h-14 w-14"
-          />
-          <div className="min-w-0">
-            <p className="font-display font-extrabold text-lg truncate">{name}</p>
-            <MaskedEmail email={email} />
-            <div className="flex flex-wrap items-center gap-2 mt-2">
-              <TravelerLevel userId={userId} />
-              <CultureCreatorBadge userId={userId} />
-              <FoundingBadge userId={userId} straight />
-              <CulturePoints userId={userId} />
-            </div>
-          </div>
-        </div>
-        <Button variant="subtle" className="mt-3 w-full" onClick={onEditCard}>
-          Edit my player card <ArrowRight />
-        </Button>
-        <Button variant="ghost" size="sm" className="mt-2" onClick={() => onMe("bug")}>
-          Send feedback
-        </Button>
-        <div className="grid grid-cols-2 gap-3 mt-5">
-          <Button
-            key="me-passport"
-            variant="outline"
-            className="home-bubble me-passport-action min-h-28 h-auto whitespace-normal font-display font-bold"
-            onClick={() => setMeSection("me-passport")}
-          >
-            {" "}
-            <img src={iconPassport} className="size-8 mb-2 object-contain" alt="" /> Passport
-            Junkie{" "}
-          </Button>
-          <Button
-            key="me-rewards"
-            variant="outline"
-            className="home-bubble me-passport-action min-h-28 h-auto whitespace-normal font-display font-bold"
-            onClick={() => setMeSection("me-rewards")}
-          >
-            {" "}
-            <img src={iconTrophy} className="size-8 mb-2 object-contain" alt="" /> Rewards{" "}
-          </Button>
-          <Button
-            key="me-trips"
-            variant="outline"
-            className="home-bubble me-passport-action min-h-28 h-auto whitespace-normal font-display font-bold"
-            onClick={() => setMeSection("me-trips")}
-          >
-            {" "}
-            <img src={iconMap} className="size-8 mb-2 object-contain" alt="" /> Your trips{" "}
-          </Button>
-          <Button
-            key="me-seasons"
-            variant="outline"
-            className="home-bubble me-passport-action min-h-28 h-auto whitespace-normal font-display font-bold"
-            onClick={() => setMeSection("me-seasons")}
-          >
-            {" "}
-            <img src={iconBoarding} className="size-8 mb-2 object-contain" alt="" /> Your
-            seasons{" "}
-          </Button>
-          <Button
-            key="me-explore"
-            variant="outline"
-            className="home-bubble me-passport-action min-h-28 h-auto whitespace-normal font-display font-bold"
-            onClick={() => setMeSection("me-explore")}
-          >
-            {" "}
-            <img src={iconCompass} className="size-8 mb-2 object-contain" alt="" /> Explore &
-            help{" "}
-          </Button>
-          <Button
-            key="me-settings"
-            variant="outline"
-            className="home-bubble me-passport-action min-h-28 h-auto whitespace-normal font-display font-bold"
-            onClick={() => setMeSection("me-settings")}
-          >
-            {" "}
-            <span className="text-3xl mb-2">⚙️</span> Settings{" "}
-          </Button>
-        </div>
-        {isAdmin && (
-          <div className="mt-6">
-            <h2 className="font-display text-lg font-extrabold">Founder</h2>
-            <AiCapBanner onOpen={() => setMeSection("ai-guard")} />
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              {[
-                ["Reports", "reports"],
-                ["Feedback", "feedback"],
-                ["Test Lab", "lab"],
-                ["Welcome wording", "welcome"],
-                ["Icon options", "icon-options"],
-                ["AI", "ai-guard"],
-              ].map(([label, key]) => (
-                <Button
-                  key={key}
-                  variant="outline"
-                  className="home-bubble min-h-24 h-auto whitespace-normal"
-                  onClick={() =>
-                    key === "welcome" || key === "icon-options" || key === "ai-guard"
-                      ? setMeSection(key)
-                      : onMe(key as "reports" | "feedback" | "lab")
-                  }
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-      </>
     );
   return (
     <>
