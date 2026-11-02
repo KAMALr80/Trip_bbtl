@@ -19,6 +19,7 @@ import {
 import type { TripWithRole } from "@/lib/trips";
 import { savePendingCode, clearPendingCode } from "@/lib/pending-code";
 import { setLabView, useLabView, VIEW_LABELS } from "@/lib/lab-mode";
+import { EngineLab } from "./EngineLab";
 type Tab = "Home" | "Play" | "Trip" | "Me";
 type Props = {
   trips: TripWithRole[];
@@ -308,8 +309,16 @@ export function TestLab({
         </p>
       )}
 
+      <EngineLab
+        trips={trips}
+        activeId={activeId}
+        selectTrip={selectTrip}
+        refresh={refresh}
+        goPlay={() => goTab("Play")}
+      />
+
       <section className="mt-5 bg-card rounded-[1.5rem] p-4 border border-border">
-        <h2 className="font-display font-extrabold text-lg">Create sandbox trip</h2>
+        <h2 className="font-display font-extrabold text-lg">Create sandbox trip (older rules)</h2>
         <Pick label="Group size" value={size} options={[4, 10, 15, 25]} onChange={setSize} />
         <Pick label="Trip length (days)" value={days} options={[3, 7, 21]} onChange={setDays} />
         <Pick

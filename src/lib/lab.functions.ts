@@ -81,7 +81,7 @@ async function wipe(ctx: Ctx, tripId: string) {
   const { data: ids, error } = await ctx.supabase.rpc("lab_delete", { p_trip: tripId });
   if (error) throw new Error(error.message);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  for (const bucket of ["trip-photos", "player-avatars"]) {
+  for (const bucket of ["trip-photos", "player-avatars", "quest-proofs"]) {
     const paths = await listAll(supabaseAdmin, bucket, tripId);
     if (paths.length) await supabaseAdmin.storage.from(bucket).remove(paths);
   }

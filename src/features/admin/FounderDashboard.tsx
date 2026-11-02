@@ -58,6 +58,7 @@ export function FounderDashboard({
     ["Beta codes", founderLaunchIcon, "beta-codes"],
     ["AI", founderFeaturesIcon, "ai-guard"],
     ["Photo review", founderReportsIcon, "moderation"],
+    ["Users & trips", founderMembersIcon, "admin-directory"],
   ];
   const next = [...(allTrips ?? trips)]
     .filter((t) => new Date(t.start_date + "T23:59:59").getTime() >= Date.now())

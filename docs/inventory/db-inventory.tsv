@@ -1,5 +1,6 @@
 kind	schema	name	args	security_definer	search_path_set	rls	policies	anon	authenticated	write_policies	last_migration	definitions	src_refs	src_files
 table	public	account_consents				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261002191814_9aff2fe7-0d03-4812-8c7a-1e21a9eddc0e.sql	1	0	
+table	public	admin_actions				t	0				20261104150000_m6_admin.sql	1	0	
 table	public	age_guesses				t	3		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE	INSERT,UPDATE	20261001051932_1ec70493-12c1-4833-9cb2-59f4868b7d89.sql	1	0	
 table	public	ai_credit_purchases				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261002070906_8ff32319-0fd9-4971-bf7d-15961bfe9af5.sql	1	0	
 table	public	ai_usage				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261002053604_c6470a40-9d7e-46d6-be84-00a03103769d.sql	1	1	src/lib/ai-quota.server.ts
@@ -147,9 +148,10 @@ table	public	trip_season_games				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,T
 table	public	trip_season_reveals				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261005185632_0a45ebd7-0585-495b-b11c-51d2a3fbf77f.sql	1	0	
 table	public	trip_team_members				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261001055917_7163ef81-85a9-4a63-b74e-663e8597a0d7.sql	1	0	
 table	public	trip_teams				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261001055917_7163ef81-85a9-4a63-b74e-663e8597a0d7.sql	1	0	
-table	public	trips				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261001043408_cff7abf7-6207-4f17-9fba-3996202c8631.sql	1	19	src/data/account.ts src/data/offline/rules.test.ts src/data/offline/rules.ts src/data/queries.ts src/data/trips.ts src/features/app-shell/nav.ts src/features/captain-tools/PhaseTiles.tsx src/features/home/HomeDashboard.tsx src/features/me/TripFeedback.tsx src/features/passport/PassportBook.tsx src/features/play/PhaseNotice.tsx src/features/play/PlayHub.tsx src/lib/content.functions.ts src/lib/culture-exp.functions.ts src/lib/delete-trip.functions.ts src/lib/inspiration.functions.ts src/lib/itinerary-ai.functions.ts src/lib/trips.ts src/routes/api/public/purge-photos.ts
+table	public	trips				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261001043408_cff7abf7-6207-4f17-9fba-3996202c8631.sql	1	20	src/data/account.ts src/data/offline/rules.test.ts src/data/offline/rules.ts src/data/queries.ts src/data/trips.ts src/features/admin/AdminDirectory.tsx src/features/app-shell/nav.ts src/features/captain-tools/PhaseTiles.tsx src/features/home/HomeDashboard.tsx src/features/me/TripFeedback.tsx src/features/passport/PassportBook.tsx src/features/play/PhaseNotice.tsx src/features/play/PlayHub.tsx src/lib/content.functions.ts src/lib/culture-exp.functions.ts src/lib/delete-trip.functions.ts src/lib/inspiration.functions.ts src/lib/itinerary-ai.functions.ts src/lib/trips.ts src/routes/api/public/purge-photos.ts
 table	public	trivia_answers				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	0	
 table	public	user_badges				t	1		SELECT		20261102110000_m5_passport.sql	1	0	
+table	public	user_blocks				t	0				20261104150000_m6_admin.sql	1	0	
 table	public	user_credits				t	1		SELECT		20261004011549_cd7e399c-6b7f-495f-aebb-60fb935ea282.sql	1	0	
 table	public	waitlist				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql	1	0	
 table	public	weekly_answer_votes				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261002021700_13b7d943-1332-4407-8f09-f44ccfda29cc.sql	1	0	
@@ -177,6 +179,8 @@ function	public	accept_legal	p_version text	f	true				EXECUTE		20261002191814_9a
 function	public	account_status		f	true				EXECUTE		20261002191814_9aff2fe7-0d03-4812-8c7a-1e21a9eddc0e.sql	1	1	src/features/onboarding/LegalConsent.tsx
 function	public	add_checkin_tasks	p_trip uuid, p_tasks jsonb	f	true						20261004014951_93631a26-f36e-49ea-adf3-3832fea78f38.sql	1	0	
 function	public	add_trip_missions	p_trip uuid, p_texts text[]	f	true						20261003213548_20f254c0-7954-493d-b704-f4a888e9865b.sql	1	0	
+function	public	admin_find_trips	p_query text	f	true				EXECUTE		20261104150000_m6_admin.sql	1	1	src/features/admin/AdminDirectory.tsx
+function	public	admin_find_users	p_query text	f	true				EXECUTE		20261104150000_m6_admin.sql	1	1	src/features/admin/AdminDirectory.tsx
 function	public	adult_badge	p_trip uuid, p_user uuid	f	true						20261001090046_0a064109-14aa-4e36-9ba2-f571b1767cc9.sql	1	0	
 function	public	advance_play_phase	p_trip uuid, p_current integer	f	true						20261003210857_dcde69e6-d32c-4384-823d-3c67bcfc91c6.sql	1	0	
 function	public	ai_cost_per_trip		f	true				EXECUTE		20261002070906_8ff32319-0fd9-4971-bf7d-15961bfe9af5.sql	1	1	src/features/ai-credits/AiCredits.tsx
@@ -292,7 +296,7 @@ function	public	home_day_schedule	p_trip uuid, p_day date, p_time time without t
 function	public	home_day_scores	p_trip uuid	f	true				EXECUTE		20261003220646_e56bbc04-8634-4977-aa11-8a9baf1caed2.sql	1	1	src/features/play/HomeDayFlow.tsx
 function	public	home_day_view	p_trip uuid	f	true				EXECUTE		20261003220646_e56bbc04-8634-4977-aa11-8a9baf1caed2.sql	1	2	src/features/at-home/CinematicMonthCalendar.tsx src/features/play/HomeDayFlow.tsx
 function	public	host_check_in	p_trip uuid, p_week integer	f	true				EXECUTE		20261002054820_cea4b60b-d85f-4615-8940-0dbafab48732.sql	1	1	src/features/at-home/HostSwaps.tsx
-function	public	is_app_admin		f	true				EXECUTE		20261002020127_d8478377-e9ec-4552-ab37-9dfa962e1146.sql	2	3	src/data/account.ts src/lib/bug-ai.functions.ts src/lib/lab.functions.ts
+function	public	is_app_admin		f	true				EXECUTE		20261002020127_d8478377-e9ec-4552-ab37-9dfa962e1146.sql	2	4	src/data/account.ts src/lib/admin.functions.ts src/lib/bug-ai.functions.ts src/lib/lab.functions.ts
 function	public	is_trip_member	p_trip uuid, p_user uuid	f	true				EXECUTE		20261001043505_41271b28-33d1-4a4a-9bbf-926185221268.sql	3	0	
 function	public	join_trip	p_code text	f	true				EXECUTE		20261001043440_510aebe2-d821-49ad-8452-42b8fd98758f.sql	2	3	src/features/onboarding/BetaAccess.tsx src/features/setup/TripSheets.tsx src/features/trip/InvitePreview.tsx
 function	public	join_waitlist	p_email text	f	true				EXECUTE		20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql	1	1	src/features/admin/BetaCodes.tsx
@@ -303,7 +307,10 @@ function	public	lab_at_home	p_pack text, p_length text	f	true				EXECUTE		202610
 function	public	lab_at_home_bots	p_trip uuid	f	true				EXECUTE		20261002085632_da6294f9-5d94-462c-a613-3e11979ee426.sql	1	1	src/features/admin/TestLab.tsx
 function	public	lab_create	p_size integer, p_days integer, p_window integer	f	true				EXECUTE		20261002041439_9be2f1cd-866f-4ffd-94a1-af116d6d032a.sql	1	1	src/lib/lab.functions.ts
 function	public	lab_delete	p_trip uuid	f	true				EXECUTE		20261002041439_9be2f1cd-866f-4ffd-94a1-af116d6d032a.sql	1	1	src/lib/lab.functions.ts
+function	public	lab_engine_create	p_room text, p_mode text, p_size integer, p_days integer	f	true				EXECUTE		20261104140000_m6_test_lab.sql	1	1	src/features/admin/EngineLab.tsx
+function	public	lab_engine_play	p_trip uuid	f	true				EXECUTE		20261104140000_m6_test_lab.sql	1	1	src/features/admin/EngineLab.tsx
 function	public	lab_extra	p_trip uuid, p_action text, p_arg text	f	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	1	src/features/admin/TestLab.tsx
+function	public	lab_jump	p_trip uuid, p_phase text	f	true				EXECUTE		20261104140000_m6_test_lab.sql	1	1	src/features/admin/EngineLab.tsx
 function	public	lab_r17	p_trip uuid, p_action text	f	true				EXECUTE		20261002061513_3de59ba7-2343-48e6-8af2-8210734342ef.sql	1	1	src/features/admin/TestLab.tsx
 function	public	lab_role	p_trip uuid, p_role text	f	true				EXECUTE		20261002041439_9be2f1cd-866f-4ffd-94a1-af116d6d032a.sql	1	1	src/features/admin/TestLab.tsx
 function	public	lab_shift	p_trip uuid, p_target text, p_day integer	f	true				EXECUTE		20261002041439_9be2f1cd-866f-4ffd-94a1-af116d6d032a.sql	1	1	src/features/admin/TestLab.tsx
@@ -326,8 +333,8 @@ function	public	mission_bonus	p_trip uuid	f	true						20261003213548_20f254c0-79
 function	public	mission_window	p_trip uuid	f	true						20261005223206_337f661b-ecd0-4989-b2bf-4c27b0430077.sql	1	0	
 function	public	mix_ai_quota	p_trip uuid	f	true				EXECUTE		20261002220159_354d5f46-fd6e-4347-b426-a3fd88d0297d.sql	1	0	
 function	public	moderate_inspiration	p_card uuid, p_action text	f	true				EXECUTE		20261002210105_753acd6c-39c8-4083-bc3b-eb5d6d2e4d1e.sql	1	1	src/features/culture/Inspiration.tsx
-function	public	moderate_photo	p_id uuid, p_action text, p_note text	f	true				EXECUTE		20261104130000_m6_moderation.sql	1	0	
-function	public	moderation_queue	p_include_closed boolean	f	true				EXECUTE		20261104130000_m6_moderation.sql	1	0	
+function	public	moderate_photo	p_id uuid, p_action text, p_note text	f	true				EXECUTE		20261104130000_m6_moderation.sql	1	1	src/data/moderation.ts
+function	public	moderation_queue	p_include_closed boolean	f	true				EXECUTE		20261104130000_m6_moderation.sql	1	1	src/data/moderation.ts
 function	public	my_access		f	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	4	src/features/app-shell/AppShell.tsx src/features/me/MeExtras.tsx src/features/onboarding/BetaAccess.tsx src/features/setup/CultureA2eSetup.tsx
 function	public	my_bug_updates		f	true				EXECUTE		20261002094216_f75ad03f-abfa-497c-b887-d5809c19a73b.sql	2	1	src/features/admin/BugInbox.tsx
 function	public	my_credits	p_trip uuid	f	true				EXECUTE		20261004011549_cd7e399c-6b7f-495f-aebb-60fb935ea282.sql	1	1	src/features/ai-credits/AiCredits.tsx
@@ -391,6 +398,7 @@ function	public	rate_content	p_trip uuid, p_kind text, p_key text, p_text text, 
 function	public	reclaim_captain	p_trip uuid	f	true				EXECUTE		20261002061513_3de59ba7-2343-48e6-8af2-8210734342ef.sql	1	1	src/features/captain-tools/CaptainExtras.tsx
 function	public	record_photo_safety	p_proof uuid, p_flags text[]	f	true						20261104130000_m6_moderation.sql	1	1	src/lib/proof-check.functions.ts
 function	public	record_proof_check	p_proof uuid, p_verdict text, p_reason text, p_flags jsonb	f	true						20261030130000_m3_proofs_crew_check.sql	1	1	src/lib/proof-check.functions.ts
+function	public	record_user_block	p_admin uuid, p_user uuid, p_disabled boolean, p_note text	f	true						20261104150000_m6_admin.sql	1	1	src/lib/admin.functions.ts
 function	public	redeem_beta_code	p_code text	f	true				EXECUTE		20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql	1	2	src/features/admin/BetaCodes.tsx src/features/app-shell/AppShell.tsx
 function	public	refund_failed_ai	p_usage uuid	f	true						20261004005522_e6b305d0-fdd9-4b45-8454-e553954fa167.sql	2	1	src/lib/ai-quota.server.ts
 function	public	refund_failed_ai	p_usage uuid, p_user uuid	f	true						20261004005522_e6b305d0-fdd9-4b45-8454-e553954fa167.sql	2	1	src/lib/ai-quota.server.ts
@@ -398,7 +406,7 @@ function	public	release_trip_day	p_trip uuid, p_date date	f	true						2026100201
 function	public	remove_photo	p_trip uuid, p_path text	f	true				EXECUTE		20261001055917_7163ef81-85a9-4a63-b74e-663e8597a0d7.sql	1	1	src/features/points/Seasons.tsx
 function	public	reopen_live	p_session uuid	f	true				EXECUTE		20261030140000_m3_live_and_crowns.sql	1	1	src/data/live.ts
 function	public	report_cost_payment	p_item uuid, p_amount_cents bigint, p_note text	f	true				EXECUTE		20261002015216_f867571e-817c-49ea-bb2e-49aeaebac36d.sql	1	1	src/features/at-home/TripCosts.tsx
-function	public	report_proof_photo	p_proof uuid, p_reason text	f	true				EXECUTE		20261104130000_m6_moderation.sql	1	0	
+function	public	report_proof_photo	p_proof uuid, p_reason text	f	true				EXECUTE		20261104130000_m6_moderation.sql	1	1	src/data/moderation.ts
 function	public	request_host_swap	p_trip uuid, p_week integer, p_to uuid	f	true				EXECUTE		20261002033304_2ae6f19b-aef9-4246-a62d-9f1a5e21c7c3.sql	1	1	src/features/at-home/HostSwaps.tsx
 function	public	request_room	p_trip uuid, p_interest text	f	true						20261002213413_8874cf4a-9ca1-4902-b6c5-ff3879ee5b18.sql	1	0	
 function	public	reschedule_preview	p_trip uuid, p_every integer, p_count integer	f	true						20261002022825_07b81448-6efe-4855-90a0-76ffec10d339.sql	1	0	
@@ -474,7 +482,7 @@ function	public	set_team_room	p_trip uuid, p_team uuid, p_call text, p_host uuid
 function	public	set_teen_dob	p_dob date, p_agree boolean, p_invite text	f	true				EXECUTE		20261002223245_4c843674-2dcd-4d21-9017-b3732a0fda52.sql	1	2	src/features/auth/AuthScreen.tsx src/features/onboarding/BetaAccess.tsx
 function	public	set_top_stamps	p_trips uuid[]	f	true				EXECUTE		20261103100000_m5_profile.sql	1	1	src/data/profile.ts
 function	public	set_trip_access	p_trip uuid, p_code_enabled boolean, p_require_approval boolean	f	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	1	src/features/onboarding/BetaAccess.tsx
-function	public	set_trip_archived	p_trip uuid, p_archived boolean, p_note text	f	true				EXECUTE		20261021130000_trip_archive_mode.sql	1	0	
+function	public	set_trip_archived	p_trip uuid, p_archived boolean, p_note text	f	true				EXECUTE		20261021130000_trip_archive_mode.sql	1	1	src/features/admin/AdminDirectory.tsx
 function	public	set_trip_extras	p_trip uuid, p_motto text, p_call text, p_backup text	f	true				EXECUTE		20261001070118_5f848051-527d-4f13-870e-af4e5d1a5440.sql	1	2	src/features/captain-tools/CaptainTools.tsx src/features/setup/TripSheets.tsx
 function	public	set_trip_hidden	p_trip uuid, p_hidden boolean	f	true				EXECUTE		20261103100000_m5_profile.sql	1	1	src/data/profile.ts
 function	public	set_trip_minors	p_trip uuid, p_has boolean	f	true				EXECUTE		20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql	1	2	src/features/at-home/AtHome.tsx src/features/setup/TripSheets.tsx
@@ -515,7 +523,7 @@ function	public	trip_photos	p_trip uuid	f	true				EXECUTE		20261001055917_7163ef
 function	public	trip_pot	p_trip uuid	f	true				EXECUTE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	1	src/features/at-home/TripCosts.tsx
 function	public	trip_price	p_trip uuid, p_headcount integer	f	true				EXECUTE		20261002034338_5eeea1c2-c81e-46ba-8a29-93d610005276.sql	1	1	src/features/trip/TripUnlock.tsx
 function	public	trip_roster	p_trip uuid	f	true				EXECUTE		20261001043440_510aebe2-d821-49ad-8452-42b8fd98758f.sql	2	4	src/data/queries.ts src/data/trips.ts src/features/culture/CultureExperiences.tsx src/features/culture/Inspiration.tsx
-function	public	trip_season	p_trip uuid	f	true						20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	11	src/data/live.ts src/data/offline/rules.test.ts src/data/postcard.ts src/data/queries.ts src/features/captain-tools/PhaseTiles.tsx src/features/passport/PassportProgress.tsx src/features/play/PhaseNotice.tsx src/features/play/PlayHub.tsx src/features/points/CrewStandings.tsx src/features/trip/JourneyPhases.tsx src/features/trip/phase.ts
+function	public	trip_season	p_trip uuid	f	true						20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	12	src/data/live.ts src/data/offline/rules.test.ts src/data/postcard.ts src/data/queries.ts src/features/admin/EngineLab.tsx src/features/captain-tools/PhaseTiles.tsx src/features/passport/PassportProgress.tsx src/features/play/PhaseNotice.tsx src/features/play/PlayHub.tsx src/features/points/CrewStandings.tsx src/features/trip/JourneyPhases.tsx src/features/trip/phase.ts
 function	public	trip_season_score	p_trip uuid	f	true						20261005024938_64b7bea2-bfed-40ea-93ea-3e169bd7dabe.sql	1	0	
 function	public	trip_season_started	p_trip uuid	f	true				EXECUTE		20261005223206_337f661b-ecd0-4989-b2bf-4c27b0430077.sql	1	1	src/features/play/PlayHub.tsx
 function	public	trip_squad_messages	p_trip uuid	f	true				EXECUTE		20261002020111_f180a993-1d28-46f1-a383-0792ab4361a4.sql	1	0	
@@ -549,6 +557,8 @@ function	trip_private	accept_legal	p_version text	t	true				EXECUTE		20261002223
 function	trip_private	account_status		t	true				EXECUTE		20261002191814_9aff2fe7-0d03-4812-8c7a-1e21a9eddc0e.sql	1	0	
 function	trip_private	add_checkin_tasks	p_trip uuid, p_tasks jsonb	t	true						20261004014951_93631a26-f36e-49ea-adf3-3832fea78f38.sql	1	0	
 function	trip_private	add_trip_missions	p_trip uuid, p_texts text[]	t	true						20261003213548_20f254c0-7954-493d-b704-f4a888e9865b.sql	1	0	
+function	trip_private	admin_find_trips	p_query text	t	true				EXECUTE		20261104150000_m6_admin.sql	1	0	
+function	trip_private	admin_find_users	p_query text	t	true				EXECUTE		20261104150000_m6_admin.sql	1	0	
 function	trip_private	adult_badge	p_trip uuid, p_user uuid	t	true				EXECUTE		20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql	4	0	
 trigger	trip_private	adult_settings_minor_guard		t	true			EXECUTE	EXECUTE		20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql	1	0	
 function	trip_private	advance_play_phase	p_trip uuid, p_current integer	t	true				EXECUTE		20261003210857_dcde69e6-d32c-4384-823d-3c67bcfc91c6.sql	1	0	
@@ -756,9 +766,12 @@ function	trip_private	lab_bypass	p_trip uuid	t	true				EXECUTE		20261002111230_1
 function	trip_private	lab_card	p_trip uuid, p_user uuid, p_name text, p_n integer	t	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	2	0	
 function	trip_private	lab_create	p_size integer, p_days integer, p_window integer	t	true				EXECUTE		20261002041439_9be2f1cd-866f-4ffd-94a1-af116d6d032a.sql	1	0	
 function	trip_private	lab_delete	p_trip uuid	t	true				EXECUTE		20261002041739_4e2ec1a9-2728-4260-a11b-d9e1dcc07b1a.sql	2	0	
+function	trip_private	lab_engine_create	p_room text, p_mode text, p_size integer, p_days integer	t	true				EXECUTE		20261104140000_m6_test_lab.sql	1	0	
+function	trip_private	lab_engine_play	p_trip uuid	t	true				EXECUTE		20261104140000_m6_test_lab.sql	1	0	
 function	trip_private	lab_extra	p_trip uuid, p_action text, p_arg text	t	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	0	
 function	trip_private	lab_guard	p_trip uuid	t	true						20261002041439_9be2f1cd-866f-4ffd-94a1-af116d6d032a.sql	1	0	
 function	trip_private	lab_itinerary	p_trip uuid	t	true				EXECUTE		20261002041439_9be2f1cd-866f-4ffd-94a1-af116d6d032a.sql	1	0	
+function	trip_private	lab_jump	p_trip uuid, p_phase text	t	true				EXECUTE		20261104140000_m6_test_lab.sql	1	0	
 function	trip_private	lab_r17	p_trip uuid, p_action text	t	true				EXECUTE		20261002061513_3de59ba7-2343-48e6-8af2-8210734342ef.sql	1	0	
 function	trip_private	lab_role	p_trip uuid, p_role text	t	true				EXECUTE		20261002041439_9be2f1cd-866f-4ffd-94a1-af116d6d032a.sql	1	0	
 function	trip_private	lab_shift	p_trip uuid, p_target text, p_day integer	t	true				EXECUTE		20261002041739_4e2ec1a9-2728-4260-a11b-d9e1dcc07b1a.sql	2	0	
@@ -891,6 +904,7 @@ function	trip_private	rate_content	p_trip uuid, p_kind text, p_key text, p_text 
 function	trip_private	reclaim_captain	p_trip uuid	t	true				EXECUTE		20261002061513_3de59ba7-2343-48e6-8af2-8210734342ef.sql	1	0	
 function	trip_private	record_photo_safety	p_proof uuid, p_flags text[]	t	true						20261104130000_m6_moderation.sql	1	0	
 trigger	trip_private	record_speed_finish		t	true						20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql	1	0	
+function	trip_private	record_user_block	p_admin uuid, p_user uuid, p_disabled boolean, p_note text	t	true						20261104150000_m6_admin.sql	1	0	
 function	trip_private	redeem_beta_code	p_code text	t	true				EXECUTE		20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql	1	0	
 function	trip_private	refresh_passport	p_user uuid	t	true						20261102110000_m5_passport.sql	1	0	
 function	trip_private	refund_failed_ai	p_usage uuid	t	true						20261004005522_e6b305d0-fdd9-4b45-8454-e553954fa167.sql	2	0	

@@ -37,6 +37,34 @@ export type Database = {
         };
         Relationships: [];
       };
+      admin_actions: {
+        Row: {
+          action: string;
+          actor: string;
+          created_at: string;
+          id: number;
+          note: string | null;
+          target_user: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor: string;
+          created_at?: string;
+          id?: never;
+          note?: string | null;
+          target_user?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor?: string;
+          created_at?: string;
+          id?: never;
+          note?: string | null;
+          target_user?: string | null;
+        };
+        Relationships: [];
+      };
       age_guesses: {
         Row: {
           created_at: string;
@@ -6712,6 +6740,31 @@ export type Database = {
         };
         Relationships: [];
       };
+      user_blocks: {
+        Row: {
+          changed_at: string;
+          changed_by: string;
+          disabled: boolean;
+          note: string | null;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          changed_at?: string;
+          changed_by: string;
+          disabled: boolean;
+          note?: string | null;
+          user_id: string;
+        };
+        Update: {
+          changed_at?: string;
+          changed_by?: string;
+          disabled?: boolean;
+          note?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       user_credits: {
         Row: {
           balance: number;
@@ -7012,6 +7065,37 @@ export type Database = {
       };
       add_checkin_tasks: { Args: { p_tasks: Json; p_trip: string }; Returns: number };
       add_trip_missions: { Args: { p_texts: string[]; p_trip: string }; Returns: number };
+      admin_find_trips: {
+        Args: { p_query: string };
+        Returns: {
+          archived: boolean;
+          created_at: string;
+          destination: string;
+          end_date: string;
+          id: string;
+          is_sandbox: boolean;
+          locked_at: string;
+          members: number;
+          name: string;
+          phase: string;
+          play_mode: string;
+          room: string;
+          start_date: string;
+        }[];
+      };
+      admin_find_users: {
+        Args: { p_query: string };
+        Returns: {
+          age_range: string;
+          created_at: string;
+          disabled: boolean;
+          email: string;
+          game_name: string;
+          last_sign_in_at: string;
+          trips: number;
+          user_id: string;
+        }[];
+      };
       adult_badge: { Args: { p_trip: string; p_user: string }; Returns: boolean };
       advance_play_phase: { Args: { p_current: number; p_trip: string }; Returns: number };
       ai_cost_per_trip: { Args: Record<PropertyKey, never>; Returns: number };
@@ -7669,7 +7753,13 @@ export type Database = {
       lab_at_home_bots: { Args: { p_trip: string }; Returns: string };
       lab_create: { Args: { p_days: number; p_size: number; p_window: number }; Returns: string };
       lab_delete: { Args: { p_trip: string }; Returns: string[] };
+      lab_engine_create: {
+        Args: { p_days: number; p_mode: string; p_room: string; p_size: number };
+        Returns: string;
+      };
+      lab_engine_play: { Args: { p_trip: string }; Returns: string };
       lab_extra: { Args: { p_action: string; p_arg: string; p_trip: string }; Returns: string };
+      lab_jump: { Args: { p_phase: string; p_trip: string }; Returns: string };
       lab_r17: { Args: { p_action: string; p_trip: string }; Returns: string };
       lab_role: { Args: { p_role: string; p_trip: string }; Returns: undefined };
       lab_shift: { Args: { p_day: number; p_target: string; p_trip: string }; Returns: undefined };
@@ -8149,6 +8239,10 @@ export type Database = {
       record_photo_safety: { Args: { p_flags: string[]; p_proof: string }; Returns: boolean };
       record_proof_check: {
         Args: { p_flags?: Json; p_proof: string; p_reason: string; p_verdict: string };
+        Returns: undefined;
+      };
+      record_user_block: {
+        Args: { p_admin: string; p_disabled: boolean; p_note: string; p_user: string };
         Returns: undefined;
       };
       redeem_beta_code: { Args: { p_code: string }; Returns: string };

@@ -7,6 +7,7 @@ import { ArchivedTrip } from "@/features/trip/ArchivedTrip";
 import { AfterTrip } from "@/features/postcard/AfterTrip";
 import { MeHome } from "@/features/me/MeHome";
 import { ModerationQueue } from "@/features/moderation/ModerationQueue";
+import { AdminDirectory } from "@/features/admin/AdminDirectory";
 
 import gameOptionA from "@/assets/game-tile-option-a.webp";
 import tripCoast from "@/assets/journey-coast-top.jpg";
@@ -425,7 +426,8 @@ export function TabContent({
               key === "ai-guard" ||
               key === "icon-options" ||
               key === "me-explore" ||
-              key === "moderation"
+              key === "moderation" ||
+              key === "admin-directory"
                 ? setMeSection(key)
                 : onMe(key as "reports" | "feedback" | "lab")
             }
@@ -455,6 +457,7 @@ export function TabContent({
               "ai-guard": "AI",
               "icon-options": "Icon options",
               moderation: "Photo review",
+              "admin-directory": "Users & trips",
             } as Record<string, string>
           )[meSection]
         }
@@ -477,6 +480,7 @@ export function TabContent({
       {meSection === "beta-codes" && isAdmin && <BetaCodesDoor />}
       {meSection === "ai-guard" && isAdmin && <AiGuardDoor />}
       {meSection === "moderation" && isAdmin && <ModerationQueue />}
+      {meSection === "admin-directory" && isAdmin && <AdminDirectory />}
       {meSection === "me-passport" && (
         <MyPassport
           trips={trips}

@@ -759,5 +759,47 @@
     "approve": "Approve",
     "remove": "Remove",
     "warn": "Warn"
+  },
+  "lab": {
+    "title": "New engine sandbox",
+    "intro": "Any room and way of playing, with bots. Jump to any phase and let the bots play what's open. Sandboxes only.",
+    "room": "Room",
+    "mode": "Who's playing",
+    "size": "Players",
+    "days": "Days",
+    "create": "Create sandbox",
+    "created": "Sandbox created. It starts in Pre-Flight.",
+    "activeTitle": "Open sandbox: {{name}}",
+    "jump": {
+      "preflight": "Jump to Pre-Flight",
+      "takeoff": "Jump to Takeoff",
+      "trip_season": "Jump to Trip Season",
+      "baggage_claim": "Jump to Baggage Claim",
+      "locked": "Past Day 7 (lock)"
+    },
+    "jumped": "Now in {{phase}}.",
+    "play": "Bots play now",
+    "played": "Bots: {{result}}",
+    "openPlay": "Open Play",
+    "pickOne": "Open one of your new-engine sandboxes to jump it or let the bots play."
+  },
+  "admin": {
+    "title": "Users & trips",
+    "search": "Name, email, trip name or join code",
+    "find": "Find",
+    "users": "People",
+    "trips": "Trips",
+    "none": "Nothing found.",
+    "reason": "Reason (required to disable or enable, kept in the log)",
+    "tripsCount_one": "{{count}} trip",
+    "tripsCount_other": "{{count}} trips",
+    "members_one": "{{count}} player",
+    "members_other": "{{count}} players",
+    "disabled": "disabled",
+    "disable": "Disable",
+    "enable": "Enable",
+    "archived": "archived",
+    "archive": "Archive",
+    "unarchive": "Unarchive"
   }
 }
