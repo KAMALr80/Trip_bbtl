@@ -43,3 +43,11 @@ legacy-export-*/
 
 # Supabase CLI link state (scripts/deploy.sh)
 supabase/.temp/
+
+
+# Supabase local CLI state
+supabase/.temp/
+supabase/.branches/
+
+# Generated build output
+.output/

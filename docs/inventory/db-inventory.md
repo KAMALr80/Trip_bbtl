@@ -14,7 +14,7 @@
 |---|---|---|
 | Tables | 161 | 14 |
 | Views | 0 | 0 |
-| Functions | 366 | 508 |
+| Functions | 369 | 511 |
 | Triggers | 5 | 52 |
 
 Objects (re)defined in 5 or more migrations: **22**. This is why the snapshot, not the migration history, is the reference (gotcha G5).
@@ -70,7 +70,7 @@ revoke `anon` (09 §2).
 
 ## Client usage
 
-### Public functions callable by clients but not referenced in `src/`: 38
+### Public functions callable by clients but not referenced in `src/`: 41
 
 Candidates to revoke (M1-08). Some may be called from SQL, cron or the Test Lab only: check
 before removing. Reference matching is by quoted name, so dynamic names built from strings
@@ -82,10 +82,13 @@ are still found.
 - `confirm_departure(p_trip uuid)`
 - `create_at_home(p_pack text, p_length text, p_start date, p_vibe text, p_tz text)`
 - `create_culture_a2e(p_kind text, p_mode text, p_title text, p_country text, p_region text, p_city text, p_start date, p_days integer, p_layer text, p_vibe text, p_types text[], p_prep integer, p_finale text, p_place text, p_repeat boolean)`
+- `create_culture_play_mode(p_kind text, p_mode text, p_title text, p_country text, p_region text, p_city text, p_start date, p_days integer, p_layer text, p_vibe text, p_types text[], p_finale text, p_place text, p_repeat boolean)`
 - `create_trip(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text)`
 - `create_trip_a2c(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text)`
 - `create_trip_play_mode(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text, p_mode text)`
 - `create_trip_play_mode_v2(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text, p_mode text, p_country text)`
+- `create_trip_play_mode_v3(p_name text, p_destination text, p_start_date date, p_end_date date, p_home_timezone text, p_mode text, p_country text, p_types text[])`
+- `create_window_play_mode(p_mode text, p_title text, p_country text, p_region text, p_city text, p_start date, p_days integer, p_vibe text, p_types text[], p_prep integer)`
 - `culture_quest_card(p_session uuid)`
 - `games_live(p_trip uuid)`
 - `guide_propose(p_trip uuid, p_kind text, p_body text, p_photo text)`
@@ -159,7 +162,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `culture_exp_days` | table | ✅ | 1 | — | 1 |
 | public | `culture_exp_hidden` | table | ✅ | 1 | — | 0 |
 | public | `culture_exp_likes` | table | ✅ | 1 | — | 0 |
-| public | `culture_experiences` | table | ✅ | 1 | — | 4 |
+| public | `culture_experiences` | table | ✅ | 1 | — | 3 |
 | public | `culture_layer_stamps` | table | ✅ | 1 | — | 1 |
 | public | `culture_quest_answers` | table | ✅ | 1 | — | 0 |
 | public | `culture_quest_items` | table | ✅ | 4 | DELETE,INSERT,UPDATE | 1 |

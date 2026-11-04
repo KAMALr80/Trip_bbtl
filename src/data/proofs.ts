@@ -166,3 +166,19 @@ export function useSubmitDropProof(tripId: string, userId: string) {
     onSettled: () => queryClient.invalidateQueries({ queryKey: proofKeys.mine(tripId) }),
   });
 }
+
+/**
+ * Present a Surprise Drop live at the next Game Night Live instead of sending photos (R-343). A 👍
+ * there scores it. Online only: it's a single tap, not a photo to keep.
+ */
+export function useClaimDropLive(tripId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (item: string) => {
+      const { data, error } = await rpc("claim_drop_live", { p_item: item });
+      if (error) throw error;
+      return data;
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: proofKeys.mine(tripId) }),
+  });
+}

@@ -78,9 +78,6 @@
     "readyMade": "Start from ready-made cards · free",
     "readyMadeHint": "You get ready-made {{label}} cards to edit or replace. No AI credits used."
   },
-  "roomSetup": {
-    "preflightDays": "Pre-Flight warm-up days before you go (optional)"
-  },
   "home": {
     "gate": "gate"
   },
@@ -247,6 +244,35 @@
   "join": {
     "role": "Your role this trip",
     "noRole": "Pick later"
+  },
+  "tripSheets": {
+    "joinLabel": "Join a trip",
+    "liveLabel": "Your trip is live",
+    "close": "Close",
+    "notFound": "That code wasn't found. Check it and try again.",
+    "yourTrip": "Your trip",
+    "waitingRoom": "You’re in the waiting room. Your Captain will let you in if approval is needed.",
+    "home": "Home",
+    "planStep": "STEP 2 OF 3",
+    "planTitle": "Your game plan",
+    "planIntro": "How should the pre-trip game nights run? You can change this any time in Captain Tools.",
+    "planSkip": "Skip for now — set it later",
+    "inviteStep": "STEP 3 OF 3 · INVITE YOUR SQUAD",
+    "official": "CAPTAIN, IT'S OFFICIAL",
+    "liveTitle": "Your trip is live!",
+    "sendInvite": "Send the invite to your favorite people.",
+    "yourCode": "YOUR JOIN CODE",
+    "copied": "Copied!",
+    "copyLink": "Copy link",
+    "share": "Share",
+    "seeTrip": "See your trip",
+    "joinTitle": "Join with Code",
+    "codeLabel": "INVITE CODE",
+    "codeAria": "Invite code",
+    "codePlaceholder": "JOIN CODE",
+    "joining": "YOU'RE JOINING",
+    "joinBusy": "Joining...",
+    "joinButton": "Join room"
   },
   "phases": {
     "preflight": "Pre-Flight",
@@ -432,7 +458,12 @@
     "speedDone": "Or say how you finished",
     "send": "Send",
     "scored": "Scored after the drop closes and the crew checks the photos.",
-    "error": "That didn't work: {{reason}}"
+    "error": "That didn't work: {{reason}}",
+    "presentLive": "I'll present it live instead",
+    "presentLiveHint": "Show the crew at the next Game Night Live. A 👍 there scores 10 pts (no photos needed, no bonus).",
+    "liveWaiting": "You're presenting this one live. A 👍 at the next Game Night Live scores 10 pts.",
+    "liveApproved": "Presented live ✓ 10 pts",
+    "liveExpired": "Not presented before the crown was decided, so no points."
   },
   "journey": {
     "eyebrow": "YOUR JOURNEY · TWO SEPARATE CROWNS",
@@ -801,5 +832,43 @@
     "archived": "archived",
     "archive": "Archive",
     "unarchive": "Unarchive"
+  },
+  "contentAdmin": {
+    "title": "Content",
+    "intro": "Review and tag the content library. Switching an item off stops new deals; nothing is deleted.",
+    "kind": "Kind",
+    "allKinds": "All kinds",
+    "review": "Review",
+    "toReview": "To review",
+    "reviewed": "Reviewed",
+    "all": "All",
+    "search": "Words in the text, or a source ref",
+    "reviewedTag": "reviewed",
+    "off": "off",
+    "edit": "Edit",
+    "previous": "Previous",
+    "next": "Next",
+    "editTitle": "Edit content item",
+    "save": "Save",
+    "cancel": "Cancel",
+    "fields": {
+      "title": "Title",
+      "body": "Text",
+      "insight": "Insight",
+      "items": "Squares / finds (one per line)",
+      "choices": "Choices (one per line)",
+      "answer": "Answer #",
+      "rooms": "Rooms",
+      "modes": "Modes",
+      "focus": "Focus",
+      "difficulty": "Difficulty",
+      "culture": "Culture",
+      "vibe": "Vibe",
+      "minAge": "Minimum age",
+      "alcohol": "Mentions alcohol",
+      "active": "On (can be dealt)",
+      "reviewed": "Reviewed",
+      "note": "Review note"
+    }
   }
 }
