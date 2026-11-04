@@ -87,6 +87,75 @@ CREATE FUNCTION public.add_trip_missions(p_trip uuid, p_texts text[]) RETURNS in
 
 
 --
+-- Name: content_text_safe(text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.content_text_safe(p_text text) RETURNS boolean
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO 'public'
+    AS $$ SELECT coalesce(p_text,'') !~* '(hangover|drunk|wasted|blackout|chang toast|starbucks|mcdonald|coca.cola|budweiser|nigg[a-z]*|fagg?[a-z]*|cunt[a-z]*|retard[a-z]*|rape[a-z]*|nazi[a-z]*|dress (up )?like (a|an|the) [a-z]+)' $$;
+
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: content_items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.content_items (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    kind text NOT NULL,
+    rooms text[] NOT NULL,
+    modes text[] NOT NULL,
+    focus text,
+    culture text,
+    vibe text,
+    difficulty text,
+    min_age integer DEFAULT 13 NOT NULL,
+    alcohol boolean DEFAULT false NOT NULL,
+    title text,
+    body text NOT NULL,
+    insight text,
+    choices text[] DEFAULT '{}'::text[] NOT NULL,
+    answer integer,
+    items text[] DEFAULT '{}'::text[] NOT NULL,
+    locale text DEFAULT 'en'::text NOT NULL,
+    source text DEFAULT 'curated'::text NOT NULL,
+    source_ref text DEFAULT (gen_random_uuid())::text NOT NULL,
+    reviewed boolean DEFAULT false NOT NULL,
+    review_note text,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT content_items_body_check CHECK (((length(body) >= 1) AND (length(body) <= 1000))),
+    CONSTRAINT content_items_check CHECK (((answer >= 0) AND (answer < cardinality(choices)))),
+    CONSTRAINT content_items_check1 CHECK (trip_private.content_text_safe(((((((((COALESCE(title, ''::text) || ' '::text) || body) || ' '::text) || COALESCE(insight, ''::text)) || ' '::text) || array_to_string(items, ' '::text)) || ' '::text) || array_to_string(choices, ' '::text)))),
+    CONSTRAINT content_items_choices_check CHECK ((cardinality(choices) <= 6)),
+    CONSTRAINT content_items_difficulty_check CHECK ((difficulty = ANY (ARRAY['easy'::text, 'medium'::text, 'hard'::text]))),
+    CONSTRAINT content_items_focus_check CHECK ((focus = ANY (ARRAY['food'::text, 'music'::text, 'language'::text, 'fashion'::text, 'holidays'::text, 'history'::text, 'art'::text, 'games'::text, 'manners'::text, 'folklore'::text, 'film'::text]))),
+    CONSTRAINT content_items_insight_check CHECK ((length(insight) <= 500)),
+    CONSTRAINT content_items_items_check CHECK ((cardinality(items) <= 16)),
+    CONSTRAINT content_items_kind_check CHECK ((kind = ANY (ARRAY['daily_discovery'::text, 'daily_card'::text, 'sealed_quest'::text, 'showcase'::text, 'airport_mission'::text, 'home_mission'::text, 'drop_bingo'::text, 'drop_scavenger'::text, 'drop_speed'::text, 'drop_photo'::text, 'trip_quest'::text, 'ws_quest'::text, 'journal_prompt'::text, 'wrapup_question'::text, 'flight_game'::text]))),
+    CONSTRAINT content_items_min_age_check CHECK ((min_age = ANY (ARRAY[13, 18, 21]))),
+    CONSTRAINT content_items_modes_check CHECK (((modes <@ ARRAY['trip'::text, 'at_home'::text, 'solo'::text]) AND (cardinality(modes) > 0))),
+    CONSTRAINT content_items_rooms_check CHECK ((rooms <@ ARRAY['trip'::text, 'window_seat'::text, 'explore_culture'::text, 'show_culture'::text, 'game_night'::text])),
+    CONSTRAINT content_items_title_check CHECK ((length(title) <= 120))
+);
+
+
+--
+-- Name: admin_content_items(text, text, boolean, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.admin_content_items(p_kind text DEFAULT NULL::text, p_query text DEFAULT NULL::text, p_reviewed boolean DEFAULT NULL::boolean, p_offset integer DEFAULT 0) RETURNS SETOF public.content_items
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.admin_content_items(p_kind, p_query, p_reviewed, p_offset) $$;
+
+
+--
 -- Name: admin_find_trips(text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -104,6 +173,16 @@ CREATE FUNCTION public.admin_find_users(p_query text) RETURNS TABLE(user_id uuid
     LANGUAGE sql STABLE
     SET search_path TO ''
     AS $$ SELECT * FROM trip_private.admin_find_users(p_query) $$;
+
+
+--
+-- Name: admin_save_content_item(uuid, jsonb); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.admin_save_content_item(p_id uuid, p_patch jsonb) RETURNS public.content_items
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.admin_save_content_item(p_id, p_patch) $$;
 
 
 --
@@ -485,6 +564,16 @@ CREATE FUNCTION public.claim_airport(p_trip uuid, p_date date, p_mission integer
 
 
 --
+-- Name: claim_drop_live(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.claim_drop_live(p_item uuid) RETURNS uuid
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.claim_drop_live(p_item) $$;
+
+
+--
 -- Name: claim_notifications(integer, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -774,10 +863,6 @@ CREATE FUNCTION public.culture_creator_badge(p_user uuid) RETURNS text
     SET search_path TO 'public'
     AS $$ SELECT trip_private.culture_creator_badge(p_user) $$;
 
-
-SET default_tablespace = '';
-
-SET default_table_access_method = heap;
 
 --
 -- Name: culture_exp_days; Type: TABLE; Schema: public; Owner: -
@@ -4101,6 +4186,28 @@ END $$;
 
 
 --
+-- Name: admin_content_items(text, text, boolean, integer); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.admin_content_items(p_kind text, p_query text, p_reviewed boolean, p_offset integer) RETURNS SETOF public.content_items
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE q text := '%' || replace(replace(btrim(coalesce(p_query, '')), '%', ''), '_', '') || '%';
+BEGIN
+  IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Admins only'; END IF;
+  RETURN QUERY
+    SELECT c.* FROM public.content_items c
+    WHERE (p_kind IS NULL OR c.kind = p_kind)
+      AND (p_reviewed IS NULL OR c.reviewed = p_reviewed)
+      AND (q = '%%' OR c.title ILIKE q OR c.body ILIKE q OR c.insight ILIKE q OR c.source_ref = btrim(p_query))
+    ORDER BY c.kind, c.reviewed, c.created_at, c.id
+    LIMIT 50 OFFSET greatest(coalesce(p_offset, 0), 0);
+END
+$$;
+
+
+--
 -- Name: admin_find_trips(text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -4147,6 +4254,39 @@ BEGIN
       AND (u.email ILIKE q OR pp.game_name ILIKE q OR pp.real_name ILIKE q OR u.id::text = btrim(p_query))
     ORDER BY u.created_at DESC
     LIMIT 50;
+END
+$$;
+
+
+--
+-- Name: admin_save_content_item(uuid, jsonb); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.admin_save_content_item(p_id uuid, p_patch jsonb) RETURNS public.content_items
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE c public.content_items; n public.content_items; v_bad text; v_keys text;
+BEGIN
+  IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Admins only'; END IF;
+  IF p_patch IS NULL OR jsonb_typeof(p_patch) <> 'object' OR p_patch = '{}'::jsonb THEN RAISE EXCEPTION 'Nothing to save'; END IF;
+  SELECT string_agg(k, ', ' ORDER BY k) INTO v_bad FROM jsonb_object_keys(p_patch) k
+  WHERE k NOT IN ('title', 'body', 'insight', 'items', 'choices', 'answer', 'rooms', 'modes', 'focus', 'culture', 'vibe',
+                  'difficulty', 'min_age', 'alcohol', 'reviewed', 'review_note', 'active');
+  IF v_bad IS NOT NULL THEN RAISE EXCEPTION 'These can''t be edited here: %', v_bad; END IF;
+  SELECT * INTO c FROM public.content_items WHERE id = p_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'That item doesn''t exist'; END IF;
+  n := jsonb_populate_record(c, p_patch);
+  UPDATE public.content_items
+  SET title = n.title, body = n.body, insight = n.insight, items = n.items, choices = n.choices, answer = n.answer,
+      rooms = n.rooms, modes = n.modes, focus = n.focus, culture = n.culture, vibe = n.vibe, difficulty = n.difficulty,
+      min_age = n.min_age, alcohol = n.alcohol, reviewed = n.reviewed, review_note = n.review_note, active = n.active,
+      updated_at = now()
+  WHERE id = p_id
+  RETURNING * INTO n;
+  SELECT string_agg(k, ', ' ORDER BY k) INTO v_keys FROM jsonb_object_keys(p_patch) k;
+  INSERT INTO public.admin_actions (actor, action, target_content, note) VALUES (auth.uid(), 'edit_content', p_id, left(v_keys, 500));
+  RETURN n;
 END
 $$;
 
@@ -4575,6 +4715,7 @@ BEGIN
   SELECT * INTO p FROM public.proofs WHERE id = p_proof FOR UPDATE;
   IF NOT FOUND OR NOT trip_private.is_trip_member(p.trip_id, auth.uid()) THEN RAISE EXCEPTION 'That proof isn''t in your trip'; END IF;
   IF p.user_id = auth.uid() THEN RAISE EXCEPTION 'You can''t approve your own proof'; END IF;
+  IF p.live THEN RAISE EXCEPTION 'This one is presented live at Game Night'; END IF;
   SELECT * INTO t FROM public.trips WHERE id = p.trip_id;
   SELECT * INTO s FROM public.trip_schedule WHERE id = p.schedule_id;
   IF t.has_minors AND p.photo_path IS NOT NULL AND NOT trip_private.is_leader(p.trip_id) THEN
@@ -5338,6 +5479,40 @@ INSERT INTO public.airport_claims(trip_id,day_date,user_id,mission,photo_path,gu
 
 
 --
+-- Name: claim_drop_live(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.claim_drop_live(p_item uuid) RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE s public.trip_schedule; t public.trips; v_id uuid;
+BEGIN
+  SELECT * INTO s FROM public.trip_schedule WHERE id = p_item;
+  IF NOT FOUND OR s.kind <> 'surprise_drop' OR NOT trip_private.is_trip_member(s.trip_id, auth.uid()) THEN
+    RAISE EXCEPTION 'That drop isn''t in your trip';
+  END IF;
+  IF now() < s.opens_at THEN RAISE EXCEPTION 'That drop hasn''t opened yet'; END IF;
+  IF now() >= s.closes_at THEN RAISE EXCEPTION 'This drop has closed'; END IF;
+  SELECT * INTO t FROM public.trips WHERE id = s.trip_id;
+  IF t.play_mode = 'solo'
+     OR (SELECT count(*) FROM public.trip_members m WHERE m.trip_id = s.trip_id AND m.status = 'approved') < 2 THEN
+    RAISE EXCEPTION 'Playing solo, send a photo instead';
+  END IF;
+  SELECT id INTO v_id FROM public.proofs WHERE schedule_id = p_item AND user_id = auth.uid() AND live;
+  IF FOUND THEN RETURN v_id; END IF;
+  IF EXISTS (SELECT 1 FROM public.proofs WHERE schedule_id = p_item AND user_id = auth.uid()) THEN
+    RAISE EXCEPTION 'You''ve already sent photos for this drop';
+  END IF;
+  INSERT INTO public.proofs (trip_id, user_id, schedule_id, part, source, body, live, crew_status, expires_at)
+  VALUES (s.trip_id, auth.uid(), p_item, 0, 'surprise_drop', 'Presenting it live at Game Night', true, 'waiting', 'infinity')
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END
+$$;
+
+
+--
 -- Name: claim_notifications(integer, uuid); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -5530,61 +5705,6 @@ IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Founder only'; END IF;
 RETURN QUERY SELECT f.kind, max(f.item_text), count(*) FILTER (WHERE f.vote=1)::int, count(*) FILTER (WHERE f.vote=-1)::int
   FROM public.content_feedback f GROUP BY f.kind, f.item_key ORDER BY count(*) DESC LIMIT 200;
 END $$;
-
-
---
--- Name: content_text_safe(text); Type: FUNCTION; Schema: trip_private; Owner: -
---
-
-CREATE FUNCTION trip_private.content_text_safe(p_text text) RETURNS boolean
-    LANGUAGE sql IMMUTABLE
-    SET search_path TO 'public'
-    AS $$ SELECT coalesce(p_text,'') !~* '(hangover|drunk|wasted|blackout|chang toast|starbucks|mcdonald|coca.cola|budweiser|nigg[a-z]*|fagg?[a-z]*|cunt[a-z]*|retard[a-z]*|rape[a-z]*|nazi[a-z]*|dress (up )?like (a|an|the) [a-z]+)' $$;
-
-
---
--- Name: content_items; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.content_items (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    kind text NOT NULL,
-    rooms text[] NOT NULL,
-    modes text[] NOT NULL,
-    focus text,
-    culture text,
-    vibe text,
-    difficulty text,
-    min_age integer DEFAULT 13 NOT NULL,
-    alcohol boolean DEFAULT false NOT NULL,
-    title text,
-    body text NOT NULL,
-    insight text,
-    choices text[] DEFAULT '{}'::text[] NOT NULL,
-    answer integer,
-    items text[] DEFAULT '{}'::text[] NOT NULL,
-    locale text DEFAULT 'en'::text NOT NULL,
-    source text DEFAULT 'curated'::text NOT NULL,
-    source_ref text DEFAULT (gen_random_uuid())::text NOT NULL,
-    reviewed boolean DEFAULT false NOT NULL,
-    review_note text,
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT content_items_body_check CHECK (((length(body) >= 1) AND (length(body) <= 1000))),
-    CONSTRAINT content_items_check CHECK (((answer >= 0) AND (answer < cardinality(choices)))),
-    CONSTRAINT content_items_check1 CHECK (trip_private.content_text_safe(((((((((COALESCE(title, ''::text) || ' '::text) || body) || ' '::text) || COALESCE(insight, ''::text)) || ' '::text) || array_to_string(items, ' '::text)) || ' '::text) || array_to_string(choices, ' '::text)))),
-    CONSTRAINT content_items_choices_check CHECK ((cardinality(choices) <= 6)),
-    CONSTRAINT content_items_difficulty_check CHECK ((difficulty = ANY (ARRAY['easy'::text, 'medium'::text, 'hard'::text]))),
-    CONSTRAINT content_items_focus_check CHECK ((focus = ANY (ARRAY['food'::text, 'music'::text, 'language'::text, 'fashion'::text, 'holidays'::text, 'history'::text, 'art'::text, 'games'::text, 'manners'::text, 'folklore'::text, 'film'::text]))),
-    CONSTRAINT content_items_insight_check CHECK ((length(insight) <= 500)),
-    CONSTRAINT content_items_items_check CHECK ((cardinality(items) <= 16)),
-    CONSTRAINT content_items_kind_check CHECK ((kind = ANY (ARRAY['daily_discovery'::text, 'daily_card'::text, 'sealed_quest'::text, 'showcase'::text, 'airport_mission'::text, 'home_mission'::text, 'drop_bingo'::text, 'drop_scavenger'::text, 'drop_speed'::text, 'drop_photo'::text, 'trip_quest'::text, 'ws_quest'::text, 'journal_prompt'::text, 'wrapup_question'::text, 'flight_game'::text]))),
-    CONSTRAINT content_items_min_age_check CHECK ((min_age = ANY (ARRAY[13, 18, 21]))),
-    CONSTRAINT content_items_modes_check CHECK (((modes <@ ARRAY['trip'::text, 'at_home'::text, 'solo'::text]) AND (cardinality(modes) > 0))),
-    CONSTRAINT content_items_rooms_check CHECK ((rooms <@ ARRAY['trip'::text, 'window_seat'::text, 'explore_culture'::text, 'show_culture'::text, 'game_night'::text])),
-    CONSTRAINT content_items_title_check CHECK ((length(title) <= 120))
-);
 
 
 --
@@ -6204,7 +6324,7 @@ BEGIN
     JOIN public.trip_schedule s ON s.id = p.schedule_id
     JOIN public.trips t ON t.id = p.trip_id
     LEFT JOIN public.content_items c ON c.id = s.content_item_id
-    WHERE p.trip_id = p_trip AND p.user_id <> auth.uid()
+    WHERE p.trip_id = p_trip AND p.user_id <> auth.uid() AND NOT p.live
       AND ((p.crew_status = 'waiting' AND p.expires_at > now())
            OR (s.kind = 'surprise_drop' AND s.variant = 'photo' AND s.closes_at > now()
                AND NOT EXISTS (SELECT 1 FROM public.proof_votes v WHERE v.proof_id = p.id AND v.voter_id = auth.uid())))
@@ -7142,7 +7262,10 @@ CREATE FUNCTION trip_private.drop_points(p_item uuid, p_user uuid) RETURNS integ
 DECLARE
   s public.trip_schedule; c public.content_items;
   v_marked int[]; v_n int; v_size int; v_lines int; v_bonus int := 0; v_place int; v_votes int; v_rank int;
+  v_live text;
 BEGIN
+  SELECT crew_status INTO v_live FROM public.proofs WHERE schedule_id = p_item AND user_id = p_user AND live;
+  IF FOUND THEN RETURN CASE WHEN v_live = 'approved' THEN 10 ELSE 0 END; END IF;
   SELECT * INTO s FROM public.trip_schedule WHERE id = p_item;
   SELECT * INTO c FROM public.content_items WHERE id = s.content_item_id;
   SELECT array_agg(part ORDER BY part) INTO v_marked FROM public.proofs
@@ -7161,14 +7284,14 @@ BEGIN
     WHEN 'speed' THEN
       SELECT x.place INTO v_place FROM (
         SELECT p.user_id, rank() OVER (ORDER BY p.created_at) AS place FROM public.proofs p
-        WHERE p.schedule_id = p_item AND p.crew_status IN ('approved', 'not_needed')) x
+        WHERE p.schedule_id = p_item AND p.crew_status IN ('approved', 'not_needed') AND NOT p.live) x
       WHERE x.user_id = p_user;
       v_bonus := CASE v_place WHEN 1 THEN 15 WHEN 2 THEN 10 WHEN 3 THEN 5 ELSE 0 END;
     WHEN 'photo' THEN
       SELECT x.r INTO v_rank FROM (
         SELECT p.user_id, dense_rank() OVER (ORDER BY (SELECT count(*) FROM public.proof_votes v WHERE v.proof_id = p.id) DESC) AS r,
                (SELECT count(*) FROM public.proof_votes v WHERE v.proof_id = p.id) AS votes
-        FROM public.proofs p WHERE p.schedule_id = p_item AND p.crew_status IN ('approved', 'not_needed')) x
+        FROM public.proofs p WHERE p.schedule_id = p_item AND p.crew_status IN ('approved', 'not_needed') AND NOT p.live) x
       WHERE x.user_id = p_user AND x.votes > 0;
       v_bonus := CASE v_rank WHEN 1 THEN 15 WHEN 2 THEN 8 ELSE 0 END;
     ELSE NULL;
@@ -7426,7 +7549,7 @@ CREATE FUNCTION trip_private.expire_proofs() RETURNS integer
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO ''
     AS $$
-DECLARE p record; n int := 0;
+DECLARE p record; n int := 0; v_live int;
 BEGIN
   FOR p IN UPDATE public.proofs SET crew_status = 'expired'
            WHERE crew_status = 'waiting' AND expires_at <= now()
@@ -7436,7 +7559,11 @@ BEGIN
     END IF;
     n := n + 1;
   END LOOP;
-  RETURN n;
+  UPDATE public.proofs x SET crew_status = 'expired'
+  WHERE x.live AND x.crew_status = 'waiting'
+    AND EXISTS (SELECT 1 FROM public.trip_crownings c WHERE c.trip_id = x.trip_id AND c.season = 'trip_season');
+  GET DIAGNOSTICS v_live = ROW_COUNT;
+  RETURN n + v_live;
 END
 $$;
 
@@ -9560,7 +9687,7 @@ CREATE FUNCTION trip_private.live_present(p_session uuid, p_presenter uuid) RETU
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO ''
     AS $$
-DECLARE l public.live_sessions; s public.trip_schedule; v_first boolean;
+DECLARE l public.live_sessions; s public.trip_schedule; v_first boolean; d record;
 BEGIN
   SELECT * INTO l FROM public.live_sessions WHERE id = p_session FOR UPDATE;
   IF NOT FOUND OR NOT trip_private.is_trip_member(l.trip_id, auth.uid()) THEN RAISE EXCEPTION 'Join this trip first'; END IF;
@@ -9570,6 +9697,13 @@ BEGIN
   v_first := NOT EXISTS (SELECT 1 FROM public.live_presents WHERE session_id = p_session AND presenter_id = p_presenter);
   INSERT INTO public.live_presents (session_id, presenter_id, voter_id) VALUES (p_session, p_presenter, auth.uid())
   ON CONFLICT DO NOTHING;
+
+  FOR d IN UPDATE public.proofs SET crew_status = 'approved', approved_by = auth.uid(), approved_at = now()
+           WHERE trip_id = l.trip_id AND user_id = p_presenter AND live AND crew_status = 'waiting'
+           RETURNING schedule_id LOOP
+    PERFORM trip_private.award_points(l.trip_id, p_presenter, 'trip_season', 'surprise_drop', d.schedule_id, 10,
+                                      'approved', now(), auth.uid());
+  END LOOP;
   IF NOT v_first THEN RETURN false; END IF;
 
   PERFORM trip_private.award_points(l.trip_id, p_presenter, l.season, 'game_night_present', l.id, 20, 'approved', now(), auth.uid());
@@ -14738,7 +14872,8 @@ BEGIN
   FOR d IN
     SELECT s.* FROM public.trip_schedule s
     WHERE s.kind = 'surprise_drop' AND s.settled_at IS NULL AND s.closes_at <= now()
-      AND NOT EXISTS (SELECT 1 FROM public.proofs x WHERE x.schedule_id = s.id AND x.crew_status = 'waiting' AND x.expires_at > now())
+      AND NOT EXISTS (SELECT 1 FROM public.proofs x WHERE x.schedule_id = s.id AND x.crew_status = 'waiting' AND x.expires_at > now()
+                        AND NOT x.live)
   LOOP
     FOR p IN SELECT DISTINCT user_id FROM public.proofs WHERE schedule_id = d.id LOOP
       v_points := trip_private.drop_points(d.id, p.user_id);
@@ -15306,6 +15441,9 @@ BEGIN
   END IF;
   IF now() < s.opens_at THEN RAISE EXCEPTION 'That drop hasn''t opened yet'; END IF;
   IF now() >= s.closes_at THEN RAISE EXCEPTION 'This drop has closed'; END IF;
+  IF EXISTS (SELECT 1 FROM public.proofs WHERE schedule_id = p_item AND user_id = auth.uid() AND live) THEN
+    RAISE EXCEPTION 'You''re presenting this one live';
+  END IF;
   SELECT * INTO c FROM public.content_items WHERE id = s.content_item_id;
   IF s.variant IN ('bingo', 'scavenger') THEN
     IF p_part IS NULL OR p_part < 0 OR p_part >= cardinality(c.items) THEN RAISE EXCEPTION 'Pick a square'; END IF;
@@ -16424,7 +16562,8 @@ CREATE TABLE public.admin_actions (
     target_user uuid,
     note text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT admin_actions_action_check CHECK ((action = ANY (ARRAY['disable_user'::text, 'enable_user'::text]))),
+    target_content uuid,
+    CONSTRAINT admin_actions_action_check CHECK ((action = ANY (ARRAY['disable_user'::text, 'enable_user'::text, 'edit_content'::text]))),
     CONSTRAINT admin_actions_note_check CHECK ((length(note) <= 500))
 );
 
@@ -18266,6 +18405,7 @@ CREATE TABLE public.proofs (
     expires_at timestamp with time zone NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     photo_removed_at timestamp with time zone,
+    live boolean DEFAULT false NOT NULL,
     CONSTRAINT proofs_ai_reason_check CHECK ((length(ai_reason) <= 300)),
     CONSTRAINT proofs_ai_status_check CHECK ((ai_status = ANY (ARRAY['not_needed'::text, 'pending'::text, 'pass'::text, 'unsure'::text, 'fail'::text, 'error'::text]))),
     CONSTRAINT proofs_body_check CHECK ((length(body) <= 500)),
@@ -23006,6 +23146,14 @@ CREATE TRIGGER wrapup_answers_archive_guard BEFORE INSERT OR UPDATE ON public.wr
 
 
 --
+-- Name: admin_actions admin_actions_target_content_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.admin_actions
+    ADD CONSTRAINT admin_actions_target_content_fkey FOREIGN KEY (target_content) REFERENCES public.content_items(id);
+
+
+--
 -- Name: age_guesses age_guesses_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -26867,6 +27015,22 @@ GRANT ALL ON FUNCTION public.add_trip_missions(p_trip uuid, p_texts text[]) TO s
 
 
 --
+-- Name: TABLE content_items; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.content_items TO service_role;
+
+
+--
+-- Name: FUNCTION admin_content_items(p_kind text, p_query text, p_reviewed boolean, p_offset integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.admin_content_items(p_kind text, p_query text, p_reviewed boolean, p_offset integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.admin_content_items(p_kind text, p_query text, p_reviewed boolean, p_offset integer) TO authenticated;
+GRANT ALL ON FUNCTION public.admin_content_items(p_kind text, p_query text, p_reviewed boolean, p_offset integer) TO service_role;
+
+
+--
 -- Name: FUNCTION admin_find_trips(p_query text); Type: ACL; Schema: public; Owner: -
 --
 
@@ -26882,6 +27046,15 @@ GRANT ALL ON FUNCTION public.admin_find_trips(p_query text) TO authenticated;
 REVOKE ALL ON FUNCTION public.admin_find_users(p_query text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.admin_find_users(p_query text) TO service_role;
 GRANT ALL ON FUNCTION public.admin_find_users(p_query text) TO authenticated;
+
+
+--
+-- Name: FUNCTION admin_save_content_item(p_id uuid, p_patch jsonb); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.admin_save_content_item(p_id uuid, p_patch jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.admin_save_content_item(p_id uuid, p_patch jsonb) TO authenticated;
+GRANT ALL ON FUNCTION public.admin_save_content_item(p_id uuid, p_patch jsonb) TO service_role;
 
 
 --
@@ -27204,6 +27377,15 @@ GRANT ALL ON FUNCTION public.checkout_beta(p_trip uuid) TO service_role;
 REVOKE ALL ON FUNCTION public.claim_airport(p_trip uuid, p_date date, p_mission integer, p_photo text, p_guess text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.claim_airport(p_trip uuid, p_date date, p_mission integer, p_photo text, p_guess text) TO authenticated;
 GRANT ALL ON FUNCTION public.claim_airport(p_trip uuid, p_date date, p_mission integer, p_photo text, p_guess text) TO service_role;
+
+
+--
+-- Name: FUNCTION claim_drop_live(p_item uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.claim_drop_live(p_item uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.claim_drop_live(p_item uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.claim_drop_live(p_item uuid) TO service_role;
 
 
 --
@@ -30171,6 +30353,15 @@ GRANT ALL ON FUNCTION trip_private.add_trip_missions(p_trip uuid, p_texts text[]
 
 
 --
+-- Name: FUNCTION admin_content_items(p_kind text, p_query text, p_reviewed boolean, p_offset integer); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.admin_content_items(p_kind text, p_query text, p_reviewed boolean, p_offset integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.admin_content_items(p_kind text, p_query text, p_reviewed boolean, p_offset integer) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.admin_content_items(p_kind text, p_query text, p_reviewed boolean, p_offset integer) TO service_role;
+
+
+--
 -- Name: FUNCTION admin_find_trips(p_query text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -30186,6 +30377,15 @@ GRANT ALL ON FUNCTION trip_private.admin_find_trips(p_query text) TO service_rol
 REVOKE ALL ON FUNCTION trip_private.admin_find_users(p_query text) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.admin_find_users(p_query text) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.admin_find_users(p_query text) TO service_role;
+
+
+--
+-- Name: FUNCTION admin_save_content_item(p_id uuid, p_patch jsonb); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.admin_save_content_item(p_id uuid, p_patch jsonb) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.admin_save_content_item(p_id uuid, p_patch jsonb) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.admin_save_content_item(p_id uuid, p_patch jsonb) TO service_role;
 
 
 --
@@ -30700,6 +30900,15 @@ GRANT ALL ON FUNCTION trip_private.claim_airport(p_trip uuid, p_date date, p_mis
 
 
 --
+-- Name: FUNCTION claim_drop_live(p_item uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.claim_drop_live(p_item uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.claim_drop_live(p_item uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.claim_drop_live(p_item uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION claim_notifications(p_limit integer, p_user uuid); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -30783,13 +30992,6 @@ GRANT ALL ON FUNCTION trip_private.confirm_game_nights(p_trip uuid, p_option int
 
 REVOKE ALL ON FUNCTION trip_private.content_feedback_summary() FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.content_feedback_summary() TO authenticated;
-
-
---
--- Name: TABLE content_items; Type: ACL; Schema: public; Owner: -
---
-
-GRANT ALL ON TABLE public.content_items TO service_role;
 
 
 --
