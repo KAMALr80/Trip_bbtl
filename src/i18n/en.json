@@ -432,7 +432,12 @@
     "speedDone": "Or say how you finished",
     "send": "Send",
     "scored": "Scored after the drop closes and the crew checks the photos.",
-    "error": "That didn't work: {{reason}}"
+    "error": "That didn't work: {{reason}}",
+    "presentLive": "I'll present it live instead",
+    "presentLiveHint": "Show the crew at the next Game Night Live. A 👍 there scores 10 pts (no photos needed, no bonus).",
+    "liveWaiting": "You're presenting this one live. A 👍 at the next Game Night Live scores 10 pts.",
+    "liveApproved": "Presented live ✓ 10 pts",
+    "liveExpired": "Not presented before the crown was decided, so no points."
   },
   "journey": {
     "eyebrow": "YOUR JOURNEY · TWO SEPARATE CROWNS",

@@ -4363,6 +4363,7 @@ export type Database = {
           crew_status: string;
           expires_at: string;
           id: string;
+          live: boolean;
           part: number;
           photo_path: string | null;
           photo_removed_at: string | null;
@@ -4383,6 +4384,7 @@ export type Database = {
           crew_status?: string;
           expires_at: string;
           id?: string;
+          live?: boolean;
           part?: number;
           photo_path?: string | null;
           photo_removed_at?: string | null;
@@ -4402,6 +4404,7 @@ export type Database = {
           crew_status?: string;
           expires_at?: string;
           id?: string;
+          live?: boolean;
           part?: number;
           photo_path?: string | null;
           photo_removed_at?: string | null;
@@ -7344,6 +7347,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      claim_drop_live: { Args: { p_item: string }; Returns: string };
       claim_notifications: {
         Args: { p_limit?: number; p_user?: string };
         Returns: {
