@@ -48,8 +48,9 @@ the new engine. What's left of M6 needs staging, production, real crews or a law
 1. **Staging first** (owner steps §1): then M4-10, M6-01's labelled-photo run, M6-06's full-trip run,
    M6-08 performance and monitoring, and M6-10 regression + crew beta.
 2. **M4-10**, the real-phone checklist, once staging exists (step 12 covers wrap-up week and the postcard).
-3. **M3 leftovers:** "present live" as Surprise Drop proof (R-343); the content admin list/edit
-   screen (M3-02). AI tailoring of content waits for `AI_API_KEY`. The ticket-stub card designs
+3. **M3 leftovers:** "present live" as Surprise Drop proof (R-343) and the content admin list/edit
+   screen (M3-02) are built (Nov 3; R-343 uses the Q29 defaults, founder to confirm). AI tailoring of
+   content waits for `AI_API_KEY`. The ticket-stub card designs
    (M3-05, M3-09) and the luggage-tag crown celebration (M3-11) wait for the designer.
 4. **Cleanup that can be slotted in anywhere:** move the 52 retired tables to `legacy_archive` (M1-08,
    M3-16), delete the unreachable old setup code (M2-05), and move the remaining strings into the
