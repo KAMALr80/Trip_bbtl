@@ -70,6 +70,12 @@ export default defineConfig(({ command, mode }) => {
         "react/jsx-dev-runtime",
       ],
     },
-    server: { host: true, port: 8080 }, // all addresses; "::" fails on hosts without IPv6
+    server: {
+      host: true, // all addresses; "::" fails on hosts without IPv6
+      port: 8080,
+      // A build writes .output while the dev server runs; watching it crashes the watcher on
+      // Windows (EBUSY). Vite keeps its own default ignores alongside this.
+      watch: { ignored: ["**/.output/**"] },
+    },
   };
 });
