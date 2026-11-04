@@ -78,9 +78,6 @@
     "readyMade": "Start from ready-made cards · free",
     "readyMadeHint": "You get ready-made {{label}} cards to edit or replace. No AI credits used."
   },
-  "roomSetup": {
-    "preflightDays": "Pre-Flight warm-up days before you go (optional)"
-  },
   "home": {
     "gate": "gate"
   },
@@ -247,6 +244,35 @@
   "join": {
     "role": "Your role this trip",
     "noRole": "Pick later"
+  },
+  "tripSheets": {
+    "joinLabel": "Join a trip",
+    "liveLabel": "Your trip is live",
+    "close": "Close",
+    "notFound": "That code wasn't found. Check it and try again.",
+    "yourTrip": "Your trip",
+    "waitingRoom": "You’re in the waiting room. Your Captain will let you in if approval is needed.",
+    "home": "Home",
+    "planStep": "STEP 2 OF 3",
+    "planTitle": "Your game plan",
+    "planIntro": "How should the pre-trip game nights run? You can change this any time in Captain Tools.",
+    "planSkip": "Skip for now — set it later",
+    "inviteStep": "STEP 3 OF 3 · INVITE YOUR SQUAD",
+    "official": "CAPTAIN, IT'S OFFICIAL",
+    "liveTitle": "Your trip is live!",
+    "sendInvite": "Send the invite to your favorite people.",
+    "yourCode": "YOUR JOIN CODE",
+    "copied": "Copied!",
+    "copyLink": "Copy link",
+    "share": "Share",
+    "seeTrip": "See your trip",
+    "joinTitle": "Join with Code",
+    "codeLabel": "INVITE CODE",
+    "codeAria": "Invite code",
+    "codePlaceholder": "JOIN CODE",
+    "joining": "YOU'RE JOINING",
+    "joinBusy": "Joining...",
+    "joinButton": "Join room"
   },
   "phases": {
     "preflight": "Pre-Flight",

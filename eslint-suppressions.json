@@ -395,14 +395,6 @@
       "count": 1
     }
   },
-  "src/features/setup/CultureA2eSetup.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    },
-    "no-restricted-syntax": {
-      "count": 28
-    }
-  },
   "src/features/setup/GamePlanPicker.tsx": {
     "no-restricted-imports": {
       "count": 1
@@ -419,9 +411,6 @@
   "src/features/setup/TripSheets.tsx": {
     "no-restricted-imports": {
       "count": 1
-    },
-    "no-restricted-syntax": {
-      "count": 52
     }
   },
   "src/features/trip/ArchivedTrip.tsx": {
