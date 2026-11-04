@@ -801,5 +801,43 @@
     "archived": "archived",
     "archive": "Archive",
     "unarchive": "Unarchive"
+  },
+  "contentAdmin": {
+    "title": "Content",
+    "intro": "Review and tag the content library. Switching an item off stops new deals; nothing is deleted.",
+    "kind": "Kind",
+    "allKinds": "All kinds",
+    "review": "Review",
+    "toReview": "To review",
+    "reviewed": "Reviewed",
+    "all": "All",
+    "search": "Words in the text, or a source ref",
+    "reviewedTag": "reviewed",
+    "off": "off",
+    "edit": "Edit",
+    "previous": "Previous",
+    "next": "Next",
+    "editTitle": "Edit content item",
+    "save": "Save",
+    "cancel": "Cancel",
+    "fields": {
+      "title": "Title",
+      "body": "Text",
+      "insight": "Insight",
+      "items": "Squares / finds (one per line)",
+      "choices": "Choices (one per line)",
+      "answer": "Answer #",
+      "rooms": "Rooms",
+      "modes": "Modes",
+      "focus": "Focus",
+      "difficulty": "Difficulty",
+      "culture": "Culture",
+      "vibe": "Vibe",
+      "minAge": "Minimum age",
+      "alcohol": "Mentions alcohol",
+      "active": "On (can be dealt)",
+      "reviewed": "Reviewed",
+      "note": "Review note"
+    }
   }
 }

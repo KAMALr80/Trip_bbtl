@@ -44,6 +44,7 @@ export type Database = {
           created_at: string;
           id: number;
           note: string | null;
+          target_content: string | null;
           target_user: string | null;
         };
         ComputedFields: never;
@@ -53,6 +54,7 @@ export type Database = {
           created_at?: string;
           id?: never;
           note?: string | null;
+          target_content?: string | null;
           target_user?: string | null;
         };
         Update: {
@@ -61,9 +63,18 @@ export type Database = {
           created_at?: string;
           id?: never;
           note?: string | null;
+          target_content?: string | null;
           target_user?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "admin_actions_target_content_fkey";
+            columns: ["target_content"];
+            isOneToOne: false;
+            referencedRelation: "content_items";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       age_guesses: {
         Row: {
@@ -7065,6 +7076,41 @@ export type Database = {
       };
       add_checkin_tasks: { Args: { p_tasks: Json; p_trip: string }; Returns: number };
       add_trip_missions: { Args: { p_texts: string[]; p_trip: string }; Returns: number };
+      admin_content_items: {
+        Args: { p_kind?: string; p_offset?: number; p_query?: string; p_reviewed?: boolean };
+        Returns: {
+          active: boolean;
+          alcohol: boolean;
+          answer: number | null;
+          body: string;
+          choices: string[];
+          created_at: string;
+          culture: string | null;
+          difficulty: string | null;
+          focus: string | null;
+          id: string;
+          insight: string | null;
+          items: string[];
+          kind: string;
+          locale: string;
+          min_age: number;
+          modes: string[];
+          review_note: string | null;
+          reviewed: boolean;
+          rooms: string[];
+          source: string;
+          source_ref: string;
+          title: string | null;
+          updated_at: string;
+          vibe: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "content_items";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       admin_find_trips: {
         Args: { p_query: string };
         Returns: {
@@ -7095,6 +7141,41 @@ export type Database = {
           trips: number;
           user_id: string;
         }[];
+      };
+      admin_save_content_item: {
+        Args: { p_id: string; p_patch: Json };
+        Returns: {
+          active: boolean;
+          alcohol: boolean;
+          answer: number | null;
+          body: string;
+          choices: string[];
+          created_at: string;
+          culture: string | null;
+          difficulty: string | null;
+          focus: string | null;
+          id: string;
+          insight: string | null;
+          items: string[];
+          kind: string;
+          locale: string;
+          min_age: number;
+          modes: string[];
+          review_note: string | null;
+          reviewed: boolean;
+          rooms: string[];
+          source: string;
+          source_ref: string;
+          title: string | null;
+          updated_at: string;
+          vibe: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "content_items";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       adult_badge: { Args: { p_trip: string; p_user: string }; Returns: boolean };
       advance_play_phase: { Args: { p_current: number; p_trip: string }; Returns: number };
