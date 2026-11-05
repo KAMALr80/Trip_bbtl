@@ -1,6 +1,6 @@
 # Fixes and regression report
 
-**Date:** Nov 5, 2026 · **Base:** `main` at `3d2bfcd`. The fixes in the first table were committed as `4c442c9` on `audit-fixes` and merged into `main` by PR #3 (`50b4e21`); CI passed on the PR and again after the merge. The final-verification changes further down are on the `final-verification` branch and **not merged yet**.
+**Date:** Nov 5, 2026 · **Base:** `main` at `3d2bfcd`. The fixes in the first table were committed as `4c442c9` on `audit-fixes` and merged into `main` by PR #3 (`50b4e21`); CI passed on the PR and again after the merge. The final-verification changes further down were merged by PR #4 (`ec98cef`, from commit `7ee8653`); CI passed on the PR and after the merge.
 
 ## Fixes
 
@@ -19,7 +19,7 @@
 
 **Not changed:** application behaviour beyond B-09, migrations, the seed, the schema, RLS, dependencies, environment files and user data.
 
-## Final verification (Nov 5, after PR #3, branch `final-verification`, not merged yet)
+## Final verification (Nov 5, after PR #3; merged by PR #4)
 
 | Bug | Files | Change |
 |---|---|---|
@@ -62,5 +62,5 @@ The final numbers are in [TESTING_REPORT.md](TESTING_REPORT.md#final-verificatio
 ## Rollback
 
 - **The audit fixes** are merged. To undo them, revert `4c442c9` in a new pull request; don't rewrite `main`'s history.
-- **The final-verification changes** aren't merged: close their pull request, or revert their commit in a new one.
+- **The final-verification changes** are merged too: revert `7ee8653` in a new pull request.
 - Nothing was migrated, and no database data changed.

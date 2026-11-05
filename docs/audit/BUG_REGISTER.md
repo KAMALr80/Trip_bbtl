@@ -1,6 +1,6 @@
 # Bug register
 
-**Date:** Nov 5, 2026 · **Code:** `main` at `50b4e21`: the audit fixes, committed as `4c442c9` and merged by PR #3, with CI passing on the PR and after the merge. The final-verification changes (B-12, B-14 and these doc updates) are on the `final-verification` branch, waiting for PR review (not merged yet).
+**Date:** Nov 5, 2026 · **Code:** `main` at `ec98cef` (PRs #1–#4 merged; CI passed on PR #4 and after its merge). The Phase 2 review the same day (B-16, B-17, the dependency table, decision notes) changed documentation only: no code, dependency or setting.
 
 Severity scale:
 - **P0:** data loss, account compromise or unauthorized access.
@@ -8,15 +8,15 @@ Severity scale:
 - **P2:** important but contained.
 - **P3:** minor, test infrastructure or polish.
 
-**Totals:** 15 findings. P0: 0 · P1: 0 · P2: 2 · P3: 13. **Fixed: 6** (B-08 to B-11 merged by PR #3; B-12 and B-14 in the final verification, on `final-verification`, not merged yet). **Open: 9.** Section B lists potential risks and missing features separately; they aren't counted as bugs.
+**Totals:** 17 findings. P0: 0 · P1: 0 · P2: 3 · P3: 14. **Fixed: 6** (B-08 to B-11 merged by PR #3; B-12 and B-14 by PR #4). **Open: 11.** Section B lists potential risks and missing features separately; they aren't counted as bugs.
 
 ## A. Confirmed findings
 
 | ID | Sev | Module | Status |
 |---|---|---|---|
 | B-01 | P2 | Dependencies | Open: needs upgrade approval |
-| B-02 | P2 | Repository process | Open: CI not required yet (owner) |
-| B-03 | P3 | Server functions | Open: proposal |
+| B-02 | P2 | Repository process | Open: owner adds required checks (steps below) |
+| B-03 | P3 | Server functions | Open: verified safe rename, needs approval |
 | B-04 | P3 | Lint | Open: existing debt |
 | B-05 | P3 | Local seed / pgTAP | Open: by design |
 | B-06 | P3 | Formatting | Open: existing debt |
@@ -25,26 +25,41 @@ Severity scale:
 | B-09 | P3 | App shell | **Fixed** |
 | B-10 | P3 | E2E infrastructure | **Fixed** |
 | B-11 | P3 | Server setup errors | **Fixed** |
-| B-12 | P3 | `.gitignore` | **Fixed** (not merged yet) |
+| B-12 | P3 | `.gitignore` | **Fixed** (PR #4) |
 | B-13 | P3 | Local tooling | Open: environment |
-| B-14 | P3 | Unit tests | **Fixed** (not merged yet) |
-| B-15 | P3 | AI proof check | Open: proposal (needs `AI_API_KEY` to verify) |
+| B-14 | P3 | Unit tests | **Fixed** (PR #4) |
+| B-15 | P3 | AI SDK message parts | Open: fix verified offline, needs approval |
+| B-16 | P3 | AI proof check cost | Open: fix verified offline, needs approval |
+| B-17 | P2 | Sign-up email on hosted Supabase | Open: to verify on staging |
 
 ### B-01 · P2 · Dependency advisories
-- **Steps to reproduce:** `bun audit`.
-- **Expected:** no high-severity advisories in direct dependencies.
-- **Actual:** 35 advisories (14 high, 16 moderate, 5 low).
-  - **Direct:** `zod@3.25.76`, "Zod can exhaust memory while validating oversized constrained collections" (fixed in 4.6.6).
-  - **Transitive, mostly build and dev tools:** `undici` and `ws` via `wrangler` / `miniflare` / `nitro`, plus others.
-  - **`sharp@0.34.5`** (via `wrangler > miniflare` and `nitro > env-runner > miniflare`): three high advisories in its bundled libvips, libheif and librsvg (fixed in 0.35.5). Miniflare is the local Worker simulator (`wrangler dev`, the dev server) and isn't part of the deployed Worker. No app code or script uses `sharp`.
-  - Re-checked Nov 5 after PR #3: still 35 (14 high, 16 moderate, 5 low).
-- **Root cause:** older dependency ranges. Moving `zod` 3 → 4 is a major upgrade (M6 audit S6, still open).
+- **Steps to reproduce:** `bun audit` (or `bun audit --json`).
+- **Actual:** 35 advisories (14 high, 16 moderate, 5 low) in 5 packages. Re-checked Nov 5 on `ec98cef`.
+- **Analysis (Phase 2, Nov 5):** paths from `bun why`; production exposure checked against the built Worker in `.output/server`.
+
+| Package | Installed | Advisories (high / moderate / low) | Vulnerable | Fixed in | Comes from | Prod or dev | Exposure here |
+|---|---|---|---|---|---|---|---|
+| `zod` | 3.25.76 | 1 / 0 / 0 (GHSA-mrhx-c7xc-m3w5, memory exhaustion on oversized constrained collections) | < 4.6.6 | 4.6.6 (major 3 → 4) | **direct** (`^3.25.76`) | **production** | Authenticated server functions validate client input with zod. Two inputs are arrays with a maximum: `culture-exp.functions.ts:12` and `:90`. A signed-in user could send an oversized body and exhaust a Worker isolate's memory. It needs an account and affects availability, not data |
+| `undici` | 7.14.0 | 9 / 14 / 5 | 7.0.0 – < 7.30.1 | 7.30.1 | `wrangler@4.59.1` → `miniflare@4.20260111.0` (exact pin); also `nitro` → `env-runner` → `miniflare` | dev | **None in production**: not in the Worker bundle. Used by the local Worker simulator only. The app's own `undici` (through `ai`) is 7.30.1, already fixed, and is only a Node fallback; Workers use the built-in `fetch` |
+| `sharp` | 0.34.5 | 3 / 0 / 0 (libvips, libheif, librsvg) | < 0.35.5 | 0.35.5 | `miniflare` | dev | **None in production**: not in the bundle, and no app code or script uses it |
+| `ws` | 8.18.0 | 1 / 1 / 0 | < 8.21.0 | 8.21.0 | `miniflare` (exact pin) | dev | **None in production** |
+| `minimatch` | 10.2.6 | 0 / 1 / 0 | 7.0.0 – < 11.0.1 | 11.0.1 (major) | `typescript-eslint@8.65.0` → `typescript-estree` | dev (lint) | Lint only, on the repo's own glob patterns. The latest `typescript-eslint` (8.72.1) still requires `minimatch@^10`, so no upgrade fixes it yet |
+
+- **Why `bun audit fix` won't help:** `miniflare` pins `undici` and `ws` exactly. `sharp`, `zod` and `minimatch` need a new minor-zero or major version, which a range-respecting fix can't pick. It wasn't run.
+- **Remediation, in priority order** (each needs approval; none was done):
+  1. **`zod` 3 → 4** (the only production exposure; before public launch, ideally before the beta).
+     - Scope: 17 files import zod.
+     - Zod 4 behaviour changes that apply here: 14 `z.string().uuid()` (Zod 4 checks the RFC version and variant; of the 29 UUID literals in `e2e`, `src` and the seed, only the nil UUID is non-RFC), 4 `.catch()`, 8 `z.infer`.
+     - Not used: `z.record`, `errorMap`, `message:`, `nativeEnum`, `zodResolver`. `@hookform/resolvers` accepts Zod 4. `miniflare` keeps its own Zod 3 copy.
+     - Tests: typecheck, unit, mocked E2E, build. Breaking-change risk: low to medium.
+  2. **`wrangler` 4.59.1 → 4.158.0** (fixes 33: all of `undici`, `sharp` and `ws`). It brings `miniflare@5.20261104.0-beta` (`undici` 7.30.1, `ws` 8.21.0, `sharp` 0.35.5) and `esbuild` 0.28.2.
+     - Risks: `miniflare` 5 is a beta, and `nitro`'s `env-runner` declares an optional peer `miniflare@^4.20260515.0` (the installed 4.20260111.0 doesn't satisfy it either).
+     - Tests: build, PWA E2E (`wrangler dev`), the dev server, `scripts/deploy.sh staging check`. Breaking-change risk: medium.
+     - The latest `miniflare` 4 (4.20260730.0) is only a partial fix: it still has `undici` 7.28.0 and `sharp` 0.35.2.
+     - Exposure is local tooling only, so this can follow the Zod upgrade.
+  3. **`minimatch`:** accept for now (lint-only). Re-check when `typescript-eslint` moves to `minimatch@11`.
 - **Files:** `package.json`, `bun.lock`.
-- **Proposed fix:**
-  - Run `bun audit fix`, which stays within the current ranges, then re-run every suite.
-  - Plan the zod 4 migration separately: 17 files import zod (27 `z.object` schemas), plus `@hookform/resolvers`.
-- **Regression tests:** the full suite. Server-function inputs are covered by E2E.
-- **Status:** not done. Dependency upgrades need approval.
+- **Status:** analysed; no dependency changed.
 
 ### B-02 · P2 · Pull requests are merged before CI finishes
 - **Steps to reproduce:**
@@ -56,17 +71,46 @@ Severity scale:
 - **Proposed fix:** GitHub → Settings → Branches → protect `main`, and require the three CI jobs.
 - **Update (Nov 5, after PR #3):** `main` now has a repository ruleset. GitHub's public API shows `protected: true` with two rules, `deletion` and `non_fast_forward`, so `main` can't be deleted or force-pushed. It has **no required status checks** and no required pull request, so a PR can still be merged before CI finishes.
 - **Remaining fix:** add "Require status checks to pass" to the ruleset with the three jobs: `Web (typecheck, lint, tests, build)`, `Database (migrations + pgTAP)` and `Supabase local stack (real pgTAP)`. Optionally, also require a pull request.
+- **Verified (Phase 2, Nov 5, public API):**
+  - The ruleset is "Protect main branch" (id 26611317): enforcement `active`, target `~DEFAULT_BRANCH` (= `main`), rules `deletion` and `non_fast_forward`.
+  - The three check names are exactly as above, reported by the GitHub Actions app (id 15368) on `ec98cef`.
+  - It wasn't changed here: that needs a signed-in repository admin, and the session has no GitHub API access.
+- **Steps for the owner (GitHub web UI):**
+  1. Open https://github.com/KAMALr80/Trip_bbtl/settings/rules/26611317.
+  2. Leave **Enforcement status** Active, **Target branches** "Default branch", and **Restrict deletions** and **Block force pushes** ticked.
+  3. Tick **Require status checks to pass** → **Add checks** → add the three names above. Where it asks for a source, pick **GitHub Actions**, so no other app can report the same name.
+  4. Leave **Require branches to be up to date before merging** off. Turning it on means re-running CI after every change to `main`.
+  5. Optional: **Require a pull request before merging**, with 0 required approvals (one developer; approvals would block self-merges). Even without it, required checks block direct pushes, because checks only run after a push.
+  6. Check the **Bypass list**. Leave it empty if the rules should also apply to admins.
+  7. **Save changes**.
+- **How to check it worked:**
+  - On the next PR, the merge button stays disabled until all three jobs pass.
+  - `https://api.github.com/repos/KAMALr80/Trip_bbtl/rules/branches/main` lists `required_status_checks`.
+- **Note:** CI cancels a superseded run (`cancel-in-progress: true`). A cancelled required check blocks the merge until the next run passes.
 - **Regression tests:** none (configuration).
 
 ### B-03 · P3 · `createServerFn().inputValidator()` is deprecated
 - **Steps to reproduce:** `bun run dev`. The dev log warns: "`inputValidator()` is deprecated. Use `createServerFn().validator()` instead." Seen in `src/lib/proof-check.functions.ts:11` and `src/lib/guide.functions.ts:7`.
 - **Root cause:** a TanStack Start API rename. It's used 19 times in 14 files under `src/lib/*.functions.ts`.
-- **Proposed fix:** a mechanical rename to `.validator()`, then re-run E2E and the build. Not done here: it touches every server function and has no functional benefit today.
+- **Verified (Phase 2):** this is a maintenance issue, not a bug, and the rename is safe on the installed versions (`@tanstack/react-start` 1.168.60).
+  - At runtime `validator` and `inputValidator` are the same function (`start-client-core/dist/esm/createServerFn.js:34–35`).
+  - The compiler handles both in one loop, which keeps validators out of the client bundle (`start-plugin-core/dist/esm/start-compiler/handleCreateServerFn.js:137`). Only `inputValidator` warns.
+- **Proposed fix:** rename the 19 calls. As a regression guard, an ESLint `no-restricted-syntax` rule for `.inputValidator(` stops it coming back.
+  - Then run typecheck, build (the warning should be gone) and mocked E2E.
+  - Not done: it waits for approval.
 
 ### B-04 · P3 · 104 ESLint warnings
 - **Steps to reproduce:** `npx eslint .`.
-- **Actual:** 57 `react-hooks/exhaustive-deps` and 47 `react-refresh/only-export-components`. All existed before this audit, and CI runs `--quiet`, which shows errors only.
-- **Proposed fix:** handle them screen by screen as each screen is touched. Silencing the hook warnings in bulk could hide real stale-closure bugs.
+- **Actual:** 104 warnings in 50 files. All existed before this audit, and CI runs `--quiet`, which shows errors only.
+  - **47 `react-refresh/only-export-components`:** these only affect hot reload in development, not users.
+  - **57 `react-hooks/exhaustive-deps`:**
+    - 50 missing dependencies;
+    - 3 complex expressions (`CultureExperiences.tsx:183`, `Inspiration.tsx:263` and `:277`);
+    - 3 `true` literals in a dependency list (`CrownCelebration.tsx:88`, `Seasons.tsx:240` and `:771`);
+    - 1 unnecessary dependency (`Season.tsx:24`).
+  - Most are in `AppShell.tsx` (11) and `Seasons.tsx` (8).
+- **Classification:** maintenance. None was shown to be a user-facing bug, but a missing dependency can mean a stale value, so each needs a look rather than a bulk fix.
+- **Proposed fix:** handle them screen by screen as each screen is touched, with a test for any real stale-value bug found. The 3 `true` literals and the unnecessary dependency are the quickest. Don't silence the rule in bulk.
 
 ### B-05 · P3 · The local seed is date-relative, so `07_seed` fails on a long-lived local stack
 - **Steps to reproduce:** `supabase test db` on a stack whose seed was applied days ago. It fails with "Airport Missions have closed".
@@ -82,7 +126,7 @@ Severity scale:
 ### B-07 · P3 · Five unused files, one of them an unfinished offline feature
 - **Steps to reproduce:** `npx knip@5 --include files`.
 - **Actual:**
-  - `src/features/offline/OfflineTripCards.tsx` (and `src/lib/offline-trip-content.ts`, which only it uses) is never rendered. Git history shows no `<OfflineTripCards` since the first commit. `src/pwa/sw-plan.ts:66` still precaches its art, about 3 MB of flight assets.
+  - `src/features/offline/OfflineTripCards.tsx` (and `src/lib/offline-trip-content.ts`, which only it uses) is never rendered. Git history shows no `<OfflineTripCards` since the first commit. `src/pwa/sw-plan.ts:66` lists it in `FLIGHT_GAME_SOURCES`, but it imports no images. *Correction (Phase 2):* this register used to say it precached about 3 MB of art; that art belongs to the other flight games, so removing it wouldn't shrink the precache.
   - Also unused: `src/features/passport/StampBadge.tsx`, `src/features/play/PhaseCountdown.tsx` and `src/hooks/use-mobile.tsx` (only the unused shadcn sidebar imports it).
 - **Expected:** [`dev-docs/01-current-state.md:145`](../../dev-docs/01-current-state.md) and M4 list offline trip cards as part of offline flight play.
 - **Proposed fix:** a product decision: mount `OfflineTripCards` on the offline Play screen, or delete it and remove it from `FLIGHT_GAME_SOURCES`. Nothing was deleted without approval.
@@ -121,7 +165,7 @@ Severity scale:
 - **Fix:** the messages now name the missing variables and `.env.example`, like `client.ts` already did.
 - **Regression:** typecheck, build, E2E.
 
-### B-12 · P3 · FIXED (not merged yet) · `.gitignore` has duplicate entries
+### B-12 · P3 · FIXED (PR #4) · `.gitignore` has duplicate entries
 - **Actual:** `supabase/.temp/` was listed twice, with empty lines around it. `.output` and `.output/` are both listed, too. This came from the owner's own edit on Nov 4.
 - **Fix (final verification):** removed the second `supabase/.temp/` and the extra empty lines.
   - `.output` (line 13) already covers `.output/` (with its "Generated build output" comment). Both were kept: the second is harmless and documents the build folder.
@@ -132,11 +176,13 @@ Severity scale:
   ```
   bun --bun node_modules/@playwright/test/cli.js install chromium
   ```
-  Using Node 22/24 LTS is recommended.
+  - **Root cause:** not proven; it's the Node 26 runtime on this machine, not the app.
+  - **What's missing:** nothing pins Node. There's no `engines` field and no `.nvmrc`, and CI doesn't run `setup-node`, so it uses the runner's default. The README asks for Node 22.
+  - **Minimal fix (needs approval):** add `.nvmrc` with `22`. The Bun workaround is already in the README.
 - **The local `supabase_vector` container restarts in a loop.** It only collects logs, and the app doesn't need it.
 - **`vite-tsconfig-paths` takes 45–92 % of build plugin time.** Vite now resolves tsconfig paths itself (`resolve.tsconfigPaths`), so the plugin could be replaced. This is an optimisation proposal, not done.
 
-### B-14 · P3 · FIXED (not merged yet) · A unit test depended on DNS
+### B-14 · P3 · FIXED (PR #4) · A unit test depended on DNS
 - **Steps to reproduce:** `bun run test` on a machine with slow or no DNS.
 - **Actual:** `proof-check.server.test.ts`, "a model error is unsure (the crew decides)", timed out after 5,336 ms.
 - **Root cause:** the photo URL was `https://x/y.jpg`. The AI SDK downloads an https image before calling the model, so the test spent its time on a DNS lookup for host `x` and never reached the model it meant to test.
@@ -145,10 +191,43 @@ Severity scale:
   - The production path is unchanged: real proofs use signed https URLs, and a failed download is also "unsure".
 - **Regression:** the file passed 7/7, three runs in a row; all unit tests 205/205.
 
-### B-15 · P3 · Proposal · The AI proof check uses a deprecated message part
-- **Steps to reproduce:** run the unit tests. The AI SDK warns that the `"image"` content part is deprecated in favour of a `"file"` part with a `mediaType`.
-- **Where:** `src/integrations/ai/proof-check.server.ts`.
-- **Proposed fix:** switch to a `file` part. Not done: it can only be checked against a real vision model, which needs `AI_API_KEY` (M6-01).
+### B-15 · P3 · Proposal · The AI calls use a deprecated message part
+- **Steps to reproduce:** run the unit tests. The AI SDK (`ai` 7.0.122) warns: "The "image" content part type is deprecated. Use a "file" part with mediaType: 'image'".
+- **Where:**
+  - `src/integrations/ai/proof-check.server.ts:103`;
+  - `src/lib/itinerary-ai.server.ts:39` (an uploaded itinerary image as a `data:` URL).
+- **Verified offline (Phase 2), without `AI_API_KEY`:**
+  - A probe used the real `@ai-sdk/openai` Responses provider, a dummy key and a fake `fetch`, so nothing left the machine.
+  - `{ type: "file", mediaType: "image", data: new URL(url) }` sends exactly the same `input_image` request as today's `image` part.
+- **Proposed fix:** switch both call sites to a `file` part, together with B-16. Not done: it waits for approval.
+
+### B-16 · P3 · The AI proof check doesn't actually ask for a low-detail image
+- **Steps to reproduce:** the same offline probe. Capture the request `visionProofChecker` would send.
+- **Expected:** `"detail": "low"` on the image. The code sets `providerOptions: { openai: { imageDetail: "low" } }`, with the comment "A small image is enough … keeps the cost down".
+- **Actual:** the request has no `detail`, so the provider uses its default. `store: false` is sent correctly.
+- **Root cause:** `@ai-sdk/openai` reads `imageDetail` from the image part's own `providerOptions` (`dist/index.js:5341`), not from the call's. With the option on the part, the probe showed `"detail": "low"`.
+- **Impact:**
+  - None today: AI checks are off without `AI_API_KEY`.
+  - Once they're on, every proof photo costs more image tokens than intended.
+- **Proposed fix (with B-15):**
+  - Make the part `{ type: "file", mediaType: "image", data: new URL(photoUrl), providerOptions: { openai: { imageDetail: "low" } } }`, and keep `store: false` on the call.
+  - Regression test: a unit test with `createOpenAI({ apiKey: "test", fetch })` that captures the request and asserts `detail: "low"` and `store: false`. It runs offline.
+  - Low detail changes what the model sees, so confirm accuracy in the M6-01 labelled-photo run.
+  - Needs approval.
+
+### B-17 · P2 · Hosted sign-up emails will send a link, but the app asks for a code (to verify on staging)
+- **Steps to reproduce (staging):** turn on email confirmation, sign up with a new address, then open the email.
+- **Expected:** a 6-digit code. After sign-up the app asks for one and checks it with `verifyOtp({ type: "signup" })` (`src/features/auth/AuthScreen.tsx:384`).
+- **Likely actual:** Supabase's default "Confirm signup" template contains a confirmation link (`{{ .ConfirmationURL }}`), not the code (`{{ .Token }}`).
+- **Root cause:** the repo sets no email template:
+  - there's no `supabase/templates/` and no `[auth.email.template]` in `config.toml`;
+  - `scripts/deploy.sh` (auth step) only sets the site URL, the redirect allow-list, Google and SMTP.
+  - Locally, email confirmation is off (CLI default), so no local test ever sees this email.
+- **Proposed fix:**
+  - Add a "Confirm signup" template with `{{ .Token }}`: in `config.toml` for local use, and in the `deploy.sh` auth step for hosted projects.
+  - Decide whether confirmation is on, as part of Q17.
+  - Then test sign-up, resend and password reset on staging.
+- **Status:** not reproduced, because no hosted project exists. Confirm it on the first staging deploy.
 
 ## B. Potential risks and missing features (not counted as bugs)
 

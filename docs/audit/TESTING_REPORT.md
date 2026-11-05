@@ -89,7 +89,7 @@ These were verified with the existing pgTAP and mocked E2E suites. To keep local
 
 ## Final verification (Nov 5, after PR #3)
 
-**Code:** `main` at `50b4e21`, plus the B-12 and B-14 fixes on the `final-verification` branch. That tree has the same application code as `4c442c9`, which the full browser suites above tested, and CI passed on PR #3 (run 42023808424) and after the merge (run 42026792076), all three jobs. So the browser suites weren't repeated in full here.
+**Code:** `main` at `50b4e21`, plus the B-12 and B-14 fixes (then on `final-verification`; merged by PR #4 as `ec98cef`, CI passed on the PR and after the merge). That tree has the same application code as `4c442c9`, which the full browser suites above tested, and CI passed on PR #3 (run 42023808424) and after the merge (run 42026792076), all three jobs. So the browser suites weren't repeated in full here.
 
 | Suite | Result |
 |---|---|
