@@ -54,6 +54,7 @@
       "generic": "Oops, that didn't work: {{reason}}",
       "google": "Google sign-in didn't work: {{reason}}. You can also use email below.",
       "googlePopup": "Google sign-in didn't work: {{reason}}. Pop-ups may be blocked — try again or use email below.",
+      "googleOff": "Google sign-in isn't turned on here. Use email to sign in.",
       "tryAgain": "please try again",
       "teenNoInvite": "TripJunkies accounts are for ages 18 and up. Under 18? Open the teen invite link your trip's Captain sends you, then sign up."
     },

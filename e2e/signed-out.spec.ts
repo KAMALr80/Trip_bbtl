@@ -7,6 +7,47 @@ test("a signed-out visitor can choose Google or email sign-in", async ({ page })
   await expect(page.getByRole("textbox", { name: /email/i }).first()).toBeVisible();
 });
 
+test("Google sign-in that's off in Auth settings says so instead of redirecting", async ({
+  page,
+}) => {
+  await page.route("**/auth/v1/settings", (route) =>
+    route.fulfill({ json: { external: { google: false, email: true } } }),
+  );
+  let authorized = false;
+  await page.route("**/auth/v1/authorize**", (route) => {
+    authorized = true;
+    return route.fulfill({ body: "redirected" });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Continue with Google" }).click();
+  await expect(page.getByRole("status")).toHaveText(
+    "Google sign-in isn't turned on here. Use email to sign in.",
+  );
+  expect(authorized).toBe(false);
+  await expect(page).toHaveURL(/localhost:8080\/$/);
+  await page.getByRole("button", { name: "Sign in with email" }).click();
+  await expect(page.getByRole("textbox", { name: /email/i }).first()).toBeVisible();
+});
+
+test("Google sign-in that's on in Auth settings goes to the provider", async ({ page }) => {
+  await page.route("**/auth/v1/settings", (route) =>
+    route.fulfill({ json: { external: { google: true, email: true } } }),
+  );
+  await page.route("**/auth/v1/authorize**", (route) => route.fulfill({ body: "redirected" }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Continue with Google" }).click();
+  await expect(page).toHaveURL(/\/auth\/v1\/authorize\?provider=google/);
+});
+
+test("Google sign-in goes to the provider when Auth settings can't tell", async ({ page }) => {
+  await page.route("**/auth/v1/settings", (route) => route.fulfill({ json: {} }));
+  await page.route("**/auth/v1/authorize**", (route) => route.fulfill({ body: "redirected" }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Continue with Google" }).click();
+  await expect(page).toHaveURL(/\/auth\/v1\/authorize\?provider=google/);
+  await expect(page.getByText(/isn't turned on|didn't work/)).toHaveCount(0);
+});
+
 test("legal pages are readable without signing in", async ({ page }) => {
   await page.goto("/legal/terms");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
