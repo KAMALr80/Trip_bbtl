@@ -56,3 +56,26 @@ export async function loadTrip(tripId: string): Promise<Tables<"trips"> | null> 
 export function signOut() {
   return supabase.auth.signOut();
 }
+
+/**
+ * Whether Supabase Auth has this sign-in provider turned on (the public GET /auth/v1/settings), so
+ * a disabled one can say so instead of sending the browser to Auth's raw error page. null when it
+ * can't tell (no network, an unexpected answer): callers then try the provider as before.
+ */
+export async function authProviderEnabled(provider: "google"): Promise<boolean | null> {
+  const url = import.meta.env["VITE_SUPABASE_URL"];
+  const key = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+  if (!url || !key) return null;
+  try {
+    const res = await fetch(`${url}/auth/v1/settings`, {
+      headers: { apikey: key },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return null;
+    const settings = (await res.json()) as { external?: Record<string, unknown> };
+    const on = settings.external?.[provider];
+    return typeof on === "boolean" ? on : null;
+  } catch {
+    return null;
+  }
+}

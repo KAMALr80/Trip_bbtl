@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Eye, EyeOff, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { authProviderEnabled } from "@/data/account";
 
 import cinematicLoginCoast from "@/assets/cinematic-login-coast-tall-768.jpg";
 import cinematicLoginCoastLarge from "@/assets/cinematic-login-coast.jpg";
@@ -103,6 +104,13 @@ export function AuthScreen({
   async function social(provider: "google") {
     setBusy(true);
     setMessage("");
+    // A provider that's off in this environment's Auth settings says so here; otherwise the
+    // browser would land on Auth's raw JSON error. Unknown (null) tries it as before.
+    if ((await authProviderEnabled(provider)) === false) {
+      setMessage(t("auth.error.googleOff"));
+      setBusy(false);
+      return;
+    }
     try {
       // Supabase redirects the browser to Google and back to this origin, where the session is
       // picked up from the URL. The Google provider and redirect URLs live in Supabase Auth settings.
