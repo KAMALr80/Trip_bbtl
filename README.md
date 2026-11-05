@@ -40,9 +40,16 @@ A local Supabase stack (`npx supabase start`, needs Docker) applies `supabase/mi
 | `bun run typecheck` / `bun run lint` | TypeScript; ESLint (existing exceptions in `eslint-suppressions.json`) |
 | `bun run test` | Unit tests (Vitest) |
 | `npx playwright test` | End-to-end tests, including the accessibility pass, against a mocked backend |
+| `npx playwright test -c playwright.pwa.config.ts` | Service worker and offline tests against a production build served by `wrangler dev` |
+| `npx playwright test -c playwright.live.config.ts` | Signed-in tests against the local Supabase stack. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from `npx supabase status -o env` first. They write to the local database: one test adds a seed account to a trip |
+| `npx supabase test db` | pgTAP against the local stack. `07_seed` only passes on the day the seed was applied ([B-05](docs/audit/BUG_REGISTER.md)) |
 | `scripts/db/test.sh` | Replays the migrations onto a throwaway Postgres and runs the pgTAP tests ([details](supabase/tests/README.md)) |
 | `REPLAY_HOOK='python3 scripts/db/inventory.py' scripts/db/replay-migrations.sh` | Regenerates the schema snapshot and DB inventory ([details](docs/inventory/README.md)); CI fails if they're stale |
 | `scripts/db/gen-types.sh` | Regenerates `src/integrations/supabase/types.ts` from the migrations; CI fails if it's stale |
+
+The Playwright configs open `/` once before the tests (`e2e/support/warm-up.ts`), so the first test doesn't wait for the dev server's first compile. Install the browser with `npx playwright install chromium`. On Node 26 that can stall; use Node 22, or run `bun --bun node_modules/@playwright/test/cli.js install chromium`.
+
+The latest audit (status, tests, bugs, roadmap and beta readiness) is in [`docs/audit/`](docs/audit/PROJECT_STATUS_REPORT.md).
 
 ## Database changes
 

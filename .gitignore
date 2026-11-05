@@ -41,11 +41,7 @@ playwright-report/
 # M1-08 legacy CSV exports hold user data; never commit them
 legacy-export-*/
 
-# Supabase CLI link state (scripts/deploy.sh)
-supabase/.temp/
-
-
-# Supabase local CLI state
+# Supabase CLI link state (scripts/deploy.sh) and local CLI state
 supabase/.temp/
 supabase/.branches/
 

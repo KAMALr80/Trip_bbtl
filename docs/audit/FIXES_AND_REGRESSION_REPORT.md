@@ -1,6 +1,6 @@
 # Fixes and regression report
 
-**Date:** Nov 5, 2026 · **Base:** `main` at `3d2bfcd`. Every change below is **uncommitted** and waiting for approval.
+**Date:** Nov 5, 2026 · **Base:** `main` at `3d2bfcd`. The fixes in the first table were committed as `4c442c9` on `audit-fixes` and merged into `main` by PR #3 (`50b4e21`); CI passed on the PR and again after the merge. The final-verification changes further down are on the `final-verification` branch and **not merged yet**.
 
 ## Fixes
 
@@ -18,6 +18,16 @@
 | Docs | `docs/audit/*.md` (new) | These six reports |
 
 **Not changed:** application behaviour beyond B-09, migrations, the seed, the schema, RLS, dependencies, environment files and user data.
+
+## Final verification (Nov 5, after PR #3, branch `final-verification`, not merged yet)
+
+| Bug | Files | Change |
+|---|---|---|
+| B-14 | `src/integrations/ai/proof-check.server.test.ts` | "A model error is unsure" uses a `data:` photo URL, so the test reaches the (failing) model without a network download. Same assertion |
+| B-12 | `.gitignore` | Removed the repeated `supabase/.temp/` entry and the empty lines around it. Every pattern that was ignored is still ignored |
+| Docs | `docs/audit/*.md`, `README.md`, `dev-docs/README.md`, `dev-docs/08-testing-and-qa.md`, `dev-docs/owner-go-live-steps.md` | Merged state instead of "uncommitted"; final numbers; B-14 and B-15; Q18; the `main` ruleset; the PWA and live E2E commands; the real Playwright viewport |
+
+The final numbers are in [TESTING_REPORT.md](TESTING_REPORT.md#final-verification-nov-5-after-pr-3).
 
 ## Regression: baseline vs final
 
@@ -51,4 +61,6 @@
 
 ## Rollback
 
-`git restore` the 10 modified files and delete `e2e/support/warm-up.ts` and `docs/audit/`. Nothing was committed or migrated.
+- **The audit fixes** are merged. To undo them, revert `4c442c9` in a new pull request; don't rewrite `main`'s history.
+- **The final-verification changes** aren't merged: close their pull request, or revert their commit in a new one.
+- Nothing was migrated, and no database data changed.

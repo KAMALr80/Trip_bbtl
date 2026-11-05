@@ -25,7 +25,9 @@ The deck is the **source of truth for product rules**. It says so itself: *"This
 
 ---
 
-## Where we are and what's next (Nov 2, 2026)
+## Where we are and what's next (Nov 5, 2026)
+
+**Nov 5:** the stabilization, authentication-hardening and audit-fix branches are merged (PRs #1–#3, `main` at `50b4e21`), and CI passes. The audit's reports (status, tests, bugs, roadmap, beta readiness) are in [`docs/audit/`](../docs/audit/PROJECT_STATUS_REPORT.md).
 
 **Done:** M1 and M2 (small leftovers in their status tables), M3 mostly done, M4's code (M4-01 –
 M4-09). M0's code side is done; **nothing is deployed yet** because the staging accounts don't exist
@@ -53,8 +55,9 @@ the new engine. What's left of M6 needs staging, production, real crews or a law
    content waits for `AI_API_KEY`. The ticket-stub card designs
    (M3-05, M3-09) and the luggage-tag crown celebration (M3-11) wait for the designer.
 4. **Cleanup that can be slotted in anywhere:** move the 52 retired tables to `legacy_archive` (M1-08,
-   M3-16), delete the unreachable old setup code (M2-05), and move the remaining strings into the
-   translation catalog as screens are touched (M1-07).
+   M3-16; [the audit](m1-08-retired-tables-audit.md) found 11 movable now, 41 still reached by live
+   code), and move the remaining strings into the translation catalog as screens are touched (M1-07).
+   The unreachable old setup code (M2-05) was removed on Nov 3.
 
 ---
 

@@ -1,6 +1,6 @@
 # Bug register
 
-**Date:** Nov 5, 2026 · **Code:** `main` at `3d2bfcd` plus the uncommitted audit fixes.
+**Date:** Nov 5, 2026 · **Code:** `main` at `50b4e21`: the audit fixes, committed as `4c442c9` and merged by PR #3, with CI passing on the PR and after the merge. The final-verification changes (B-12, B-14 and these doc updates) are on the `final-verification` branch, waiting for PR review (not merged yet).
 
 Severity scale:
 - **P0:** data loss, account compromise or unauthorized access.
@@ -8,14 +8,14 @@ Severity scale:
 - **P2:** important but contained.
 - **P3:** minor, test infrastructure or polish.
 
-**Totals:** 13 findings. P0: 0 · P1: 0 · P2: 2 · P3: 11. **Fixed: 4** (B-08 to B-11). **Open: 9.** Section B lists potential risks and missing features separately; they aren't counted as bugs.
+**Totals:** 15 findings. P0: 0 · P1: 0 · P2: 2 · P3: 13. **Fixed: 6** (B-08 to B-11 merged by PR #3; B-12 and B-14 in the final verification, on `final-verification`, not merged yet). **Open: 9.** Section B lists potential risks and missing features separately; they aren't counted as bugs.
 
 ## A. Confirmed findings
 
 | ID | Sev | Module | Status |
 |---|---|---|---|
 | B-01 | P2 | Dependencies | Open: needs upgrade approval |
-| B-02 | P2 | Repository process | Open: owner configuration |
+| B-02 | P2 | Repository process | Open: CI not required yet (owner) |
 | B-03 | P3 | Server functions | Open: proposal |
 | B-04 | P3 | Lint | Open: existing debt |
 | B-05 | P3 | Local seed / pgTAP | Open: by design |
@@ -25,8 +25,10 @@ Severity scale:
 | B-09 | P3 | App shell | **Fixed** |
 | B-10 | P3 | E2E infrastructure | **Fixed** |
 | B-11 | P3 | Server setup errors | **Fixed** |
-| B-12 | P3 | `.gitignore` | Open: owner's edit |
+| B-12 | P3 | `.gitignore` | **Fixed** (not merged yet) |
 | B-13 | P3 | Local tooling | Open: environment |
+| B-14 | P3 | Unit tests | **Fixed** (not merged yet) |
+| B-15 | P3 | AI proof check | Open: proposal (needs `AI_API_KEY` to verify) |
 
 ### B-01 · P2 · Dependency advisories
 - **Steps to reproduce:** `bun audit`.
@@ -34,6 +36,8 @@ Severity scale:
 - **Actual:** 35 advisories (14 high, 16 moderate, 5 low).
   - **Direct:** `zod@3.25.76`, "Zod can exhaust memory while validating oversized constrained collections" (fixed in 4.6.6).
   - **Transitive, mostly build and dev tools:** `undici` and `ws` via `wrangler` / `miniflare` / `nitro`, plus others.
+  - **`sharp@0.34.5`** (via `wrangler > miniflare` and `nitro > env-runner > miniflare`): three high advisories in its bundled libvips, libheif and librsvg (fixed in 0.35.5). Miniflare is the local Worker simulator (`wrangler dev`, the dev server) and isn't part of the deployed Worker. No app code or script uses `sharp`.
+  - Re-checked Nov 5 after PR #3: still 35 (14 high, 16 moderate, 5 low).
 - **Root cause:** older dependency ranges. Moving `zod` 3 → 4 is a major upgrade (M6 audit S6, still open).
 - **Files:** `package.json`, `bun.lock`.
 - **Proposed fix:**
@@ -50,6 +54,8 @@ Severity scale:
 - **Actual:** both merges happened before CI finished. Both runs passed afterwards.
 - **Root cause:** branch protection with required checks isn't enabled ([owner-go-live-steps.md](../../dev-docs/owner-go-live-steps.md) still has this unchecked).
 - **Proposed fix:** GitHub → Settings → Branches → protect `main`, and require the three CI jobs.
+- **Update (Nov 5, after PR #3):** `main` now has a repository ruleset. GitHub's public API shows `protected: true` with two rules, `deletion` and `non_fast_forward`, so `main` can't be deleted or force-pushed. It has **no required status checks** and no required pull request, so a PR can still be merged before CI finishes.
+- **Remaining fix:** add "Require status checks to pass" to the ruleset with the three jobs: `Web (typecheck, lint, tests, build)`, `Database (migrations + pgTAP)` and `Supabase local stack (real pgTAP)`. Optionally, also require a pull request.
 - **Regression tests:** none (configuration).
 
 ### B-03 · P3 · `createServerFn().inputValidator()` is deprecated
@@ -115,9 +121,11 @@ Severity scale:
 - **Fix:** the messages now name the missing variables and `.env.example`, like `client.ts` already did.
 - **Regression:** typecheck, build, E2E.
 
-### B-12 · P3 · `.gitignore` has duplicate entries
-- **Actual:** `supabase/.temp/` and `.output` / `.output/` are each listed twice, and the file has no trailing newline. This came from the owner's own edit on Nov 4.
-- **Proposed fix:** remove the duplicates. They do no harm, so it's left for the owner.
+### B-12 · P3 · FIXED (not merged yet) · `.gitignore` has duplicate entries
+- **Actual:** `supabase/.temp/` was listed twice, with empty lines around it. `.output` and `.output/` are both listed, too. This came from the owner's own edit on Nov 4.
+- **Fix (final verification):** removed the second `supabase/.temp/` and the extra empty lines.
+  - `.output` (line 13) already covers `.output/` (with its "Generated build output" comment). Both were kept: the second is harmless and documents the build folder.
+  - No pattern was added or dropped, so nothing becomes tracked or untracked: `git status --ignored` lists the same files before and after.
 
 ### B-13 · P3 · Local tooling issues (environment, not product)
 - **On Node 26, `npx playwright install chromium` stalls** while extracting `chrome.dll`. Seen twice, with 0 CPU and 0 I/O. Running the installer under Bun worked:
@@ -127,6 +135,20 @@ Severity scale:
   Using Node 22/24 LTS is recommended.
 - **The local `supabase_vector` container restarts in a loop.** It only collects logs, and the app doesn't need it.
 - **`vite-tsconfig-paths` takes 45–92 % of build plugin time.** Vite now resolves tsconfig paths itself (`resolve.tsconfigPaths`), so the plugin could be replaced. This is an optimisation proposal, not done.
+
+### B-14 · P3 · FIXED (not merged yet) · A unit test depended on DNS
+- **Steps to reproduce:** `bun run test` on a machine with slow or no DNS.
+- **Actual:** `proof-check.server.test.ts`, "a model error is unsure (the crew decides)", timed out after 5,336 ms.
+- **Root cause:** the photo URL was `https://x/y.jpg`. The AI SDK downloads an https image before calling the model, so the test spent its time on a DNS lookup for host `x` and never reached the model it meant to test.
+- **Fix:** use a `data:` URL. The assertion didn't change.
+  - Probes confirmed 0 network requests: with a stub model, the model is now reached and its error gives "unsure"; the test's own `{}` model gives "unsure" too.
+  - The production path is unchanged: real proofs use signed https URLs, and a failed download is also "unsure".
+- **Regression:** the file passed 7/7, three runs in a row; all unit tests 205/205.
+
+### B-15 · P3 · Proposal · The AI proof check uses a deprecated message part
+- **Steps to reproduce:** run the unit tests. The AI SDK warns that the `"image"` content part is deprecated in favour of a `"file"` part with a `mediaType`.
+- **Where:** `src/integrations/ai/proof-check.server.ts`.
+- **Proposed fix:** switch to a `file` part. Not done: it can only be checked against a real vision model, which needs `AI_API_KEY` (M6-01).
 
 ## B. Potential risks and missing features (not counted as bugs)
 

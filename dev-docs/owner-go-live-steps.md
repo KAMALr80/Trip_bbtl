@@ -19,6 +19,8 @@ numbered sections below.
       install, offline, reminders). Merged as `960f35f`; the offline browser tests
       (`playwright.pwa.config.ts`) pass locally and in CI (Nov 5, 2026).
 - [ ] Turn on branch protection for `main` and make CI required (GitHub → Settings → Branches).
+      Partly done (Nov 5, 2026): a ruleset stops `main` being deleted or force-pushed. Still to do:
+      require the three CI jobs (Web, Database, Supabase local stack) before a merge.
 - [ ] Create the staging accounts: Supabase (1.1), Cloudflare (1.2); AI key optional (1.3).
 - [ ] Make the web push keys: `bun scripts/pwa/vapid-keys.ts`, then add `VAPID_PUBLIC_KEY` and
       `VAPID_PRIVATE_KEY` as secrets (6.1). Do it once; never change them.
