@@ -84,9 +84,14 @@ SELECT tests.authenticate_as(tests.user_id('p2'));
 SELECT public.approve_proof(c.id) FROM public.crew_check((SELECT id FROM ids WHERE k = 'trip')) c WHERE c.schedule_id = (SELECT id FROM ids WHERE k = 'bingo');
 SELECT tests.clear_authentication();
 SELECT is(trip_private.drop_points((SELECT id FROM ids WHERE k = 'bingo'), tests.user_id('p1')), 10, 'one line = 10 (Q4)');
-SELECT is(trip_private.settle_drops(), 0, 'nothing is scored while the drop is open');
+-- settle_drops() counts every trip's drops, so check this drop's own settled_at instead.
+SELECT trip_private.settle_drops();
+SELECT ok((SELECT settled_at IS NULL FROM public.trip_schedule WHERE id = (SELECT id FROM ids WHERE k = 'bingo')),
+          'nothing is scored while the drop is open');
 UPDATE public.trip_schedule SET closes_at = now() - interval '1 minute' WHERE id = (SELECT id FROM ids WHERE k = 'bingo');
-SELECT is(trip_private.settle_drops(), 1, 'after it closes the drop is scored');
+SELECT trip_private.settle_drops();
+SELECT ok((SELECT settled_at IS NOT NULL FROM public.trip_schedule WHERE id = (SELECT id FROM ids WHERE k = 'bingo')),
+          'after it closes the drop is scored');
 SELECT is((SELECT points FROM public.points_ledger WHERE source = 'surprise_drop' AND user_id = tests.user_id('p1')), 10,
           'into Trip Season, once');
 

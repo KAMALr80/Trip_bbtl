@@ -48,6 +48,18 @@ test("Google sign-in goes to the provider when Auth settings can't tell", async 
   await expect(page.getByText(/isn't turned on|didn't work/)).toHaveCount(0);
 });
 
+test("a signed-out visitor makes no admin check (it could only answer 401)", async ({ page }) => {
+  let adminChecks = 0;
+  await page.route("**/rest/v1/rpc/is_app_admin", (route) => {
+    adminChecks++;
+    return route.fulfill({ status: 401, json: { message: "permission denied" } });
+  });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Sign in with email" })).toBeVisible();
+  await page.waitForTimeout(1000);
+  expect(adminChecks).toBe(0);
+});
+
 test("legal pages are readable without signing in", async ({ page }) => {
   await page.goto("/legal/terms");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

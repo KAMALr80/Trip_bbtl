@@ -190,11 +190,17 @@ export function AppShell() {
   const [publicView, setPublicView] = useState<"overview" | "story" | "games" | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
+    // Signed out there's nobody to check (the RPC would only answer 401).
+    if (!user) {
+      setIsAdmin(false);
+      setFounder(false);
+      return;
+    }
     void isAppAdmin().then((admin) => {
       setIsAdmin(admin);
       setFounder(admin);
     });
-    if (user) void touchLastSeen();
+    void touchLastSeen();
   }, [user?.id]);
   const [myProfile, setMyProfile] = useState<AccountProfile | null | undefined>(undefined);
   const loadMyProfile = async () => {

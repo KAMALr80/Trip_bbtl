@@ -64,7 +64,10 @@ SELECT is((SELECT count(*)::int FROM public.proof_votes), 2, 'both votes are rec
 
 -- ---------------------------------------------------------------- 24 hours without a 👍
 UPDATE public.proofs SET expires_at = now() - interval '1 minute' WHERE id = (SELECT id FROM ids WHERE k = 'proof2');
-SELECT is(trip_private.expire_proofs(), 1, 'the expiry job finds it');
+-- The job's return value counts every trip's proofs, so check this proof's own state instead.
+SELECT trip_private.expire_proofs();
+SELECT is((SELECT crew_status FROM public.proofs WHERE id = (SELECT id FROM ids WHERE k = 'proof2')), 'expired',
+          'the expiry job finds it');
 SELECT is((SELECT status FROM public.points_ledger WHERE source = 'showcase'), 'rejected', 'no 👍 within 24h = not approved (R-411)');
 SELECT ok(EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'expire-proofs' AND schedule = '*/5 * * * *'), 'it runs every 5 minutes');
 

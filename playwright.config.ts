@@ -8,6 +8,8 @@ export default defineConfig({
   // e2e/live needs the real local stack (playwright.live.config.ts); e2e/pwa a production build
   // with the service worker (playwright.pwa.config.ts)
   testIgnore: ["live/**", "pwa/**"],
+  // Opens "/" once first so the dev server's first-visit compile doesn't hit the first test.
+  globalSetup: "./e2e/support/warm-up.ts",
   timeout: 60_000,
   // The dev server compiles the 3,000-line index route on first visit; give it time.
   expect: { timeout: 20_000 },
