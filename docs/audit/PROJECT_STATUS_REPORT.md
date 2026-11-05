@@ -69,7 +69,12 @@ TripJunkies is a mobile-first web app (PWA) that turns a group trip into a game.
 - CI not being required before a merge (B-02);
 - the sign-up email on hosted Supabase sending a link where the app asks for a code (B-17, to verify on staging).
 
-The other 14 are P3. B-08 to B-11 were merged by PR #3 (`50b4e21`), and B-12 and B-14 by PR #4 (`ec98cef`). The Phase 2 review (Nov 5) added B-16 and B-17 and documented the dependency analysis; it changed no code.
+The other 14 are P3. B-08 to B-11 were merged by PR #3 (`50b4e21`), and B-12 and B-14 by PR #4 (`ec98cef`). The Phase 2 review (Nov 5) added B-16 and B-17. The hardening branch (`release/complete-project-hardening`) then:
+- fixes B-03, B-13, B-15, B-16, B-18 (a flaky passport test) and B-19 (the query cache on sign-out);
+- upgrades zod, so no dependency advisory reaches production;
+- adds the sign-up code template (B-17, to check on staging).
+
+The register now lists 19 findings.
 
 ### Security risks
 
@@ -78,7 +83,7 @@ These are risks and decisions, not open exploits.
 - 35 dependency advisories, 14 of them high.
   - 33 are in `undici`, `sharp` and `ws` under `wrangler` → `miniflare`, the local Worker simulator. They aren't in the production bundle.
   - One is `minimatch`, lint only.
-  - Only the `zod` advisory reaches production: memory exhaustion in authenticated server functions. See the B-01 table.
+  - The `zod` advisory reached production (memory exhaustion in authenticated server functions). The hardening branch moves the app to Zod 4.6.6. The one remaining `zod` entry is `miniflare`'s own dev copy.
 - Signed photo links last 1 hour and still work if shared (P3).
 - Teen avatars are visible to the crew, pending legal review (P4).
 - Moving a trip's dates after it starts can delete proofs (P8).

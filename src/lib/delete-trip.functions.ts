@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const permanentlyDeleteTrip = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value) =>
+  .validator((value) =>
     z.object({ tripId: z.string().uuid(), name: z.string().min(1).max(100) }).parse(value),
   )
   .handler(async ({ data, context }) => {

@@ -30,6 +30,11 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       "no-restricted-imports": ["error", { paths: [serverOnly] }],
+      // B-03: TanStack Start deprecated createServerFn().inputValidator(); validator() is the same.
+      "no-restricted-properties": [
+        "error",
+        { property: "inputValidator", message: "Use createServerFn().validator() instead." },
+      ],
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
     },

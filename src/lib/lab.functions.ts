@@ -107,7 +107,7 @@ const preset = z.object({
 
 export const createSandbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => preset.parse(d))
+  .validator((d) => preset.parse(d))
   .handler(async ({ data, context }) => {
     await assertFounder(context);
     await ensureBots(data.size - 1 + 2); // +2 spares for late joins
@@ -130,7 +130,7 @@ export const prepareLateBot = createServerFn({ method: "POST" })
 
 export const deleteSandbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ tripId: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ tripId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertFounder(context);
     await wipe(context, data.tripId);
@@ -139,7 +139,7 @@ export const deleteSandbox = createServerFn({ method: "POST" })
 
 export const resetSandbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ tripId: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ tripId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertFounder(context);
     const { data: p } = await context.supabase
@@ -165,7 +165,7 @@ const athome = z.object({
 });
 export const createAtHomeSandbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => athome.parse(d))
+  .validator((d) => athome.parse(d))
   .handler(async ({ data, context }) => {
     await assertFounder(context);
     await ensureBots(3 + 2);

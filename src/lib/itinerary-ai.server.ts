@@ -27,16 +27,16 @@ export async function extractItinerary(
   }
   const content: Array<
     | { type: "text"; text: string }
-    | { type: "image"; image: URL }
-    | { type: "file"; filename: string; data: string; mediaType: "application/pdf" }
+    | { type: "file"; data: string; mediaType: string; filename?: string }
   > = [
     {
       type: "text",
       text: `Trip destination: ${input.destination}; dates: ${input.startDate} to ${input.endDate}. Source text: ${input.text ?? ""}`,
     },
   ];
+  // A "file" part with an image media type (the AI SDK's "image" part is deprecated, B-15).
   if (input.base64 && input.mime?.startsWith("image/"))
-    content.push({ type: "image", image: new URL(`data:${input.mime};base64,${input.base64}`) });
+    content.push({ type: "file", data: input.base64, mediaType: input.mime });
   if (input.base64 && input.mime === "application/pdf")
     content.push({
       type: "file",

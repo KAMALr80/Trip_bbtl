@@ -6,7 +6,7 @@ import { spendAiQuota } from "./ai-quota.server";
 
 export const suggestTripNames = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value) =>
+  .validator((value) =>
     z
       .object({
         destination: z.string().trim().min(1).max(120),
@@ -23,7 +23,7 @@ export const suggestTripNames = createServerFn({ method: "POST" })
 
 export const suggestTripMottos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value) =>
+  .validator((value) =>
     z
       .object({
         name: z.string().trim().min(1).max(100),

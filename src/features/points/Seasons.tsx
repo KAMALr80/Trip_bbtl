@@ -237,7 +237,7 @@ export function MysteryPrizes({
     return () => {
       live = false;
     };
-  }, [true, trip.id]);
+  }, [trip.id]);
   const [reveal, setReveal] = useState<SeasonKey | null>(null);
   // Crowns are decided on the server (M3-11); the reveal plays once per season on this device.
   useEffect(() => {
@@ -768,7 +768,7 @@ export function PhotoWall({ trip, members, cards, userId }: Base) {
     return () => {
       live = false;
     };
-  }, [true, trip.id]);
+  }, [trip.id]);
   const closed = tripClosed(trip);
   async function downloadAll() {
     setBusyMem("zip");

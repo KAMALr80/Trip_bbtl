@@ -190,7 +190,8 @@ their photos into staging; use test accounts only.
 - [ ] **Auth URLs:** the site URL is `STAGING_APP_URL`, and the redirect allow-list includes
       `STAGING_APP_URL/**` (`deploy.sh` auth step). Re-run the auth step after the domain changes.
 - [ ] **Email** (2.3): the sender is verified, with SPF, DKIM and DMARC records in Cloudflare DNS.
-      Sign-up sends a 6-digit **code**: the default Supabase template sends a link (B-17). Password
+      Sign-up sends a 6-digit **code**: `deploy staging auth` now installs the repo's template
+      (`supabase/templates/confirmation.html`, B-17); check that the email has it. Password
       reset arrives and returns to the app. Supabase's email rate limit is raised for the beta.
 - [ ] **Google** (2.2): the consent screen is published; the redirect URI is
       `https://<staging ref>.supabase.co/auth/v1/callback`; Google sign-in works on a phone.

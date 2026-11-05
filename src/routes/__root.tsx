@@ -22,15 +22,10 @@ import { UpdatePrompt } from "@/features/app-shell/UpdatePrompt";
 // Catches the browser's install prompt as early as possible (M4-01).
 import "@/pwa/install";
 import { isNetworkError } from "@/data/offline/rules";
-import {
-  dropSnapshot,
-  restoreSnapshot,
-  saveAccount,
-  savedAccount,
-  startSnapshot,
-} from "@/data/offline/snapshot";
+import { restoreSnapshot, saveAccount, savedAccount, startSnapshot } from "@/data/offline/snapshot";
 import { markStartedOffline } from "@/data/offline/status";
-import { clearOutbox, startOutbox } from "@/data/offline/outbox";
+import { startOutbox } from "@/data/offline/outbox";
+import { forgetAccount } from "@/data/offline/forget";
 
 const CHUNK_RELOAD_KEY = "tj-chunk-reload";
 function isChunkError(error: unknown) {
@@ -372,7 +367,7 @@ function RootComponent() {
       markStartedOffline(false);
       // The server answered with no signed-in player: this device's snapshot must go too
       // (supabase-js doesn't always send SIGNED_OUT for a session the server rejects).
-      if (!data.user) void dropSnapshot().then(clearOutbox);
+      if (!data.user) forgetAccount(queryClient);
       setUser(data.user);
       if (data.user) {
         void startSnapshot(queryClient, data.user);
@@ -391,7 +386,7 @@ function RootComponent() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      if (event === "SIGNED_OUT") void dropSnapshot().then(clearOutbox);
+      if (event === "SIGNED_OUT") forgetAccount(queryClient);
       else if (session?.user) {
         void startSnapshot(queryClient, session.user);
         void startOutbox(queryClient, session.user.id);

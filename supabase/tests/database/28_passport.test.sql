@@ -43,11 +43,16 @@ SELECT pg_temp.trip('ws', 'window_seat', 'crew', 'Mexico', NULL);
 SELECT pg_temp.trip('cu', 'explore_culture', 'crew', 'Korea', NULL);
 SELECT pg_temp.trip('gn', 'game_night', 'crew', 'Japan', NULL);
 SELECT tests.add_member(pg_temp.id('ca'), tests.user_id('pal'));
-INSERT INTO public.journal_entries (trip_id, user_id, schedule_id, day, prompt, body)
-SELECT pg_temp.id('ws'), tests.user_id('me'), (SELECT id FROM public.trip_schedule WHERE trip_id = pg_temp.id('ws') LIMIT 1),
-       current_date + 15, 'Prompt', 'We found a cenote.';
 -- All of them ended 10 days ago.
 UPDATE public.trips SET start_date = start_date - 28, end_date = end_date - 28 WHERE id IN (SELECT id FROM ids);
+-- A journal entry for the Window Seat guide, written after the move: moving the dates re-plans the
+-- schedule and deletes items that no longer fit, with their journal entries (P8), so an entry made
+-- before it could vanish depending on which item it hung on.
+INSERT INTO public.journal_entries (trip_id, user_id, schedule_id, day, prompt, body)
+SELECT pg_temp.id('ws'), tests.user_id('me'), s.id, s.day, 'Prompt', 'We found a cenote.'
+FROM public.trip_schedule s
+WHERE s.trip_id = pg_temp.id('ws') AND s.kind = 'journal_prompt'
+ORDER BY s.opens_at, s.slot LIMIT 1;
 
 SELECT is((SELECT count(*) FILTER (WHERE x.l)::int FROM (SELECT trip_private.lock_trip(pg_temp.id(k), true) AS l FROM unnest(ARRAY['tx', 'ca', 'jp', 'ws', 'cu', 'gn']) k) x), 5,
           'every trip locks except Game Night');

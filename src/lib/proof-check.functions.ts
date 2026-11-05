@@ -10,7 +10,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // "unsure" (the crew decides) and no safety flag is raised (players can still report a photo).
 export const checkProof = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value) => z.object({ proofId: z.string().uuid() }).parse(value))
+  .validator((value) => z.object({ proofId: z.string().uuid() }).parse(value))
   .handler(async ({ data, context }) => {
     const { data: proof } = await context.supabase
       .from("proofs")

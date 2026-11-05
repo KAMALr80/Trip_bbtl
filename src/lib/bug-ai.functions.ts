@@ -13,7 +13,7 @@ type Row = {
 /** Founder-only: asks the app's AI which other reports look like the same bug. Sends text + screen only — never screenshots, emails or names. */
 export const suggestSimilarReports = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v) => z.object({ reportId: z.string().uuid() }).parse(v))
+  .validator((v) => z.object({ reportId: z.string().uuid() }).parse(v))
   .handler(async ({ data, context }) => {
     const sb = context.supabase;
     const admin = await sb.rpc("is_app_admin");
