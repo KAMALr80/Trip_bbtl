@@ -46,7 +46,10 @@ describe("parseVerdict (M6-01, M6-02)", () => {
   });
   it("a model error is unsure (the crew decides)", async () => {
     const failing = visionProofChecker({} as never);
-    const v = await checkProofPhoto({ challenge: "a mural", photoUrl: "https://x/y.jpg" }, failing);
+    // A data: URL, so the SDK hands the photo straight to the (broken) model. With an https URL it
+    // first downloads the photo, which made this test depend on DNS and never reach the model.
+    const photoUrl = "data:image/png;base64,iVBORw0KGgo=";
+    const v = await checkProofPhoto({ challenge: "a mural", photoUrl }, failing);
     expect(v).toEqual({ verdict: "unsure", reason: null, safetyFlags: [] });
   });
 });

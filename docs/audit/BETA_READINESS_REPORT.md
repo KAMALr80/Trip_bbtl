@@ -1,6 +1,6 @@
 # Beta readiness report
 
-**Date:** Nov 5, 2026 · **Code:** `main` at `3d2bfcd` plus the uncommitted audit fixes.
+**Date:** Nov 5, 2026 · **Code:** `main` at `50b4e21`: the audit fixes, committed as `4c442c9` and merged by PR #3, with CI passing on the PR and after the merge. The final-verification changes (B-12, B-14 and these doc updates) are on the `final-verification` branch, waiting for PR review (not merged yet).
 
 ## Verdict: **Not ready for a beta with real crews.** Ready to go to staging once the owner provides the accounts.
 
@@ -26,14 +26,14 @@ A beta needs real people to sign in from a hosted URL. None of that exists yet: 
 | Testing | Good locally | Gaps: real devices, desktop, a live-stack E2E for trip management, staging, load |
 | Deployment | **Blocked** | No Supabase or Cloudflare accounts, domain or secrets |
 | Operations | **Blocked** | No monitoring (Sentry DSN), no alerts, no load test, no backups (production Pro plan) |
-| Process | Needs a setting | PRs merged before CI finished (B-02) |
+| Process | Needs a setting | `main` can't be deleted or force-pushed now, but CI isn't required before a merge (B-02) |
 | Legal and content | **Blocked** | Terms and Privacy outdated (M6-09); content below the launch target |
 
 ## Blockers before a beta, in order
 
 1. **Staging.** The owner creates the Supabase and Cloudflare accounts, VAPID keys and secrets, then runs `deploy staging` (owner steps §1).
 2. **Email.** An SMTP sender with DNS records (2.3), so sign-up codes and password resets are delivered.
-3. **Branch protection** with required CI (B-02).
+3. **Required CI checks** on `main` (B-02). The ruleset already blocks deleting and force-pushing it.
 4. **Phones.** The M4-10 checklist on one iPhone and one Android phone against staging.
 5. **Legal.** Terms and Privacy updated and lawyer-reviewed (M6-09), including P4; then the legal version is bumped.
 6. **Decisions:**
@@ -41,7 +41,7 @@ A beta needs real people to sign in from a hosted URL. None of that exists yet: 
    - P8, protecting proofs when dates move;
    - confirm Q29.
 7. **Monitoring.** A Sentry DSN, and cron and error alerts (M0-12, M6-08).
-8. **Dependencies.** `bun audit fix` and the zod 4 upgrade (B-01).
+8. **Dependencies.** `bun audit fix`, the zod 4 upgrade and newer `wrangler` / `miniflare` for the `sharp` advisories (B-01).
 9. **Content.** The founder reviews the library up to the launch target (M3-02).
 
 ## Optional before a beta

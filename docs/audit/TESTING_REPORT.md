@@ -1,6 +1,6 @@
 # Testing report
 
-**Date:** Nov 5, 2026 · **Code:** `main` at `3d2bfcd`. The baseline ran before any change; the final run includes the fixes in [FIXES_AND_REGRESSION_REPORT.md](FIXES_AND_REGRESSION_REPORT.md).
+**Date:** Nov 5, 2026 · **Code:** `main` at `3d2bfcd`. The baseline ran before any change; the final run includes the fixes in [FIXES_AND_REGRESSION_REPORT.md](FIXES_AND_REGRESSION_REPORT.md). Those fixes were merged by PR #3 (`50b4e21`). A last verification ran after that merge: see [Final verification](#final-verification-nov-5-after-pr-3).
 
 **Environment:** Windows 11 with about 0.7–1.1 GB of free RAM, so suites ran one at a time. Docker Desktop and the local Supabase stack ran with the long-lived local volume; its seed was applied Oct 31. Playwright 1.56.1 with Chromium 141, iPhone 13 viewport.
 
@@ -86,3 +86,26 @@ These were verified with the existing pgTAP and mocked E2E suites. To keep local
 2. **`07_seed.test.sql` on the local stack.** "Airport Missions have closed". The seed's dates are relative to the day it was applied (Oct 31). It passes on a fresh database, in CI and on the disposable PG16 database. Not fixed: the fix is `supabase db reset`, which isn't allowed here (B-05).
 3. **Mocked E2E `game-night-live.spec.ts`.** It timed out after the page reloaded during the test; the failure snapshot shows the splash screen. Re-run alone it passed twice (42.0 s cold, 8.3 s warm), so it was a cold server or a Vite reload, not an app defect. Fixed by the E2E warm-up (B-10): in the final run it passed in 5.0 s.
 4. **Signed-out spec run alone on a cold server.** The first test timed out while the page was still on the splash screen. Fixed by the warm-up (B-10): on a genuinely cold server, the first test passed in 5.9 s.
+
+## Final verification (Nov 5, after PR #3)
+
+**Code:** `main` at `50b4e21`, plus the B-12 and B-14 fixes on the `final-verification` branch. That tree has the same application code as `4c442c9`, which the full browser suites above tested, and CI passed on PR #3 (run 42023808424) and after the merge (run 42026792076), all three jobs. So the browser suites weren't repeated in full here.
+
+| Suite | Result |
+|---|---|
+| Typecheck | passed |
+| Unit (Vitest) | 205 passed, 0 failed, 0 skipped. The first run hit B-14 (a DNS timeout), fixed; the next three runs of that file passed |
+| ESLint | 0 errors, 104 warnings (unchanged) |
+| Production build and bundle secret check | passed, no secrets |
+| pgTAP, disposable PG16 | 35/35 files, 827 assertions |
+| pgTAP, local stack | 34/35 files: `07_seed` fails (B-05, by design). The first attempt didn't run at all: `npx` got a network error (ECONNRESET) while downloading the CLI, so it's not counted |
+| Signed-out E2E (mocked, `e2e/signed-out.spec.ts`) | 8 passed, 0 failed, 0 skipped (1.5 min, including the warm-up) |
+| `bun audit` | 35 advisories (14 high, 16 moderate, 5 low), now including three high `sharp` advisories (B-01) |
+| Database state | unchanged: 9 auth users, 5 trips, 11 members, 459 content items, 0 proofs, 27 migrations |
+
+**Not executed in this pass:**
+- the full mocked, PWA and live E2E suites (they passed on the same application code earlier the same day and in CI);
+- the live invite-join test, which would change local membership;
+- everything already listed under "Not executed, and why".
+
+**Memory note:** the host had about 0.7 GB of free RAM. One unit run and one typecheck ran out of memory and were re-run; the re-runs are the results above.

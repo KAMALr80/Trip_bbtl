@@ -64,13 +64,13 @@ TripJunkies is a mobile-first web app (PWA) that turns a group trip into a game.
 
 ### Known bugs
 
-[BUG_REGISTER.md](BUG_REGISTER.md) lists **13 findings**. There are **0 P0 and 0 P1** issues. The two P2 items are dependency advisories (B-01) and PRs merged before CI finished (B-02); the other 11 are P3. The 4 reproducible code or test defects (B-08 to B-11) were fixed in this audit.
+[BUG_REGISTER.md](BUG_REGISTER.md) lists **15 findings**. There are **0 P0 and 0 P1** issues. The two P2 items are dependency advisories (B-01) and CI not being required before a merge (B-02); the other 13 are P3. B-08 to B-11 were fixed in this audit and merged by PR #3 (`50b4e21`). B-12 and B-14 were fixed in the final verification, on the `final-verification` branch (not merged yet).
 
 ### Security risks
 
 These are risks and decisions, not open exploits.
 
-- 35 dependency advisories, 14 of them high. Most are in build tooling; `zod` is a direct dependency below 4.6.6.
+- 35 dependency advisories, 14 of them high. Most are in build tooling (including `sharp` under `miniflare`); `zod` is a direct dependency below 4.6.6.
 - Signed photo links last 1 hour and still work if shared (P3).
 - Teen avatars are visible to the crew, pending legal review (P4).
 - Moving a trip's dates after it starts can delete proofs (P8).

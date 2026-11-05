@@ -11,10 +11,11 @@
 | SMTP for auth email (owner steps 2.3) | Not configured | No | Email sender and DNS; `SMTP_*` settings for `deploy.sh auth` | Owner, domain | Sign-up codes and password reset can't be delivered; Supabase's default mailer is rate-limited | Pick Resend, Postmark or SES |
 | Full E2E coverage | 59 mocked, 13 PWA, 3 live tests; all pass except one live test not run here | Mostly | Real-stack E2E for create, edit, delete, leave and remove; a desktop project; live invite join on a fresh stack (CI runs it) | Fresh local stack or CI | Real-backend UI gaps | Add live specs for trip management in a later PR |
 | Offline and real-device testing (M4-10) | Offline passes in Chromium (13/13) | Browser only | The iPhone and Android checklist at the end of M4 | Staging, phones | iOS Safari PWA differences | After staging |
-| CI artifacts and remote CI | CI uploads Playwright artifacts `if: failure()` (7 days); traces `retain-on-failure`. Remote CI passed on PR #1, #2 and both merges | Yes | Make CI required before merge (B-02) | Owner | Merges ahead of CI | Turn on branch protection |
+| CI artifacts and remote CI | CI uploads Playwright artifacts `if: failure()` (7 days); traces `retain-on-failure`. Remote CI passed on PRs #1–#3 and their merges | Yes | `main`'s ruleset blocks deletion and force-push; make the three CI jobs required before merge (B-02) | Owner | Merges ahead of CI | Add required status checks to the ruleset |
 | Legal (M6-09, Q11) | Not done | No | Terms and Privacy for 18+ self sign-up, teen invites, photo deletion after Day 7, AI checks and moderation; lawyer review; legal version bump | Owner, lawyer | Text no longer matches the app | Brief the lawyer |
 | Zod 4 migration (S6, B-01) | Not done | No | zod 3 → 4 in 17 files; `bun audit fix` for transitive advisories | Approval | High advisory (memory DoS) | Approve the upgrade PR |
 | **Q17** "Sign-in methods: email (password or one-time code?), Google, Apple?" | Open | No | Decision. Default: email code + Google. Google needs an OAuth client (owner steps 2.2) | Founder | Sign-in UX | Founder decides |
+| **Q18** "Payments (Phase 2): provider and when to turn them on? Tier change when players join mid-trip (R-902)?" | Open, scheduled "Later" | No | Decision. Suggested: Stripe on the web, keep `beta_free` on until then. The payment and cost functions stay dormant | Founder | None for the beta: payments are off | Decide before Phase 2 |
 | **Q29** "Surprise Drop present live (R-343)" | Built with defaults: flat 10, all four games, expires with the crown, solo sends photos | Built; confirmation pending | Founder confirmation | Founder | Rule changes later | Founder confirms |
 | **P4** "teen avatars: whether they should be leader-only too" | Open for legal review | No | Decision; if leader-only, a policy change plus tests | Lawyer, founder | Minors' images | Include in the legal review |
 | **P8** "Re-planning: moving dates deletes items' proofs and points" | Ticket (product decision) | No | Lock dates once a trip starts, or move proofs to the new item | Founder | Data loss for live trips if dates move | Founder picks an option, then a migration with tests |
@@ -30,17 +31,19 @@
 - B-09: signed-out admin check.
 - B-10: E2E warm-up.
 - B-11: setup error text.
+- Final verification (branch `final-verification`, not merged yet): B-12 `.gitignore` duplicates, B-14 the network-dependent unit test.
 
 **Code changes that need your approval:**
 - Dependency upgrades: `bun audit fix` and zod 4 (B-01).
 - The `.validator()` rename (B-03).
 - Removing or mounting the unused files, including `OfflineTripCards` (B-07).
 - Replacing `vite-tsconfig-paths` (B-13).
+- The AI SDK `file` part in the proof check (B-15), once `AI_API_KEY` exists.
 - Moving the 11 retired tables (M1-08).
 - Real-stack E2E for trip management.
 
 **Configuration that needs your input:**
-- Branch protection (B-02).
+- Required CI checks on `main` (B-02).
 - VAPID keys.
 - Google OAuth client.
 - SMTP sender.
