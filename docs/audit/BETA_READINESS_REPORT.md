@@ -1,6 +1,6 @@
 # Beta readiness report
 
-**Date:** Nov 5, 2026 · **Code:** `main` at `50b4e21`: the audit fixes, committed as `4c442c9` and merged by PR #3, with CI passing on the PR and after the merge. The final-verification changes (B-12, B-14 and these doc updates) are on the `final-verification` branch, waiting for PR review (not merged yet).
+**Date:** Nov 5, 2026 · **Code:** `main` at `ec98cef` (PRs #1–#4 merged; CI passed on PR #4 and after its merge). The Phase 2 review the same day (B-16, B-17, the dependency table, decision notes) changed documentation only: no code, dependency or setting.
 
 ## Verdict: **Not ready for a beta with real crews.** Ready to go to staging once the owner provides the accounts.
 
@@ -32,8 +32,8 @@ A beta needs real people to sign in from a hosted URL. None of that exists yet: 
 ## Blockers before a beta, in order
 
 1. **Staging.** The owner creates the Supabase and Cloudflare accounts, VAPID keys and secrets, then runs `deploy staging` (owner steps §1).
-2. **Email.** An SMTP sender with DNS records (2.3), so sign-up codes and password resets are delivered.
-3. **Required CI checks** on `main` (B-02). The ruleset already blocks deleting and force-pushing it.
+2. **Email.** An SMTP sender with DNS records (2.3), so sign-up codes and password resets are delivered. Also the sign-up template with the code (B-17).
+3. **Required CI checks** on `main` (B-02). The ruleset already blocks deleting and force-pushing it; the exact UI steps are in B-02.
 4. **Phones.** The M4-10 checklist on one iPhone and one Android phone against staging.
 5. **Legal.** Terms and Privacy updated and lawyer-reviewed (M6-09), including P4; then the legal version is bumped.
 6. **Decisions:**
@@ -41,7 +41,7 @@ A beta needs real people to sign in from a hosted URL. None of that exists yet: 
    - P8, protecting proofs when dates move;
    - confirm Q29.
 7. **Monitoring.** A Sentry DSN, and cron and error alerts (M0-12, M6-08).
-8. **Dependencies.** `bun audit fix`, the zod 4 upgrade and newer `wrangler` / `miniflare` for the `sharp` advisories (B-01).
+8. **Dependencies.** The zod 4 upgrade first: it's the only advisory that reaches production. Then `wrangler` 4.158.0 for the 33 dev-only ones (B-01). `bun audit fix` can't fix these.
 9. **Content.** The founder reviews the library up to the launch target (M3-02).
 
 ## Optional before a beta
@@ -53,6 +53,28 @@ A beta needs real people to sign in from a hosted URL. None of that exists yet: 
 - An external pen test (M6-07).
 - Designer art (ticket-stub card, Airline Look, postcard image).
 - `AI_API_KEY` for AI tailoring and photo checks (M6-01 evaluation).
+
+## Beta QA plan (Phase 2, Nov 5)
+
+"Local" can run today on this machine or in CI. The other columns need what they name. Mark each row only from a real run; none of the right-hand columns has been run yet.
+
+| Area | Local (already passing) | Needs staging | Needs credentials / accounts | Needs physical devices |
+|---|---|---|---|---|
+| Mobile layouts | Mocked E2E at iPhone 13 (390×844); a11y (axe) | — | — | 360 px Android, a small iPhone, a large phone; no 360/430 Playwright project yet |
+| PWA install | `e2e/pwa` install test (Chromium) | HTTPS staging URL | — | M4-10 steps 1–2 on iPhone (Safari → Add to Home Screen) and Android (Chrome) |
+| Offline, reconnection, sync | PWA suite 13/13 (offline Home and pages, outbox, snapshot) | ✓ | — | M4-10 steps 4–7 and 11 (airplane mode, 12 MP camera photo, no duplicates, EXIF stripped, 7-day snapshot on iPhone) |
+| Push notifications | PWA push test (mocked) | ✓ | VAPID keys (6.1) | M4-10 steps 3, 8–10 (test push, quiet hours, mute, update prompt) on both phones |
+| Sign-in, sign-up code, password reset | 10/10 role and session checks; Google off, on and unknown (mocked) | ✓ | SMTP sender (2.3), template (B-17) | Inbox on a phone |
+| Google OAuth | Mocked only | ✓ | Google OAuth client (2.2), redirect URI | One Android and one iPhone |
+| Trips, invites, Captain and Crew permissions | pgTAP 01, 02, 05, 13, 16, 30; E2E join, invite, Captain tiles | Two or three real accounts | — | Invite link opened on a second phone |
+| Proofs and Crew Check | pgTAP 20–23; E2E `crew-check` | ✓ (storage, signed links) | `AI_API_KEY` for AI verdicts (optional) | Camera upload on both phones |
+| Surprise Drops | pgTAP 23, 35; E2E `surprise-drop` | Hosted cron (`settle_drops`) | — | — |
+| Game Night Live | pgTAP 22; E2E `game-night-live` | Hosted cron (auto-close); real-time with 3+ players | — | 3+ phones at once |
+| Postcards and Passport | pgTAP 26–29; E2E `postcard`, `profile` | Photo purge cron after Day 7 (M4-10 step 12) | — | Download my photos on iPhone |
+| Moderation and admin | pgTAP 31–34; E2E `admin`, `moderation` | ✓ | `AI_API_KEY` for image moderation | — |
+| Performance and load | — | Lighthouse on Slow 4G, 500-player load test (M6-08) | — | A mid-range Android |
+
+**Exit criteria for a beta with 3–5 crews:** every row passes on staging and both phones; no open P0 or P1; B-01 (zod), B-02 and B-17 closed.
 
 ## After staging is up, verify there
 

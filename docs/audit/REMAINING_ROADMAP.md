@@ -13,7 +13,7 @@
 | Offline and real-device testing (M4-10) | Offline passes in Chromium (13/13) | Browser only | The iPhone and Android checklist at the end of M4 | Staging, phones | iOS Safari PWA differences | After staging |
 | CI artifacts and remote CI | CI uploads Playwright artifacts `if: failure()` (7 days); traces `retain-on-failure`. Remote CI passed on PRs #1–#3 and their merges | Yes | `main`'s ruleset blocks deletion and force-push; make the three CI jobs required before merge (B-02) | Owner | Merges ahead of CI | Add required status checks to the ruleset |
 | Legal (M6-09, Q11) | Not done | No | Terms and Privacy for 18+ self sign-up, teen invites, photo deletion after Day 7, AI checks and moderation; lawyer review; legal version bump | Owner, lawyer | Text no longer matches the app | Brief the lawyer |
-| Zod 4 migration (S6, B-01) | Not done | No | zod 3 → 4 in 17 files; `bun audit fix` for transitive advisories | Approval | High advisory (memory DoS) | Approve the upgrade PR |
+| Zod 4 migration (S6, B-01) | Analysed (Phase 2); not done | No | zod 3 → 4 in 17 files (14 `.uuid()`, 4 `.catch()`; no `zodResolver`). Then `wrangler` 4.59.1 → 4.158.0 for 33 dev-only advisories (brings `miniflare` 5 beta). `bun audit fix` can't fix any of them | Approval | The only production advisory (authenticated memory DoS) | Approve the zod upgrade PR first |
 | **Q17** "Sign-in methods: email (password or one-time code?), Google, Apple?" | Open | No | Decision. Default: email code + Google. Google needs an OAuth client (owner steps 2.2) | Founder | Sign-in UX | Founder decides |
 | **Q18** "Payments (Phase 2): provider and when to turn them on? Tier change when players join mid-trip (R-902)?" | Open, scheduled "Later" | No | Decision. Suggested: Stripe on the web, keep `beta_free` on until then. The payment and cost functions stay dormant | Founder | None for the beta: payments are off | Decide before Phase 2 |
 | **Q29** "Surprise Drop present live (R-343)" | Built with defaults: flat 10, all four games, expires with the crown, solo sends photos | Built; confirmation pending | Founder confirmation | Founder | Rule changes later | Founder confirms |
@@ -31,14 +31,16 @@
 - B-09: signed-out admin check.
 - B-10: E2E warm-up.
 - B-11: setup error text.
-- Final verification (branch `final-verification`, not merged yet): B-12 `.gitignore` duplicates, B-14 the network-dependent unit test.
+- Final verification (merged by PR #4): B-12 `.gitignore` duplicates, B-14 the network-dependent unit test.
 
 **Code changes that need your approval:**
 - Dependency upgrades: `bun audit fix` and zod 4 (B-01).
 - The `.validator()` rename (B-03).
 - Removing or mounting the unused files, including `OfflineTripCards` (B-07).
 - Replacing `vite-tsconfig-paths` (B-13).
-- The AI SDK `file` part in the proof check (B-15), once `AI_API_KEY` exists.
+- The AI SDK `file` part (B-15) and the low-detail image option (B-16): both verified offline, one small change plus an offline unit test.
+- The sign-up email template with the code (B-17), and testing it on staging.
+- `.nvmrc` with Node 22 (B-13).
 - Moving the 11 retired tables (M1-08).
 - Real-stack E2E for trip management.
 
@@ -57,6 +59,17 @@
 - Designer: the ticket-stub card, the Airline Look and the postcard art.
 - Phones for M4-10.
 - 3–5 real crews for the beta.
+
+**Decision notes (Phase 2, Nov 5).** These are recovered from `06-open-questions.md` and `m6-security-and-privacy-audit.md`. A "recommendation" is a suggestion, not a decision. Nothing is implemented until you approve.
+
+| Item | What needs deciding | Choices | Technical impact | User impact | Recommendation |
+|---|---|---|---|---|---|
+| **Q17** sign-in methods | "email (password or one-time code?), Google, Apple?" Today: email + password, with a 6-digit code to confirm sign-up; Google works when the provider is configured, otherwise the app says so | a) email + password, as today; b) the written default: email code + Google; c) b plus Apple | b) needs SMTP (2.3), the code template (B-17), a Google OAuth client (2.2) and the redirect URIs. The code already handles Google on or off. c) needs an Apple developer account | Google is the fastest sign-up on phones; codes avoid forgotten passwords | The written default (b). Apple only if players ask |
+| **Q18** payments | "provider and when to turn them on? Tier change when players join mid-trip (R-902)?" | a) the written suggestion: Stripe on the web, later; b) decide now | None for the beta: `beta_free` stays on, and the payment and cost functions stay dormant | None for the beta | Decide before Phase 2 (a) |
+| **Q29** Surprise Drop "present live" | Built with defaults (flat 10, all four games, expires with 0 at the Trip Season crown, solo sends photos); "founder to confirm" | a) confirm; b) change points, games or expiry | Changing it is a migration plus pgTAP 35 | Scoring of Surprise Drops | Confirm (a), unless playtests say otherwise |
+| **P4** teen avatars | "whether teen avatars should be leader-only too" (proof photos in trips with minors already are) | a) as today: visible to everyone sharing a trip; b) leader-only for minors; c) initials only for minors | b and c are a storage policy and avatar-read change, plus pgTAP | Teens' crew-mates see a photo, or initials | Ask the lawyer as part of M6-09. Until then, b or c is the more cautious default |
+| **P8** re-planning | "Moving a trip's dates re-plans the schedule; items that no longer fit are deleted and their proofs (and points) cascade with them" | a) lock the dates once the trip has started; b) move proofs to the new item | a) a server-side check on date changes after the start, plus a test. b) mapping old items to new ones, which is harder. Today only the setup wizard limits date changes to before the trip; the database doesn't enforce it | a) Captains can't move dates mid-trip; b) points survive a move | a), enforced in the database |
+| **OfflineTripCards** (B-07) | The component and `offline-trip-content.ts` were never rendered; M4-05 lists offline trip cards as part of flight play | a) mount it on the offline Play screen; b) delete both files and remove the `sw-plan.ts:66` entry | a) a place in Play, plus a PWA test. b) removes 2 files; the precache doesn't change (no images) | a) an extra card to play offline on a flight | Product owner decides. If M4-05 has no plan for it, b |
 
 **Product decisions:**
 - Q17 and Q18.
