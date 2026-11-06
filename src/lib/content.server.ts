@@ -85,7 +85,7 @@ export async function askList(
   paid?: { log: import("./ai-quota.server").UsageLog },
   userId: string | null = null,
 ): Promise<string[]> {
-  const { getAiModel } = await import("@/integrations/ai/index.server");
+  const { aiRequestLimits, getAiModel } = await import("@/integrations/ai/index.server");
   const ai = getAiModel();
   if (!ai) {
     if (paid) throw new Error("AI unavailable");
@@ -100,6 +100,7 @@ export async function askList(
   try {
     const { streamText } = await import("ai");
     const result = streamText({
+      ...aiRequestLimits(),
       model: ai.model,
       instructions: `${instructions} ${RULES} Return ONLY a JSON array of strings.`,
       messages: [{ role: "user", content: JSON.stringify(payload) }],
@@ -137,11 +138,12 @@ export async function askTasks(
   payload: object,
   paid: { log: import("./ai-quota.server").UsageLog },
 ): Promise<CheckinTask[]> {
-  const { getAiModel } = await import("@/integrations/ai/index.server");
+  const { aiRequestLimits, getAiModel } = await import("@/integrations/ai/index.server");
   const ai = getAiModel();
   if (!ai) throw new Error("AI unavailable");
   const { streamText } = await import("ai");
   const result = streamText({
+    ...aiRequestLimits(),
     model: ai.model,
     instructions: `${instructions} ${RULES} Return ONLY a JSON array of objects with keys category, title, what, backstory, keywords (array of 2-4 strings).`,
     messages: [{ role: "user", content: JSON.stringify(payload) }],

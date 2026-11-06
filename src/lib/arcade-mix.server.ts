@@ -1,10 +1,11 @@
-import { getAiModel } from "@/integrations/ai/index.server";
+import { aiRequestLimits, getAiModel } from "@/integrations/ai/index.server";
 import { generateText } from "ai";
 
 export async function generateArcadeMix() {
   const ai = getAiModel();
   if (!ai) throw new Error("AI mixes are unavailable right now. Try the sample cards instead.");
   const result = await generateText({
+    ...aiRequestLimits(),
     model: ai.model,
     instructions:
       "Make a single playful, clean, all-ages three-part sample game using only the supplied prompts: Talk Cards (ask one supplied question), Do Wheel (use one supplied action), Show Vote (use a supplied vote). You may reorder and connect, but do not invent new game mechanics, personal facts, drinking or adult content. Return three numbered short lines. No markdown.",

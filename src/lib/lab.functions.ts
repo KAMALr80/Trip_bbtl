@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { TRIP_FOLDER_BUCKETS } from "./trip-storage";
 
 const BOT_NAMES = [
   "Mango",
@@ -81,7 +82,7 @@ async function wipe(ctx: Ctx, tripId: string) {
   const { data: ids, error } = await ctx.supabase.rpc("lab_delete", { p_trip: tripId });
   if (error) throw new Error(error.message);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  for (const bucket of ["trip-photos", "player-avatars", "quest-proofs"]) {
+  for (const bucket of TRIP_FOLDER_BUCKETS) {
     const paths = await listAll(supabaseAdmin, bucket, tripId);
     if (paths.length) await supabaseAdmin.storage.from(bucket).remove(paths);
   }

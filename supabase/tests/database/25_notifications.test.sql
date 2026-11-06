@@ -82,7 +82,7 @@ SELECT throws_like($$SELECT * FROM public.claim_notifications()$$, '%permission 
                    'or run the sender');
 SELECT throws_like($$SELECT public.queue_test_notification()$$, 'Turn on notifications on this phone first',
                    'a test needs a subscription');
-SELECT public.save_push_subscription('https://push.example.com/abc', repeat('B', 87), repeat('a', 22), 'Test UA');
+SELECT public.save_push_subscription('https://fcm.googleapis.com/fcm/send/abc', repeat('B', 87), repeat('a', 22), 'Test UA');
 SELECT ok(public.queue_test_notification() IS NOT NULL, 'then a test is queued for right now');
 SELECT tests.authenticate_as(tests.user_id('p2'));
 SELECT is((SELECT count(*)::int FROM public.push_subscriptions), 0, 'nobody sees another player''s subscriptions');
@@ -125,11 +125,11 @@ UPDATE public.notification_queue SET send_after = now() - interval '1 minute'
 WHERE id = (SELECT id FROM claimed WHERE type = 'proof_expired');
 SELECT public.finish_notifications(
   (SELECT jsonb_agg(jsonb_build_object('id', c.id, 'outcome', 'sent', 'channel', 'push',
-                                       'gone', jsonb_build_array('https://push.example.com/abc')))
+                                       'gone', jsonb_build_array('https://fcm.googleapis.com/fcm/send/abc')))
    FROM public.claim_notifications(100, tests.user_id('p1')) c));
 SELECT ok((SELECT status = 'sent' AND channel = 'push' FROM public.notification_queue
            WHERE id = (SELECT id FROM claimed WHERE type = 'proof_expired'))
-          AND NOT EXISTS (SELECT 1 FROM public.push_subscriptions WHERE endpoint = 'https://push.example.com/abc'),
+          AND NOT EXISTS (SELECT 1 FROM public.push_subscriptions WHERE endpoint = 'https://fcm.googleapis.com/fcm/send/abc'),
           'sent is recorded, and a subscription the push service says is gone is deleted');
 
 SELECT * FROM finish();

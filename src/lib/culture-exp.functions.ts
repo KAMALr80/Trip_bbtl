@@ -58,11 +58,12 @@ async function runAi(
   payload: object,
   log: (m: string, u: any) => Promise<void>,
 ) {
-  const { getAiModel } = await import("@/integrations/ai/index.server");
+  const { aiRequestLimits, getAiModel } = await import("@/integrations/ai/index.server");
   const ai = getAiModel();
   if (!ai) throw new Error("AI help is unavailable right now.");
   const { streamText } = await import("ai");
   const result = streamText({
+    ...aiRequestLimits(),
     model: ai.model,
     instructions: `${instructions} ${POLICY}`,
     messages: [{ role: "user", content: JSON.stringify(payload) }],

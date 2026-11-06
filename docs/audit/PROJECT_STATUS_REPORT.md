@@ -2,7 +2,9 @@
 
 **Date:** Nov 5, 2026 · **Code audited:** `main` at `3d2bfcd` (Phase 1 merged as `0520cd0`, authentication hardening as `d13acf3`) · **Environment:** Windows 11, Node 26.13, Bun 1.4.2, Docker 29.9, Supabase CLI 3.0 (2.121 for tests), local stack only.
 
-Related reports in this folder: [testing](TESTING_REPORT.md), [bug register](BUG_REGISTER.md), [fixes and regression](FIXES_AND_REGRESSION_REPORT.md), [remaining roadmap](REMAINING_ROADMAP.md), [beta readiness](BETA_READINESS_REPORT.md).
+Related reports in this folder: [testing](TESTING_REPORT.md), [bug register](BUG_REGISTER.md), [fixes and regression](FIXES_AND_REGRESSION_REPORT.md), [remaining roadmap](REMAINING_ROADMAP.md), [beta readiness](BETA_READINESS_REPORT.md), [authorization review](AUTHORIZATION_REVIEW.md).
+
+**Latest state (Nov 6, 2026):** `main` is at `53e8f5f` (PRs #1–#6). These were targeted reviews, not a full audit or penetration test. Reviewed: authentication, server functions, RLS, storage, badges, notifications, the AI photo check, and targeted concurrency, time-zone and performance checks. Not reviewed: anything hosted, real devices, real parallel load, UX beyond the axe checks. The rest of this report describes the code as first audited at `3d2bfcd`.
 
 ## What TripJunkies is
 
@@ -64,15 +66,19 @@ TripJunkies is a mobile-first web app (PWA) that turns a group trip into a game.
 
 ### Known bugs
 
-[BUG_REGISTER.md](BUG_REGISTER.md) lists **17 findings**. There are **0 P0 and 0 P1** issues. The three P2 items are:
-- the `zod` advisory (B-01, the only one that reaches production);
+[BUG_REGISTER.md](BUG_REGISTER.md) lists **26 findings**. There are **0 P0 and 0 P1** issues in what was reviewed. The five P2 items are:
+- dependency advisories (B-01; zod is fixed, and the 35 left are dev-only);
 - CI not being required before a merge (B-02);
-- the sign-up email on hosted Supabase sending a link where the app asks for a code (B-17, to verify on staging).
+- the sign-up email on hosted Supabase (B-17; template added, to verify on staging);
+- proof photos left in Storage after a trip is deleted (B-20, fixed on the authorization branch);
+- push reminders continuing after sign-out (B-21, fixed on the authorization branch).
 
-The other 14 are P3. B-08 to B-11 were merged by PR #3 (`50b4e21`), and B-12 and B-14 by PR #4 (`ec98cef`). The Phase 2 review (Nov 5) added B-16 and B-17. The hardening branch (`release/complete-project-hardening`) then:
+The other 21 are P3. B-08 to B-11 were merged by PR #3 (`50b4e21`), and B-12 and B-14 by PR #4 (`ec98cef`). The Phase 2 review (Nov 5) added B-16 and B-17. PR #6 (`53e8f5f`) then:
 - fixes B-03, B-13, B-15, B-16, B-18 (a flaky passport test) and B-19 (the query cache on sign-out);
 - upgrades zod, so no dependency advisory reaches production;
 - adds the sign-up code template (B-17, to check on staging).
+
+The authorization review (Nov 6) added B-20 to B-26.
 
 The register now lists 19 findings.
 
@@ -83,7 +89,7 @@ These are risks and decisions, not open exploits.
 - 35 dependency advisories, 14 of them high.
   - 33 are in `undici`, `sharp` and `ws` under `wrangler` → `miniflare`, the local Worker simulator. They aren't in the production bundle.
   - One is `minimatch`, lint only.
-  - The `zod` advisory reached production (memory exhaustion in authenticated server functions). The hardening branch moves the app to Zod 4.6.6. The one remaining `zod` entry is `miniflare`'s own dev copy.
+  - The `zod` advisory reached production (memory exhaustion in authenticated server functions). PR #6 moved the app to Zod 4.6.6. The one remaining `zod` entry is `miniflare`'s own dev copy.
 - Signed photo links last 1 hour and still work if shared (P3).
 - Teen avatars are visible to the crew, pending legal review (P4).
 - Moving a trip's dates after it starts can delete proofs (P8).

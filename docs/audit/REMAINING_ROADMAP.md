@@ -13,7 +13,7 @@
 | Offline and real-device testing (M4-10) | Offline passes in Chromium (13/13) | Browser only | The iPhone and Android checklist at the end of M4 | Staging, phones | iOS Safari PWA differences | After staging |
 | CI artifacts and remote CI | CI uploads Playwright artifacts `if: failure()` (7 days); traces `retain-on-failure`. Remote CI passed on PRs #1–#3 and their merges | Yes | `main`'s ruleset blocks deletion and force-push; make the three CI jobs required before merge (B-02) | Owner | Merges ahead of CI | Add required status checks to the ruleset |
 | Legal (M6-09, Q11) | Not done | No | Terms and Privacy for 18+ self sign-up, teen invites, photo deletion after Day 7, AI checks and moderation; lawyer review; legal version bump | Owner, lawyer | Text no longer matches the app | Brief the lawyer |
-| Zod 4 migration (S6, B-01) | **Done on the hardening branch** (zod 4.6.6) | Yes, once merged | `wrangler` 4.158.0 is still open: dev-only; brings the `miniflare` 5 beta | zod 3 → 4 in 17 files (14 `.uuid()`, 4 `.catch()`; no `zodResolver`). Then `wrangler` 4.59.1 → 4.158.0 for 33 dev-only advisories (brings `miniflare` 5 beta). `bun audit fix` can't fix any of them | Approval | The only production advisory (authenticated memory DoS) | Approve the zod upgrade PR first |
+| Zod 4 migration (S6, B-01) | **Done** (zod 4.6.6, PR #6) | Yes | `wrangler` 4.158.0 is still open: dev-only; brings the `miniflare` 5 beta | zod 3 → 4 in 17 files (14 `.uuid()`, 4 `.catch()`; no `zodResolver`). Then `wrangler` 4.59.1 → 4.158.0 for 33 dev-only advisories (brings `miniflare` 5 beta). `bun audit fix` can't fix any of them | Approval | The only production advisory (authenticated memory DoS) | Approve the zod upgrade PR first |
 | **Q17** "Sign-in methods: email (password or one-time code?), Google, Apple?" | Open | No | Decision. Default: email code + Google. Google needs an OAuth client (owner steps 2.2) | Founder | Sign-in UX | Founder decides |
 | **Q18** "Payments (Phase 2): provider and when to turn them on? Tier change when players join mid-trip (R-902)?" | Open, scheduled "Later" | No | Decision. Suggested: Stripe on the web, keep `beta_free` on until then. The payment and cost functions stay dormant | Founder | None for the beta: payments are off | Decide before Phase 2 |
 | **Q29** "Surprise Drop present live (R-343)" | Built with defaults: flat 10, all four games, expires with the crown, solo sends photos | Built; confirmation pending | Founder confirmation | Founder | Rule changes later | Founder confirms |
@@ -32,7 +32,8 @@
 - B-10: E2E warm-up.
 - B-11: setup error text.
 - Final verification (merged by PR #4): B-12 `.gitignore` duplicates, B-14 the network-dependent unit test.
-- Hardening branch (`release/complete-project-hardening`): zod 4 (B-01), `.validator()` (B-03), lint leftovers (B-04), Node 22 pin (B-13), AI `file` parts and low detail (B-15, B-16), the sign-up code template (B-17), the `28_passport` fixture (B-18), and clearing the query cache on sign-out (B-19).
+- Merged by PR #6: zod 4 (B-01), `.validator()` (B-03), lint leftovers (B-04), Node 22 pin (B-13), AI `file` parts and low detail (B-15, B-16), the sign-up code template (B-17), the `28_passport` fixture (B-18), and clearing the query cache on sign-out (B-19).
+- Authorization branch (`audit/trip-authorization-and-beta-readiness`): trip deletion cleans every bucket (B-20), sign-out stops push (B-21), push address rules (B-22), AI limits (B-23), Storyteller (B-25), indexes (B-26), and the standing attack matrix.
 
 **Code changes that need your approval:**
 - Dependency upgrades: `bun audit fix` and zod 4 (B-01).
@@ -40,6 +41,9 @@
 - Removing or mounting the unused files, including `OfflineTripCards` (B-07).
 - Replacing `vite-tsconfig-paths` (B-13).
 - Testing the sign-up code email on staging (B-17); the template is in the repository now.
+- Password re-check before deleting an account, and a `Content-Security-Policy` header ([review](AUTHORIZATION_REVIEW.md)).
+- Storage cleanup when a Captain alone in a trip taps Leave (B-20).
+- Splitting the 768 KB `_shell` chunk.
 - `wrangler` 4.158.0 (B-01, dev-only).
 - Moving the 11 retired tables (M1-08).
 - Real-stack E2E for trip management.
