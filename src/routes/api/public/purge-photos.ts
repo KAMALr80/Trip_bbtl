@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { rpcOn } from "@/data/rpc-core";
 import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 import type { Database } from "@/integrations/supabase/types";
+import { sweepOrphanFiles } from "@/lib/trip-storage";
 
 /** Every object under a folder, any depth. */
 async function listTree(
@@ -102,7 +103,9 @@ export const Route = createFileRoute("/api/public/purge-photos")({
             .eq("id", t.id);
           purged++;
         }
-        return Response.json({ purged, postcards });
+        // B-27: files of trips, cards and experiences that no longer exist, however they went.
+        const orphans = await sweepOrphanFiles(supabaseAdmin);
+        return Response.json({ purged, postcards, orphans });
       },
     },
   },

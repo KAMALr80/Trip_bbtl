@@ -37,8 +37,8 @@ export const suggestSimilarReports = createServerFn({ method: "POST" })
     const ai = getAiModel();
     if (!ai) throw new Error("AI is unavailable right now.");
     const guard = await import("./ai-quota.server");
-    if (!(await guard.appAiAllowed("bug_triage", null, context.userId)))
-      throw new Error(guard.AI_BREAK);
+    const usageId = await guard.reserveAppAi("bug_triage", null, context.userId);
+    if (!usageId) throw new Error(guard.AI_BREAK);
     const { generateText } = await import("ai");
     const model = ai.modelId;
     const result = await generateText({
@@ -52,8 +52,7 @@ export const suggestSimilarReports = createServerFn({ method: "POST" })
       }),
       providerOptions: { openai: { store: false } },
     });
-    const { logAppAi } = await import("./ai-quota.server");
-    await logAppAi(null, "bug_triage", model, result.usage, context.userId);
+    await guard.logAppAi(usageId, model, result.usage);
     const m = result.text.match(/\[[\s\S]*\]/);
     let ids: unknown = [];
     try {

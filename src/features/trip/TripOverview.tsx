@@ -40,7 +40,7 @@ function Accordion({
         <Button
           variant="ghost"
           data-view-navigation="true"
-          className="flex-1 min-h-14 justify-between text-left font-display text-lg font-extrabold px-3"
+          className="flex-1 min-w-0 min-h-14 justify-between text-left whitespace-normal font-display text-lg font-extrabold px-3"
           aria-expanded={open}
           onClick={onToggle}
         >

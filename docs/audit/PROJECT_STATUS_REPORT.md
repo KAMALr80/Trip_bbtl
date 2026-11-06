@@ -4,7 +4,7 @@
 
 Related reports in this folder: [testing](TESTING_REPORT.md), [bug register](BUG_REGISTER.md), [fixes and regression](FIXES_AND_REGRESSION_REPORT.md), [remaining roadmap](REMAINING_ROADMAP.md), [beta readiness](BETA_READINESS_REPORT.md), [authorization review](AUTHORIZATION_REVIEW.md).
 
-**Latest state (Nov 6, 2026):** `main` is at `53e8f5f` (PRs #1–#6). These were targeted reviews, not a full audit or penetration test. Reviewed: authentication, server functions, RLS, storage, badges, notifications, the AI photo check, and targeted concurrency, time-zone and performance checks. Not reviewed: anything hosted, real devices, real parallel load, UX beyond the axe checks. The rest of this report describes the code as first audited at `3d2bfcd`.
+**Latest state (Nov 6, 2026):** `main` is at `36ac013` (PRs #1–#7), and `release/final-beta-readiness` is waiting for review. These were targeted reviews, not a full audit or penetration test. Reviewed: authentication, server functions, RLS, storage, badges, notifications, the AI photo check, and targeted concurrency, time-zone and performance checks. Not reviewed: anything hosted, real devices, real parallel load, UX beyond the axe checks. The rest of this report describes the code as first audited at `3d2bfcd`.
 
 ## What TripJunkies is
 
@@ -66,19 +66,21 @@ TripJunkies is a mobile-first web app (PWA) that turns a group trip into a game.
 
 ### Known bugs
 
-[BUG_REGISTER.md](BUG_REGISTER.md) lists **26 findings**. There are **0 P0 and 0 P1** issues in what was reviewed. The five P2 items are:
+[BUG_REGISTER.md](BUG_REGISTER.md) lists **35 findings**. There are **0 P0 and 0 P1** issues in what was reviewed. The seven P2 items are:
 - dependency advisories (B-01; zod is fixed, and the 35 left are dev-only);
 - CI not being required before a merge (B-02);
 - the sign-up email on hosted Supabase (B-17; template added, to verify on staging);
-- proof photos left in Storage after a trip is deleted (B-20, fixed on the authorization branch);
-- push reminders continuing after sign-out (B-21, fixed on the authorization branch).
+- proof photos left in Storage after a trip is deleted (B-20, fixed by PR #7);
+- push reminders continuing after sign-out (B-21, fixed by PR #7);
+- files of deleted trips with no retry (B-27, fixed on the final branch);
+- account deletion without re-checking identity (B-31, fixed on the final branch).
 
-The other 21 are P3. B-08 to B-11 were merged by PR #3 (`50b4e21`), and B-12 and B-14 by PR #4 (`ec98cef`). The Phase 2 review (Nov 5) added B-16 and B-17. PR #6 (`53e8f5f`) then:
+The other 28 are P3. B-08 to B-11 were merged by PR #3 (`50b4e21`), and B-12 and B-14 by PR #4 (`ec98cef`). The Phase 2 review (Nov 5) added B-16 and B-17. PR #6 (`53e8f5f`) then:
 - fixes B-03, B-13, B-15, B-16, B-18 (a flaky passport test) and B-19 (the query cache on sign-out);
 - upgrades zod, so no dependency advisory reaches production;
 - adds the sign-up code template (B-17, to check on staging).
 
-The authorization review (Nov 6) added B-20 to B-26.
+The authorization review (Nov 6) added B-20 to B-26, and the final branch adds B-27 to B-35.
 
 The register now lists 19 findings.
 

@@ -16,7 +16,8 @@ export function senders(origin: string): Senders {
   return {
     push:
       publicKey && privateKey
-        ? (sub, payload) => sendWebPush(sub, payload, { publicKey, privateKey, subject })
+        ? (sub, payload, topic) =>
+            sendWebPush(sub, payload, { publicKey, privateKey, subject }, { topic })
         : null,
     email:
       emailKey && emailFrom

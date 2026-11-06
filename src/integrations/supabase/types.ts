@@ -7215,6 +7215,10 @@ export type Database = {
       };
       ai_gate_server: { Args: { p_kind: string; p_trip: string; p_user: string }; Returns: string };
       ai_guard_report: { Args: Record<PropertyKey, never>; Returns: Json };
+      ai_reserve_server: {
+        Args: { p_kind: string; p_trip: string; p_user: string };
+        Returns: string;
+      };
       answer_daily: {
         Args: { p_choice?: number; p_item: string };
         Returns: {
@@ -8129,6 +8133,13 @@ export type Database = {
           paid: boolean;
           tier: string;
           upgrade_cents: number;
+        }[];
+      };
+      orphan_files: {
+        Args: { p_limit?: number };
+        Returns: {
+          bucket: string;
+          path: string;
         }[];
       };
       passport_collection: {

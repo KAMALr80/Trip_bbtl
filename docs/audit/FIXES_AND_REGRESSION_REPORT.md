@@ -75,7 +75,7 @@ The final numbers are in [TESTING_REPORT.md](TESTING_REPORT.md#final-verificatio
 
 **Not changed:** migrations, the schema, RLS, the seed, `wrangler` / `miniflare`, environment files and local data.
 
-## Authorization review (Nov 6, `audit/trip-authorization-and-beta-readiness`)
+## Authorization review (Nov 6, merged by PR #7 as `36ac013`)
 
 | Bug | Files | Change |
 |---|---|---|
@@ -91,10 +91,32 @@ The final numbers are in [TESTING_REPORT.md](TESTING_REPORT.md#final-verificatio
 
 **Not changed:** P8, payments, sign-in decisions, RLS policies, existing migrations, dependencies, local data.
 
+## Final beta readiness (Nov 6, `release/final-beta-readiness`)
+
+| Bug | Files | Change |
+|---|---|---|
+| B-27 | Migration `20261106120000`, `src/lib/trip-storage.ts` (+ test), `delete-trip.functions.ts`, `purge-photos.ts` | Stateless orphan sweep after a trip deletion and daily; shared files stay |
+| B-28 | `src/lib/security-headers.ts` (+ test), `src/server.ts`, `scripts/pwa/build-sw.ts`, `e2e/pwa/headers.spec.ts` | Security headers; limited CSP enforced, full CSP report-only |
+| B-29 | Migration, `ai-quota.server.ts` (+ test), `proof-check.functions.ts`, `bug-ai.functions.ts`, `content.server.ts` | Atomic reservation before each app-paid call |
+| B-30 | Migration, `deliver.server.ts` (+ test), `web-push.server.ts`, `run.server.ts` | Attempt limit on re-claims; left players skipped; push `Topic` |
+| B-31, B-32 | `src/lib/account-delete.ts` (+ test), `account.functions.ts`, `MeExtras.tsx`, `en.json`, `e2e/profile.spec.ts` | Identity re-check; Captain check before leaving any trip |
+| B-33 | `proof-check.server.ts` (+ test) | Safety flags checked one at a time |
+| B-34 | `CountryFlag.tsx`, `TabContent.tsx` | Flags and founder screens load on demand |
+| B-35 | `TripOverview.tsx` | Long section titles wrap |
+| B-28 | `src/lib/zod-setup.ts` (+ test), `src/data/profile.ts`, `src/data/postcard.ts`, `package.json` (`sideEffects`) | Zod no longer tries `new Function` |
+| Tests | `38_release_hardening`, `e2e/responsive.spec.ts` | New; 360 and 1280 px layout checks |
+| Generated | `supabase/baseline/*`, `docs/inventory/*`, `src/integrations/supabase/types.ts` | Regenerated for the migration |
+| Docs | `docs/audit/*`, `dev-docs/owner-go-live-steps.md`, `dev-docs/README.md`, `supabase/AGENTS.md` | Statuses, results, staging checks, P8 design |
+
+`listTripFiles` and its tests from PR #7 were replaced by the sweep and its tests.
+
+**Not changed:** P8, payments, sign-in decisions, RLS policies, existing migrations, dependencies, local data.
+
 ## Rollback
 
 - **The audit fixes** are merged. To undo them, revert `4c442c9` in a new pull request; don't rewrite `main`'s history.
 - **The final-verification changes** are merged too: revert `7ee8653` in a new pull request.
 - **PR #6** is merged: revert `0e32b58` in a new pull request. Zod 4 goes with it.
-- **The authorization branch** has one forward-only migration. To undo it, restore the two functions and drop the indexes (its header says how).
+- **PR #7** has one forward-only migration. To undo it, restore the two functions and drop the indexes (its header says how).
+- **The final branch** has one forward-only migration; its header says how to undo it. Revert the code in a new pull request.
 - No migration or test here deleted or changed database data.

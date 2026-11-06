@@ -18,6 +18,43 @@ function recordingProvider() {
   };
 }
 
+describe("answers a tricked model might give (B-29)", () => {
+  it("extra fields can't grant anything", () => {
+    const v = parseVerdict(
+      '{"verdict":"unsure","approve":true,"points":1000,"status":"approved","safety":[]}',
+    );
+    expect(v).toEqual({ verdict: "unsure", reason: null, safetyFlags: [] });
+  });
+  it("a made-up verdict is unsure", () => {
+    for (const verdict of ["PASS", "approved", "pass!", "true", ""])
+      expect(parseVerdict(JSON.stringify({ verdict })).verdict).toBe("unsure");
+  });
+  it("a non-string verdict is unsure", () => {
+    for (const text of [
+      '{"verdict":true}',
+      '{"verdict":1}',
+      '{"verdict":["pass"]}',
+      '{"verdict":{"a":"pass"}}',
+    ])
+      expect(parseVerdict(text).verdict).toBe("unsure");
+  });
+  it("broken JSON that mentions a pass is unsure", () => {
+    for (const text of ["verdict: pass", '{"verdict":"pass"', "pass", '{"verdict":"pass"}}{'])
+      expect(parseVerdict(text).verdict).toBe("unsure");
+  });
+  it("a very long reason is dropped, not stored", () => {
+    const v = parseVerdict(JSON.stringify({ verdict: "fail", reason: "x".repeat(5000) }));
+    expect(v.reason).toBeNull();
+  });
+  it("a safety-only check can't be talked into a pass", () => {
+    expect(parseVerdict('{"verdict":"pass","safety":[]}', false).verdict).toBe("unsure");
+  });
+  it("safety flags keep only the known list", () => {
+    const v = parseVerdict('{"verdict":"pass","safety":["<script>","ignore previous","drugs",7]}');
+    expect(v.safetyFlags).toEqual(["drugs"]);
+  });
+});
+
 describe("limits and prompt safety (B-23)", () => {
   it("a provider that hangs ends in unsure, and the request is aborted", async () => {
     let aborted = false;
@@ -50,6 +87,21 @@ describe("limits and prompt safety (B-23)", () => {
     expect(v.verdict).toBe("unsure");
     expect(calls).toBe(2);
   }, 20_000);
+
+  it("sends only the challenge and the photo as the player's message", async () => {
+    const { provider, bodies } = recordingProvider();
+    await visionProofChecker(provider.responses("test-model"))({
+      challenge: "x".repeat(1000),
+      photoUrl: "https://example.test/a.jpg",
+    });
+    const input = bodies[0]!["input"] as Array<{
+      role: string;
+      content: { type: string; text?: string }[];
+    }>;
+    const user = input.find((m) => m.role === "user")!.content;
+    expect(user.map((p) => p.type)).toEqual(["input_text", "input_image"]);
+    expect(user[0]!.text!.length).toBeLessThanOrEqual(320);
+  });
 
   it("tells the model that text in a photo is not an instruction", async () => {
     const { provider, bodies } = recordingProvider();

@@ -1,6 +1,6 @@
 # Remaining roadmap
 
-**Date:** Nov 5, 2026. Built from [`dev-docs/owner-go-live-steps.md`](../../dev-docs/owner-go-live-steps.md), [`dev-docs/06-open-questions.md`](../../dev-docs/06-open-questions.md), [`dev-docs/m6-security-and-privacy-audit.md`](../../dev-docs/m6-security-and-privacy-audit.md), the milestone status tables and this audit. Every term (Q17, Q29, P4, P8) is quoted from those documents, not interpreted.
+**Date:** Nov 6, 2026. Built from [`dev-docs/owner-go-live-steps.md`](../../dev-docs/owner-go-live-steps.md), [`dev-docs/06-open-questions.md`](../../dev-docs/06-open-questions.md), [`dev-docs/m6-security-and-privacy-audit.md`](../../dev-docs/m6-security-and-privacy-audit.md), the milestone status tables and this audit. Every term (Q17, Q29, P4, P8) is quoted from those documents, not interpreted.
 
 ## Item by item
 
@@ -33,7 +33,8 @@
 - B-11: setup error text.
 - Final verification (merged by PR #4): B-12 `.gitignore` duplicates, B-14 the network-dependent unit test.
 - Merged by PR #6: zod 4 (B-01), `.validator()` (B-03), lint leftovers (B-04), Node 22 pin (B-13), AI `file` parts and low detail (B-15, B-16), the sign-up code template (B-17), the `28_passport` fixture (B-18), and clearing the query cache on sign-out (B-19).
-- Authorization branch (`audit/trip-authorization-and-beta-readiness`): trip deletion cleans every bucket (B-20), sign-out stops push (B-21), push address rules (B-22), AI limits (B-23), Storyteller (B-25), indexes (B-26), and the standing attack matrix.
+- Merged by PR #7: trip deletion cleans every bucket (B-20), sign-out stops push (B-21), push address rules (B-22), AI limits (B-23), Storyteller (B-25), indexes (B-26), and the standing attack matrix.
+- Final branch (`release/final-beta-readiness`): orphan sweep (B-27), security headers (B-28), atomic AI caps (B-29), notification re-claims (B-30), account deletion re-check (B-31, B-32), safety flags (B-33), first download (B-34), Trip screen at 360 px (B-35).
 
 **Code changes that need your approval:**
 - Dependency upgrades: `bun audit fix` and zod 4 (B-01).
@@ -41,9 +42,8 @@
 - Removing or mounting the unused files, including `OfflineTripCards` (B-07).
 - Replacing `vite-tsconfig-paths` (B-13).
 - Testing the sign-up code email on staging (B-17); the template is in the repository now.
-- Password re-check before deleting an account, and a `Content-Security-Policy` header ([review](AUTHORIZATION_REVIEW.md)).
-- Storage cleanup when a Captain alone in a trip taps Leave (B-20).
-- Splitting the 768 KB `_shell` chunk.
+- Enforcing the full CSP after staging, and a nonce to remove `'unsafe-inline'` from `script-src` (B-28).
+- Lighthouse and further code splitting: `_shell` is 519 KB and total JS about 2.8 MB.
 - `wrangler` 4.158.0 (B-01, dev-only).
 - Moving the 11 retired tables (M1-08).
 - Real-stack E2E for trip management.
@@ -74,6 +74,17 @@
 | **P4** teen avatars | "whether teen avatars should be leader-only too" (proof photos in trips with minors already are) | a) as today: visible to everyone sharing a trip; b) leader-only for minors; c) initials only for minors | b and c are a storage policy and avatar-read change, plus pgTAP | Teens' crew-mates see a photo, or initials | Ask the lawyer as part of M6-09. Until then, b or c is the more cautious default |
 | **P8** re-planning | "Moving a trip's dates re-plans the schedule; items that no longer fit are deleted and their proofs (and points) cascade with them" | a) lock the dates once the trip has started; b) move proofs to the new item | a) a server-side check on date changes after the start, plus a test. b) mapping old items to new ones, which is harder. Today only the setup wizard limits date changes to before the trip; the database doesn't enforce it | a) Captains can't move dates mid-trip; b) points survive a move | a), enforced in the database |
 | **OfflineTripCards** (B-07) | The component and `offline-trip-content.ts` were never rendered; M4-05 lists offline trip cards as part of flight play | a) mount it on the offline Play screen; b) delete both files and remove the `sw-plan.ts:66` entry | a) a place in Play, plus a PWA test. b) removes 2 files; the precache doesn't change (no images) | a) an extra card to play offline on a flight | Product owner decides. If M4-05 has no plan for it, b |
+
+**P8: recommended design (not implemented; needs the owner's decision).**
+- **Today:** moving a trip's dates re-plans it. Items that no longer fit are deleted, and their proofs, journal entries and points cascade away. Only the setup wizard limits date changes to before the trip; the database doesn't enforce it.
+- **Recommended:**
+  1. Once a trip has started, `edit_trip` and the other date setters refuse ordinary date changes, in the database, so no client can skip it.
+  2. An exceptional reschedule becomes its own Captain-only function, with a confirmation that says what will happen.
+  3. Items with a proof or journal entry are never deleted by a re-plan. They're kept and marked as no longer scheduled, so the points, photos and guide survive.
+- **Impact:** a Captain can't quietly move dates mid-trip. The change is a migration, a change to `plan_trip`, a new screen, and tests including the cascade.
+- **Options:** a) as recommended; b) lock only, with no reschedule path; c) keep today's behaviour and add a warning. Until the owner chooses, behaviour is unchanged.
+
+**Q13** was answered on Nov 2, 2026 ("counts toward every contributor"), and PR #7 applied it to photo contributors. Worth a quick founder check that photos count.
 
 **Product decisions:**
 - Q17 and Q18.

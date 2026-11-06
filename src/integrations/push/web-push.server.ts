@@ -155,7 +155,8 @@ export async function sendWebPush(
   {
     ttlSeconds = 24 * 3600,
     fetchImpl = fetch,
-  }: { ttlSeconds?: number; fetchImpl?: typeof fetch } = {},
+    topic,
+  }: { ttlSeconds?: number; fetchImpl?: typeof fetch; topic?: string | undefined } = {},
 ): Promise<PushResult> {
   const body = await encryptPayload(enc.encode(JSON.stringify(payload)), sub);
   let res: Response;
@@ -168,6 +169,8 @@ export async function sendWebPush(
         "Content-Type": "application/octet-stream",
         TTL: String(ttlSeconds),
         Urgency: "normal",
+        // A resend with the same Topic replaces one the push service hasn't delivered yet.
+        ...(topic ? { Topic: topic } : {}),
       },
       body: buf(body),
     });

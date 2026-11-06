@@ -27,7 +27,7 @@ The deck is the **source of truth for product rules**. It says so itself: *"This
 
 ## Where we are and what's next (Nov 6, 2026)
 
-**Nov 6:** the stabilization, authentication-hardening, audit-fix, verification, documentation and hardening branches are merged (PRs #1–#6, `main` at `53e8f5f`), and CI passes. The audit's reports (status, tests, bugs, roadmap, beta readiness) are in [`docs/audit/`](../docs/audit/PROJECT_STATUS_REPORT.md).
+**Nov 6:** the stabilization, authentication-hardening, audit-fix, verification, documentation, hardening and authorization branches are merged (PRs #1–#7, `main` at `36ac013`), and CI passes. The audit's reports (status, tests, bugs, roadmap, beta readiness) are in [`docs/audit/`](../docs/audit/PROJECT_STATUS_REPORT.md).
 
 **Done:** M1 and M2 (small leftovers in their status tables), M3 mostly done, M4's code (M4-01 –
 M4-09). M0's code side is done; **nothing is deployed yet** because the staging accounts don't exist

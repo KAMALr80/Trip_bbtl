@@ -134,7 +134,7 @@ These were verified with the existing pgTAP and mocked E2E suites. To keep local
 - real email, Google, AI and push, which need credentials;
 - real devices and staging.
 
-## Authorization review (Nov 6, `audit/trip-authorization-and-beta-readiness`)
+## Authorization review (Nov 6, merged by PR #7 as `36ac013`)
 
 **Targeted review, not a full audit or penetration test.** Scope, method and limits are in [AUTHORIZATION_REVIEW.md](AUTHORIZATION_REVIEW.md). **Code:** `53e8f5f` plus this branch.
 
@@ -160,3 +160,33 @@ These were verified with the existing pgTAP and mocked E2E suites. To keep local
 - **Skipped, would change data:** the live invite-join test (it adds a seed account to a trip). CI runs it on a fresh stack.
 - **Blocked by credentials or infrastructure:** real AI model (mocks only), real push, SMTP and email, Google, every hosted setting.
 - **Not run:** real devices, parallel load, penetration test, desktop viewports.
+
+## Final verification (Nov 6, `release/final-beta-readiness`)
+
+**What this is:** automated tests plus targeted code review. It isn't a penetration test, real-device QA or staging verification.
+
+| # | Category | Command | Passed | Failed | Skipped | Notes |
+|---|---|---|---|---|---|---|
+| 1 | Typecheck | `bun run typecheck` | pass | 0 | — | |
+| 2 | ESLint | `npx eslint .` | pass | 0 errors | — | 100 warnings |
+| 3 | Unit | `bun run test` | 260/260 | 0 | 0 | |
+| 4 | Production build | `bun run build` | pass | 0 | — | |
+| 5 | Bundle secret scan | `bun scripts/security/check-bundle.ts` | pass | 0 | — | |
+| 6 | Mocked E2E | `npx playwright test --workers=2` | 70/70 | 0 | 0 | Includes 10 layout checks at 360 and 1280 px |
+| 7 | Authentication checks | scripted browser probe | 10/10 in the last 3 runs | see notes | 0 | Local stack, seed accounts, dev server. **5 runs on this code: 3 passed 10/10, 2 passed 9/10.** In both failures `/trips/new` didn't reach `/`: its lazy route file failed to load on the dev server (`Failed to fetch dynamically imported module`; one run also showed `ERR_INSUFFICIENT_RESOURCES`). **Cause not found.** A restarted server and the same page sequence didn't reproduce it, and it wasn't compared against `main`. Treat it as an unexplained flake and watch for it on staging |
+| 8 | PWA / offline E2E | `npx playwright test -c playwright.pwa.config.ts` | 18/18 | 0 | 0 | Includes the header tests |
+| 9 | Authorization matrix | `36_authorization` | 25 | 0 | 0 | Part of 10 and 11 |
+| 10 | pgTAP, disposable PG16 | `scripts/db/test.sh` | 38/38 files, 901 assertions | 0 | 0 | |
+| 11 | pgTAP, local stack | `npx supabase test db` | 37/38 files | 1 file | 0 | `07_seed`: B-05, the old local seed. It passes on a fresh database and in CI |
+| 12 | Migration consistency | replay on PG16; `supabase gen types` | pass | 0 | — | Snapshot, inventory and types regenerated |
+| 13 | AI (mocks only) | `proof-check.server.test.ts`, `ai-quota.server.test.ts`, `itinerary-ai.server.test.ts` | in 3 | 0 | 0 | No real model called |
+| 14 | Storage cleanup | `trip-storage.test.ts`, `38_release_hardening` | in 3, 10 | 0 | 0 | No real Storage deletion |
+| 15 | Headers | `security-headers.test.ts`, `e2e/pwa/headers.spec.ts` | in 3, 8 | 0 | 0 | Workers runtime, http only |
+| 16 | Notification failures | `deliver.test.ts`, `38_release_hardening` | in 3, 10 | 0 | 0 | No real push service |
+| 17 | Time zones | `phases.json` (SQL and TypeScript), age checks in `38` | in 3, 10 | 0 | 0 | |
+| 18 | Performance | build output sizes; one parallel AI run | see B-34, B-29 | — | — | No Lighthouse or load test |
+| 19 | `git diff --check` | `git diff --check` | clean apart from the generated inventory's trailing tabs | | | |
+| — | Live E2E | `-c playwright.live.config.ts --grep-invert "invite link"` | 2 | 0 | 1 not run | The invite-join test adds a seed account to a trip; CI runs it on a fresh stack |
+
+**Blocked by credentials or infrastructure:** real AI model, real push, SMTP and email, Google, every hosted setting.
+**Not run:** real devices, load test, Lighthouse, penetration test.

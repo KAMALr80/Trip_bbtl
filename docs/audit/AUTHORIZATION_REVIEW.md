@@ -1,6 +1,6 @@
 # Authorization review
 
-**Date:** Nov 6, 2026 · **Code:** `main` at `53e8f5f` plus the branch `audit/trip-authorization-and-beta-readiness`.
+**Date:** Nov 6, 2026 · **Code:** reviewed at `53e8f5f`, merged by PR #7 (`36ac013`). Updated for `release/final-beta-readiness`: new functions and fixes are noted below. Test 36 (the attack matrix) ran again and passes; test 38 covers the new service-only functions. The review itself wasn't repeated.
 
 **Targeted review, not a full audit or penetration test.** It ran against a local Supabase stack and disposable PostgreSQL. Nothing was checked on a hosted project.
 
@@ -8,7 +8,7 @@
 
 No way was found for a signed-in player to read or change another trip's data, another player's private records, or a leader's or founder's functions. That covers the checks below, on the IDs and states they used. It isn't proof that no such bug exists.
 
-Confirmed issues, all fixed on this branch except where noted (details in [BUG_REGISTER.md](BUG_REGISTER.md)):
+Confirmed issues, all fixed by PR #7 except where noted (details in [BUG_REGISTER.md](BUG_REGISTER.md)):
 
 | ID | Severity | Issue | Exposure |
 |---|---|---|---|
@@ -85,10 +85,11 @@ Identity is always the verified JWT's `sub` (`requireSupabaseAuth`, `getClaims`)
 | `GET /api/public/version` | `routes/api/public/version.ts` | No | None | Returns the app version only | — | No |
 
 **Worth knowing:**
-- `deleteMyAccount` needs only a valid session, with no password re-check. A stolen unlocked session could delete the account. That's a product decision, not changed here.
+- `deleteMyAccount` now re-checks identity first: the password, or a sign-in within 15 minutes for Google-only accounts (B-31).
 - Some server functions return raw database error text (`error.message`). The database's messages are written for players, but a constraint error can name a column. Low risk; not changed.
 - A disabled account (`ban_duration`) keeps a working JWT until it expires, up to an hour.
-- The app sends no `Content-Security-Policy` header. React escapes output and only two `dangerouslySetInnerHTML` uses exist, with fixed strings, so this is hardening rather than a hole. It needs a staging check before turning on.
+- Security headers are sent, and a limited CSP is enforced; the full CSP is report-only until staging (B-28). `script-src` keeps `'unsafe-inline'`.
+- New service-only functions, `orphan_files` and `ai_reserve_server`, aren't executable by `anon` or `authenticated` (test 38).
 
 ## Other areas reviewed
 
@@ -106,13 +107,14 @@ Identity is always the verified JWT's `sub` (`requireSupabaseAuth`, `getClaims`)
 - The key stays on the server (bundle check). Without `AI_API_KEY` the verdict is "unsure" and the crew decides.
 - Daily caps per player and overall, plus the kill switch, are checked in the database. Uploads are limited to 5 MB and to image types by the bucket.
 - Invalid model output becomes "unsure" (`parseVerdict`). Timeouts, one retry and the photo-text rule were added (B-23).
-- **Still open:** the cap counts a call after it finishes, so a burst of parallel calls can pass it by a few. Only a real model can show whether the prompt-injection line holds; that belongs in the M6-01 labelled-photo run.
+- App-paid calls now reserve before the model runs, and the gate takes a lock: 20 parallel calls with a cap of 5 gave 20 rows before and 5 after (B-29).
+- **Still open:** only a real model can show whether the prompt-injection line holds; that belongs in the M6-01 labelled-photo run. The tests cover what comes back from a tricked model, not whether it can be tricked.
 - No real AI call was made: all tests use mocks.
 
 **Concurrency.**
 - `award_points` takes an advisory lock and has a unique key, so a repeat is a no-op. `join_trip`, role changes and credit spending lock the trip row. `pick_postcard` serialises per player.
 - Proofs and journal entries are unique per item and player, so an offline resend can't duplicate them.
-- **Not tested under real parallel load.** This was read from the code; no concurrent-load test ran.
+- **Not load-tested.** Apart from the AI cap measurement above, this was read from the code.
 
 **Time zones.**
 - The phase engine uses the trip's zone, and `phases.json` covers DST and far-off zones in both SQL and TypeScript. Client date math uses the safe `T12:00:00Z` pattern.
@@ -121,14 +123,14 @@ Identity is always the verified JWT's `sub` (`requireSupabaseAuth`, `getClaims`)
 **Performance and UX (targeted).**
 - No timer or listener leaks were found by count, and the root route has error and not-found pages. Axe runs in E2E.
 - 54 foreign keys had no leading index; 9 on live paths got one (B-26). The rest are on retired or small tables.
-- The largest client chunk, `_shell`, is 768 KB; total JS is about 2.8 MB. Splitting it is a refactor, left for a later pass.
+- The largest client chunk, `_shell`, went from 768 KB to 519 KB (B-34); total JS is about 2.8 MB. No Lighthouse run yet.
 - Bug-report and admin lists were not load-tested.
 
 ## Not reviewed
 
 - Hosted Supabase and Cloudflare settings, SMTP, Google, real push, a real AI model.
 - Real devices, real parallel load, penetration testing.
-- UX and accessibility beyond the existing axe checks, and React re-renders.
+- UX and accessibility beyond the existing axe checks and the 360 px / 1280 px layout checks, and React re-renders.
 - Every branch of every private function; retired Lovable-era functions got the matrix only.
 
 ## Row-level security policies (202)

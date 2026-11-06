@@ -14,7 +14,7 @@
 |---|---|---|
 | Tables | 161 | 14 |
 | Views | 0 | 0 |
-| Functions | 369 | 512 |
+| Functions | 371 | 513 |
 | Triggers | 5 | 52 |
 
 Objects (re)defined in 5 or more migrations: **22**. This is why the snapshot, not the migration history, is the reference (gotcha G5).
@@ -158,7 +158,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `cost_log` | table | ✅ | 1 | — | 0 |
 | public | `cost_notes` | table | ✅ | 1 | — | 1 |
 | public | `cost_shares` | table | ✅ | 1 | — | 1 |
-| public | `cultural_inspirations` | table | ✅ | 4 | DELETE,INSERT,UPDATE | 6 |
+| public | `cultural_inspirations` | table | ✅ | 4 | DELETE,INSERT,UPDATE | 5 |
 | public | `culture_exp_days` | table | ✅ | 1 | — | 1 |
 | public | `culture_exp_hidden` | table | ✅ | 1 | — | 0 |
 | public | `culture_exp_likes` | table | ✅ | 1 | — | 0 |
