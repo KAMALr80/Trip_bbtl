@@ -1,6 +1,6 @@
 # Bug register
 
-**Date:** Nov 6, 2026 · **Code:** `main` at `53e8f5f` (PRs #1–#6 merged), plus the branch `audit/trip-authorization-and-beta-readiness`, which adds B-20 to B-26. Statuses marked "authorization branch" are on that branch until it merges. The scope of the latest review is in [AUTHORIZATION_REVIEW.md](AUTHORIZATION_REVIEW.md): a targeted review, not a full audit or penetration test.
+**Date:** Nov 6, 2026 · **Code:** `main` at `36ac013` (PRs #1–#7 merged), plus the branch `release/final-beta-readiness`, which adds B-27 to B-35. Statuses marked "final branch" are on that branch until it merges. Findings come from targeted code review and automated tests, not a full audit or penetration test; see [AUTHORIZATION_REVIEW.md](AUTHORIZATION_REVIEW.md).
 
 Severity scale:
 - **P0:** data loss, account compromise or unauthorized access.
@@ -8,7 +8,7 @@ Severity scale:
 - **P2:** important but contained.
 - **P3:** minor, test infrastructure or polish.
 
-**Totals:** 26 findings. P0: 0 · P1: 0 · P2: 5 · P3: 21. **Fixed: 18** (B-08 to B-11 by PR #3; B-12 and B-14 by PR #4; B-03, B-13, B-15, B-16, B-18 and B-19 by PR #6; B-20 to B-23, B-25 and B-26 on the authorization branch). **Partly fixed: 3** (B-01, B-04, B-17). **Open: 4** (B-02, B-05, B-06, B-07). **Checked, no change: 1** (B-24). Section B lists potential risks and missing features separately; they aren't counted as bugs.
+**Totals:** 35 findings. P0: 0 · P1: 0 · P2: 7 · P3: 28. **Fixed: 26** (B-08 to B-11 by PR #3; B-12 and B-14 by PR #4; B-03, B-13, B-15, B-16, B-18 and B-19 by PR #6; B-20 to B-23, B-25 and B-26 by PR #7; B-27, B-29 to B-35 on the final branch). **Partly fixed: 4** (B-01, B-04, B-17, B-28). **Open: 4** (B-02, B-05, B-06, B-07). **Checked, no change: 1** (B-24). Section B lists potential risks and missing features separately; they aren't counted as bugs.
 
 ## A. Confirmed findings
 
@@ -33,13 +33,22 @@ Severity scale:
 | B-17 | P2 | Sign-up email on hosted Supabase | **Partly fixed** (PR #6): template in the repo; verify on staging |
 | B-18 | P3 | pgTAP `28_passport` | **Fixed** (PR #6) |
 | B-19 | P3 | Sign-out and the query cache | **Fixed** (PR #6) |
-| B-20 | P2 | Trip deletion and Storage | **Fixed** (authorization branch) |
-| B-21 | P2 | Sign-out and push reminders | **Fixed** (authorization branch) |
-| B-22 | P3 | Push addresses | **Fixed** (authorization branch) |
-| B-23 | P3 | AI timeouts and photo text | **Fixed** (authorization branch); check the prompt on a real model |
+| B-20 | P2 | Trip deletion and Storage | **Fixed** (PR #7) |
+| B-21 | P2 | Sign-out and push reminders | **Fixed** (PR #7) |
+| B-22 | P3 | Push addresses | **Fixed** (PR #7) |
+| B-23 | P3 | AI timeouts and photo text | **Fixed** (PR #7); check the prompt on a real model |
 | B-24 | P3 | `game_cards` read policies | Checked: not exploitable, no change |
-| B-25 | P3 | Storyteller badge | **Fixed** (authorization branch) |
-| B-26 | P3 | Missing foreign key indexes | **Fixed** (authorization branch) |
+| B-25 | P3 | Storyteller badge | **Fixed** (PR #7) |
+| B-26 | P3 | Missing foreign key indexes | **Fixed** (PR #7) |
+| B-27 | P2 | Orphaned files in Storage | **Fixed** (final branch) |
+| B-28 | P3 | Security headers and CSP | **Partly fixed** (final branch): full policy is report-only until staging |
+| B-29 | P3 | AI caps under parallel calls | **Fixed** (final branch) |
+| B-30 | P3 | Repeated notification sends | **Fixed** (final branch): at-least-once, repeats collapse |
+| B-31 | P2 | Account deletion without re-checking identity | **Fixed** (final branch) |
+| B-32 | P3 | A refused account deletion left some trips | **Fixed** (final branch) |
+| B-33 | P3 | One bad entry dropped AI safety flags | **Fixed** (final branch) |
+| B-34 | P3 | First download size | **Fixed** (final branch): `_shell` 768 → 519 KB |
+| B-35 | P3 | Trip screen at 360 px | **Fixed** (final branch) |
 
 ### B-01 · P2 · Dependency advisories
 - **Steps to reproduce:** `bun audit` (or `bun audit --json`).
@@ -283,28 +292,28 @@ Severity scale:
 - **Fix:** `forgetAccount()` (`src/data/offline/forget.ts`) drops the snapshot first, so nothing is saved, then the outbox, then `queryClient.clear()`. `__root.tsx` calls it on `SIGNED_OUT` and when the server reports no user.
 - **Regression:** `src/data/offline/forget.test.ts` (the cache is empty and the snapshot stops before the cache clears); the PWA snapshot and signed-out E2E specs still pass.
 
-### B-20 · P2 · FIXED (authorization branch) · Deleting a trip left its proof and guide photos in Storage
+### B-20 · P2 · FIXED (PR #7) · Deleting a trip left its proof and guide photos in Storage
 - **Steps to reproduce:** delete a trip that has quest proofs, then list `quest-proofs/<tripId>/`.
 - **Actual:** `permanentlyDeleteTrip` emptied only `trip-photos` and `player-avatars`. Proof photos stayed for good: the Day 7 purge works from the trip row, which is gone. Nobody could read them, since the storage policy needs the trip, but players and the Privacy Policy expect them deleted.
 - **Fix:** `src/lib/trip-storage.ts` lists every bucket with a trip folder (`TRIP_FOLDER_BUCKETS`); trip deletion and the Test Lab both use it.
 - **Regression:** `src/lib/trip-storage.test.ts` (buckets, nested files, paging, no other trip's files, stops if Storage fails). It tests the listing with a fake Storage; a real deletion wasn't run against hosted Storage.
-- **Known gap:** a Captain alone in a trip who taps Leave deletes the trip through `leave_trip`, with no Storage cleanup. Not changed: it needs its own design.
+- **Later:** the sole-Captain gap noted here, and the risk of deleting a file another row uses, are closed by B-27.
 
-### B-21 · P2 · FIXED (authorization branch) · Signing out didn't stop push reminders on that device
+### B-21 · P2 · FIXED (PR #7) · Signing out didn't stop push reminders on that device
 - **Steps to reproduce (by code):** turn reminders on, sign out. Only "turn off" in Settings called `delete_push_subscription`; `signOut` and `forgetAccount` left the browser subscribed.
 - **Impact:** on a shared phone, the last player's reminders kept arriving, with trip names on the lock screen.
 - **Fix:** `forgetAccount` calls `releasePushOnThisDevice()`, which unsubscribes the browser on every sign-out, including an expired session. The server deletes the row when the push service answers "gone".
 - **User-visible change:** after signing back in, a player turns reminders on again on that device.
 - **Regression:** `src/pwa/push.test.ts`, `src/data/offline/forget.test.ts`. **Not tested on a real phone**: add it to M4-10.
 
-### B-22 · P3 · FIXED (authorization branch) · A push address could be any https URL
+### B-22 · P3 · FIXED (PR #7) · A push address could be any https URL
 - **Steps to reproduce:** call `save_push_subscription('https://anything.example/x', …)`.
 - **Impact:** the sender POSTs to that URL. One player could add unlimited addresses, and every reminder goes to each of them, so the app could be pointed at any site. Cloudflare Workers can't reach a private network, which limits this.
 - **Fix:** `trip_private.push_endpoint_ok` allows the browser push services only (Google, Mozilla, Apple, Microsoft), and a player keeps ten browsers at most.
 - **Risk:** a browser using another push service gets an error when turning reminders on. Check real browsers in M4-10; the list is one function.
 - **Regression:** `37_push_badges_indexes`. Those assertions fail without the migration.
 
-### B-23 · P3 · FIXED (authorization branch) · AI calls had no timeout, and photo text wasn't treated as untrusted
+### B-23 · P3 · FIXED (PR #7) · AI calls had no timeout, and photo text wasn't treated as untrusted
 - **Actual:** none of the 11 AI calls set a timeout, and the SDK's default is 2 retries. An AI "pass" approves a proof by itself (Q3), but the system prompt didn't say text inside a photo isn't an instruction.
 - **Fix:** `aiRequestLimits()` gives each call 90 s and one retry (`src/integrations/ai/index.server.ts`). The proof check gets 30 s, and a new prompt line says to ignore instructions in a photo.
 - **Regression:** `proof-check.server.test.ts` (a hanging provider ends in "unsure" and is aborted; at most two tries; the prompt line is sent). All mocks.
@@ -315,15 +324,65 @@ Severity scale:
 - **Why it's not a bug today:** `authenticated` has no SELECT on `game_cards`, so these policies can't be reached. Test 36 checks that. Normal paths also can't create a 21+ trip card.
 - **Next:** remove the leftover policies when the table is retired (M1-08). If SELECT is ever granted again, drop this policy first.
 
-### B-25 · P3 · FIXED (authorization branch) · Storyteller ignored players who only contributed photos
+### B-25 · P3 · FIXED (PR #7) · Storyteller ignored players who only contributed photos
 - **Expected:** "The shared guide counts toward every contributor's Storyteller badge" (Q13); the guide is built from journal entries and photos (R-355).
 - **Actual:** `refresh_passport` counted journal authors only.
 - **Fix:** an approved photo of the kinds the guide shows also counts, and still counts after the Day 7 purge removes its file. No rule was added: this applies the written one.
 - **Regression:** `37_push_badges_indexes`.
 
-### B-26 · P3 · FIXED (authorization branch) · Foreign keys without indexes on live paths
+### B-26 · P3 · FIXED (PR #7) · Foreign keys without indexes on live paths
 - **Actual:** 54 foreign keys had no leading index. For example, reading a trip's cards scanned all 1,930 rows of `game_cards`.
 - **Fix:** 9 indexes on live lookups and cascades. The other 45 are on retired or small tables and were left. No load test measured the benefit.
+
+### B-27 · P2 · FIXED (final branch) · Files of deleted trips could stay in Storage for good
+- **Steps to reproduce:** a Captain alone in a trip taps Leave. `leave_trip` deletes the trip, and nothing removes its files. A failed cleanup in `permanentlyDeleteTrip` had the same result, with no retry.
+- **Also:** trip deletion removed the whole `player-avatars/<trip>/` folder, even a photo another row still pointed at. Older profile photos can live there and are copied to the player's other cards.
+- **Fix:** `trip_private.orphan_files` (service role only) lists files whose trip, card or experience is gone, and keeps anything `player_profiles` or `trip_player_cards` still uses. `sweepOrphanFiles` (`src/lib/trip-storage.ts`) deletes them, straight after a trip deletion and in the daily cleanup route. It keeps no state: what fails is listed again next run, so it's safe to retry or repeat, and it doesn't depend on any page staying open.
+- **Regression:** `38_release_hardening` (last Captain leaving, Captain with a crew refused, other trips, files outside a trip folder, account photos, shared files, batch limit, retry, unauthorized callers); `trip-storage.test.ts` (Storage failures, retry, repeat runs, batches). The trip's single Captain is a schema rule, so "multiple Captains" doesn't occur.
+- **Not tested:** removal against hosted Storage. Locally the listing returned 0 files and nothing was deleted.
+
+### B-28 · P3 · PARTLY FIXED (final branch) · No security headers
+- **Fix:** every Worker response and static file now has `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `Strict-Transport-Security` and an enforced CSP of `object-src`, `base-uri`, `frame-ancestors` and `form-action` (`src/lib/security-headers.ts`, `_headers` from `build-sw.ts`).
+- **Report-only:** the full policy (`script-src`, `connect-src`, `img-src` and so on) is sent as `Content-Security-Policy-Report-Only`. It can't break anything, and it doesn't block anything either.
+- **Zod:** Zod 4 tries `new Function` once, which raised a report on every load. `src/lib/zod-setup.ts` turns that off, so `'unsafe-eval'` isn't needed.
+- **Remaining:** check for reports on staging (Supabase, Google sign-in, Sentry, push), then enforce it. `script-src` still has `'unsafe-inline'` because TanStack Start streams inline scripts; removing it needs a per-request nonce.
+- **Regression:** `security-headers.test.ts`; `e2e/pwa/headers.spec.ts` on the production build in the Workers runtime (pages, API, static files, no violations on the signed-out screens). Signed-in screens weren't checked for violations.
+
+### B-29 · P3 · FIXED (final branch) · A burst of AI calls could pass the daily caps
+- **Steps to reproduce:** 20 parallel calls with a cap of 5. The old flow checked the cap, called the model, then wrote the row. **Measured on PG16: 20 rows.**
+- **Fix:** `ai_gate` takes a lock and re-reads the count, and app-paid calls reserve their row first (`ai_reserve_server`, `reserveAppAi`). **Measured after: exactly 5.** A call that then fails stays counted, which errs towards spending less.
+- **Regression:** `38_release_hardening`, `ai-quota.server.test.ts`. The parallel measurement was a one-off script, not part of CI.
+- **Not added:** a per-trip cap. No number has been decided for one.
+
+### B-30 · P3 · FIXED (final branch) · A crash mid-send could repeat a reminder, without limit
+- **Actual:** a row stuck in `sending` was claimed again every 10 minutes with no limit, even after the player left the trip.
+- **Fix:** it stops at 5 attempts, and a player who left is skipped. Each push has a `Topic` from its queue row, so the push service replaces an undelivered copy; the notification `tag` replaces a visible one.
+- **Honest limit:** delivery is **at-least-once**, not exactly-once. A push service can't confirm what a crashed sender already sent.
+- **Regression:** `38_release_hardening`, `deliver.test.ts` (partial failures, gone browsers, same Topic on a resend). Not tested against a real push service.
+
+### B-31 · P2 · FIXED (final branch) · Deleting an account needed only a valid session
+- **Fix:** `checkDeleteReauth` (`src/lib/account-delete.ts`), checked before anything changes. An account with a password must give it, and it's verified against the session's own email. A Google-only account has no password to ask for, so it must have signed in within 15 minutes (`amr`), which refreshing a token doesn't reset.
+- **Regression:** `account-delete.test.ts` (missing, wrong and right password; the check failing; stale and fresh Google sessions; missing `amr`); `profile.spec` (the screen). Against the local stack, the JWT does carry `providers`, `amr` and `email`, and a wrong password is refused.
+- **Not run:** a real deletion, end to end: local accounts are kept. An expired session is refused by `requireSupabaseAuth`; that's covered by the auth checks, not a deletion-specific test.
+
+### B-32 · P3 · FIXED (final branch) · A refused account deletion left the player's other trips
+- **Actual:** trips were left one at a time, and a trip with a crew stopped the loop part-way, leaving the account in place but out of some trips.
+- **Fix:** `tripsNeedingNewCaptain` checks first, before leaving anything. **Regression:** `account-delete.test.ts`.
+
+### B-33 · P3 · FIXED (final branch) · One bad entry dropped every AI safety flag
+- **Steps to reproduce:** a model answer of `"safety": ["drugs", 7]`. The schema rejected the whole list, so the real flag was lost.
+- **Fix:** entries are checked one at a time. **Regression:** `proof-check.server.test.ts`, found by the new adversarial tests.
+
+### B-34 · P3 · FIXED (final branch) · Every flag and founder screen was in the first download
+- **Actual:** 324 of the 1,369 KB of source in `_shell` was `country-flag-icons`.
+- **Fix:** `CountryFlag` loads the flags on first use, holding its place with a same-sized blank, and four founder-only screens load on demand. **`_shell`: 768 → 519 KB, 139 KB gzipped.**
+- **Limits:** total JS is unchanged (about 2.8 MB), and no Lighthouse or real-network measurement was run.
+
+### B-35 · P3 · FIXED (final branch) · The Trip screen scrolled sideways on a 360 px phone
+- **Found by:** the new `e2e/responsive.spec.ts`. All other specs run at 390 px, so nothing had caught it.
+- **Root cause:** a long section title ("What's next · itinerary") couldn't wrap, which pushed its edit button 4 px off the screen.
+- **Fix:** the title wraps (`TripOverview.tsx`). **Regression:** `e2e/responsive.spec.ts`, five screens at 360 and 1280 px.
+- **Limits:** it checks sideways scrolling on these screens, with mock data. It isn't a full layout review or a real phone.
 
 ## B. Potential risks and missing features (not counted as bugs)
 

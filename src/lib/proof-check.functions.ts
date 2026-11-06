@@ -28,13 +28,13 @@ export const checkProof = createServerFn({ method: "POST" })
     const { getAiModel } = await import("@/integrations/ai/index.server");
     const guard = await import("./ai-quota.server");
     const ai = getAiModel();
-    const allowed =
-      !!ai && (await guard.appAiAllowed("proof_check", proof.trip_id, context.userId));
+    const usageId = ai
+      ? await guard.reserveAppAi("proof_check", proof.trip_id, context.userId)
+      : null;
+    const allowed = !!usageId;
     const checker =
-      ai && allowed
-        ? visionProofChecker(ai.model, (usage) =>
-            guard.logAppAi(proof.trip_id, "proof_check", ai.modelId, usage, context.userId),
-          )
+      ai && usageId
+        ? visionProofChecker(ai.model, (usage) => guard.logAppAi(usageId, ai.modelId, usage))
         : stubProofChecker;
     const { data: challenge } = await rpcOn(supabaseAdmin, "proof_challenge", {
       p_proof: proof.id,

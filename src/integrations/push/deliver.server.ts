@@ -25,7 +25,9 @@ export type DeliveryResult = {
 };
 
 export type Senders = {
-  push: ((sub: PushSubscriptionKeys, payload: PushPayload) => Promise<PushResult>) | null;
+  push:
+    | ((sub: PushSubscriptionKeys, payload: PushPayload, topic: string) => Promise<PushResult>)
+    | null;
   email: ((to: string, subject: string, text: string, link: string) => Promise<boolean>) | null;
 };
 
@@ -39,7 +41,10 @@ export async function deliver(n: ClaimedNotification, send: Senders): Promise<De
   if (n.push && send.push && n.subscriptions.length) {
     pushTried = true;
     const payload: PushPayload = { title: n.title, body: n.body, url: n.deep_link, tag: n.type };
-    const results = await Promise.all(n.subscriptions.map((s) => send.push!(s, payload)));
+    // Web Push Topics are at most 32 URL-safe characters: the queue row's id without its dashes.
+    // Delivery is at-least-once; the Topic and the notification tag collapse a repeat.
+    const topic = n.id.replace(/-/g, "").slice(0, 32);
+    const results = await Promise.all(n.subscriptions.map((s) => send.push!(s, payload, topic)));
     results.forEach((r, i) => {
       if (!r.ok && r.gone) gone.push(n.subscriptions[i]!.endpoint);
       if (!r.ok && !r.gone) pushError = `push ${r.status}: ${r.error}`;

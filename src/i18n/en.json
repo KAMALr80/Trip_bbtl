@@ -12,6 +12,12 @@
     "oneSec": "One sec...",
     "supportEmail": "support@tripjunkies.app"
   },
+  "account": {
+    "delete": {
+      "password": "Enter your password",
+      "recentSignIn": "For your security, you need to have signed in within the last 15 minutes."
+    }
+  },
   "explorePrompt": {
     "title": "Explore the app ✨",
     "open": "See the tour"

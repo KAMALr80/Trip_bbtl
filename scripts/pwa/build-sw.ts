@@ -5,6 +5,7 @@
 // Without it, sw.js is the kill switch: a worker that removes itself and its caches, so a
 // browser that installed one earlier goes back to plain network loading on its next visit.
 //   bun scripts/pwa/build-sw.ts
+import { headersFileBlock } from "../../src/lib/security-headers";
 import { createHash } from "node:crypto";
 import {
   appendFileSync,
@@ -88,8 +89,9 @@ if (process.env["VITE_SERVICE_WORKER"] === "true") {
 
 writeFileSync(join(OUT, "sw.js"), body);
 // The browser must always see the newest sw.js and offline page (assets/* are already immutable).
+// Static files never reach the Worker, so they get the security headers from here too (B-28).
 appendFileSync(
   join(OUT, "_headers"),
-  "\n/sw.js\n  cache-control: no-cache\n  service-worker-allowed: /\n/offline\n  cache-control: no-cache\n",
+  `\n/sw.js\n  cache-control: no-cache\n  service-worker-allowed: /\n/offline\n  cache-control: no-cache\n${headersFileBlock()}\n`,
 );
 console.log(summary);

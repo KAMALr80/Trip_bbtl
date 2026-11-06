@@ -1,7 +1,9 @@
 {
   "name": "tripjunkies",
   "private": true,
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/lib/zod-setup.ts"
+  ],
   "type": "module",
   "engines": {
     "node": ">=22"

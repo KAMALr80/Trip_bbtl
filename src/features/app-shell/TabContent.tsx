@@ -1,4 +1,4 @@
-import { FounderDashboard } from "@/features/admin/FounderDashboard";
+import { lazy, Suspense } from "react";
 import { HomeSeasons } from "@/features/points/HomeSeasons";
 import { Tab } from "@/features/app-shell/tabs";
 import { SquadView } from "@/features/trip/SquadView";
@@ -6,9 +6,6 @@ import { SquadView } from "@/features/trip/SquadView";
 import { ArchivedTrip } from "@/features/trip/ArchivedTrip";
 import { AfterTrip } from "@/features/postcard/AfterTrip";
 import { MeHome } from "@/features/me/MeHome";
-import { ModerationQueue } from "@/features/moderation/ModerationQueue";
-import { AdminDirectory } from "@/features/admin/AdminDirectory";
-import { ContentAdmin } from "@/features/admin/ContentAdmin";
 
 import gameOptionA from "@/assets/game-tile-option-a.webp";
 import tripCoast from "@/assets/journey-coast-top.jpg";
@@ -63,6 +60,20 @@ import { AppearanceQuickToggle } from "@/features/me/MeExtras";
 import { FoundingControls } from "@/features/onboarding/LegalConsent";
 import { legalLinks } from "@/lib/legal";
 import { Link } from "@tanstack/react-router";
+
+// Screens only the founder opens: not in every player's first download.
+const FounderDashboard = lazy(() =>
+  import("@/features/admin/FounderDashboard").then((m) => ({ default: m.FounderDashboard })),
+);
+const ModerationQueue = lazy(() =>
+  import("@/features/moderation/ModerationQueue").then((m) => ({ default: m.ModerationQueue })),
+);
+const AdminDirectory = lazy(() =>
+  import("@/features/admin/AdminDirectory").then((m) => ({ default: m.AdminDirectory })),
+);
+const ContentAdmin = lazy(() =>
+  import("@/features/admin/ContentAdmin").then((m) => ({ default: m.ContentAdmin })),
+);
 
 export function TabContent({
   tab,
@@ -417,24 +428,26 @@ export function TabContent({
           onSettings={() => setMeSection("me-settings")}
         />
         {isAdmin && <AiCapBanner onOpen={() => setMeSection("ai-guard")} />}
-        {isAdmin && (
-          <FounderDashboard
-            trips={trips}
-            onOpen={(key) =>
-              key === "welcome" ||
-              key === "founding-members" ||
-              key === "beta-codes" ||
-              key === "ai-guard" ||
-              key === "icon-options" ||
-              key === "me-explore" ||
-              key === "moderation" ||
-              key === "admin-directory" ||
-              key === "content-admin"
-                ? setMeSection(key)
-                : onMe(key as "reports" | "feedback" | "lab")
-            }
-          />
-        )}
+        <Suspense fallback={null}>
+          {isAdmin && (
+            <FounderDashboard
+              trips={trips}
+              onOpen={(key) =>
+                key === "welcome" ||
+                key === "founding-members" ||
+                key === "beta-codes" ||
+                key === "ai-guard" ||
+                key === "icon-options" ||
+                key === "me-explore" ||
+                key === "moderation" ||
+                key === "admin-directory" ||
+                key === "content-admin"
+                  ? setMeSection(key)
+                  : onMe(key as "reports" | "feedback" | "lab")
+              }
+            />
+          )}
+        </Suspense>
       </div>
     );
   return (
@@ -482,9 +495,11 @@ export function TabContent({
       {meSection === "founding-members" && isAdmin && <FoundingControls />}
       {meSection === "beta-codes" && isAdmin && <BetaCodesDoor />}
       {meSection === "ai-guard" && isAdmin && <AiGuardDoor />}
-      {meSection === "moderation" && isAdmin && <ModerationQueue />}
-      {meSection === "admin-directory" && isAdmin && <AdminDirectory />}
-      {meSection === "content-admin" && isAdmin && <ContentAdmin />}
+      <Suspense fallback={null}>
+        {meSection === "moderation" && isAdmin && <ModerationQueue />}
+        {meSection === "admin-directory" && isAdmin && <AdminDirectory />}
+        {meSection === "content-admin" && isAdmin && <ContentAdmin />}
+      </Suspense>
       {meSection === "me-passport" && (
         <MyPassport
           trips={trips}

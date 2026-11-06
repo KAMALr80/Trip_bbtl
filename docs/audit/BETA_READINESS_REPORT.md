@@ -1,14 +1,14 @@
 # Beta readiness report
 
-**Date:** Nov 6, 2026 · **Code:** `main` at `53e8f5f` (PRs #1–#6 merged), plus the branch `audit/trip-authorization-and-beta-readiness`.
+**Date:** Nov 6, 2026 · **Code:** `main` at `36ac013` (PRs #1–#7 merged), plus the branch `release/final-beta-readiness`.
 
-## Verdict: **Not ready for a beta with real crews.** Ready to go to staging once the owner provides the accounts.
+## Verdict: **Ready for controlled staging QA** once the final branch is merged and the owner provides the accounts. **Not ready for a beta with real crews.** Nothing has run on a hosted environment.
 
 The code is in good shape locally:
-- unit tests 219/219 and typecheck pass;
+- unit tests 260/260 and typecheck pass;
 - ESLint has 0 errors, and the build passes with no secrets in the bundle;
-- pgTAP: 37/37 on a fresh PG16 database (871 assertions);
-- E2E: mocked 59/59, PWA/offline 13/13, live 2 run of 3 (both passed; invite join not run locally);
+- pgTAP: 38/38 files, 901 assertions on a fresh PG16 database;
+- E2E: mocked 70/70, PWA/offline 18/18, live 2 run of 3 (both passed; invite join not run locally);
 - authentication and role checks: 10/10;
 - a [targeted authorization review](AUTHORIZATION_REVIEW.md) found no way into another trip's data. It isn't a full audit or a penetration test.
 
@@ -23,7 +23,7 @@ A beta needs real people to sign in from a hosted URL. None of that exists yet: 
 | Application functionality | Strong locally | Every M1–M6 code task is built; E2E and pgTAP pass ([TESTING_REPORT.md](TESTING_REPORT.md)) |
 | Database and RLS | Strong | RLS on every public table; 30_security; client-writable tables reviewed; artifacts match migrations |
 | Authentication | Strong | 10/10 checks, including role access, session expiry and the Google disabled state |
-| Security | Good, with open items | Attack matrix found no bypass; privacy gaps B-20 and B-21 fixed on the authorization branch. Open: dev-only dependency advisories (B-01), P3/P4/P8, no pen test, nothing checked hosted |
+| Security | Good, with open items | Attack matrix found no bypass; privacy gaps fixed (B-20, B-21, B-27, B-31). Full CSP is report-only until staging (B-28). Open: dev-only dependency advisories (B-01), P3/P4/P8, no pen test, nothing checked hosted |
 | Testing | Good locally | Gaps: real devices, desktop, a live-stack E2E for trip management, staging, load |
 | Deployment | **Blocked** | No Supabase or Cloudflare accounts, domain or secrets |
 | Operations | **Blocked** | No monitoring (Sentry DSN), no alerts, no load test, no backups (production Pro plan) |
@@ -61,7 +61,7 @@ A beta needs real people to sign in from a hosted URL. None of that exists yet: 
 
 | Area | Local (already passing) | Needs staging | Needs credentials / accounts | Needs physical devices |
 |---|---|---|---|---|
-| Mobile layouts | Mocked E2E at iPhone 13 (390×844); a11y (axe) | — | — | 360 px Android, a small iPhone, a large phone; no 360/430 Playwright project yet |
+| Mobile layouts | Mocked E2E at iPhone 13 (390×844); a11y (axe); layout checks at 360 and 1280 px on five screens | — | — | 360 px Android, a small iPhone, a large phone, a desktop browser |
 | PWA install | `e2e/pwa` install test (Chromium) | HTTPS staging URL | — | M4-10 steps 1–2 on iPhone (Safari → Add to Home Screen) and Android (Chrome) |
 | Offline, reconnection, sync | PWA suite 13/13 (offline Home and pages, outbox, snapshot) | ✓ | — | M4-10 steps 4–7 and 11 (airplane mode, 12 MP camera photo, no duplicates, EXIF stripped, 7-day snapshot on iPhone) |
 | Push notifications | PWA push test (mocked) | ✓ | VAPID keys (6.1) | M4-10 steps 3, 8–10 (test push, quiet hours, mute, update prompt) on both phones; also: sign out and confirm reminders stop (B-21), and that each real browser's push service is accepted (B-22) |
@@ -75,7 +75,7 @@ A beta needs real people to sign in from a hosted URL. None of that exists yet: 
 | Moderation and admin | pgTAP 31–34; E2E `admin`, `moderation` | ✓ | `AI_API_KEY` for image moderation | — |
 | Performance and load | — | Lighthouse on Slow 4G, 500-player load test (M6-08) | — | A mid-range Android |
 
-**Exit criteria for a beta with 3–5 crews:** every row passes on staging and both phones; no open P0 or P1; B-02 closed; B-17 checked on staging; the authorization branch merged.
+**Exit criteria for a beta with 3–5 crews:** every row passes on staging and both phones; no open P0 or P1; B-02 closed; B-17 and the report-only CSP checked on staging; the final branch merged.
 
 ## After staging is up, verify there
 

@@ -271,6 +271,23 @@ CREATE FUNCTION public.ai_guard_report() RETURNS jsonb
 
 
 --
+-- Name: ai_reserve_server(text, uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.ai_reserve_server(p_kind text, p_trip uuid, p_user uuid) RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE v_id uuid;
+BEGIN
+  PERFORM trip_private.ai_gate(p_kind, p_trip, p_user);
+  INSERT INTO public.ai_usage (user_id, trip_id, kind) VALUES (p_user, p_trip, p_kind) RETURNING id INTO v_id;
+  RETURN v_id;
+EXCEPTION WHEN raise_exception THEN RETURN NULL;
+END $$;
+
+
+--
 -- Name: answer_daily(uuid, integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2105,6 +2122,16 @@ CREATE FUNCTION public.order_quote(p_trip uuid) RETURNS TABLE(kind text, label t
     LANGUAGE sql STABLE
     SET search_path TO 'public'
     AS $$ SELECT * FROM trip_private.order_quote(p_trip) $$;
+
+
+--
+-- Name: orphan_files(integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.orphan_files(p_limit integer DEFAULT 1000) RETURNS TABLE(bucket text, path text)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.orphan_files(p_limit) $$;
 
 
 --
@@ -4404,7 +4431,7 @@ CREATE FUNCTION trip_private.ai_daily_counts() RETURNS TABLE(day date, user_id u
 --
 
 CREATE FUNCTION trip_private.ai_gate(p_kind text, p_trip uuid, p_user uuid) RETURNS void
-    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
 DECLARE s record; n int;
@@ -4412,6 +4439,8 @@ BEGIN
   SELECT ai_enabled, ai_daily_global_cap, ai_daily_user_cap INTO s FROM public.app_settings LIMIT 1;
   IF s IS NULL THEN RETURN; END IF;
   IF NOT s.ai_enabled THEN RAISE EXCEPTION 'AI_PAUSED: AI ideas are taking a break — pre-written content keeps playing.'; END IF;
+  -- Held to the end of the caller's transaction, which also writes the ai_usage row this counts.
+  PERFORM pg_advisory_xact_lock(hashtextextended('trip_private.ai_gate', 0));
   SELECT count(*) INTO n FROM public.ai_usage WHERE created_at >= date_trunc('day', now());
   IF n >= s.ai_daily_global_cap THEN RAISE EXCEPTION 'AI_DAILY_CAP: AI ideas are taking a break — pre-written content keeps playing.'; END IF;
   IF p_user IS NOT NULL THEN
@@ -5525,6 +5554,15 @@ BEGIN
   FROM public.notification_prefs p
   WHERE p.user_id = q.user_id AND p.type = q.type AND NOT (p.push OR p.email)
     AND q.status = 'queued' AND q.send_after <= now();
+  -- A send that died mid-way (no finish_notifications): give up at the attempt limit, and drop it if
+  -- the player has left the trip since. Anything else is claimed again below, so delivery is
+  -- at-least-once; the push Topic and the notification tag collapse a repeat on the device.
+  UPDATE public.notification_queue q
+  SET status = CASE WHEN q.attempts >= 5 THEN 'failed' ELSE 'skipped' END,
+      last_error = CASE WHEN q.attempts >= 5 THEN 'gave up: the sender stopped mid-way too many times'
+                        ELSE 'no longer in this trip' END
+  WHERE q.status = 'sending' AND q.claimed_at < now() - interval '10 minutes'
+    AND (q.attempts >= 5 OR (q.trip_id IS NOT NULL AND NOT trip_private.is_trip_member(q.trip_id, q.user_id)));
   RETURN QUERY
   WITH due AS (
     SELECT q.id FROM public.notification_queue q
@@ -10938,6 +10976,34 @@ CREATE FUNCTION trip_private.ordered_answers(p_trip uuid, p_week integer) RETURN
  SELECT (row_number() OVER (ORDER BY md5(q.shuffle_salt::text || a.user_id::text)) - 1)::int, a.user_id, a.answer, a.emoji
  FROM public.weekly_answers a JOIN public.weekly_questions q ON q.trip_id=a.trip_id AND q.week_number=a.week_number
  WHERE a.trip_id=p_trip AND a.week_number=p_week $$;
+
+
+--
+-- Name: orphan_files(integer); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.orphan_files(p_limit integer DEFAULT 1000) RETURNS TABLE(bucket text, path text)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $_$
+  SELECT o.bucket_id, o.name
+  FROM storage.objects o
+  WHERE split_part(o.name, '/', 1) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    AND CASE
+      WHEN o.bucket_id IN ('trip-photos', 'player-avatars', 'quest-proofs', 'window-guide')
+        THEN NOT EXISTS (SELECT 1 FROM public.trips t WHERE t.id::text = split_part(o.name, '/', 1))
+      WHEN o.bucket_id = 'inspiration-photos'
+        THEN NOT EXISTS (SELECT 1 FROM public.cultural_inspirations c WHERE c.id::text = split_part(o.name, '/', 1))
+      WHEN o.bucket_id = 'culture-photos'
+        THEN NOT EXISTS (SELECT 1 FROM public.culture_experiences e WHERE e.id::text = split_part(o.name, '/', 1))
+      ELSE false
+    END
+    -- An older profile photo can live in a trip's folder and be copied to the player's other cards.
+    AND NOT EXISTS (SELECT 1 FROM public.player_profiles p WHERE p.avatar_path = o.name)
+    AND NOT EXISTS (SELECT 1 FROM public.trip_player_cards c WHERE c.avatar_path = o.name)
+  ORDER BY o.created_at
+  LIMIT greatest(1, least(coalesce(p_limit, 1000), 5000))
+$_$;
 
 
 --
@@ -27222,6 +27288,14 @@ GRANT ALL ON FUNCTION public.ai_guard_report() TO service_role;
 
 
 --
+-- Name: FUNCTION ai_reserve_server(p_kind text, p_trip uuid, p_user uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.ai_reserve_server(p_kind text, p_trip uuid, p_user uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.ai_reserve_server(p_kind text, p_trip uuid, p_user uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION answer_daily(p_item uuid, p_choice integer); Type: ACL; Schema: public; Owner: -
 --
 
@@ -28742,6 +28816,14 @@ GRANT ALL ON FUNCTION public.open_live(p_trip uuid, p_call_night uuid, p_crownin
 REVOKE ALL ON FUNCTION public.order_quote(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.order_quote(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.order_quote(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION orphan_files(p_limit integer); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.orphan_files(p_limit integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.orphan_files(p_limit integer) TO service_role;
 
 
 --
@@ -32797,6 +32879,14 @@ GRANT ALL ON FUNCTION trip_private.order_quote(p_trip uuid) TO service_role;
 REVOKE ALL ON FUNCTION trip_private.ordered_answers(p_trip uuid, p_week integer) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.ordered_answers(p_trip uuid, p_week integer) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.ordered_answers(p_trip uuid, p_week integer) TO service_role;
+
+
+--
+-- Name: FUNCTION orphan_files(p_limit integer); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.orphan_files(p_limit integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.orphan_files(p_limit integer) TO service_role;
 
 
 --

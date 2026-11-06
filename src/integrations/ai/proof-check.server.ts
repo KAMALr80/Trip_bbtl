@@ -44,7 +44,8 @@ export const stubProofChecker: ProofChecker = async () => ({
 const modelAnswer = z.object({
   verdict: z.enum(["pass", "unsure", "fail"]).catch("unsure"),
   reason: z.string().max(300).nullable().catch(null),
-  safety: z.array(z.string()).catch([]),
+  // Items are checked one by one below, so one bad entry can't drop a real flag with it.
+  safety: z.array(z.unknown()).catch([]),
 });
 
 /** Read the model's JSON answer. Anything unexpected becomes "unsure" with no flags. */
@@ -59,9 +60,11 @@ export function parseVerdict(text: string, needsVerdict = true): ProofVerdict {
   const parsed = modelAnswer.safeParse(raw);
   if (!parsed.success) return { verdict: "unsure", reason: null, safetyFlags: [] };
   const known = new Set<string>(SAFETY_FLAGS);
-  const safetyFlags = [...new Set(parsed.data.safety.map((f) => f.trim().toLowerCase()))].filter(
-    (f) => known.has(f),
-  );
+  const safetyFlags = [
+    ...new Set(
+      parsed.data.safety.flatMap((f) => (typeof f === "string" ? [f.trim().toLowerCase()] : [])),
+    ),
+  ].filter((f) => known.has(f));
   return {
     verdict: needsVerdict ? parsed.data.verdict : "unsure",
     reason: parsed.data.reason?.slice(0, 300) ?? null,

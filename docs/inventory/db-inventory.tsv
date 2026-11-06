@@ -29,7 +29,7 @@ table	public	cost_items				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE
 table	public	cost_log				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	0	
 table	public	cost_notes				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	1	src/features/at-home/TripCosts.tsx
 table	public	cost_shares				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261002015216_f867571e-817c-49ea-bb2e-49aeaebac36d.sql	1	1	src/features/at-home/TripCosts.tsx
-table	public	cultural_inspirations				t	4		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE	DELETE,INSERT,UPDATE	20261002164011_bb8f0d95-7fe3-4564-9209-82172fa80008.sql	1	6	src/features/culture/CultureQuest.tsx src/features/culture/Inspiration.tsx src/features/passport/PassportBook.tsx src/lib/culture-quest.functions.ts src/lib/delete-trip.functions.ts src/lib/inspiration.functions.ts
+table	public	cultural_inspirations				t	4		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE	DELETE,INSERT,UPDATE	20261002164011_bb8f0d95-7fe3-4564-9209-82172fa80008.sql	1	5	src/features/culture/CultureQuest.tsx src/features/culture/Inspiration.tsx src/features/passport/PassportBook.tsx src/lib/culture-quest.functions.ts src/lib/inspiration.functions.ts
 table	public	culture_exp_days				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261004013306_b18f4c90-e999-49f3-b61e-503d898301af.sql	1	1	src/lib/culture-exp.functions.ts
 table	public	culture_exp_hidden				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261004013306_b18f4c90-e999-49f3-b61e-503d898301af.sql	1	0	
 table	public	culture_exp_likes				t	1		DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE		20261004013306_b18f4c90-e999-49f3-b61e-503d898301af.sql	1	0	
@@ -189,8 +189,9 @@ function	public	ai_cost_per_trip		f	true				EXECUTE		20261002070906_8ff32319-0fd
 function	public	ai_cost_summary		f	true				EXECUTE		20261002070906_8ff32319-0fd9-4971-bf7d-15961bfe9af5.sql	1	1	src/features/ai-credits/AiCredits.tsx
 function	public	ai_credit_status	p_trip uuid	f	true				EXECUTE		20261002070906_8ff32319-0fd9-4971-bf7d-15961bfe9af5.sql	1	1	src/features/ai-credits/AiCredits.tsx
 function	public	ai_daily_counts		f	true				EXECUTE		20261002191814_9aff2fe7-0d03-4812-8c7a-1e21a9eddc0e.sql	1	1	src/features/admin/BugInbox.tsx
-function	public	ai_gate_server	p_kind text, p_trip uuid, p_user uuid	t	true						20261004090455_61dd7fb0-7787-4328-9dd7-7925eb46d988.sql	1	1	src/lib/ai-quota.server.ts
+function	public	ai_gate_server	p_kind text, p_trip uuid, p_user uuid	t	true						20261004090455_61dd7fb0-7787-4328-9dd7-7925eb46d988.sql	1	0	
 function	public	ai_guard_report		f	true				EXECUTE		20261004090455_61dd7fb0-7787-4328-9dd7-7925eb46d988.sql	1	1	src/features/admin/AiGuard.tsx
+function	public	ai_reserve_server	p_kind text, p_trip uuid, p_user uuid	t	true						20261106120000_release_hardening.sql	1	2	src/lib/ai-quota.server.test.ts src/lib/ai-quota.server.ts
 function	public	answer_daily	p_item uuid, p_choice integer	f	true				EXECUTE		20261030120000_m3_daily_play.sql	1	4	src/data/daily.ts src/data/offline/outbox-rules.test.ts src/data/offline/outbox-rules.ts src/data/offline/outbox.ts
 function	public	answer_trivia	p_trip uuid, p_date date, p_question integer, p_choice integer	f	true						20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	0	
 function	public	answer_weekly_question	p_trip uuid, p_week integer, p_answer text, p_emoji text	f	true						20261002013427_1776f1d2-a102-4732-9ae6-d7d0f72618cc.sql	1	0	
@@ -363,6 +364,7 @@ function	public	normalize_game_name	p text	f	true				EXECUTE		20261003045243_7ec
 function	public	open_item	p_item uuid	f	true				EXECUTE		20261030150000_m3_reveal_drops.sql	1	1	src/data/proofs.ts
 function	public	open_live	p_trip uuid, p_call_night uuid, p_crowning boolean	f	true				EXECUTE		20261030140000_m3_live_and_crowns.sql	1	1	src/data/live.ts
 function	public	order_quote	p_trip uuid	f	true				EXECUTE		20261002085632_da6294f9-5d94-462c-a613-3e11979ee426.sql	1	1	src/features/trip/Checkout.tsx
+function	public	orphan_files	p_limit integer	f	true						20261106120000_release_hardening.sql	1	1	src/lib/trip-storage.ts
 function	public	passport_collection		f	true				EXECUTE		20261002092808_9941e65b-4e13-4843-8edb-d4f97ae09692.sql	2	2	src/features/passport/PassportBook.tsx src/features/trip/TripList.tsx
 function	public	pending_count	p_trip uuid	f	true				EXECUTE		20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql	1	1	src/features/admin/BetaCodes.tsx
 function	public	pending_members	p_trip uuid	f	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	2	src/features/admin/BetaCodes.tsx src/features/onboarding/BetaAccess.tsx
@@ -572,7 +574,7 @@ function	trip_private	age_range	p_age integer	f	true				EXECUTE		20261002043324_
 function	trip_private	ai_cost_per_trip		t	true				EXECUTE		20261002070906_8ff32319-0fd9-4971-bf7d-15961bfe9af5.sql	1	0	
 function	trip_private	ai_cost_summary		t	true				EXECUTE		20261002070906_8ff32319-0fd9-4971-bf7d-15961bfe9af5.sql	1	0	
 function	trip_private	ai_daily_counts		t	true				EXECUTE		20261002191814_9aff2fe7-0d03-4812-8c7a-1e21a9eddc0e.sql	1	0	
-function	trip_private	ai_gate	p_kind text, p_trip uuid, p_user uuid	t	true				EXECUTE		20261004090455_61dd7fb0-7787-4328-9dd7-7925eb46d988.sql	1	0	
+function	trip_private	ai_gate	p_kind text, p_trip uuid, p_user uuid	t	true				EXECUTE		20261106120000_release_hardening.sql	2	0	
 function	trip_private	ai_guard_report		t	true				EXECUTE		20261004090455_61dd7fb0-7787-4328-9dd7-7925eb46d988.sql	1	0	
 function	trip_private	answer_daily	p_item uuid, p_choice integer	t	true				EXECUTE		20261030120000_m3_daily_play.sql	1	0	
 function	trip_private	answer_trivia	p_trip uuid, p_date date, p_question integer, p_choice integer	t	true				EXECUTE		20261001085456_016768e4-6649-4451-a0da-2c642d22ff93.sql	2	0	
@@ -627,7 +629,7 @@ trigger	trip_private	check_trip_rules		f	true						20261026140000_m2_game_night_
 function	trip_private	checkout_beta	p_trip uuid	t	true				EXECUTE		20261005154302_ba6aa404-5943-406c-862e-1dfa2ed6565a.sql	2	0	
 function	trip_private	claim_airport	p_trip uuid, p_date date, p_mission integer, p_photo text, p_guess text	t	true				EXECUTE		20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	0	
 function	trip_private	claim_drop_live	p_item uuid	t	true				EXECUTE		20261105110000_m3_drop_present_live.sql	1	0	
-function	trip_private	claim_notifications	p_limit integer, p_user uuid	t	true						20261101100000_m4_notifications.sql	1	0	
+function	trip_private	claim_notifications	p_limit integer, p_user uuid	t	true						20261106120000_release_hardening.sql	2	0	
 function	trip_private	clear_song_discs	p_trip uuid	t	true				EXECUTE		20261002111230_103a7690-3b6f-49f7-8fba-610c330d5549.sql	1	0	
 function	trip_private	close_live	p_session uuid	t	true				EXECUTE		20261030140000_m3_live_and_crowns.sql	1	0	
 function	trip_private	close_live_session	p_session uuid, p_auto boolean	t	true						20261030140000_m3_live_and_crowns.sql	1	0	
@@ -844,6 +846,7 @@ function	trip_private	open_item	p_item uuid	t	true				EXECUTE		20261030150000_m3
 function	trip_private	open_live	p_trip uuid, p_call_night uuid, p_crowning boolean	t	true				EXECUTE		20261030140000_m3_live_and_crowns.sql	1	0	
 function	trip_private	order_quote	p_trip uuid	t	true				EXECUTE		20261005154608_2f973bc7-77b7-40da-9899-bca1c775affe.sql	3	0	
 function	trip_private	ordered_answers	p_trip uuid, p_week integer	t	true				EXECUTE		20261002053604_c6470a40-9d7e-46d6-be84-00a03103769d.sql	2	0	
+function	trip_private	orphan_files	p_limit integer	t	true						20261106120000_release_hardening.sql	1	0	
 function	trip_private	passport_collection		t	true				EXECUTE		20261002092808_9941e65b-4e13-4843-8edb-d4f97ae09692.sql	1	0	
 function	trip_private	pending_count	p_trip uuid	t	true				EXECUTE		20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql	1	0	
 function	trip_private	pending_members	p_trip uuid	t	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	0	

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { listTripFiles } from "./trip-storage";
+import { sweepOrphanFiles } from "./trip-storage";
 
 export const permanentlyDeleteTrip = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -29,31 +29,13 @@ export const permanentlyDeleteTrip = createServerFn({ method: "POST" })
       .maybeSingle();
     if (role?.role !== "captain") throw new Error("Captain only.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: inspirations } = await context.supabase
-      .from("cultural_inspirations")
-      .select("photo_path")
-      .eq("trip_id", data.tripId);
-    const files = await listTripFiles(supabaseAdmin, data.tripId);
-    files.push({
-      bucket: "inspiration-photos",
-      paths: (inspirations ?? [])
-        .map((item) => item.photo_path)
-        .filter((path): path is string => !!path),
-    });
     const { error } = await context.supabase.rpc(
       "delete_trip" as never,
       { p_trip: data.tripId, p_name: data.name } as never,
     );
     if (error) throw new Error(error.message);
-    for (const file of files)
-      for (let offset = 0; offset < file.paths.length; offset += 100) {
-        const { error: storageError } = await supabaseAdmin.storage
-          .from(file.bucket)
-          .remove(file.paths.slice(offset, offset + 100));
-        if (storageError)
-          throw new Error(
-            `Trip deleted, but photo cleanup needs attention: ${storageError.message}`,
-          );
-      }
+    // The trip's files are orphans now. Whatever this misses, the daily cleanup deletes.
+    const swept = await sweepOrphanFiles(supabaseAdmin);
+    if (swept.failed || swept.error) console.error("Trip deleted; photo cleanup will retry", swept);
     return { ok: true };
   });

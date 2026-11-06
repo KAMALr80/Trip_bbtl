@@ -2,7 +2,7 @@
 // (M5-01 – M5-06), plus the player's stamps, level and badges (M5-07 – M5-09).
 // The server decides every rule; these hooks only call and read.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { z } from "zod";
+import { z } from "@/lib/zod-setup";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { rpc } from "./rpc";

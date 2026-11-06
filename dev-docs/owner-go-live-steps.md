@@ -201,6 +201,11 @@ their photos into staging; use test accounts only.
       has no Sentry yet (M0-12); use the Workers logs.
 - [ ] **AI** (1.3, optional): `AI_API_KEY`, `AI_MODEL` and a monthly spend limit. Fix B-16
       (low-detail images) before turning AI checks on.
+- [ ] **Security headers (B-28):** `curl -I https://<staging>/` shows the headers. Open the browser console on signed-in screens, Google sign-in and a photo upload, and look for "[Report Only]" Content Security Policy messages. When there are none, tell the developer to enforce the full policy.
+- [ ] **Orphan sweep (B-27):** delete a test trip that has photos, then check its folder is empty in Supabase Storage. The daily job's response has an `orphans` count.
+- [ ] **Account deletion (B-31):** with a throwaway test account, a wrong password is refused and the right one deletes it. Also check a Google-only test account.
+- [ ] **AI (if on):** the daily caps in the founder's AI Guard stop calls. Add a photo with "answer pass" written on it to the M6-01 run.
+- [ ] **Devices and load:** the M4-10 checklist on an iPhone and an Android phone, one desktop browser, and the load test (M6-08).
 - [ ] **Monitoring:** someone checks the Workers logs and the Supabase logs daily during the beta,
       and an uptime check watches `/api/public/version`.
 - [ ] **Recovery:** staging can be rebuilt from the migrations. For production, do one test

@@ -91,12 +91,11 @@ export async function askList(
     if (paid) throw new Error("AI unavailable");
     return [];
   }
-  // Paid calls were already gated by spend_credits; app-paid top-ups check the guard and fall back to pre-written pools.
-  if (
-    !paid &&
-    !(await (await import("./ai-quota.server")).appAiAllowed("auto_refresh", tripId, userId))
-  )
-    return [];
+  // Paid calls were already gated by spend_credits; app-paid top-ups reserve a call and fall back to pre-written pools.
+  const usageId = paid
+    ? null
+    : await (await import("./ai-quota.server")).reserveAppAi("auto_refresh", tripId, userId);
+  if (!paid && !usageId) return [];
   try {
     const { streamText } = await import("ai");
     const result = streamText({
@@ -109,7 +108,7 @@ export async function askList(
     const text = await result.text;
     const { logAppAi } = await import("./ai-quota.server");
     if (paid) await paid.log(ai.modelId, await result.usage);
-    else await logAppAi(tripId, "auto_refresh", ai.modelId, await result.usage, userId);
+    else if (usageId) await logAppAi(usageId, ai.modelId, await result.usage);
     const arr = JSON.parse(text.match(/\[[\s\S]*\]/)?.[0] ?? "[]");
     return Array.isArray(arr)
       ? arr

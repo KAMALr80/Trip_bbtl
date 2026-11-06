@@ -106,6 +106,7 @@ describe("sendWebPush", () => {
     const headers = seen?.headers as Record<string, string>;
     expect(headers["Content-Encoding"]).toBe("aes128gcm");
     expect(headers["TTL"]).toBe("86400");
+    expect(headers["Topic"]).toBeUndefined();
     expect(headers["Authorization"]).toMatch(/^vapid t=/);
   });
 
