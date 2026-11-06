@@ -6,7 +6,7 @@ import { spendAiQuota } from "./ai-quota.server";
 
 export const analyzeTripPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value) =>
+  .validator((value) =>
     z
       .object({
         tripId: z.string().uuid(),

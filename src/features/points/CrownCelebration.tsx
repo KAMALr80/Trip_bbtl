@@ -85,7 +85,7 @@ export function CrownCelebration({
     return () => {
       live = false;
     };
-  }, [true, trips, userId, cards]);
+  }, [trips, userId, cards]);
 
   async function continueOn() {
     if (!crown) return;

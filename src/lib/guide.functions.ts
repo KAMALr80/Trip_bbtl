@@ -5,7 +5,7 @@ import { z } from "zod";
 // published guide, with names and photos only for players who opted in; photo links are signed
 // here with the service role for an hour.
 export const loadPublicGuide = createServerFn({ method: "GET" })
-  .inputValidator((value) => z.object({ token: z.string().regex(/^[0-9a-f]{24}$/) }).parse(value))
+  .validator((value) => z.object({ token: z.string().regex(/^[0-9a-f]{24}$/) }).parse(value))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin.rpc("public_guide", { p_token: data.token });

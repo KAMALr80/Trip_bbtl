@@ -95,8 +95,12 @@ auth() {
     --arg gid "${GOOGLE_CLIENT_ID:-}" --arg gsecret "${GOOGLE_CLIENT_SECRET:-}" \
     --arg host "${SMTP_HOST:-}" --arg port "${SMTP_PORT:-587}" --arg user "${SMTP_USER:-}" \
     --arg pass "${SMTP_PASS:-}" --arg from "${SMTP_SENDER_EMAIL:-}" \
-    --arg fromName "${SMTP_SENDER_NAME:-TripJunkies}" '
-    {site_url: $url, uri_allow_list: ($url + "/**")}
+    --arg fromName "${SMTP_SENDER_NAME:-TripJunkies}" \
+    --rawfile confirm supabase/templates/confirmation.html '
+    {site_url: $url, uri_allow_list: ($url + "/**"),
+     # B-17: the sign-up email carries the 6-digit code the app asks for (same as config.toml).
+     mailer_subjects_confirmation: "Your TripJunkies sign-up code",
+     mailer_templates_confirmation_content: $confirm}
     + (if $gid != "" then {external_google_enabled: true, external_google_client_id: $gid,
                            external_google_secret: $gsecret} else {} end)
     + (if $host != "" then {smtp_host: $host, smtp_port: $port, smtp_user: $user, smtp_pass: $pass,

@@ -109,3 +109,27 @@ These were verified with the existing pgTAP and mocked E2E suites. To keep local
 - everything already listed under "Not executed, and why".
 
 **Memory note:** the host had about 0.7 GB of free RAM. One unit run and one typecheck ran out of memory and were re-run; the re-runs are the results above.
+
+## Hardening branch (Nov 5, `release/complete-project-hardening`)
+
+**Code:** `bf688ee` plus the hardening changes (B-01 zod, B-03, B-04 partial, B-13, B-15, B-16, B-17 repository side, B-18, B-19).
+
+| Suite | Command | Result |
+|---|---|---|
+| Typecheck | `bun run typecheck` | passed |
+| ESLint | `npx eslint .` | 0 errors, 100 warnings (104 before) |
+| Prettier, changed code files | `npx prettier --check <files>` | passed |
+| Unit (Vitest) | `bun run test` | 208 passed, 0 failed, 0 skipped (20 files) |
+| Production build and bundle secret check | `bun run build`, `bun scripts/security/check-bundle.ts` | passed; no secrets in the bundle; 0 `inputValidator()` deprecation warnings (19 before) |
+| Mocked E2E | `npx playwright test`, on a fresh dev server on port 8082 so that it ran the new dependencies | Full run: 55 passed, 4 failed. Two `a11y` timeouts came while a Node process ran out of memory; `notifications` failed in the same run; `signed-out` failed because the test expects port 8080. Re-run alone: `a11y` + `notifications` 10/10 on port 8082, `signed-out` 8/8 on port 8080 |
+| PWA / offline E2E | `npx playwright test -c playwright.pwa.config.ts` | 13 passed, 0 failed |
+| pgTAP, disposable PG16 (CI "Database" job) | `scripts/db/test.sh` in `postgres:16` | 35/35 files, 827 assertions (`28_passport` 43) |
+| pgTAP, local stack | `npx supabase test db` | 34/35 files: only `07_seed` fails (B-05, the old local seed); `28_passport` passes |
+| `28_passport` under two plans | local stack, rolled back | 43/43 with seq scans on, 43/43 with them off |
+| `bun audit` | `bun audit` | 35 (14 high, 16 moderate, 5 low), all in dev tooling; none in production (B-01) |
+| Database state | row counts | unchanged: 9 auth users, 5 trips, 11 members, 459 content items, 0 proofs |
+
+**Not executed:**
+- the live-stack E2E: it writes a trip membership for a seed account;
+- real email, Google, AI and push, which need credentials;
+- real devices and staging.

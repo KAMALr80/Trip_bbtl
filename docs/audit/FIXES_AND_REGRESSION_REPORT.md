@@ -59,6 +59,22 @@ The final numbers are in [TESTING_REPORT.md](TESTING_REPORT.md#final-verificatio
   - desktop viewports;
   - real devices, staging, load and performance.
 
+## Hardening branch (Nov 5, `release/complete-project-hardening`)
+
+| Bug | Files | Change |
+|---|---|---|
+| B-01 | `package.json`, `bun.lock` | zod `^3.25.76` → `^4.6.6`. The lockfile changes only the zod entries; `miniflare` keeps its own Zod 3 |
+| B-03 | 14 `src/lib/*.functions.ts`, `eslint.config.js` | `.inputValidator(` → `.validator(` (19 calls), plus a lint rule against the old name |
+| B-04 | `CrownCelebration.tsx`, `Seasons.tsx`, `Season.tsx` | 3 leftover `true` dependencies removed; 1 deliberate dependency documented |
+| B-13 | `.nvmrc`, `package.json`, `README.md` | Node 22 pinned (`engines` `>=22`) |
+| B-15, B-16 | `proof-check.server.ts`, `itinerary-ai.server.ts`, two test files | `file` parts; `imageDetail: "low"` on the proof photo part; offline request tests |
+| B-17 | `supabase/templates/confirmation.html`, `supabase/config.toml`, `scripts/deploy.sh` | The sign-up email carries the 6-digit code (and the link) |
+| B-18 | `supabase/tests/database/28_passport.test.sql` | Deterministic journal fixture after the date move |
+| B-19 | `src/data/offline/forget.ts` (+ test), `src/routes/__root.tsx` | Sign-out also clears the in-memory query cache |
+| Docs | `docs/audit/*.md`, `README.md`, `dev-docs/owner-go-live-steps.md` | Statuses and results |
+
+**Not changed:** migrations, the schema, RLS, the seed, `wrangler` / `miniflare`, environment files and local data.
+
 ## Rollback
 
 - **The audit fixes** are merged. To undo them, revert `4c442c9` in a new pull request; don't rewrite `main`'s history.

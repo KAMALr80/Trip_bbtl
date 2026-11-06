@@ -1,6 +1,6 @@
 # Bug register
 
-**Date:** Nov 5, 2026 · **Code:** `main` at `ec98cef` (PRs #1–#4 merged; CI passed on PR #4 and after its merge). The Phase 2 review the same day (B-16, B-17, the dependency table, decision notes) changed documentation only: no code, dependency or setting.
+**Date:** Nov 5, 2026 · **Code:** `main` at `bf688ee` (PRs #1–#5 merged), plus the hardening branch `release/complete-project-hardening`, which fixes B-03, B-13, B-15, B-16, B-18 and B-19, the production part of B-01 and the repository part of B-17. Statuses marked "hardening" are on that branch until it merges.
 
 Severity scale:
 - **P0:** data loss, account compromise or unauthorized access.
@@ -8,16 +8,16 @@ Severity scale:
 - **P2:** important but contained.
 - **P3:** minor, test infrastructure or polish.
 
-**Totals:** 17 findings. P0: 0 · P1: 0 · P2: 3 · P3: 14. **Fixed: 6** (B-08 to B-11 merged by PR #3; B-12 and B-14 by PR #4). **Open: 11.** Section B lists potential risks and missing features separately; they aren't counted as bugs.
+**Totals:** 19 findings. P0: 0 · P1: 0 · P2: 3 · P3: 16. **Fixed: 12** (B-08 to B-11 by PR #3; B-12 and B-14 by PR #4; B-03, B-13, B-15, B-16, B-18 and B-19 on the hardening branch). **Partly fixed: 3** (B-01, B-04, B-17). **Open: 4** (B-02, B-05, B-06, B-07). Section B lists potential risks and missing features separately; they aren't counted as bugs.
 
 ## A. Confirmed findings
 
 | ID | Sev | Module | Status |
 |---|---|---|---|
-| B-01 | P2 | Dependencies | Open: needs upgrade approval |
+| B-01 | P2 | Dependencies | **Partly fixed** (hardening): zod 4 removes the only production advisory; 35 dev-only remain |
 | B-02 | P2 | Repository process | Open: owner adds required checks (steps below) |
-| B-03 | P3 | Server functions | Open: verified safe rename, needs approval |
-| B-04 | P3 | Lint | Open: existing debt |
+| B-03 | P3 | Server functions | **Fixed** (hardening) |
+| B-04 | P3 | Lint | **Partly fixed** (hardening): 104 → 100 warnings |
 | B-05 | P3 | Local seed / pgTAP | Open: by design |
 | B-06 | P3 | Formatting | Open: existing debt |
 | B-07 | P3 | Offline / dead code | Open: product decision |
@@ -26,11 +26,13 @@ Severity scale:
 | B-10 | P3 | E2E infrastructure | **Fixed** |
 | B-11 | P3 | Server setup errors | **Fixed** |
 | B-12 | P3 | `.gitignore` | **Fixed** (PR #4) |
-| B-13 | P3 | Local tooling | Open: environment |
+| B-13 | P3 | Local tooling | **Fixed** (hardening): Node pinned |
 | B-14 | P3 | Unit tests | **Fixed** (PR #4) |
-| B-15 | P3 | AI SDK message parts | Open: fix verified offline, needs approval |
-| B-16 | P3 | AI proof check cost | Open: fix verified offline, needs approval |
-| B-17 | P2 | Sign-up email on hosted Supabase | Open: to verify on staging |
+| B-15 | P3 | AI SDK message parts | **Fixed** (hardening) |
+| B-16 | P3 | AI proof check cost | **Fixed** (hardening) |
+| B-17 | P2 | Sign-up email on hosted Supabase | **Partly fixed** (hardening): template in the repo; verify on staging |
+| B-18 | P3 | pgTAP `28_passport` | **Fixed** (hardening) |
+| B-19 | P3 | Sign-out and the query cache | **Fixed** (hardening) |
 
 ### B-01 · P2 · Dependency advisories
 - **Steps to reproduce:** `bun audit` (or `bun audit --json`).
@@ -59,7 +61,14 @@ Severity scale:
      - Exposure is local tooling only, so this can follow the Zod upgrade.
   3. **`minimatch`:** accept for now (lint-only). Re-check when `typescript-eslint` moves to `minimatch@11`.
 - **Files:** `package.json`, `bun.lock`.
-- **Status:** analysed; no dependency changed.
+- **Status (hardening, Nov 5):** **zod upgraded to 4.6.6** (`package.json` `^4.6.6`; `bun.lock` changes only the zod entries, and `bun install --frozen-lockfile` is clean).
+  - The app and every TanStack package now use Zod 4.6.6. Only `miniflare` (dev) keeps its own `zod@3.25.76`, so `bun audit` still lists the zod advisory, against that dev copy.
+  - Review of the Zod 4 changes that apply here:
+    - `.uuid()` is stricter. All local IDs (5 trips, 9 users, 459 content items, 62 schedule items) and every UUID literal in `e2e`, `src` and the seed pass it, and the nil UUID is still accepted.
+    - `.catch()`, `.refine(fn, "message")`, `.optional()`, `.nullable()`, `z.enum`, `.trim()` and `z.infer` behave the same.
+  - Tests: typecheck, 208 unit tests (`parseVerdict` covers `.catch()`), the mocked E2E suite on a fresh dev server, and the build all pass.
+  - **Advisories now:** still 35 (14 high, 16 moderate, 5 low), but **none reaches production**. `undici` (28), `sharp` (3), `ws` (2) and the leftover `zod` (1) all come from `wrangler` → `miniflare`; `minimatch` (1) is lint only.
+  - `wrangler` 4.158.0 was **not** done: it brings `miniflare` 5, which is a beta.
 
 ### B-02 · P2 · Pull requests are merged before CI finishes
 - **Steps to reproduce:**
@@ -95,9 +104,9 @@ Severity scale:
 - **Verified (Phase 2):** this is a maintenance issue, not a bug, and the rename is safe on the installed versions (`@tanstack/react-start` 1.168.60).
   - At runtime `validator` and `inputValidator` are the same function (`start-client-core/dist/esm/createServerFn.js:34–35`).
   - The compiler handles both in one loop, which keeps validators out of the client bundle (`start-plugin-core/dist/esm/start-compiler/handleCreateServerFn.js:137`). Only `inputValidator` warns.
-- **Proposed fix:** rename the 19 calls. As a regression guard, an ESLint `no-restricted-syntax` rule for `.inputValidator(` stops it coming back.
-  - Then run typecheck, build (the warning should be gone) and mocked E2E.
-  - Not done: it waits for approval.
+- **Fix (hardening):** the 19 calls are renamed to `.validator()`.
+  - Regression guard: an ESLint `no-restricted-properties` rule for `inputValidator` (`eslint.config.js`). A throwaway file using `.inputValidator(` failed lint with it.
+  - Typecheck, build and mocked E2E pass.
 
 ### B-04 · P3 · 104 ESLint warnings
 - **Steps to reproduce:** `npx eslint .`.
@@ -110,7 +119,11 @@ Severity scale:
     - 1 unnecessary dependency (`Season.tsx:24`).
   - Most are in `AppShell.tsx` (11) and `Seasons.tsx` (8).
 - **Classification:** maintenance. None was shown to be a user-facing bug, but a missing dependency can mean a stale value, so each needs a look rather than a bulk fix.
-- **Proposed fix:** handle them screen by screen as each screen is touched, with a test for any real stale-value bug found. The 3 `true` literals and the unnecessary dependency are the quickest. Don't silence the rule in bulk.
+- **Proposed fix:** handle them screen by screen as each screen is touched, with a test for any real stale-value bug found. Don't silence the rule in bulk.
+- **Done (hardening):** 104 → 100 warnings.
+  - The 3 `true` literals were leftovers of the removed look switch (M1-03). They're gone; this changes nothing at runtime.
+  - `Season.tsx`'s `[burst]` is deliberate (a new burst re-rolls the confetti), so it has a commented, line-level suppression.
+  - The 11 in `AppShell.tsx` are `[user?.id]`-keyed effects: they re-run when the account changes, not on every new `user` object. That's intended and was left alone.
 
 ### B-05 · P3 · The local seed is date-relative, so `07_seed` fails on a long-lived local stack
 - **Steps to reproduce:** `supabase test db` on a stack whose seed was applied days ago. It fails with "Airport Missions have closed".
@@ -178,7 +191,7 @@ Severity scale:
   ```
   - **Root cause:** not proven; it's the Node 26 runtime on this machine, not the app.
   - **What's missing:** nothing pins Node. There's no `engines` field and no `.nvmrc`, and CI doesn't run `setup-node`, so it uses the runner's default. The README asks for Node 22.
-  - **Minimal fix (needs approval):** add `.nvmrc` with `22`. The Bun workaround is already in the README.
+  - **Fix (hardening):** `.nvmrc` = `22` and `engines.node` = `>=22` in `package.json`. Bun doesn't enforce the root `engines`, so Bun workflows are unchanged. The README points to `.nvmrc`; the Bun workaround for Node 26 stays documented.
 - **The local `supabase_vector` container restarts in a loop.** It only collects logs, and the app doesn't need it.
 - **`vite-tsconfig-paths` takes 45–92 % of build plugin time.** Vite now resolves tsconfig paths itself (`resolve.tsconfigPaths`), so the plugin could be replaced. This is an optimisation proposal, not done.
 
@@ -199,7 +212,12 @@ Severity scale:
 - **Verified offline (Phase 2), without `AI_API_KEY`:**
   - A probe used the real `@ai-sdk/openai` Responses provider, a dummy key and a fake `fetch`, so nothing left the machine.
   - `{ type: "file", mediaType: "image", data: new URL(url) }` sends exactly the same `input_image` request as today's `image` part.
-- **Proposed fix:** switch both call sites to a `file` part, together with B-16. Not done: it waits for approval.
+- **Fix (hardening):** both call sites use a `file` part.
+  - Proof check: `{ type: "file", mediaType: "image", data: new URL(photoUrl) }`.
+  - Itinerary import: `{ type: "file", data: <base64>, mediaType: <the upload's type> }`. The type is still limited to png, jpeg or webp by the server function's validator.
+  - Regression tests run offline: `proof-check.server.test.ts` and `itinerary-ai.server.test.ts` (dummy key, a fetch that records and refuses).
+    - The itinerary test checks the exact `input_image` the old `image` part sent (`data:image/png;base64,…`).
+    - Both files run without the deprecation warning.
 
 ### B-16 · P3 · The AI proof check doesn't actually ask for a low-detail image
 - **Steps to reproduce:** the same offline probe. Capture the request `visionProofChecker` would send.
@@ -213,7 +231,7 @@ Severity scale:
   - Make the part `{ type: "file", mediaType: "image", data: new URL(photoUrl), providerOptions: { openai: { imageDetail: "low" } } }`, and keep `store: false` on the call.
   - Regression test: a unit test with `createOpenAI({ apiKey: "test", fetch })` that captures the request and asserts `detail: "low"` and `store: false`. It runs offline.
   - Low detail changes what the model sees, so confirm accuracy in the M6-01 labelled-photo run.
-  - Needs approval.
+- **Fix (hardening):** done as proposed. The unit test asserts `"detail": "low"` on the `input_image` and `store: false`. The old call-level option produced no `detail` (offline probe), so the test would fail on the old code.
 
 ### B-17 · P2 · Hosted sign-up emails will send a link, but the app asks for a code (to verify on staging)
 - **Steps to reproduce (staging):** turn on email confirmation, sign up with a new address, then open the email.
@@ -227,7 +245,36 @@ Severity scale:
   - Add a "Confirm signup" template with `{{ .Token }}`: in `config.toml` for local use, and in the `deploy.sh` auth step for hosted projects.
   - Decide whether confirmation is on, as part of Q17.
   - Then test sign-up, resend and password reset on staging.
-- **Status:** not reproduced, because no hosted project exists. Confirm it on the first staging deploy.
+- **Fix (hardening, repository side):**
+  - `supabase/templates/confirmation.html` has the code (`{{ .Token }}`) and the link as a fallback. The app already sends `emailRedirectTo`, so either works.
+  - `supabase/config.toml` uses it locally. The Supabase CLI reads the updated config without errors.
+  - The `scripts/deploy.sh` auth step now sends `mailer_subjects_confirmation` and `mailer_templates_confirmation_content`. The `jq` body was checked offline (jq 1.6 in a throwaway container).
+- **Still to do:**
+  - Run `deploy staging auth`, then check that the hosted project accepts these two Management API fields.
+  - Sign up, resend and reset a password on staging, with SMTP (2.3).
+  - Decide whether confirmation is on (Q17).
+  - Local confirmation stays off, so local tests still don't send this email.
+
+### B-18 · P3 · FIXED (hardening) · `28_passport` fails now and then (tests 34 and 38)
+- **Steps to reproduce:**
+  - CI run 42070242335, attempt 1 (Supabase local stack): tests 34 "badges: 2 states, 1 culture, 1 Window Seat guide" and 38 "my badges" failed.
+  - Attempt 2, on the same commit, passed.
+- **Root cause:**
+  - The test hung its journal entry on `(SELECT id FROM trip_schedule WHERE trip_id = ws LIMIT 1)`, with no `ORDER BY`, and then moved the trip's dates.
+  - Moving the dates re-plans the schedule. On a rolled-back probe, 11 of the 17 Window Seat items were deleted (every date-slotted item), and `journal_entries.schedule_id` is `ON DELETE CASCADE`.
+  - When `LIMIT 1` returned one of those, the entry vanished, so no `storyteller` badge. That's P8 showing up in a test.
+- **Fix:** the entry is now written after the move, on the first surviving `journal_prompt` (`ORDER BY opens_at, slot`). `plan(43)` and every assertion are unchanged.
+- **Regression:** on the local stack, 43/43 with the default plan (seq scan) and 43/43 with seq scans off (index scan).
+  - `25_notifications`'s `LIMIT 1` queries pick by kind and player and move no dates, so their result doesn't depend on the row. They were left alone.
+
+### B-19 · P3 · FIXED (hardening) · After a sign-out without a reload, the next account could briefly see the last one's cached data
+- **Steps to reproduce (by inspection):**
+  1. A session expires, so supabase-js sends `SIGNED_OUT` and the page doesn't reload.
+  2. Another account signs in in the same tab.
+- **Actual:** the in-memory React Query cache was kept. Keys such as `["profile"]`, `["account"]` and `["trip", id, "journal"]` aren't per user, so they showed the previous account's data until the refetch finished.
+  - The offline snapshot and outbox were already cleared. The sign-out buttons reload the page, so they weren't affected.
+- **Fix:** `forgetAccount()` (`src/data/offline/forget.ts`) drops the snapshot first, so nothing is saved, then the outbox, then `queryClient.clear()`. `__root.tsx` calls it on `SIGNED_OUT` and when the server reports no user.
+- **Regression:** `src/data/offline/forget.test.ts` (the cache is empty and the snapshot stops before the cache clears); the PWA snapshot and signed-out E2E specs still pass.
 
 ## B. Potential risks and missing features (not counted as bugs)
 

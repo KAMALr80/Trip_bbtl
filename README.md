@@ -21,7 +21,7 @@ scripts/        database tooling and the deploy script
 
 ## Local development
 
-Requirements: [bun](https://bun.sh) 1.x and Node 22. For the database tools you also need the PostgreSQL server binaries (`initdb`, `pg_ctl`, 16 or newer); Docker isn't required for them.
+Requirements: [bun](https://bun.sh) 1.x and Node 22 (`.nvmrc`; `nvm use` picks it). For the database tools you also need the PostgreSQL server binaries (`initdb`, `pg_ctl`, 16 or newer); Docker isn't required for them.
 
 ```bash
 bun install

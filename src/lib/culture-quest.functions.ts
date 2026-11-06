@@ -5,7 +5,7 @@ import { spendCredits } from "./ai-quota.server";
 
 export const draftCultureQuest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v) => z.object({ cardId: z.string().uuid() }).parse(v))
+  .validator((v) => z.object({ cardId: z.string().uuid() }).parse(v))
   .handler(async ({ data, context }) => {
     const { data: card, error } = await context.supabase
       .from("cultural_inspirations")

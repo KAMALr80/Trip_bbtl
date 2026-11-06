@@ -6,7 +6,7 @@ import { RULES, safeContent } from "./content-rules";
 
 export const makeInspirationGuide = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v) =>
+  .validator((v) =>
     z
       .object({
         tripId: z.string().uuid(),

@@ -100,12 +100,19 @@ export function visionProofChecker(
                   ? `Challenge: ${challenge.slice(0, 300)}`
                   : 'Safety check only. Use "unsure" as the verdict.',
               },
-              { type: "image", image: new URL(photoUrl) },
+              {
+                // A "file" part with an image media type (the "image" part is deprecated, B-15).
+                type: "file",
+                mediaType: "image",
+                data: new URL(photoUrl),
+                // A small image is enough for both questions and keeps the cost down. The OpenAI
+                // provider reads imageDetail from the part, not from the call (B-16).
+                providerOptions: { openai: { imageDetail: "low" } },
+              },
             ],
           },
         ],
-        // A small image is enough for both questions and keeps the cost down (≤ 1024 px).
-        providerOptions: { openai: { store: false, imageDetail: "low" } },
+        providerOptions: { openai: { store: false } },
         maxOutputTokens: 200,
       });
       await onUsage?.(result.usage);

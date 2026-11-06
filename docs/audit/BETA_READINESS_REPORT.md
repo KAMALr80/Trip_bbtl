@@ -32,7 +32,7 @@ A beta needs real people to sign in from a hosted URL. None of that exists yet: 
 ## Blockers before a beta, in order
 
 1. **Staging.** The owner creates the Supabase and Cloudflare accounts, VAPID keys and secrets, then runs `deploy staging` (owner steps §1).
-2. **Email.** An SMTP sender with DNS records (2.3), so sign-up codes and password resets are delivered. Also the sign-up template with the code (B-17).
+2. **Email.** An SMTP sender with DNS records (2.3), so sign-up codes and password resets are delivered. The sign-up template with the code is in the repository now (B-17); check it on staging.
 3. **Required CI checks** on `main` (B-02). The ruleset already blocks deleting and force-pushing it; the exact UI steps are in B-02.
 4. **Phones.** The M4-10 checklist on one iPhone and one Android phone against staging.
 5. **Legal.** Terms and Privacy updated and lawyer-reviewed (M6-09), including P4; then the legal version is bumped.
@@ -41,7 +41,7 @@ A beta needs real people to sign in from a hosted URL. None of that exists yet: 
    - P8, protecting proofs when dates move;
    - confirm Q29.
 7. **Monitoring.** A Sentry DSN, and cron and error alerts (M0-12, M6-08).
-8. **Dependencies.** The zod 4 upgrade first: it's the only advisory that reaches production. Then `wrangler` 4.158.0 for the 33 dev-only ones (B-01). `bun audit fix` can't fix these.
+8. **Dependencies.** The zod 4 upgrade is on the hardening branch, so no advisory reaches production. The 35 dev-only ones wait for a stable `wrangler` / `miniflare` (B-01).
 9. **Content.** The founder reviews the library up to the launch target (M3-02).
 
 ## Optional before a beta
@@ -74,7 +74,7 @@ A beta needs real people to sign in from a hosted URL. None of that exists yet: 
 | Moderation and admin | pgTAP 31–34; E2E `admin`, `moderation` | ✓ | `AI_API_KEY` for image moderation | — |
 | Performance and load | — | Lighthouse on Slow 4G, 500-player load test (M6-08) | — | A mid-range Android |
 
-**Exit criteria for a beta with 3–5 crews:** every row passes on staging and both phones; no open P0 or P1; B-01 (zod), B-02 and B-17 closed.
+**Exit criteria for a beta with 3–5 crews:** every row passes on staging and both phones; no open P0 or P1; B-02 closed; B-17 checked on staging; the hardening branch merged.
 
 ## After staging is up, verify there
 

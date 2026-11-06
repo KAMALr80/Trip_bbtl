@@ -83,7 +83,7 @@ async function runAi(
 
 export const planCultureExperience = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v) =>
+  .validator((v) =>
     z
       .object({
         id: z.string().uuid(),
@@ -136,7 +136,7 @@ export const planCultureExperience = createServerFn({ method: "POST" })
 
 export const summarizeCultureTrip = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v) => z.object({ id: z.string().uuid() }).parse(v))
+  .validator((v) => z.object({ id: z.string().uuid() }).parse(v))
   .handler(async ({ data, context }) => {
     const exp = await loadForAi(context as Ctx, data.id);
     const { data: days } = await context.supabase
