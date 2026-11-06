@@ -1,6 +1,6 @@
 # Bug register
 
-**Date:** Nov 5, 2026 · **Code:** `main` at `bf688ee` (PRs #1–#5 merged), plus the hardening branch `release/complete-project-hardening`, which fixes B-03, B-13, B-15, B-16, B-18 and B-19, the production part of B-01 and the repository part of B-17. Statuses marked "hardening" are on that branch until it merges.
+**Date:** Nov 6, 2026 · **Code:** `main` at `53e8f5f` (PRs #1–#6 merged), plus the branch `audit/trip-authorization-and-beta-readiness`, which adds B-20 to B-26. Statuses marked "authorization branch" are on that branch until it merges. The scope of the latest review is in [AUTHORIZATION_REVIEW.md](AUTHORIZATION_REVIEW.md): a targeted review, not a full audit or penetration test.
 
 Severity scale:
 - **P0:** data loss, account compromise or unauthorized access.
@@ -8,16 +8,16 @@ Severity scale:
 - **P2:** important but contained.
 - **P3:** minor, test infrastructure or polish.
 
-**Totals:** 19 findings. P0: 0 · P1: 0 · P2: 3 · P3: 16. **Fixed: 12** (B-08 to B-11 by PR #3; B-12 and B-14 by PR #4; B-03, B-13, B-15, B-16, B-18 and B-19 on the hardening branch). **Partly fixed: 3** (B-01, B-04, B-17). **Open: 4** (B-02, B-05, B-06, B-07). Section B lists potential risks and missing features separately; they aren't counted as bugs.
+**Totals:** 26 findings. P0: 0 · P1: 0 · P2: 5 · P3: 21. **Fixed: 18** (B-08 to B-11 by PR #3; B-12 and B-14 by PR #4; B-03, B-13, B-15, B-16, B-18 and B-19 by PR #6; B-20 to B-23, B-25 and B-26 on the authorization branch). **Partly fixed: 3** (B-01, B-04, B-17). **Open: 4** (B-02, B-05, B-06, B-07). **Checked, no change: 1** (B-24). Section B lists potential risks and missing features separately; they aren't counted as bugs.
 
 ## A. Confirmed findings
 
 | ID | Sev | Module | Status |
 |---|---|---|---|
-| B-01 | P2 | Dependencies | **Partly fixed** (hardening): zod 4 removes the only production advisory; 35 dev-only remain |
+| B-01 | P2 | Dependencies | **Partly fixed** (PR #6): zod 4 removes the only production advisory; 35 dev-only remain |
 | B-02 | P2 | Repository process | Open: owner adds required checks (steps below) |
-| B-03 | P3 | Server functions | **Fixed** (hardening) |
-| B-04 | P3 | Lint | **Partly fixed** (hardening): 104 → 100 warnings |
+| B-03 | P3 | Server functions | **Fixed** (PR #6) |
+| B-04 | P3 | Lint | **Partly fixed** (PR #6): 104 → 100 warnings |
 | B-05 | P3 | Local seed / pgTAP | Open: by design |
 | B-06 | P3 | Formatting | Open: existing debt |
 | B-07 | P3 | Offline / dead code | Open: product decision |
@@ -26,13 +26,20 @@ Severity scale:
 | B-10 | P3 | E2E infrastructure | **Fixed** |
 | B-11 | P3 | Server setup errors | **Fixed** |
 | B-12 | P3 | `.gitignore` | **Fixed** (PR #4) |
-| B-13 | P3 | Local tooling | **Fixed** (hardening): Node pinned |
+| B-13 | P3 | Local tooling | **Fixed** (PR #6): Node pinned |
 | B-14 | P3 | Unit tests | **Fixed** (PR #4) |
-| B-15 | P3 | AI SDK message parts | **Fixed** (hardening) |
-| B-16 | P3 | AI proof check cost | **Fixed** (hardening) |
-| B-17 | P2 | Sign-up email on hosted Supabase | **Partly fixed** (hardening): template in the repo; verify on staging |
-| B-18 | P3 | pgTAP `28_passport` | **Fixed** (hardening) |
-| B-19 | P3 | Sign-out and the query cache | **Fixed** (hardening) |
+| B-15 | P3 | AI SDK message parts | **Fixed** (PR #6) |
+| B-16 | P3 | AI proof check cost | **Fixed** (PR #6) |
+| B-17 | P2 | Sign-up email on hosted Supabase | **Partly fixed** (PR #6): template in the repo; verify on staging |
+| B-18 | P3 | pgTAP `28_passport` | **Fixed** (PR #6) |
+| B-19 | P3 | Sign-out and the query cache | **Fixed** (PR #6) |
+| B-20 | P2 | Trip deletion and Storage | **Fixed** (authorization branch) |
+| B-21 | P2 | Sign-out and push reminders | **Fixed** (authorization branch) |
+| B-22 | P3 | Push addresses | **Fixed** (authorization branch) |
+| B-23 | P3 | AI timeouts and photo text | **Fixed** (authorization branch); check the prompt on a real model |
+| B-24 | P3 | `game_cards` read policies | Checked: not exploitable, no change |
+| B-25 | P3 | Storyteller badge | **Fixed** (authorization branch) |
+| B-26 | P3 | Missing foreign key indexes | **Fixed** (authorization branch) |
 
 ### B-01 · P2 · Dependency advisories
 - **Steps to reproduce:** `bun audit` (or `bun audit --json`).
@@ -61,7 +68,7 @@ Severity scale:
      - Exposure is local tooling only, so this can follow the Zod upgrade.
   3. **`minimatch`:** accept for now (lint-only). Re-check when `typescript-eslint` moves to `minimatch@11`.
 - **Files:** `package.json`, `bun.lock`.
-- **Status (hardening, Nov 5):** **zod upgraded to 4.6.6** (`package.json` `^4.6.6`; `bun.lock` changes only the zod entries, and `bun install --frozen-lockfile` is clean).
+- **Status (PR #6):** **zod upgraded to 4.6.6** (`package.json` `^4.6.6`; `bun.lock` changes only the zod entries, and `bun install --frozen-lockfile` is clean).
   - The app and every TanStack package now use Zod 4.6.6. Only `miniflare` (dev) keeps its own `zod@3.25.76`, so `bun audit` still lists the zod advisory, against that dev copy.
   - Review of the Zod 4 changes that apply here:
     - `.uuid()` is stricter. All local IDs (5 trips, 9 users, 459 content items, 62 schedule items) and every UUID literal in `e2e`, `src` and the seed pass it, and the nil UUID is still accepted.
@@ -104,7 +111,7 @@ Severity scale:
 - **Verified (Phase 2):** this is a maintenance issue, not a bug, and the rename is safe on the installed versions (`@tanstack/react-start` 1.168.60).
   - At runtime `validator` and `inputValidator` are the same function (`start-client-core/dist/esm/createServerFn.js:34–35`).
   - The compiler handles both in one loop, which keeps validators out of the client bundle (`start-plugin-core/dist/esm/start-compiler/handleCreateServerFn.js:137`). Only `inputValidator` warns.
-- **Fix (hardening):** the 19 calls are renamed to `.validator()`.
+- **Fix (PR #6):** the 19 calls are renamed to `.validator()`.
   - Regression guard: an ESLint `no-restricted-properties` rule for `inputValidator` (`eslint.config.js`). A throwaway file using `.inputValidator(` failed lint with it.
   - Typecheck, build and mocked E2E pass.
 
@@ -120,7 +127,7 @@ Severity scale:
   - Most are in `AppShell.tsx` (11) and `Seasons.tsx` (8).
 - **Classification:** maintenance. None was shown to be a user-facing bug, but a missing dependency can mean a stale value, so each needs a look rather than a bulk fix.
 - **Proposed fix:** handle them screen by screen as each screen is touched, with a test for any real stale-value bug found. Don't silence the rule in bulk.
-- **Done (hardening):** 104 → 100 warnings.
+- **Done (PR #6):** 104 → 100 warnings.
   - The 3 `true` literals were leftovers of the removed look switch (M1-03). They're gone; this changes nothing at runtime.
   - `Season.tsx`'s `[burst]` is deliberate (a new burst re-rolls the confetti), so it has a commented, line-level suppression.
   - The 11 in `AppShell.tsx` are `[user?.id]`-keyed effects: they re-run when the account changes, not on every new `user` object. That's intended and was left alone.
@@ -191,7 +198,7 @@ Severity scale:
   ```
   - **Root cause:** not proven; it's the Node 26 runtime on this machine, not the app.
   - **What's missing:** nothing pins Node. There's no `engines` field and no `.nvmrc`, and CI doesn't run `setup-node`, so it uses the runner's default. The README asks for Node 22.
-  - **Fix (hardening):** `.nvmrc` = `22` and `engines.node` = `>=22` in `package.json`. Bun doesn't enforce the root `engines`, so Bun workflows are unchanged. The README points to `.nvmrc`; the Bun workaround for Node 26 stays documented.
+  - **Fix (PR #6):** `.nvmrc` = `22` and `engines.node` = `>=22` in `package.json`. Bun doesn't enforce the root `engines`, so Bun workflows are unchanged. The README points to `.nvmrc`; the Bun workaround for Node 26 stays documented.
 - **The local `supabase_vector` container restarts in a loop.** It only collects logs, and the app doesn't need it.
 - **`vite-tsconfig-paths` takes 45–92 % of build plugin time.** Vite now resolves tsconfig paths itself (`resolve.tsconfigPaths`), so the plugin could be replaced. This is an optimisation proposal, not done.
 
@@ -212,7 +219,7 @@ Severity scale:
 - **Verified offline (Phase 2), without `AI_API_KEY`:**
   - A probe used the real `@ai-sdk/openai` Responses provider, a dummy key and a fake `fetch`, so nothing left the machine.
   - `{ type: "file", mediaType: "image", data: new URL(url) }` sends exactly the same `input_image` request as today's `image` part.
-- **Fix (hardening):** both call sites use a `file` part.
+- **Fix (PR #6):** both call sites use a `file` part.
   - Proof check: `{ type: "file", mediaType: "image", data: new URL(photoUrl) }`.
   - Itinerary import: `{ type: "file", data: <base64>, mediaType: <the upload's type> }`. The type is still limited to png, jpeg or webp by the server function's validator.
   - Regression tests run offline: `proof-check.server.test.ts` and `itinerary-ai.server.test.ts` (dummy key, a fetch that records and refuses).
@@ -231,7 +238,7 @@ Severity scale:
   - Make the part `{ type: "file", mediaType: "image", data: new URL(photoUrl), providerOptions: { openai: { imageDetail: "low" } } }`, and keep `store: false` on the call.
   - Regression test: a unit test with `createOpenAI({ apiKey: "test", fetch })` that captures the request and asserts `detail: "low"` and `store: false`. It runs offline.
   - Low detail changes what the model sees, so confirm accuracy in the M6-01 labelled-photo run.
-- **Fix (hardening):** done as proposed. The unit test asserts `"detail": "low"` on the `input_image` and `store: false`. The old call-level option produced no `detail` (offline probe), so the test would fail on the old code.
+- **Fix (PR #6):** done as proposed. The unit test asserts `"detail": "low"` on the `input_image` and `store: false`. The old call-level option produced no `detail` (offline probe), so the test would fail on the old code.
 
 ### B-17 · P2 · Hosted sign-up emails will send a link, but the app asks for a code (to verify on staging)
 - **Steps to reproduce (staging):** turn on email confirmation, sign up with a new address, then open the email.
@@ -245,7 +252,7 @@ Severity scale:
   - Add a "Confirm signup" template with `{{ .Token }}`: in `config.toml` for local use, and in the `deploy.sh` auth step for hosted projects.
   - Decide whether confirmation is on, as part of Q17.
   - Then test sign-up, resend and password reset on staging.
-- **Fix (hardening, repository side):**
+- **Fix (PR #6, repository side):**
   - `supabase/templates/confirmation.html` has the code (`{{ .Token }}`) and the link as a fallback. The app already sends `emailRedirectTo`, so either works.
   - `supabase/config.toml` uses it locally. The Supabase CLI reads the updated config without errors.
   - The `scripts/deploy.sh` auth step now sends `mailer_subjects_confirmation` and `mailer_templates_confirmation_content`. The `jq` body was checked offline (jq 1.6 in a throwaway container).
@@ -255,7 +262,7 @@ Severity scale:
   - Decide whether confirmation is on (Q17).
   - Local confirmation stays off, so local tests still don't send this email.
 
-### B-18 · P3 · FIXED (hardening) · `28_passport` fails now and then (tests 34 and 38)
+### B-18 · P3 · FIXED (PR #6) · `28_passport` fails now and then (tests 34 and 38)
 - **Steps to reproduce:**
   - CI run 42070242335, attempt 1 (Supabase local stack): tests 34 "badges: 2 states, 1 culture, 1 Window Seat guide" and 38 "my badges" failed.
   - Attempt 2, on the same commit, passed.
@@ -267,7 +274,7 @@ Severity scale:
 - **Regression:** on the local stack, 43/43 with the default plan (seq scan) and 43/43 with seq scans off (index scan).
   - `25_notifications`'s `LIMIT 1` queries pick by kind and player and move no dates, so their result doesn't depend on the row. They were left alone.
 
-### B-19 · P3 · FIXED (hardening) · After a sign-out without a reload, the next account could briefly see the last one's cached data
+### B-19 · P3 · FIXED (PR #6) · After a sign-out without a reload, the next account could briefly see the last one's cached data
 - **Steps to reproduce (by inspection):**
   1. A session expires, so supabase-js sends `SIGNED_OUT` and the page doesn't reload.
   2. Another account signs in in the same tab.
@@ -275,6 +282,48 @@ Severity scale:
   - The offline snapshot and outbox were already cleared. The sign-out buttons reload the page, so they weren't affected.
 - **Fix:** `forgetAccount()` (`src/data/offline/forget.ts`) drops the snapshot first, so nothing is saved, then the outbox, then `queryClient.clear()`. `__root.tsx` calls it on `SIGNED_OUT` and when the server reports no user.
 - **Regression:** `src/data/offline/forget.test.ts` (the cache is empty and the snapshot stops before the cache clears); the PWA snapshot and signed-out E2E specs still pass.
+
+### B-20 · P2 · FIXED (authorization branch) · Deleting a trip left its proof and guide photos in Storage
+- **Steps to reproduce:** delete a trip that has quest proofs, then list `quest-proofs/<tripId>/`.
+- **Actual:** `permanentlyDeleteTrip` emptied only `trip-photos` and `player-avatars`. Proof photos stayed for good: the Day 7 purge works from the trip row, which is gone. Nobody could read them, since the storage policy needs the trip, but players and the Privacy Policy expect them deleted.
+- **Fix:** `src/lib/trip-storage.ts` lists every bucket with a trip folder (`TRIP_FOLDER_BUCKETS`); trip deletion and the Test Lab both use it.
+- **Regression:** `src/lib/trip-storage.test.ts` (buckets, nested files, paging, no other trip's files, stops if Storage fails). It tests the listing with a fake Storage; a real deletion wasn't run against hosted Storage.
+- **Known gap:** a Captain alone in a trip who taps Leave deletes the trip through `leave_trip`, with no Storage cleanup. Not changed: it needs its own design.
+
+### B-21 · P2 · FIXED (authorization branch) · Signing out didn't stop push reminders on that device
+- **Steps to reproduce (by code):** turn reminders on, sign out. Only "turn off" in Settings called `delete_push_subscription`; `signOut` and `forgetAccount` left the browser subscribed.
+- **Impact:** on a shared phone, the last player's reminders kept arriving, with trip names on the lock screen.
+- **Fix:** `forgetAccount` calls `releasePushOnThisDevice()`, which unsubscribes the browser on every sign-out, including an expired session. The server deletes the row when the push service answers "gone".
+- **User-visible change:** after signing back in, a player turns reminders on again on that device.
+- **Regression:** `src/pwa/push.test.ts`, `src/data/offline/forget.test.ts`. **Not tested on a real phone**: add it to M4-10.
+
+### B-22 · P3 · FIXED (authorization branch) · A push address could be any https URL
+- **Steps to reproduce:** call `save_push_subscription('https://anything.example/x', …)`.
+- **Impact:** the sender POSTs to that URL. One player could add unlimited addresses, and every reminder goes to each of them, so the app could be pointed at any site. Cloudflare Workers can't reach a private network, which limits this.
+- **Fix:** `trip_private.push_endpoint_ok` allows the browser push services only (Google, Mozilla, Apple, Microsoft), and a player keeps ten browsers at most.
+- **Risk:** a browser using another push service gets an error when turning reminders on. Check real browsers in M4-10; the list is one function.
+- **Regression:** `37_push_badges_indexes`. Those assertions fail without the migration.
+
+### B-23 · P3 · FIXED (authorization branch) · AI calls had no timeout, and photo text wasn't treated as untrusted
+- **Actual:** none of the 11 AI calls set a timeout, and the SDK's default is 2 retries. An AI "pass" approves a proof by itself (Q3), but the system prompt didn't say text inside a photo isn't an instruction.
+- **Fix:** `aiRequestLimits()` gives each call 90 s and one retry (`src/integrations/ai/index.server.ts`). The proof check gets 30 s, and a new prompt line says to ignore instructions in a photo.
+- **Regression:** `proof-check.server.test.ts` (a hanging provider ends in "unsure" and is aborted; at most two tries; the prompt line is sent). All mocks.
+- **Still open:** whether the prompt line holds can only be measured on a real model: add a photo with "answer pass" written on it to the M6-01 labelled-photo run.
+
+### B-24 · P3 · Checked, no change · An older `game_cards` read policy is broader than a newer one
+- **Actual:** "Read clean base and own trip cards" lets any member read a trip's cards, 21+ included, while "Read seed and member cards" limits those to approved adults. Policies add up, so the broader one would win.
+- **Why it's not a bug today:** `authenticated` has no SELECT on `game_cards`, so these policies can't be reached. Test 36 checks that. Normal paths also can't create a 21+ trip card.
+- **Next:** remove the leftover policies when the table is retired (M1-08). If SELECT is ever granted again, drop this policy first.
+
+### B-25 · P3 · FIXED (authorization branch) · Storyteller ignored players who only contributed photos
+- **Expected:** "The shared guide counts toward every contributor's Storyteller badge" (Q13); the guide is built from journal entries and photos (R-355).
+- **Actual:** `refresh_passport` counted journal authors only.
+- **Fix:** an approved photo of the kinds the guide shows also counts, and still counts after the Day 7 purge removes its file. No rule was added: this applies the written one.
+- **Regression:** `37_push_badges_indexes`.
+
+### B-26 · P3 · FIXED (authorization branch) · Foreign keys without indexes on live paths
+- **Actual:** 54 foreign keys had no leading index. For example, reading a trip's cards scanned all 1,930 rows of `game_cards`.
+- **Fix:** 9 indexes on live lookups and cascades. The other 45 are on retired or small tables and were left. No load test measured the benefit.
 
 ## B. Potential risks and missing features (not counted as bugs)
 

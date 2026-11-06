@@ -894,6 +894,7 @@ function	trip_private	public_guide	p_token text	t	true						20261031100000_m3_jo
 function	trip_private	public_inspiration_queue		t	true				EXECUTE		20261002210105_753acd6c-39c8-4083-bc3b-eb5d6d2e4d1e.sql	1	0	
 function	trip_private	public_launch		t	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	0	
 function	trip_private	publish_guide	p_trip uuid, p_publish boolean	t	true				EXECUTE		20261031100000_m3_journal_guide.sql	1	0	
+function	trip_private	push_endpoint_ok	p_endpoint text	f	true						20261106100000_authorization_hardening.sql	1	0	
 function	trip_private	qotw_action	p_trip uuid, p_week integer, p_action text	t	true				EXECUTE		20261002021700_13b7d943-1332-4407-8f09-f44ccfda29cc.sql	1	0	
 function	trip_private	qotw_answers	p_trip uuid, p_week integer	t	true				EXECUTE		20261002021700_13b7d943-1332-4407-8f09-f44ccfda29cc.sql	1	0	
 function	trip_private	qotw_finalize	p_trip uuid, p_week integer	t	true				EXECUTE		20261002021700_13b7d943-1332-4407-8f09-f44ccfda29cc.sql	1	0	
@@ -912,7 +913,7 @@ function	trip_private	record_photo_safety	p_proof uuid, p_flags text[]	t	true			
 trigger	trip_private	record_speed_finish		t	true						20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql	1	0	
 function	trip_private	record_user_block	p_admin uuid, p_user uuid, p_disabled boolean, p_note text	t	true						20261104150000_m6_admin.sql	1	0	
 function	trip_private	redeem_beta_code	p_code text	t	true				EXECUTE		20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql	1	0	
-function	trip_private	refresh_passport	p_user uuid	t	true						20261102110000_m5_passport.sql	1	0	
+function	trip_private	refresh_passport	p_user uuid	t	true						20261106100000_authorization_hardening.sql	2	0	
 function	trip_private	refund_failed_ai	p_usage uuid	t	true						20261004005522_e6b305d0-fdd9-4b45-8454-e553954fa167.sql	2	0	
 function	trip_private	refund_failed_ai	p_usage uuid, p_user uuid	t	true						20261004005522_e6b305d0-fdd9-4b45-8454-e553954fa167.sql	2	0	
 function	trip_private	release_trip_day	p_trip uuid, p_date date	t	true				EXECUTE		20261002014424_c31efe62-dd16-4eeb-85d4-9e1b1f91f453.sql	1	0	
@@ -947,7 +948,7 @@ function	trip_private	save_cost_item	p_trip uuid, p_item uuid, p_title text, p_c
 function	trip_private	save_cost_item_v2	p_trip uuid, p_item uuid, p_title text, p_category text, p_custom text, p_estimate boolean, p_total_cents bigint, p_split text, p_shares jsonb, p_due date	t	true				EXECUTE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	0	
 function	trip_private	save_cost_item_wrap	p_trip uuid, p_item uuid, p_title text, p_category text, p_total_cents bigint, p_split text, p_shares jsonb, p_due date	t	true				EXECUTE		20261002020143_0e62bd13-d71c-42e7-9bce-ee84c7e74300.sql	1	0	
 function	trip_private	save_game_scores	p_trip uuid, p_week integer, p_rows jsonb	t	true				EXECUTE		20261003073655_1047ce89-63b5-46bc-a963-8fd5e56bf189.sql	3	0	
-function	trip_private	save_push_subscription	p_endpoint text, p_p256dh text, p_auth text, p_user_agent text	t	true				EXECUTE		20261101100000_m4_notifications.sql	1	0	
+function	trip_private	save_push_subscription	p_endpoint text, p_p256dh text, p_auth text, p_user_agent text	t	true				EXECUTE		20261106100000_authorization_hardening.sql	2	0	
 function	trip_private	save_teams	p_trip uuid, p_teams jsonb	t	true				EXECUTE		20261002061513_3de59ba7-2343-48e6-8af2-8210734342ef.sql	2	0	
 function	trip_private	save_trip_draft	p_data jsonb	t	true				EXECUTE		20261026120000_m2_setup_call_nights_schedule.sql	1	0	
 trigger	trip_private	schedule_changed		t	true						20261101100000_m4_notifications.sql	1	0	

@@ -11,6 +11,17 @@ import type { LanguageModel } from "ai";
 
 export type AiModel = { model: LanguageModel; modelId: string };
 
+/** How long one AI request may take before it's given up on (B-23). */
+export const AI_TIMEOUT_MS = 90_000;
+
+/**
+ * Spread into every generateText / streamText call: a provider that hangs ends in the caller's usual
+ * error path instead of holding the request open, and a failure is retried at most once.
+ */
+export function aiRequestLimits(timeoutMs = AI_TIMEOUT_MS) {
+  return { abortSignal: AbortSignal.timeout(timeoutMs), maxRetries: 1 };
+}
+
 /** The configured model, or null when AI is not configured (callers show their fallback copy). */
 export function getAiModel(): AiModel | null {
   const apiKey = process.env["AI_API_KEY"];

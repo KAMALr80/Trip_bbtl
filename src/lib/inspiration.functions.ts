@@ -25,7 +25,7 @@ export const makeInspirationGuide = createServerFn({ method: "POST" })
       .eq("status", "approved")
       .maybeSingle();
     if (!member) throw new Error("Join this squad first.");
-    const { getAiModel } = await import("@/integrations/ai/index.server");
+    const { aiRequestLimits, getAiModel } = await import("@/integrations/ai/index.server");
     const ai = getAiModel();
     if (!ai) throw new Error("AI help is unavailable right now.");
     const log = await spendCredits(context.supabase, data.tripId, "inspiration_guide");
@@ -42,6 +42,7 @@ export const makeInspirationGuide = createServerFn({ method: "POST" })
       .eq("id", data.tripId)
       .single();
     const result = streamText({
+      ...aiRequestLimits(),
       model: ai.model,
       instructions: `Turn the user's own notes into a short, clear, numbered how-to someone can follow. Do not invent family history, ingredients, cultural claims, pronunciation, lyrics, or facts absent from the notes. Safe, clean and respectful: no politics, religion, sex, drugs, alcohol, unsafe or illegal acts. Return plain text only, under 2000 characters. ${RULES}`,
       messages: [

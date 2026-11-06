@@ -59,7 +59,7 @@ The final numbers are in [TESTING_REPORT.md](TESTING_REPORT.md#final-verificatio
   - desktop viewports;
   - real devices, staging, load and performance.
 
-## Hardening branch (Nov 5, `release/complete-project-hardening`)
+## Hardening (Nov 5, merged by PR #6 as `53e8f5f`)
 
 | Bug | Files | Change |
 |---|---|---|
@@ -75,8 +75,26 @@ The final numbers are in [TESTING_REPORT.md](TESTING_REPORT.md#final-verificatio
 
 **Not changed:** migrations, the schema, RLS, the seed, `wrangler` / `miniflare`, environment files and local data.
 
+## Authorization review (Nov 6, `audit/trip-authorization-and-beta-readiness`)
+
+| Bug | Files | Change |
+|---|---|---|
+| B-20 | `src/lib/trip-storage.ts` (+ test), `delete-trip.functions.ts`, `lab.functions.ts` | Trip deletion empties every bucket with a trip folder |
+| B-21 | `src/pwa/push.ts` (+ test), `src/data/offline/forget.ts` (+ test) | Sign-out unsubscribes this browser |
+| B-22 | Migration `20261106100000`, `25_notifications`, `37_push_badges_indexes` | Push addresses limited to browser push services; ten per player. Test 25's fixture address changed to a real push host because the rule changed; its assertions didn't |
+| B-23 | `src/integrations/ai/index.server.ts`, `proof-check.server.ts` (+ test), 8 AI callers | Timeouts, one retry, photo text isn't an instruction |
+| B-25 | Migration `20261106100000`, `37_push_badges_indexes` | Storyteller counts photo contributors (Q13) |
+| B-26 | Migration `20261106100000` | 9 foreign key indexes |
+| Test | `36_authorization` | The attack matrix as a standing test |
+| Generated | `supabase/baseline/*`, `docs/inventory/*` | Regenerated for the migration |
+| Docs | `docs/audit/*`, `dev-docs/README.md`, `supabase/AGENTS.md` | `AUTHORIZATION_REVIEW.md` added; stale PR #6 wording corrected |
+
+**Not changed:** P8, payments, sign-in decisions, RLS policies, existing migrations, dependencies, local data.
+
 ## Rollback
 
 - **The audit fixes** are merged. To undo them, revert `4c442c9` in a new pull request; don't rewrite `main`'s history.
 - **The final-verification changes** are merged too: revert `7ee8653` in a new pull request.
-- Nothing was migrated, and no database data changed.
+- **PR #6** is merged: revert `0e32b58` in a new pull request. Zod 4 goes with it.
+- **The authorization branch** has one forward-only migration. To undo it, restore the two functions and drop the indexes (its header says how).
+- No migration or test here deleted or changed database data.

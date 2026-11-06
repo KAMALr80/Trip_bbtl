@@ -110,9 +110,9 @@ These were verified with the existing pgTAP and mocked E2E suites. To keep local
 
 **Memory note:** the host had about 0.7 GB of free RAM. One unit run and one typecheck ran out of memory and were re-run; the re-runs are the results above.
 
-## Hardening branch (Nov 5, `release/complete-project-hardening`)
+## Hardening (Nov 5, merged by PR #6 as `53e8f5f`)
 
-**Code:** `bf688ee` plus the hardening changes (B-01 zod, B-03, B-04 partial, B-13, B-15, B-16, B-17 repository side, B-18, B-19).
+**Code:** `bf688ee` plus the changes later merged by PR #6 (B-01 zod, B-03, B-04 partial, B-13, B-15, B-16, B-17 repository side, B-18, B-19).
 
 | Suite | Command | Result |
 |---|---|---|
@@ -133,3 +133,30 @@ These were verified with the existing pgTAP and mocked E2E suites. To keep local
 - the live-stack E2E: it writes a trip membership for a seed account;
 - real email, Google, AI and push, which need credentials;
 - real devices and staging.
+
+## Authorization review (Nov 6, `audit/trip-authorization-and-beta-readiness`)
+
+**Targeted review, not a full audit or penetration test.** Scope, method and limits are in [AUTHORIZATION_REVIEW.md](AUTHORIZATION_REVIEW.md). **Code:** `53e8f5f` plus this branch.
+
+| Suite | Command | Result |
+|---|---|---|
+| Typecheck | `bun run typecheck` | passed |
+| ESLint | `npx eslint .` | 0 errors, 100 warnings |
+| Prettier, changed code files | `npx prettier --check <files>` | passed |
+| Unit (Vitest) | `bun run test` | 219 passed, 0 failed, 0 skipped (22 files) |
+| Production build and bundle secret check | `bun run build`, `bun scripts/security/check-bundle.ts` | passed; no secrets in the bundle |
+| Mocked E2E | `npx playwright test --workers=2` | 59 passed, 0 failed, 0 skipped (5.6 min) |
+| PWA / offline E2E | `npx playwright test -c playwright.pwa.config.ts` | 13 passed, 0 failed |
+| Authentication and role checks | scripted browser probe against the local stack | 10/10 passed |
+| Live-stack E2E | `npx playwright test -c playwright.live.config.ts --grep-invert "invite link"` | 2 passed, 0 failed; the invite-join test was not executed |
+| pgTAP, disposable PG16 (CI "Database" job) | `scripts/db/test.sh` in `postgres:16` | 37/37 files, 871 assertions |
+| pgTAP, local stack | `npx supabase test db` | 36/37 files: only `07_seed` fails (B-05) |
+| New tests without the fix | replay without the new migration | `37_push_badges_indexes`: 9 assertions fail, as they should. `36_authorization` passes, because no bypass existed there |
+| Attack matrix | 266 functions × 8 actors; 161 tables × 6 actors × 4 operations; disposable PG16 | no bypass found (see the review) |
+| Migration consistency | replay on PG16; `supabase gen types` | snapshot and inventory regenerated; only this migration differs. Types identical |
+| Database state | row counts | same data: 9 auth users, 5 trips, 11 members, 459 content items, 0 proofs. 28 migrations (1 new, applied with `migration up`, no reset) |
+
+**Skipped or blocked:**
+- **Skipped, would change data:** the live invite-join test (it adds a seed account to a trip). CI runs it on a fresh stack.
+- **Blocked by credentials or infrastructure:** real AI model (mocks only), real push, SMTP and email, Google, every hosted setting.
+- **Not run:** real devices, parallel load, penetration test, desktop viewports.

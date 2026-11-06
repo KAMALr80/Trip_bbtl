@@ -12224,6 +12224,23 @@ $$;
 
 
 --
+-- Name: push_endpoint_ok(text); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.push_endpoint_ok(p_endpoint text) RETURNS boolean
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO ''
+    AS $$
+  SELECT coalesce(p_endpoint ~ ('^https://('
+    || 'fcm\.googleapis\.com|android\.googleapis\.com'                   -- Chrome, Android, Samsung, Opera
+    || '|([a-z0-9-]+\.)*push\.services\.mozilla\.com'                    -- Firefox
+    || '|([a-z0-9-]+\.)*push\.apple\.com'                                -- Safari
+    || '|[a-z0-9-]+\.notify\.windows\.com'                               -- Edge
+    || ')/'), false)
+$$;
+
+
+--
 -- Name: qotw_action(uuid, integer, text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
@@ -12629,11 +12646,17 @@ BEGIN
     FROM public.passport_stamps s JOIN public.trips t ON t.id = s.trip_id
     WHERE s.user_id = p_user AND s.kind = 'postcard' AND nullif(btrim(s.culture), '') IS NOT NULL AND NOT t.is_sandbox
     UNION ALL
-    -- Every contributor to a finished Window Seat guide counts it (Q13).
+    -- Every contributor to a finished Window Seat guide counts it (Q13): a journal entry, or an
+    -- approved photo of the kinds guide_items shows. The photo still counts after the Day 7 purge
+    -- removes its file (photo_removed_at), so an old guide doesn't drop out of the count.
     SELECT 'storyteller', count(DISTINCT t.id)::int
     FROM public.trips t
     WHERE t.room = 'window_seat' AND t.locked_at IS NOT NULL AND NOT t.is_sandbox
-      AND EXISTS (SELECT 1 FROM public.journal_entries j WHERE j.trip_id = t.id AND j.user_id = p_user)
+      AND (EXISTS (SELECT 1 FROM public.journal_entries j WHERE j.trip_id = t.id AND j.user_id = p_user)
+           OR EXISTS (SELECT 1 FROM public.proofs p JOIN public.trip_schedule s ON s.id = p.schedule_id
+                      WHERE p.trip_id = t.id AND p.user_id = p_user AND p.photo_path IS NOT NULL
+                        AND p.crew_status IN ('approved', 'not_needed')
+                        AND s.kind IN ('ws_quest', 'home_mission', 'airport_mission', 'surprise_drop', 'trip_quest')))
   LOOP
     IF trip_private.badge_tier(b.badge, b.n) > 0 THEN
       INSERT INTO public.user_badges (user_id, badge, tier, progress)
@@ -13296,11 +13319,20 @@ CREATE FUNCTION trip_private.save_push_subscription(p_endpoint text, p_p256dh te
     AS $$
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  IF NOT trip_private.push_endpoint_ok(p_endpoint) THEN
+    RAISE EXCEPTION 'This browser''s notifications aren''t supported';
+  END IF;
   INSERT INTO public.push_subscriptions (user_id, endpoint, p256dh, auth, user_agent)
   VALUES (auth.uid(), p_endpoint, p_p256dh, p_auth, left(p_user_agent, 400))
   ON CONFLICT (endpoint) DO UPDATE
     SET user_id = auth.uid(), p256dh = excluded.p256dh, auth = excluded.auth,
         user_agent = excluded.user_agent, updated_at = now();
+  -- Ten browsers per player, newest kept: every reminder is sent to each of them.
+  DELETE FROM public.push_subscriptions s
+  WHERE s.user_id = auth.uid()
+    AND s.endpoint <> p_endpoint
+    AND s.id NOT IN (SELECT k.id FROM public.push_subscriptions k WHERE k.user_id = auth.uid()
+                     ORDER BY k.endpoint = p_endpoint DESC, k.updated_at DESC, k.created_at DESC, k.id LIMIT 10);
 END
 $$;
 
@@ -21459,6 +21491,20 @@ CREATE INDEX cost_shares_trip_user_idx ON public.cost_shares USING btree (trip_i
 
 
 --
+-- Name: cultural_inspirations_trip_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cultural_inspirations_trip_idx ON public.cultural_inspirations USING btree (trip_id);
+
+
+--
+-- Name: culture_experiences_trip_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX culture_experiences_trip_idx ON public.culture_experiences USING btree (trip_id) WHERE (trip_id IS NOT NULL);
+
+
+--
 -- Name: culture_layer_unique_stamp; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -21480,10 +21526,24 @@ CREATE INDEX daily_answers_trip_user_idx ON public.daily_answers USING btree (tr
 
 
 --
+-- Name: game_cards_trip_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX game_cards_trip_idx ON public.game_cards USING btree (trip_id) WHERE (trip_id IS NOT NULL);
+
+
+--
 -- Name: journal_entries_trip_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX journal_entries_trip_idx ON public.journal_entries USING btree (trip_id, day);
+
+
+--
+-- Name: live_sessions_call_night_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX live_sessions_call_night_idx ON public.live_sessions USING btree (call_night_id) WHERE (call_night_id IS NOT NULL);
 
 
 --
@@ -21501,6 +21561,13 @@ CREATE INDEX live_votes_trip_idx ON public.live_votes USING btree (trip_id, crea
 
 
 --
+-- Name: moderation_log_moderation_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX moderation_log_moderation_idx ON public.moderation_log USING btree (moderation_id);
+
+
+--
 -- Name: notification_queue_due_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -21512,6 +21579,13 @@ CREATE INDEX notification_queue_due_idx ON public.notification_queue USING btree
 --
 
 CREATE INDEX notification_queue_trip_idx ON public.notification_queue USING btree (trip_id) WHERE (status = 'queued'::text);
+
+
+--
+-- Name: notification_queue_user_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_queue_user_idx ON public.notification_queue USING btree (user_id);
 
 
 --
@@ -21529,10 +21603,24 @@ CREATE UNIQUE INDEX one_co_captain_per_trip ON public.trip_members USING btree (
 
 
 --
+-- Name: passport_stamps_trip_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX passport_stamps_trip_idx ON public.passport_stamps USING btree (trip_id);
+
+
+--
 -- Name: photo_moderation_open_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX photo_moderation_open_idx ON public.photo_moderation USING btree (created_at) WHERE (status = ANY (ARRAY['flagged'::text, 'reported'::text]));
+
+
+--
+-- Name: photo_moderation_trip_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX photo_moderation_trip_idx ON public.photo_moderation USING btree (trip_id);
 
 
 --
@@ -21603,6 +21691,13 @@ CREATE UNIQUE INDEX season_quests_carry_unique ON public.season_quests USING btr
 --
 
 CREATE UNIQUE INDEX season_quests_night_unique ON public.season_quests USING btree (trip_id, user_id, night_week) WHERE (quest_kind = 'preflight'::text);
+
+
+--
+-- Name: trip_invites_trip_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX trip_invites_trip_idx ON public.trip_invites USING btree (trip_id);
 
 
 --
@@ -33118,6 +33213,13 @@ GRANT ALL ON FUNCTION trip_private.public_launch() TO service_role;
 REVOKE ALL ON FUNCTION trip_private.publish_guide(p_trip uuid, p_publish boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.publish_guide(p_trip uuid, p_publish boolean) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.publish_guide(p_trip uuid, p_publish boolean) TO service_role;
+
+
+--
+-- Name: FUNCTION push_endpoint_ok(p_endpoint text); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.push_endpoint_ok(p_endpoint text) FROM PUBLIC;
 
 
 --

@@ -1,4 +1,4 @@
-import { getAiModel } from "@/integrations/ai/index.server";
+import { aiRequestLimits, getAiModel } from "@/integrations/ai/index.server";
 import { streamText } from "ai";
 import type { UsageLog } from "./ai-quota.server";
 
@@ -15,6 +15,7 @@ export async function generateTripNames(
   if (!ai)
     throw new Error("Trip name suggestions are unavailable right now. Try a name of your own.");
   const result = streamText({
+    ...aiRequestLimits(),
     model: ai.model,
     instructions:
       "Suggest exactly three distinctive, short, fun, inclusive group trip names. Trip-neutral: do not assume international travel, flights, passports, drinking, gender, or age. Use the destination and trip type where helpful; dates may inspire a season. Keep it clean. Return ONLY a JSON array of three strings, each under 55 characters. No markdown.",
@@ -55,6 +56,7 @@ export async function generateTripMottos(
   const ai = getAiModel();
   if (!ai) throw new Error("Motto ideas are unavailable right now. Try writing your own.");
   const result = streamText({
+    ...aiRequestLimits(),
     model: ai.model,
     instructions:
       "Write exactly three short, fun, inclusive trip mottos. Each is one line playing on what the group's trip name means, but NEVER include or repeat the trip name itself and never start with it or a 'Name:' prefix. Trip-neutral: don't assume flights, drinking, gender or age. Keep it clean. Each must be 60 characters or fewer. Return ONLY a JSON array of three strings. No markdown.",

@@ -1,4 +1,4 @@
-import { getAiModel } from "@/integrations/ai/index.server";
+import { aiRequestLimits, getAiModel } from "@/integrations/ai/index.server";
 import { streamText } from "ai";
 import type { UsageLog } from "./ai-quota.server";
 import { PDFDocument } from "pdf-lib";
@@ -45,6 +45,7 @@ export async function extractItinerary(
       mediaType: "application/pdf",
     });
   const result = streamText({
+    ...aiRequestLimits(),
     model: ai.model,
     instructions:
       "Extract only itinerary details explicitly present in the source. Return ONLY a JSON array of days, each object exactly {date: YYYY-MM-DD, city: string, note: string, stays: [{name,checkIn,checkOut}], flights: [{date,from,to}], spots: [{name}]}. Dates must fall within the provided trip range. Use empty strings for unknown checkIn/checkOut; do not invent details. A stay may appear on its check-in day only. At most 3 spots per day. For any day describing travel, a flight, an in-air day, or a departure, preserve the original short line in note even if the destination or flight endpoints are unknown. Never infer a flight endpoint. No markdown.",
