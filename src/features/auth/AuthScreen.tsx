@@ -156,7 +156,8 @@ export function AuthScreen({
       <div className="cinematic-auth-content">
         <BrandLockup className="cinematic-auth-brand" />
         <div className="cinematic-auth-spacer">
-          {!emailOpen && <p className="login-hook">{t("auth.hook")}</p>}
+          {/* The page heading on the sign-in screen (QA-19). */}
+          {!emailOpen && <h1 className="login-hook">{t("auth.hook")}</h1>}
         </div>
         {emailOpen ? (
           <section
@@ -384,7 +385,9 @@ export function VerifyCode({ email, onBack }: { email: string; onBack: () => voi
     const { error } = await supabase.auth.verifyOtp({ email, token: code, type: "signup" });
     setBusy(false);
     if (error) {
-      setError(t(/expired/i.test(error.message) ? "verify.expired" : "verify.mismatch"));
+      // Auth answers a mistyped code and an expired one the same way ("otp_expired": "Token has
+      // expired or is invalid"), so the message can't claim either (N-5).
+      setError(t("verify.wrongOrExpired"));
       setDigits(Array(6).fill(""));
       refs.current[0]?.focus();
     }

@@ -19,6 +19,13 @@ export const dayIn = (tz?: string | null, at: Date = new Date()) => {
 };
 
 /** Upcoming / Active / Completed, judged in the trip's home time zone. */
+/** A finished trip: setup prompts (game nights, prizes, invites, a first card) no longer apply
+ * (QA-17). */
+export const tripIsOver = (
+  t: Pick<OrderTrip, "start_date" | "end_date" | "ended_at" | "home_timezone">,
+  at = new Date(),
+) => tripStatus(t, at) === "Completed";
+
 export function tripStatus(
   t: Pick<OrderTrip, "start_date" | "end_date" | "ended_at" | "home_timezone">,
   at?: Date,

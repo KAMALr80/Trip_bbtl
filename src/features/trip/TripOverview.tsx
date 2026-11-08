@@ -17,6 +17,8 @@ import { TripTimezoneField } from "@/features/captain-tools/TripTimezoneField";
 import { CaptainTakeover, EditPencil, Sheet } from "@/features/captain-tools/CaptainExtras";
 import { TripSectionIcon } from "@/features/trip/TripSectionIcon";
 import { CaptainCrown } from "@/components/CaptainCrown";
+import { preflightSummary } from "@/features/trip/phase";
+import { useT } from "@/i18n";
 
 type Section = "plan" | "games" | "photos";
 type Edit = "itinerary" | "plan" | "vibe" | "tz" | null;
@@ -79,6 +81,8 @@ export function TripOverview({
   onWindowSeat?: (() => void) | undefined;
   viewOnly?: boolean;
 }) {
+  const t = useT();
+  const preflight = preflightSummary(trip);
   const [full, setFull] = useState(false);
   const [edit, setEdit] = useState<Edit>(null),
     [bump, setBump] = useState(0);
@@ -193,10 +197,9 @@ export function TripOverview({
         onToggle={() => toggle("games")}
       >
         <p className="text-sm text-muted-foreground mt-2">
-          {trip.game_start
-            ? `Pre-Flight starts ${friendlyDate(trip.game_start)}.`
-            : "Set when Pre-Flight starts with the pencil."}{" "}
-          Call nights and daily cards arrive with the new setup.
+          {preflight.kind === "opens"
+            ? t("phases.opensPreflight", { date: friendlyDate(preflight.date) })
+            : `${t("phases.noPreflight")} ${t("phases.opensTakeoff", { date: friendlyDate(preflight.takeoff) })}`}
         </p>
       </Accordion>
       <Accordion

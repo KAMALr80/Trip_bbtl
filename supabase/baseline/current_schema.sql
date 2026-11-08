@@ -1082,6 +1082,16 @@ CREATE FUNCTION public.dismiss_cost_note(p_note uuid) RETURNS void
 
 
 --
+-- Name: dismiss_join_decline(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dismiss_join_decline(p_trip uuid) RETURNS void
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT trip_private.dismiss_join_decline(p_trip) $$;
+
+
+--
 -- Name: draw_game_card(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1898,6 +1908,16 @@ CREATE FUNCTION public.my_credits(p_trip uuid DEFAULT NULL::uuid) RETURNS TABLE(
     CASE WHEN p_trip IS NULL THEN NULL ELSE (SELECT s.remaining FROM public.ai_credit_status(p_trip) s LIMIT 1) END,
     COALESCE((SELECT c.balance FROM public.user_credits c WHERE c.user_id = auth.uid()), 0)
 $$;
+
+
+--
+-- Name: my_join_declines(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.my_join_declines() RETURNS TABLE(trip_id uuid, name text, declined_at timestamp with time zone)
+    LANGUAGE sql
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.my_join_declines() $$;
 
 
 --
@@ -4726,9 +4746,14 @@ BEGIN IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Only the Capta
   END IF;
   UPDATE public.trip_members SET status='approved', approved_at=now() WHERE trip_id=p_trip AND user_id=p_user;
   DELETE FROM trip_private.trip_removals WHERE trip_id=p_trip AND user_id=p_user;
+  DELETE FROM trip_private.join_declines WHERE trip_id=p_trip AND user_id=p_user;
   PERFORM trip_private.apply_join_baseline(p_trip, p_user);
   INSERT INTO public.beta_access(user_id, source) VALUES (p_user, 'invite') ON CONFLICT DO NOTHING;
- ELSE DELETE FROM public.trip_members WHERE trip_id=p_trip AND user_id=p_user; END IF; END $$;
+ ELSE
+  DELETE FROM public.trip_members WHERE trip_id=p_trip AND user_id=p_user;
+  INSERT INTO trip_private.join_declines(trip_id, user_id) VALUES (p_trip, p_user)
+  ON CONFLICT (trip_id, user_id) DO UPDATE SET declined_at = now();
+ END IF; END $$;
 
 
 --
@@ -7252,6 +7277,18 @@ CREATE FUNCTION trip_private.dismiss_cost_note(p_note uuid) RETURNS void
     SET search_path TO 'public'
     AS $$
   UPDATE public.cost_notes SET dismissed_at=now() WHERE id=p_note AND user_id=auth.uid() $$;
+
+
+--
+-- Name: dismiss_join_decline(uuid); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.dismiss_join_decline(p_trip uuid) RETURNS void
+    LANGUAGE sql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  DELETE FROM trip_private.join_declines WHERE trip_id = p_trip AND user_id = auth.uid()
+$$;
 
 
 --
@@ -9899,7 +9936,7 @@ CREATE FUNCTION trip_private.log_ai_call(p_usage uuid, p_model text, p_in intege
     LANGUAGE sql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
- UPDATE public.ai_usage SET model=left(p_model,80), input_tokens=greatest(0,p_in), output_tokens=greatest(0,p_out), est_cost_usd=greatest(0,p_cost) WHERE id=p_usage AND user_id=auth.uid() AND model IS NULL $$;
+ UPDATE public.ai_usage SET model=left(p_model,80), input_tokens=greatest(0,p_in), output_tokens=greatest(0,p_out), est_cost_usd=greatest(0,p_cost) WHERE id=p_usage AND model IS NULL $$;
 
 
 --
@@ -10389,6 +10426,22 @@ CREATE FUNCTION trip_private.my_bug_updates() RETURNS TABLE(id uuid, page text, 
   SELECT id, page, status, founder_note, status_changed_at FROM bug_reports
   WHERE user_id = auth.uid() AND status IN ('fixed','need_info') AND update_seen_at IS NULL AND status_changed_at IS NOT NULL
   ORDER BY status_changed_at DESC LIMIT 5;
+$$;
+
+
+--
+-- Name: my_join_declines(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.my_join_declines() RETURNS TABLE(trip_id uuid, name text, declined_at timestamp with time zone)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  SELECT d.trip_id, t.name, d.declined_at
+  FROM trip_private.join_declines d JOIN public.trips t ON t.id = d.trip_id
+  WHERE d.user_id = auth.uid()
+    AND NOT EXISTS (SELECT 1 FROM public.trip_members m WHERE m.trip_id = d.trip_id AND m.user_id = d.user_id)
+  ORDER BY d.declined_at DESC
 $$;
 
 
@@ -19706,6 +19759,17 @@ ALTER SEQUENCE trip_private.inspiration_moderation_id_seq OWNED BY trip_private.
 
 
 --
+-- Name: join_declines; Type: TABLE; Schema: trip_private; Owner: -
+--
+
+CREATE TABLE trip_private.join_declines (
+    trip_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    declined_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: join_names; Type: TABLE; Schema: trip_private; Owner: -
 --
 
@@ -21526,6 +21590,14 @@ ALTER TABLE ONLY trip_private.inspiration_moderation
 
 
 --
+-- Name: join_declines join_declines_pkey; Type: CONSTRAINT; Schema: trip_private; Owner: -
+--
+
+ALTER TABLE ONLY trip_private.join_declines
+    ADD CONSTRAINT join_declines_pkey PRIMARY KEY (trip_id, user_id);
+
+
+--
 -- Name: join_names join_names_pkey; Type: CONSTRAINT; Schema: trip_private; Owner: -
 --
 
@@ -21932,6 +22004,13 @@ CREATE INDEX window_guide_items_trip ON public.window_guide_items USING btree (t
 --
 
 CREATE INDEX code_attempts_user_time ON trip_private.code_attempts USING btree (user_id, created_at);
+
+
+--
+-- Name: join_declines_user_id_idx; Type: INDEX; Schema: trip_private; Owner: -
+--
+
+CREATE INDEX join_declines_user_id_idx ON trip_private.join_declines USING btree (user_id);
 
 
 --
@@ -24895,6 +24974,22 @@ ALTER TABLE ONLY public.wrapup_answers
 
 
 --
+-- Name: join_declines join_declines_trip_id_fkey; Type: FK CONSTRAINT; Schema: trip_private; Owner: -
+--
+
+ALTER TABLE ONLY trip_private.join_declines
+    ADD CONSTRAINT join_declines_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
+-- Name: join_declines join_declines_user_id_fkey; Type: FK CONSTRAINT; Schema: trip_private; Owner: -
+--
+
+ALTER TABLE ONLY trip_private.join_declines
+    ADD CONSTRAINT join_declines_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: join_names join_names_trip_id_user_id_fkey; Type: FK CONSTRAINT; Schema: trip_private; Owner: -
 --
 
@@ -25896,13 +25991,6 @@ CREATE POLICY "Trivia answers are hidden" ON public.trip_day_trivia_keys FOR SEL
 --
 
 CREATE POLICY "Users create own profile" ON public.profiles FOR INSERT TO authenticated WITH CHECK ((auth.uid() = id));
-
-
---
--- Name: profiles Users delete own profile; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Users delete own profile" ON public.profiles FOR DELETE TO authenticated USING ((auth.uid() = id));
 
 
 --
@@ -27282,6 +27370,12 @@ CREATE POLICY "No direct access to join grants" ON trip_private.trip_join_grants
 
 
 --
+-- Name: join_declines; Type: ROW SECURITY; Schema: trip_private; Owner: -
+--
+
+ALTER TABLE trip_private.join_declines ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: join_names; Type: ROW SECURITY; Schema: trip_private; Owner: -
 --
 
@@ -27987,7 +28081,7 @@ GRANT ALL ON FUNCTION public.culture_creator_badge(p_user uuid) TO service_role;
 -- Name: TABLE culture_exp_days; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_exp_days TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.culture_exp_days TO authenticated;
 GRANT ALL ON TABLE public.culture_exp_days TO service_role;
 
 
@@ -28131,6 +28225,15 @@ GRANT ALL ON FUNCTION public.dismiss_bug_update(p_report uuid) TO service_role;
 REVOKE ALL ON FUNCTION public.dismiss_cost_note(p_note uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dismiss_cost_note(p_note uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.dismiss_cost_note(p_note uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION dismiss_join_decline(p_trip uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.dismiss_join_decline(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.dismiss_join_decline(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.dismiss_join_decline(p_trip uuid) TO service_role;
 
 
 --
@@ -28658,7 +28761,6 @@ GRANT ALL ON FUNCTION public.live_vote_award(p_session uuid, p_award text, p_nom
 --
 
 REVOKE ALL ON FUNCTION public.log_ai_call(p_usage uuid, p_model text, p_in integer, p_out integer, p_cost numeric) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.log_ai_call(p_usage uuid, p_model text, p_in integer, p_out integer, p_cost numeric) TO authenticated;
 GRANT ALL ON FUNCTION public.log_ai_call(p_usage uuid, p_model text, p_in integer, p_out integer, p_cost numeric) TO service_role;
 
 
@@ -28801,6 +28903,15 @@ GRANT ALL ON FUNCTION public.my_bug_updates() TO service_role;
 REVOKE ALL ON FUNCTION public.my_credits(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.my_credits(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.my_credits(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION my_join_declines(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.my_join_declines() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.my_join_declines() TO authenticated;
+GRANT ALL ON FUNCTION public.my_join_declines() TO service_role;
 
 
 --
@@ -31353,7 +31464,7 @@ GRANT ALL ON FUNCTION trip_private.content_feedback_summary() TO authenticated;
 -- Name: TABLE trips; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trips TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trips TO authenticated;
 GRANT ALL ON TABLE public.trips TO service_role;
 
 
@@ -31782,6 +31893,15 @@ GRANT ALL ON FUNCTION trip_private.dismiss_bug_update(p_report uuid) TO service_
 REVOKE ALL ON FUNCTION trip_private.dismiss_cost_note(p_note uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.dismiss_cost_note(p_note uuid) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.dismiss_cost_note(p_note uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION dismiss_join_decline(p_trip uuid); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.dismiss_join_decline(p_trip uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.dismiss_join_decline(p_trip uuid) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.dismiss_join_decline(p_trip uuid) TO service_role;
 
 
 --
@@ -32640,7 +32760,7 @@ GRANT ALL ON FUNCTION trip_private.lock_trip(p_trip uuid, p_force boolean) TO se
 --
 
 REVOKE ALL ON FUNCTION trip_private.log_ai_call(p_usage uuid, p_model text, p_in integer, p_out integer, p_cost numeric) FROM PUBLIC;
-GRANT ALL ON FUNCTION trip_private.log_ai_call(p_usage uuid, p_model text, p_in integer, p_out integer, p_cost numeric) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.log_ai_call(p_usage uuid, p_model text, p_in integer, p_out integer, p_cost numeric) TO service_role;
 
 
 --
@@ -32797,6 +32917,15 @@ GRANT ALL ON FUNCTION trip_private.my_access() TO service_role;
 REVOKE ALL ON FUNCTION trip_private.my_bug_updates() FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.my_bug_updates() TO authenticated;
 GRANT ALL ON FUNCTION trip_private.my_bug_updates() TO service_role;
+
+
+--
+-- Name: FUNCTION my_join_declines(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.my_join_declines() FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.my_join_declines() TO authenticated;
+GRANT ALL ON FUNCTION trip_private.my_join_declines() TO service_role;
 
 
 --
@@ -33230,7 +33359,7 @@ GRANT ALL ON FUNCTION trip_private.plan_trip(p_trip uuid) TO service_role;
 -- Name: TABLE trip_day_games; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_day_games TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_day_games TO authenticated;
 GRANT ALL ON TABLE public.trip_day_games TO service_role;
 
 
@@ -35281,7 +35410,7 @@ GRANT ALL ON FUNCTION trip_private.write_journal(p_item uuid, p_body text, p_cho
 -- Name: TABLE account_consents; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.account_consents TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.account_consents TO authenticated;
 GRANT ALL ON TABLE public.account_consents TO service_role;
 
 
@@ -35304,7 +35433,7 @@ GRANT ALL ON SEQUENCE public.admin_actions_id_seq TO service_role;
 -- Name: TABLE age_guesses; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.age_guesses TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.age_guesses TO authenticated;
 GRANT ALL ON TABLE public.age_guesses TO service_role;
 
 
@@ -35312,7 +35441,7 @@ GRANT ALL ON TABLE public.age_guesses TO service_role;
 -- Name: TABLE ai_credit_purchases; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.ai_credit_purchases TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.ai_credit_purchases TO authenticated;
 GRANT ALL ON TABLE public.ai_credit_purchases TO service_role;
 
 
@@ -35320,7 +35449,7 @@ GRANT ALL ON TABLE public.ai_credit_purchases TO service_role;
 -- Name: TABLE ai_usage; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.ai_usage TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.ai_usage TO authenticated;
 GRANT ALL ON TABLE public.ai_usage TO service_role;
 
 
@@ -35328,7 +35457,7 @@ GRANT ALL ON TABLE public.ai_usage TO service_role;
 -- Name: TABLE airport_claims; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.airport_claims TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.airport_claims TO authenticated;
 GRANT ALL ON TABLE public.airport_claims TO service_role;
 
 
@@ -35336,7 +35465,7 @@ GRANT ALL ON TABLE public.airport_claims TO service_role;
 -- Name: TABLE app_admins; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.app_admins TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.app_admins TO authenticated;
 GRANT ALL ON TABLE public.app_admins TO service_role;
 
 
@@ -35344,7 +35473,7 @@ GRANT ALL ON TABLE public.app_admins TO service_role;
 -- Name: TABLE app_settings; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.app_settings TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.app_settings TO authenticated;
 GRANT ALL ON TABLE public.app_settings TO service_role;
 
 
@@ -35394,7 +35523,7 @@ GRANT ALL ON TABLE public.at_home_answers TO service_role;
 -- Name: TABLE at_home_pack_items; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.at_home_pack_items TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.at_home_pack_items TO authenticated;
 GRANT ALL ON TABLE public.at_home_pack_items TO service_role;
 
 
@@ -35410,7 +35539,7 @@ GRANT ALL ON SEQUENCE public.at_home_pack_items_id_seq TO service_role;
 -- Name: TABLE at_home_packs; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.at_home_packs TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.at_home_packs TO authenticated;
 GRANT ALL ON TABLE public.at_home_packs TO service_role;
 
 
@@ -35418,7 +35547,7 @@ GRANT ALL ON TABLE public.at_home_packs TO service_role;
 -- Name: TABLE at_home_song_winners; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.at_home_song_winners TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.at_home_song_winners TO authenticated;
 GRANT ALL ON TABLE public.at_home_song_winners TO service_role;
 
 
@@ -35433,7 +35562,7 @@ GRANT ALL ON TABLE public.at_home_votes TO service_role;
 -- Name: TABLE beta_access; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.beta_access TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.beta_access TO authenticated;
 GRANT ALL ON TABLE public.beta_access TO service_role;
 
 
@@ -35441,7 +35570,7 @@ GRANT ALL ON TABLE public.beta_access TO service_role;
 -- Name: TABLE beta_codes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.beta_codes TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.beta_codes TO authenticated;
 GRANT ALL ON TABLE public.beta_codes TO service_role;
 
 
@@ -35449,7 +35578,7 @@ GRANT ALL ON TABLE public.beta_codes TO service_role;
 -- Name: TABLE bingo_marks; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.bingo_marks TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.bingo_marks TO authenticated;
 GRANT ALL ON TABLE public.bingo_marks TO service_role;
 
 
@@ -35457,7 +35586,7 @@ GRANT ALL ON TABLE public.bingo_marks TO service_role;
 -- Name: TABLE bug_issues; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.bug_issues TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.bug_issues TO authenticated;
 GRANT ALL ON TABLE public.bug_issues TO service_role;
 
 
@@ -35465,7 +35594,7 @@ GRANT ALL ON TABLE public.bug_issues TO service_role;
 -- Name: TABLE bug_reports; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.bug_reports TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.bug_reports TO authenticated;
 GRANT ALL ON TABLE public.bug_reports TO service_role;
 
 
@@ -35481,7 +35610,7 @@ GRANT SELECT ON TABLE public.call_nights TO authenticated;
 -- Name: TABLE checkin_responses; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.checkin_responses TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.checkin_responses TO authenticated;
 GRANT ALL ON TABLE public.checkin_responses TO service_role;
 
 
@@ -35517,7 +35646,7 @@ GRANT ALL ON TABLE public.content_variants TO service_role;
 -- Name: TABLE cost_items; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cost_items TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.cost_items TO authenticated;
 GRANT ALL ON TABLE public.cost_items TO service_role;
 
 
@@ -35525,7 +35654,7 @@ GRANT ALL ON TABLE public.cost_items TO service_role;
 -- Name: TABLE cost_log; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cost_log TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.cost_log TO authenticated;
 GRANT ALL ON TABLE public.cost_log TO service_role;
 
 
@@ -35533,7 +35662,7 @@ GRANT ALL ON TABLE public.cost_log TO service_role;
 -- Name: TABLE cost_notes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cost_notes TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.cost_notes TO authenticated;
 GRANT ALL ON TABLE public.cost_notes TO service_role;
 
 
@@ -35541,7 +35670,7 @@ GRANT ALL ON TABLE public.cost_notes TO service_role;
 -- Name: TABLE cost_shares; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.cost_shares TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.cost_shares TO authenticated;
 GRANT ALL ON TABLE public.cost_shares TO service_role;
 
 
@@ -35549,7 +35678,7 @@ GRANT ALL ON TABLE public.cost_shares TO service_role;
 -- Name: TABLE cultural_inspirations; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE ON TABLE public.cultural_inspirations TO authenticated;
+GRANT SELECT,INSERT,DELETE ON TABLE public.cultural_inspirations TO authenticated;
 GRANT ALL ON TABLE public.cultural_inspirations TO service_role;
 
 
@@ -35634,7 +35763,7 @@ GRANT UPDATE(feature_later) ON TABLE public.cultural_inspirations TO authenticat
 -- Name: TABLE culture_exp_hidden; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_exp_hidden TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.culture_exp_hidden TO authenticated;
 GRANT ALL ON TABLE public.culture_exp_hidden TO service_role;
 
 
@@ -35642,7 +35771,7 @@ GRANT ALL ON TABLE public.culture_exp_hidden TO service_role;
 -- Name: TABLE culture_exp_likes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_exp_likes TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.culture_exp_likes TO authenticated;
 GRANT ALL ON TABLE public.culture_exp_likes TO service_role;
 
 
@@ -35650,7 +35779,7 @@ GRANT ALL ON TABLE public.culture_exp_likes TO service_role;
 -- Name: TABLE culture_experiences; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_experiences TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.culture_experiences TO authenticated;
 GRANT ALL ON TABLE public.culture_experiences TO service_role;
 
 
@@ -35658,7 +35787,7 @@ GRANT ALL ON TABLE public.culture_experiences TO service_role;
 -- Name: TABLE culture_layer_stamps; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_layer_stamps TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.culture_layer_stamps TO authenticated;
 GRANT ALL ON TABLE public.culture_layer_stamps TO service_role;
 
 
@@ -35666,7 +35795,7 @@ GRANT ALL ON TABLE public.culture_layer_stamps TO service_role;
 -- Name: TABLE culture_quest_answers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_quest_answers TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.culture_quest_answers TO authenticated;
 GRANT ALL ON TABLE public.culture_quest_answers TO service_role;
 
 
@@ -35674,7 +35803,7 @@ GRANT ALL ON TABLE public.culture_quest_answers TO service_role;
 -- Name: TABLE culture_quest_items; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_quest_items TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.culture_quest_items TO authenticated;
 GRANT ALL ON TABLE public.culture_quest_items TO service_role;
 
 
@@ -35682,7 +35811,7 @@ GRANT ALL ON TABLE public.culture_quest_items TO service_role;
 -- Name: TABLE culture_quest_players; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_quest_players TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.culture_quest_players TO authenticated;
 GRANT ALL ON TABLE public.culture_quest_players TO service_role;
 
 
@@ -35690,7 +35819,7 @@ GRANT ALL ON TABLE public.culture_quest_players TO service_role;
 -- Name: TABLE culture_quest_sessions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_quest_sessions TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.culture_quest_sessions TO authenticated;
 GRANT ALL ON TABLE public.culture_quest_sessions TO service_role;
 
 
@@ -35698,7 +35827,7 @@ GRANT ALL ON TABLE public.culture_quest_sessions TO service_role;
 -- Name: TABLE culture_showcase_ballots; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_showcase_ballots TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.culture_showcase_ballots TO authenticated;
 GRANT ALL ON TABLE public.culture_showcase_ballots TO service_role;
 
 
@@ -35706,7 +35835,7 @@ GRANT ALL ON TABLE public.culture_showcase_ballots TO service_role;
 -- Name: TABLE culture_showcase_rewards; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_showcase_rewards TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.culture_showcase_rewards TO authenticated;
 GRANT ALL ON TABLE public.culture_showcase_rewards TO service_role;
 
 
@@ -35714,7 +35843,7 @@ GRANT ALL ON TABLE public.culture_showcase_rewards TO service_role;
 -- Name: TABLE culture_showcase_viewers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_showcase_viewers TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.culture_showcase_viewers TO authenticated;
 GRANT ALL ON TABLE public.culture_showcase_viewers TO service_role;
 
 
@@ -35722,7 +35851,7 @@ GRANT ALL ON TABLE public.culture_showcase_viewers TO service_role;
 -- Name: TABLE culture_stamps; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.culture_stamps TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.culture_stamps TO authenticated;
 GRANT ALL ON TABLE public.culture_stamps TO service_role;
 
 
@@ -35738,7 +35867,7 @@ GRANT SELECT ON TABLE public.daily_answers TO authenticated;
 -- Name: TABLE day_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.day_votes TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.day_votes TO authenticated;
 GRANT ALL ON TABLE public.day_votes TO service_role;
 
 
@@ -35746,7 +35875,7 @@ GRANT ALL ON TABLE public.day_votes TO service_role;
 -- Name: TABLE experience_previews; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.experience_previews TO authenticated;
+GRANT INSERT,DELETE,UPDATE ON TABLE public.experience_previews TO authenticated;
 GRANT ALL ON TABLE public.experience_previews TO service_role;
 
 
@@ -35887,7 +36016,7 @@ GRANT SELECT(updated_at) ON TABLE public.experience_previews TO authenticated;
 -- Name: TABLE game_cards; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.game_cards TO authenticated;
+GRANT INSERT,DELETE,UPDATE ON TABLE public.game_cards TO authenticated;
 GRANT ALL ON TABLE public.game_cards TO service_role;
 
 
@@ -35903,7 +36032,7 @@ GRANT ALL ON SEQUENCE public.game_cards_id_seq TO service_role;
 -- Name: TABLE game_catalog; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_catalog TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.game_catalog TO authenticated;
 GRANT ALL ON TABLE public.game_catalog TO service_role;
 
 
@@ -35911,7 +36040,7 @@ GRANT ALL ON TABLE public.game_catalog TO service_role;
 -- Name: TABLE game_format_prompts; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_format_prompts TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.game_format_prompts TO authenticated;
 GRANT ALL ON TABLE public.game_format_prompts TO service_role;
 
 
@@ -35927,7 +36056,7 @@ GRANT ALL ON SEQUENCE public.game_format_prompts_id_seq TO service_role;
 -- Name: TABLE game_night_card_skips; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_card_skips TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.game_night_card_skips TO authenticated;
 GRANT ALL ON TABLE public.game_night_card_skips TO service_role;
 
 
@@ -35935,7 +36064,7 @@ GRANT ALL ON TABLE public.game_night_card_skips TO service_role;
 -- Name: TABLE game_night_flow; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_flow TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.game_night_flow TO authenticated;
 GRANT ALL ON TABLE public.game_night_flow TO service_role;
 
 
@@ -35943,7 +36072,7 @@ GRANT ALL ON TABLE public.game_night_flow TO service_role;
 -- Name: TABLE game_night_moments; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_moments TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.game_night_moments TO authenticated;
 GRANT ALL ON TABLE public.game_night_moments TO service_role;
 
 
@@ -35959,7 +36088,7 @@ GRANT ALL ON TABLE public.game_night_polls TO service_role;
 -- Name: TABLE game_night_reactions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_reactions TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.game_night_reactions TO authenticated;
 GRANT ALL ON TABLE public.game_night_reactions TO service_role;
 
 
@@ -35967,7 +36096,7 @@ GRANT ALL ON TABLE public.game_night_reactions TO service_role;
 -- Name: TABLE game_night_turns; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_turns TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.game_night_turns TO authenticated;
 GRANT ALL ON TABLE public.game_night_turns TO service_role;
 
 
@@ -35975,7 +36104,7 @@ GRANT ALL ON TABLE public.game_night_turns TO service_role;
 -- Name: TABLE game_night_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_night_votes TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.game_night_votes TO authenticated;
 GRANT ALL ON TABLE public.game_night_votes TO service_role;
 
 
@@ -35991,7 +36120,7 @@ GRANT ALL ON TABLE public.game_nights TO service_role;
 -- Name: TABLE game_pick_log; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_pick_log TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.game_pick_log TO authenticated;
 GRANT ALL ON TABLE public.game_pick_log TO service_role;
 
 
@@ -36007,7 +36136,7 @@ GRANT ALL ON SEQUENCE public.game_pick_log_id_seq TO service_role;
 -- Name: TABLE game_scores; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.game_scores TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.game_scores TO authenticated;
 GRANT ALL ON TABLE public.game_scores TO service_role;
 
 
@@ -36023,7 +36152,7 @@ GRANT SELECT ON TABLE public.guide_prefs TO authenticated;
 -- Name: TABLE home_day_results; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.home_day_results TO authenticated;
+GRANT INSERT,DELETE,UPDATE ON TABLE public.home_day_results TO authenticated;
 GRANT ALL ON TABLE public.home_day_results TO service_role;
 
 
@@ -36031,7 +36160,7 @@ GRANT ALL ON TABLE public.home_day_results TO service_role;
 -- Name: TABLE home_day_sessions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.home_day_sessions TO authenticated;
+GRANT INSERT,DELETE,UPDATE ON TABLE public.home_day_sessions TO authenticated;
 GRANT ALL ON TABLE public.home_day_sessions TO service_role;
 
 
@@ -36039,7 +36168,7 @@ GRANT ALL ON TABLE public.home_day_sessions TO service_role;
 -- Name: TABLE host_penalties; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.host_penalties TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.host_penalties TO authenticated;
 GRANT ALL ON TABLE public.host_penalties TO service_role;
 
 
@@ -36047,7 +36176,7 @@ GRANT ALL ON TABLE public.host_penalties TO service_role;
 -- Name: TABLE host_swaps; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.host_swaps TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.host_swaps TO authenticated;
 GRANT ALL ON TABLE public.host_swaps TO service_role;
 
 
@@ -36055,7 +36184,7 @@ GRANT ALL ON TABLE public.host_swaps TO service_role;
 -- Name: TABLE inspiration_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.inspiration_votes TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.inspiration_votes TO authenticated;
 GRANT ALL ON TABLE public.inspiration_votes TO service_role;
 
 
@@ -36071,7 +36200,7 @@ GRANT SELECT ON TABLE public.journal_entries TO authenticated;
 -- Name: TABLE junkie_ranks; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.junkie_ranks TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.junkie_ranks TO authenticated;
 GRANT ALL ON TABLE public.junkie_ranks TO service_role;
 
 
@@ -36101,7 +36230,7 @@ GRANT SELECT ON TABLE public.live_sessions TO authenticated;
 -- Name: TABLE live_vote_ballots; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.live_vote_ballots TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.live_vote_ballots TO authenticated;
 GRANT ALL ON TABLE public.live_vote_ballots TO service_role;
 
 
@@ -36109,7 +36238,7 @@ GRANT ALL ON TABLE public.live_vote_ballots TO service_role;
 -- Name: TABLE live_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.live_votes TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.live_votes TO authenticated;
 GRANT ALL ON TABLE public.live_votes TO service_role;
 
 
@@ -36117,7 +36246,7 @@ GRANT ALL ON TABLE public.live_votes TO service_role;
 -- Name: TABLE mission_claims; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.mission_claims TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.mission_claims TO authenticated;
 GRANT ALL ON TABLE public.mission_claims TO service_role;
 
 
@@ -36125,7 +36254,7 @@ GRANT ALL ON TABLE public.mission_claims TO service_role;
 -- Name: TABLE mission_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.mission_votes TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.mission_votes TO authenticated;
 GRANT ALL ON TABLE public.mission_votes TO service_role;
 
 
@@ -36163,7 +36292,7 @@ GRANT ALL ON TABLE public.notification_queue TO service_role;
 -- Name: TABLE orders; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.orders TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.orders TO authenticated;
 GRANT ALL ON TABLE public.orders TO service_role;
 
 
@@ -36179,7 +36308,7 @@ GRANT SELECT ON TABLE public.passport_progress TO authenticated;
 -- Name: TABLE passport_stamps; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.passport_stamps TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.passport_stamps TO authenticated;
 GRANT ALL ON TABLE public.passport_stamps TO service_role;
 
 
@@ -36201,7 +36330,7 @@ GRANT ALL ON TABLE public.photo_moderation_reports TO service_role;
 -- Name: TABLE photo_posts; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.photo_posts TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.photo_posts TO authenticated;
 GRANT ALL ON TABLE public.photo_posts TO service_role;
 
 
@@ -36224,7 +36353,7 @@ GRANT ALL ON SEQUENCE public.photo_purge_log_id_seq TO service_role;
 -- Name: TABLE photo_reactions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.photo_reactions TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.photo_reactions TO authenticated;
 GRANT ALL ON TABLE public.photo_reactions TO service_role;
 
 
@@ -36232,7 +36361,7 @@ GRANT ALL ON TABLE public.photo_reactions TO service_role;
 -- Name: TABLE photo_removed; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.photo_removed TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.photo_removed TO authenticated;
 GRANT ALL ON TABLE public.photo_removed TO service_role;
 
 
@@ -36240,7 +36369,7 @@ GRANT ALL ON TABLE public.photo_removed TO service_role;
 -- Name: TABLE photo_reports; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.photo_reports TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.photo_reports TO authenticated;
 GRANT ALL ON TABLE public.photo_reports TO service_role;
 
 
@@ -36248,7 +36377,7 @@ GRANT ALL ON TABLE public.photo_reports TO service_role;
 -- Name: TABLE player_birthdays; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT,REFERENCES,TRIGGER,TRUNCATE ON TABLE public.player_birthdays TO authenticated;
+GRANT SELECT ON TABLE public.player_birthdays TO authenticated;
 GRANT ALL ON TABLE public.player_birthdays TO service_role;
 
 
@@ -36256,7 +36385,7 @@ GRANT ALL ON TABLE public.player_birthdays TO service_role;
 -- Name: TABLE player_private; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.player_private TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.player_private TO authenticated;
 GRANT ALL ON TABLE public.player_private TO service_role;
 
 
@@ -36264,7 +36393,7 @@ GRANT ALL ON TABLE public.player_private TO service_role;
 -- Name: TABLE player_profiles; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.player_profiles TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.player_profiles TO authenticated;
 GRANT ALL ON TABLE public.player_profiles TO service_role;
 
 
@@ -36319,7 +36448,7 @@ GRANT SELECT ON TABLE public.postcard_picks TO authenticated;
 -- Name: TABLE postcard_stickers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.postcard_stickers TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.postcard_stickers TO authenticated;
 GRANT ALL ON TABLE public.postcard_stickers TO service_role;
 
 
@@ -36327,7 +36456,7 @@ GRANT ALL ON TABLE public.postcard_stickers TO service_role;
 -- Name: TABLE preview_hidden; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.preview_hidden TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.preview_hidden TO authenticated;
 GRANT ALL ON TABLE public.preview_hidden TO service_role;
 
 
@@ -36335,7 +36464,7 @@ GRANT ALL ON TABLE public.preview_hidden TO service_role;
 -- Name: TABLE price_rules; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.price_rules TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.price_rules TO authenticated;
 GRANT ALL ON TABLE public.price_rules TO service_role;
 GRANT SELECT ON TABLE public.price_rules TO anon;
 
@@ -36352,7 +36481,7 @@ GRANT SELECT ON TABLE public.profile_prefs TO authenticated;
 -- Name: TABLE profiles; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.profiles TO authenticated;
+GRANT SELECT,INSERT,UPDATE ON TABLE public.profiles TO authenticated;
 GRANT ALL ON TABLE public.profiles TO service_role;
 
 
@@ -36424,7 +36553,7 @@ GRANT SELECT(updated_at) ON TABLE public.push_subscriptions TO authenticated;
 -- Name: TABLE quest_challenges; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.quest_challenges TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.quest_challenges TO authenticated;
 GRANT ALL ON TABLE public.quest_challenges TO service_role;
 
 
@@ -36432,7 +36561,7 @@ GRANT ALL ON TABLE public.quest_challenges TO service_role;
 -- Name: TABLE quest_posts; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.quest_posts TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.quest_posts TO authenticated;
 GRANT ALL ON TABLE public.quest_posts TO service_role;
 
 
@@ -36440,7 +36569,7 @@ GRANT ALL ON TABLE public.quest_posts TO service_role;
 -- Name: TABLE quest_thumbs; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.quest_thumbs TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.quest_thumbs TO authenticated;
 GRANT ALL ON TABLE public.quest_thumbs TO service_role;
 
 
@@ -36448,7 +36577,7 @@ GRANT ALL ON TABLE public.quest_thumbs TO service_role;
 -- Name: TABLE reward_codes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.reward_codes TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.reward_codes TO authenticated;
 GRANT ALL ON TABLE public.reward_codes TO service_role;
 
 
@@ -36456,7 +36585,7 @@ GRANT ALL ON TABLE public.reward_codes TO service_role;
 -- Name: TABLE room_blocks; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.room_blocks TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.room_blocks TO authenticated;
 GRANT ALL ON TABLE public.room_blocks TO service_role;
 
 
@@ -36464,7 +36593,7 @@ GRANT ALL ON TABLE public.room_blocks TO service_role;
 -- Name: TABLE room_requests; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.room_requests TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.room_requests TO authenticated;
 GRANT ALL ON TABLE public.room_requests TO service_role;
 
 
@@ -36472,7 +36601,7 @@ GRANT ALL ON TABLE public.room_requests TO service_role;
 -- Name: TABLE sandbox_bots; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.sandbox_bots TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.sandbox_bots TO authenticated;
 GRANT ALL ON TABLE public.sandbox_bots TO service_role;
 
 
@@ -36480,7 +36609,7 @@ GRANT ALL ON TABLE public.sandbox_bots TO service_role;
 -- Name: TABLE sandbox_trips; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.sandbox_trips TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.sandbox_trips TO authenticated;
 GRANT ALL ON TABLE public.sandbox_trips TO service_role;
 
 
@@ -36488,7 +36617,7 @@ GRANT ALL ON TABLE public.sandbox_trips TO service_role;
 -- Name: TABLE season_champions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.season_champions TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.season_champions TO authenticated;
 GRANT ALL ON TABLE public.season_champions TO service_role;
 
 
@@ -36496,7 +36625,7 @@ GRANT ALL ON TABLE public.season_champions TO service_role;
 -- Name: TABLE season_quests; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.season_quests TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.season_quests TO authenticated;
 GRANT ALL ON TABLE public.season_quests TO service_role;
 
 
@@ -36504,7 +36633,7 @@ GRANT ALL ON TABLE public.season_quests TO service_role;
 -- Name: TABLE season_settings; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.season_settings TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.season_settings TO authenticated;
 GRANT ALL ON TABLE public.season_settings TO service_role;
 
 
@@ -36512,7 +36641,7 @@ GRANT ALL ON TABLE public.season_settings TO service_role;
 -- Name: TABLE secret_missions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.secret_missions TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.secret_missions TO authenticated;
 GRANT ALL ON TABLE public.secret_missions TO service_role;
 
 
@@ -36520,7 +36649,7 @@ GRANT ALL ON TABLE public.secret_missions TO service_role;
 -- Name: TABLE security_missions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.security_missions TO authenticated;
+GRANT INSERT,DELETE,UPDATE ON TABLE public.security_missions TO authenticated;
 GRANT ALL ON TABLE public.security_missions TO service_role;
 
 
@@ -36528,7 +36657,7 @@ GRANT ALL ON TABLE public.security_missions TO service_role;
 -- Name: TABLE skip_passes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.skip_passes TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.skip_passes TO authenticated;
 GRANT ALL ON TABLE public.skip_passes TO service_role;
 
 
@@ -36544,7 +36673,7 @@ GRANT ALL ON TABLE public.solo_quests TO service_role;
 -- Name: TABLE song_discs; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.song_discs TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.song_discs TO authenticated;
 GRANT ALL ON TABLE public.song_discs TO service_role;
 
 
@@ -36552,7 +36681,7 @@ GRANT ALL ON TABLE public.song_discs TO service_role;
 -- Name: TABLE stamp_settings; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.stamp_settings TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.stamp_settings TO authenticated;
 GRANT ALL ON TABLE public.stamp_settings TO service_role;
 
 
@@ -36560,7 +36689,7 @@ GRANT ALL ON TABLE public.stamp_settings TO service_role;
 -- Name: TABLE trip_adult_activities; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_adult_activities TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_adult_activities TO authenticated;
 GRANT ALL ON TABLE public.trip_adult_activities TO service_role;
 
 
@@ -36568,7 +36697,7 @@ GRANT ALL ON TABLE public.trip_adult_activities TO service_role;
 -- Name: TABLE trip_adult_approvals; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_adult_approvals TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_adult_approvals TO authenticated;
 GRANT ALL ON TABLE public.trip_adult_approvals TO service_role;
 
 
@@ -36576,7 +36705,7 @@ GRANT ALL ON TABLE public.trip_adult_approvals TO service_role;
 -- Name: TABLE trip_adult_settings; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_adult_settings TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_adult_settings TO authenticated;
 GRANT ALL ON TABLE public.trip_adult_settings TO service_role;
 
 
@@ -36600,7 +36729,7 @@ GRANT SELECT ON TABLE public.trip_crowns TO authenticated;
 -- Name: TABLE trip_day_tags; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_day_tags TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_day_tags TO authenticated;
 GRANT ALL ON TABLE public.trip_day_tags TO service_role;
 
 
@@ -36608,7 +36737,7 @@ GRANT ALL ON TABLE public.trip_day_tags TO service_role;
 -- Name: TABLE trip_day_trivia_keys; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_day_trivia_keys TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_day_trivia_keys TO authenticated;
 GRANT ALL ON TABLE public.trip_day_trivia_keys TO service_role;
 
 
@@ -36616,7 +36745,7 @@ GRANT ALL ON TABLE public.trip_day_trivia_keys TO service_role;
 -- Name: TABLE trip_deletion_log; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_deletion_log TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_deletion_log TO authenticated;
 GRANT ALL ON TABLE public.trip_deletion_log TO service_role;
 
 
@@ -36624,7 +36753,7 @@ GRANT ALL ON TABLE public.trip_deletion_log TO service_role;
 -- Name: TABLE trip_deletion_notes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_deletion_notes TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_deletion_notes TO authenticated;
 GRANT ALL ON TABLE public.trip_deletion_notes TO service_role;
 
 
@@ -36640,7 +36769,7 @@ GRANT SELECT ON TABLE public.trip_drafts TO authenticated;
 -- Name: TABLE trip_feedback; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_feedback TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_feedback TO authenticated;
 GRANT ALL ON TABLE public.trip_feedback TO service_role;
 
 
@@ -36656,7 +36785,7 @@ GRANT SELECT ON TABLE public.trip_guides TO authenticated;
 -- Name: TABLE trip_invites; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_invites TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_invites TO authenticated;
 GRANT ALL ON TABLE public.trip_invites TO service_role;
 
 
@@ -36664,7 +36793,7 @@ GRANT ALL ON TABLE public.trip_invites TO service_role;
 -- Name: TABLE trip_item_alternatives; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_item_alternatives TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_item_alternatives TO authenticated;
 GRANT ALL ON TABLE public.trip_item_alternatives TO service_role;
 
 
@@ -36672,7 +36801,7 @@ GRANT ALL ON TABLE public.trip_item_alternatives TO service_role;
 -- Name: TABLE trip_itineraries; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_itineraries TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_itineraries TO authenticated;
 GRANT ALL ON TABLE public.trip_itineraries TO service_role;
 
 
@@ -36680,7 +36809,7 @@ GRANT ALL ON TABLE public.trip_itineraries TO service_role;
 -- Name: TABLE trip_members; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_members TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_members TO authenticated;
 GRANT ALL ON TABLE public.trip_members TO service_role;
 
 
@@ -36688,7 +36817,7 @@ GRANT ALL ON TABLE public.trip_members TO service_role;
 -- Name: TABLE trip_play_state; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_play_state TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_play_state TO authenticated;
 GRANT ALL ON TABLE public.trip_play_state TO service_role;
 
 
@@ -36696,7 +36825,7 @@ GRANT ALL ON TABLE public.trip_play_state TO service_role;
 -- Name: TABLE trip_player_cards; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE ON TABLE public.trip_player_cards TO authenticated;
+GRANT SELECT,INSERT,DELETE ON TABLE public.trip_player_cards TO authenticated;
 GRANT ALL ON TABLE public.trip_player_cards TO service_role;
 
 
@@ -36789,7 +36918,7 @@ GRANT SELECT ON TABLE public.trip_postcards TO authenticated;
 -- Name: TABLE trip_role_changes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_role_changes TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_role_changes TO authenticated;
 GRANT ALL ON TABLE public.trip_role_changes TO service_role;
 
 
@@ -36916,7 +37045,7 @@ GRANT SELECT(settled_at) ON TABLE public.trip_schedule TO authenticated;
 -- Name: TABLE trip_season_finds; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_season_finds TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_season_finds TO authenticated;
 GRANT ALL ON TABLE public.trip_season_finds TO service_role;
 
 
@@ -36924,7 +37053,7 @@ GRANT ALL ON TABLE public.trip_season_finds TO service_role;
 -- Name: TABLE trip_season_games; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_season_games TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_season_games TO authenticated;
 GRANT ALL ON TABLE public.trip_season_games TO service_role;
 
 
@@ -36932,7 +37061,7 @@ GRANT ALL ON TABLE public.trip_season_games TO service_role;
 -- Name: TABLE trip_season_reveals; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_season_reveals TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_season_reveals TO authenticated;
 GRANT ALL ON TABLE public.trip_season_reveals TO service_role;
 
 
@@ -36940,7 +37069,7 @@ GRANT ALL ON TABLE public.trip_season_reveals TO service_role;
 -- Name: TABLE trip_team_members; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_team_members TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_team_members TO authenticated;
 GRANT ALL ON TABLE public.trip_team_members TO service_role;
 
 
@@ -36948,7 +37077,7 @@ GRANT ALL ON TABLE public.trip_team_members TO service_role;
 -- Name: TABLE trip_teams; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trip_teams TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trip_teams TO authenticated;
 GRANT ALL ON TABLE public.trip_teams TO service_role;
 
 
@@ -36956,7 +37085,7 @@ GRANT ALL ON TABLE public.trip_teams TO service_role;
 -- Name: TABLE trivia_answers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.trivia_answers TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.trivia_answers TO authenticated;
 GRANT ALL ON TABLE public.trivia_answers TO service_role;
 
 
@@ -36987,7 +37116,7 @@ GRANT ALL ON TABLE public.user_credits TO service_role;
 -- Name: TABLE waitlist; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.waitlist TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.waitlist TO authenticated;
 GRANT ALL ON TABLE public.waitlist TO service_role;
 
 
@@ -36995,7 +37124,7 @@ GRANT ALL ON TABLE public.waitlist TO service_role;
 -- Name: TABLE weekly_answer_votes; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.weekly_answer_votes TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.weekly_answer_votes TO authenticated;
 GRANT ALL ON TABLE public.weekly_answer_votes TO service_role;
 
 
@@ -37003,7 +37132,7 @@ GRANT ALL ON TABLE public.weekly_answer_votes TO service_role;
 -- Name: TABLE weekly_answers; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.weekly_answers TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.weekly_answers TO authenticated;
 GRANT ALL ON TABLE public.weekly_answers TO service_role;
 
 
@@ -37011,7 +37140,7 @@ GRANT ALL ON TABLE public.weekly_answers TO service_role;
 -- Name: TABLE weekly_question_pool; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.weekly_question_pool TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.weekly_question_pool TO authenticated;
 GRANT ALL ON TABLE public.weekly_question_pool TO service_role;
 
 
@@ -37027,7 +37156,7 @@ GRANT ALL ON SEQUENCE public.weekly_question_pool_id_seq TO service_role;
 -- Name: TABLE weekly_questions; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.weekly_questions TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.weekly_questions TO authenticated;
 GRANT ALL ON TABLE public.weekly_questions TO service_role;
 
 
@@ -37035,7 +37164,7 @@ GRANT ALL ON TABLE public.weekly_questions TO service_role;
 -- Name: TABLE window_guide_items; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON TABLE public.window_guide_items TO authenticated;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.window_guide_items TO authenticated;
 GRANT ALL ON TABLE public.window_guide_items TO service_role;
 
 
@@ -37045,6 +37174,13 @@ GRANT ALL ON TABLE public.window_guide_items TO service_role;
 
 GRANT ALL ON TABLE public.wrapup_answers TO service_role;
 GRANT SELECT ON TABLE public.wrapup_answers TO authenticated;
+
+
+--
+-- Name: TABLE join_declines; Type: ACL; Schema: trip_private; Owner: -
+--
+
+GRANT ALL ON TABLE trip_private.join_declines TO service_role;
 
 
 --
@@ -37088,7 +37224,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIO
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT,DELETE,UPDATE ON TABLES TO authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO service_role;
 
 

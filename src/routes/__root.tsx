@@ -54,6 +54,7 @@ function retry(error: unknown, fallback: () => void) {
 import appCss from "../styles.css?url";
 import { reportClientError } from "../lib/error-reporting";
 import { i18n } from "@/i18n";
+import { FONT_STYLESHEETS, applyWebFonts } from "@/lib/web-fonts";
 
 function NotFoundComponent() {
   return (
@@ -200,14 +201,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preload", href: loginArt, as: "image" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&family=Fredoka:wght@600;700&display=swap",
-      },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap",
-      },
+      // Fetched early but not render-blocking; RootComponent applies them (src/lib/web-fonts.ts).
+      ...FONT_STYLESHEETS.map((href) => ({ rel: "preload", as: "style", href })),
     ],
     meta: [
       { charSet: "utf-8" },
@@ -247,6 +242,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => applyWebFonts(), []);
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);

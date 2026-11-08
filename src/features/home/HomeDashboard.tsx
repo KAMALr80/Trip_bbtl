@@ -26,6 +26,7 @@ import airportSignoffSmall from "@/assets/home-airport-signoff-diverse-768.webp"
 import departuresBoardArt from "@/assets/home-departures-board.jpg";
 
 import { HomePhaseBanner } from "@/features/play/PhaseNotice";
+import { JoinDeclinedNotice } from "@/features/trip/JoinDeclinedNotice";
 import { Inspiration } from "@/features/culture/Inspiration";
 
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,7 @@ import welcomeLetter from "@/assets/welcome-letter.webp";
 import { supabase } from "@/integrations/supabase/client";
 import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
-import { useT } from "@/i18n";
+import { i18n, useT } from "@/i18n";
 import { DailyDiscovery } from "@/features/daily/DailyPlay";
 import { useMySchedule } from "@/data/daily";
 
@@ -428,6 +429,7 @@ export function HomeDashboard({
         className="home-reference-page pb-24 cinematic-home-top cinematic-home-bottom"
         aria-label="Home departures"
       >
+        <JoinDeclinedNotice className="mt-3" />
         {trip && <HomePhaseBanner trip={trip} />}
         {trip && <DailyDiscovery trip={trip} />}
         {/* A saved invite is pinned at the top until joined or dismissed (AGENTS.md: pin Join room on Home). */}
@@ -445,7 +447,8 @@ export function HomeDashboard({
         </h1>
         <Button variant="outline" className="home-live-search" onClick={() => explore()}>
           <Search size={18} />
-          <span>Search destinations, games, or squads…</span>
+          {/* It opens Explore, not a search (QA-14), so it says so. */}
+          <span>{i18n.t("home.exploreButton")}</span>
         </Button>
         <section className="home-live-board-scene" aria-label="Departures board">
           <img
@@ -598,6 +601,7 @@ export function HomeDashboard({
       className="home-orbit-page pb-24 cinematic-home-top cinematic-home-bottom"
       aria-label="Home departures"
     >
+      <JoinDeclinedNotice className="mt-3" />
       {trip && <HomePhaseBanner trip={trip} />}
       {trip && <DailyDiscovery trip={trip} />}
       <p className="eyebrow text-blue">

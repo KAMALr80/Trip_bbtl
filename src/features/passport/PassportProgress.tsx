@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useMarkBadgesSeen, useMyStamps, usePassportProgress, type Stamp } from "@/data/postcard";
 import { TripPostcard } from "@/features/postcard/TripPostcard";
 import { useT } from "@/i18n";
+import { placeName } from "@/lib/places";
 
 const BADGE_ICON = { us_explorer: "🗽", culture_collector: "🎎", storyteller: "📖" } as const;
 const TIER = ["carry_on", "carry_on", "checked_bag", "first_class"] as const;
@@ -93,7 +94,9 @@ export function TripStamps() {
               aria-label={t("passport.openPostcard", { trip: s.trip_name })}
             >
               <strong className="block uppercase">
-                {s.kind === "postcard" ? `🏠 ${s.culture ?? s.country}` : (s.state ?? s.country)}
+                {s.kind === "postcard"
+                  ? `🏠 ${placeName(s.culture ?? s.country)}`
+                  : (s.state ?? s.country)}
               </strong>
               <span className="block">{t(`passport.kind.${kindKey(s.kind)}`)}</span>
               <span className="block">

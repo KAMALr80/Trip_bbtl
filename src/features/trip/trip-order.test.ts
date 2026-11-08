@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { orderTrips, pickActiveTrip, tripStatus } from "./trip-order";
+import { orderTrips, pickActiveTrip, tripStatus, tripIsOver } from "./trip-order";
 
 const AT = new Date("2026-11-06T12:00:00Z");
 const trip = (id: string, start: string, end: string, extra: object = {}) => ({
@@ -69,5 +69,24 @@ describe("pickActiveTrip (QA-03)", () => {
       "home",
       "sandbox",
     ]);
+  });
+});
+
+describe("tripIsOver (QA-17)", () => {
+  const trip = {
+    start_date: "2026-11-01",
+    end_date: "2026-11-05",
+    ended_at: null,
+    home_timezone: "UTC",
+  };
+  it("is over the day after the last day, or once ended early", () => {
+    expect(tripIsOver(trip, new Date("2026-11-05T12:00:00Z"))).toBe(false);
+    expect(tripIsOver(trip, new Date("2026-11-06T12:00:00Z"))).toBe(true);
+    expect(
+      tripIsOver({ ...trip, ended_at: "2026-11-03T00:00:00Z" }, new Date("2026-11-03T12:00:00Z")),
+    ).toBe(true);
+  });
+  it("isn't over before or during the trip", () => {
+    expect(tripIsOver(trip, new Date("2026-10-20T12:00:00Z"))).toBe(false);
   });
 });

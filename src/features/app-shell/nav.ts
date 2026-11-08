@@ -19,6 +19,20 @@ export const meViews = [
   "notifications",
 ] as const;
 export type MeView = (typeof meViews)[number];
+/** Me views and sections only an app admin opens (QA-12, QA-13). The server checks too. */
+const founderViews: readonly string[] = ["lab", "reports", "feedback"];
+const founderSections: readonly string[] = [
+  "welcome",
+  "founding-members",
+  "beta-codes",
+  "ai-guard",
+  "icon-options",
+  "moderation",
+  "admin-directory",
+  "content-admin",
+];
+export const isFounderView = (view: string) => founderViews.includes(view);
+export const isFounderSection = (section: string) => founderSections.includes(section);
 const homeScreens: readonly HomeScreen[] = [
   "dashboard",
   "trip",

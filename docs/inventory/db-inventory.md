@@ -12,9 +12,9 @@
 
 | | public | trip_private |
 |---|---|---|
-| Tables | 161 | 15 |
+| Tables | 161 | 16 |
 | Views | 0 | 0 |
-| Functions | 371 | 513 |
+| Functions | 373 | 515 |
 | Triggers | 5 | 53 |
 
 Objects (re)defined in 5 or more migrations: **22**. This is why the snapshot, not the migration history, is the reference (gotcha G5).
@@ -49,7 +49,7 @@ M6-07 against the rule that game tables take no direct client writes (09 §2).
 - `photo_reactions`: DELETE,INSERT
 - `photo_reports`: INSERT
 - `player_profiles`: INSERT,UPDATE
-- `profiles`: DELETE,INSERT,UPDATE
+- `profiles`: INSERT,UPDATE
 - `trip_day_tags`: DELETE,INSERT,UPDATE
 - `trip_deletion_log`: ALL
 - `trip_itineraries`: INSERT,UPDATE
@@ -227,7 +227,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `preview_hidden` | table | ✅ | 1 | — | 0 |
 | public | `price_rules` | table | ✅ | 1 | — | 0 |
 | public | `profile_prefs` | table | ✅ | 1 | — | 1 |
-| public | `profiles` | table | ✅ | 4 | DELETE,INSERT,UPDATE | 8 |
+| public | `profiles` | table | ✅ | 3 | INSERT,UPDATE | 8 |
 | public | `proof_votes` | table | ✅ | 0 | — | 0 |
 | public | `proofs` | table | ✅ | 1 | — | 6 |
 | public | `push_subscriptions` | table | ✅ | 1 | — | 0 |
@@ -293,6 +293,7 @@ Usually fine: most are read and written only through `trip_private` functions.
 | trip_private | `cron_endpoints` | table | ❌ | 0 | — | — |
 | trip_private | `cron_keys` | table | ❌ | 0 | — | — |
 | trip_private | `inspiration_moderation` | table | ❌ | 0 | — | — |
+| trip_private | `join_declines` | table | ✅ | 0 | — | — |
 | trip_private | `join_names` | table | ✅ | 0 | — | — |
 | trip_private | `lab_views` | table | ❌ | 0 | — | — |
 | trip_private | `preview_log` | table | ❌ | 0 | — | — |
@@ -313,9 +314,9 @@ Usually fine: most are read and written only through `trip_private` functions.
 | `trip_private.finalize_season` | 8 | `20261005221121_d80b4f9d-1fd2-4e0d-99fd-8db06de6c8f9.sql` |
 | `trip_private.spin_next_game` | 7 | `20261005031128_e385e871-ecf2-484d-93d3-f31b7c53416d.sql` |
 | `trip_private.night_flow_action` | 7 | `20261002104152_3d89b803-5e0f-4b61-83ee-36c93a8a0e03.sql` |
+| `trip_private.approve_member` | 7 | `20261108110000_join_decline_notice.sql` |
 | `trip_private.mission_action` | 6 | `20261006024714_82adb54f-0d8b-4207-84a6-7b7909b4eb72.sql` |
 | `trip_private.game_stamps` | 6 | `20261002064146_d6694141-2653-428c-9c3f-fa6bbc1b46bc.sql` |
-| `trip_private.approve_member` | 6 | `20261026110000_m2_limits_co_captain.sql` |
 | `trip_private.trip_invite_preview` | 5 | `20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql` |
 | `trip_private.sync_passport` | 5 | `20261102110000_m5_passport.sql` |
 | `trip_private.set_my_dob` | 5 | `20261104100000_m6_age_rules.sql` |

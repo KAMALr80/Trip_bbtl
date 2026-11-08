@@ -1,5 +1,5 @@
 import { rpc } from "@/data/rpc";
-import { tabHref, useShellNav } from "@/features/app-shell/nav";
+import { isFounderView, tabHref, useShellNav } from "@/features/app-shell/nav";
 import { Link } from "@tanstack/react-router";
 import { TabContent } from "@/features/app-shell/TabContent";
 import { tabs } from "@/features/app-shell/tabs";
@@ -46,9 +46,10 @@ import { FeedbackAdmin } from "@/features/me/TripFeedback";
 
 import { RoleTips } from "@/features/captain-tools/RoleTips";
 import type { Member, TripWithRole } from "@/lib/trips";
-import { pickActiveTrip } from "@/features/trip/trip-order";
+import { pickActiveTrip, tripIsOver } from "@/features/trip/trip-order";
 import { prefetchTripForOffline, queryKeys, useCards, useMembers, useTrips } from "@/data/queries";
 import { OfflineBanner } from "@/features/app-shell/OfflineBanner";
+import { TripsLoadFailed } from "@/features/app-shell/TripsLoadFailed";
 import { InstallCard } from "@/features/app-shell/InstallCard";
 import { RemindersCard } from "@/features/app-shell/RemindersCard";
 import { NotificationSettings } from "@/features/me/NotificationSettings";
@@ -157,6 +158,8 @@ export function AppShell() {
   const queryClient = useQueryClient();
   const tripsQuery = useTrips(user?.id);
   const trips = (user && tripsQuery.data) || noTrips;
+  // The trip list failed and there's nothing cached to show (QA-16).
+  const tripsFailed = !!user && !!tripsQuery.error && !tripsQuery.data;
   const membersQuery = useMembers(activeId);
   const cardsQuery = useCards(activeId);
   const members = membersQuery.data ?? noMembers;
@@ -190,6 +193,8 @@ export function AppShell() {
   const [itineraryVersion, setItineraryVersion] = useState(0);
   const [publicView, setPublicView] = useState<"overview" | "story" | "games" | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  // A founder view for anyone else, or a view name that isn't one, opens plain Me (QA-12).
+  const shownMeView = meView && (!isFounderView(meView) || isAdmin) ? meView : null;
   useEffect(() => {
     // Signed out there's nobody to check (the RPC would only answer 401).
     if (!user) {
@@ -289,10 +294,12 @@ export function AppShell() {
     if (!r.error) saveAccount({ access: next });
     setAccess(next);
   };
+  // Loaded again once the Terms are accepted: accepting can also save the sign-up birthday (N-4).
+  const legalAccepted = legal.status === "accepted";
   useEffect(() => {
     if (user) void loadAccess();
     else setAccess(null);
-  }, [user?.id]);
+  }, [user?.id, legalAccepted]);
   const active = trips.find((t) => t.id === activeId) ?? null;
   // Keep the open trip's Home and Play data in the offline snapshot (M4-03), and refresh it when
   // the network comes back.
@@ -710,9 +717,9 @@ export function AppShell() {
           <RemindersCard trips={trips} />
         </>
       )}
-      {meView && tab === "Me" ? (
+      {shownMeView && tab === "Me" ? (
         <div className="px-[18px]">
-          {meView === "lab" && isAdmin ? (
+          {shownMeView === "lab" ? (
             <TestLab
               trips={trips}
               activeId={active?.id}
@@ -732,23 +739,23 @@ export function AppShell() {
               }}
               previewLock={() => setPreviewLock(true)}
             />
-          ) : meView === "feedback" ? (
+          ) : shownMeView === "feedback" ? (
             <FeedbackAdmin onBack={() => setMeView(null)} />
-          ) : meView === "reports" && isAdmin ? (
+          ) : shownMeView === "reports" ? (
             <FounderReports onBack={() => setMeView(null)} />
-          ) : meView === "notifications" ? (
+          ) : shownMeView === "notifications" ? (
             <NotificationSettings onBack={() => setMeView(null)} />
-          ) : meView === "help" ? (
+          ) : shownMeView === "help" ? (
             <HelpPage onBack={() => setMeView(null)} onReplay={() => void replayIntro()} />
-          ) : meView === "bug" ? (
+          ) : shownMeView === "bug" ? (
             <BugReport
               onBack={() => setMeView(null)}
               tripId={active?.id}
               page={`Me (last tab: ${tab})`}
             />
-          ) : (
+          ) : shownMeView === "delete" ? (
             <DeleteAccount onBack={() => setMeView(null)} />
-          )}
+          ) : null}
         </div>
       ) : showcaseCode ? (
         <div className="px-[18px]">
@@ -798,10 +805,17 @@ export function AppShell() {
         />
       ) : (
         <div className="px-[18px]">
-          {tripError && (
-            <p role="alert" className="text-destructive text-sm mb-4">
-              {tripError}
-            </p>
+          {tripsFailed && tab !== "Me" ? (
+            <TripsLoadFailed
+              offline={typeof navigator !== "undefined" && !navigator.onLine}
+              onRetry={() => void tripsQuery.refetch()}
+            />
+          ) : (
+            tripError && (
+              <p role="alert" className="text-destructive text-sm mb-4">
+                {tripError}
+              </p>
+            )
           )}
           <OutOfCreditsHost />
           {tab === "Home" && homeScreen === "dashboard" && (
@@ -866,7 +880,8 @@ export function AppShell() {
             />
           ) : (
             tab === "Home" &&
-            homeScreen !== "trip" && (
+            homeScreen !== "trip" &&
+            !tripsFailed && (
               <HomeDashboard
                 screen={homeScreen}
                 setScreen={setHomeScreen}
@@ -929,7 +944,7 @@ export function AppShell() {
                 }}
               />
             )}{" "}
-          {!(tab === "Home" && homeScreen !== "trip") && (
+          {!(tab === "Home" && homeScreen !== "trip") && !(tripsFailed && tab !== "Me") && (
             <div key={`${tab}-${tools}-${about}-${meView ?? "main"}`} className="tab-enter">
               <TabContent
                 isAdmin={isAdmin}
@@ -1116,7 +1131,7 @@ export function AppShell() {
         !viewAsPlayer &&
         (() => {
           const mine = cards.find((c) => c.user_id === user.id);
-          const needsCard = !!active && !cardsLoading && !mine;
+          const needsCard = !!active && !cardsLoading && !mine && !tripIsOver(active);
           if (needsCard && myProfile && !editCard)
             return (
               <QuickJoinCard

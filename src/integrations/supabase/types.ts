@@ -7654,6 +7654,7 @@ export type Database = {
       discard_trip_draft: { Args: Record<PropertyKey, never>; Returns: undefined };
       dismiss_bug_update: { Args: { p_report: string }; Returns: undefined };
       dismiss_cost_note: { Args: { p_note: string }; Returns: undefined };
+      dismiss_join_decline: { Args: { p_trip: string }; Returns: undefined };
       draw_game_card: { Args: { p_category: string; p_trip: string }; Returns: number };
       edit_trip: {
         Args: {
@@ -8001,6 +8002,14 @@ export type Database = {
           trip_included: number;
           trip_remaining: number;
           wallet: number;
+        }[];
+      };
+      my_join_declines: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          declined_at: string;
+          name: string;
+          trip_id: string;
         }[];
       };
       my_lab_view: {

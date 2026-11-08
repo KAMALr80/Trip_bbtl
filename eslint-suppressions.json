@@ -225,7 +225,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 52
+      "count": 51
     }
   },
   "src/features/me/ContentVote.tsx": {
@@ -489,7 +489,7 @@
   },
   "src/features/trip/TripOverview.tsx": {
     "no-restricted-syntax": {
-      "count": 13
+      "count": 12
     }
   },
   "src/features/trip/TripUnlock.tsx": {

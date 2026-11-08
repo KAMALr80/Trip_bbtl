@@ -28,6 +28,7 @@ import { gameSceneArt } from "@/features/play/GameScene";
 import { OnePhoneNight } from "@/features/play/OnePhoneNight";
 import { SoloGuide } from "@/features/window-seat/SoloGuide";
 import { TripGuide, isShowcase } from "@/features/guide/TripGuide";
+import { upNowQuest } from "./up-now";
 import { JournalPrompt } from "@/features/guide/JournalPrompt";
 import { PostcardPicks } from "@/features/postcard/PostcardPicks";
 import { WrapupWeek } from "@/features/postcard/WrapupWeek";
@@ -580,14 +581,7 @@ function EnginePlayHub(props: Props) {
       />
     );
   const nowMs = Date.now();
-  const sealedReady = schedule.find(
-    (i) =>
-      i.user_id === userId &&
-      ["sealed_quest", "airport_mission", "home_mission", "trip_quest"].includes(i.kind) &&
-      i.is_open &&
-      i.body == null &&
-      (!i.closes_at || Date.parse(i.closes_at) > nowMs),
-  );
+  const sealedReady = upNowQuest(schedule, userId, nowMs);
   const pending = myProofs.find((p) => p.crew_status === "waiting");
   const up: {
     key: string;
@@ -604,11 +598,18 @@ function EnginePlayHub(props: Props) {
       key: sealedReady.id,
       icon: <Ticket />,
       tone: "pink",
-      title: sealedReady.kind === "sealed_quest" ? "Sealed quest dropped" : "Sealed card waiting",
+      title:
+        sealedReady.kind === "showcase"
+          ? t("quests.showcaseUpNow")
+          : sealedReady.kind === "sealed_quest"
+            ? "Sealed quest dropped"
+            : "Sealed card waiting",
       line:
-        sealedReady.kind === "sealed_quest"
-          ? "Open it within 3 hours for +5"
-          : "Open it to see what to do",
+        sealedReady.kind === "showcase"
+          ? t("quests.showcaseUpNowLine")
+          : sealedReady.kind === "sealed_quest"
+            ? "Open it within 3 hours for +5"
+            : "Open it to see what to do",
       ...(sealedReady.points ? { points: `${sealedReady.points} pts` } : {}),
       pill: "New",
       action: () => openPhase(active),

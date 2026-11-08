@@ -24,7 +24,8 @@ test("Google sign-in that's off in Auth settings says so instead of redirecting"
     "Google sign-in isn't turned on here. Use email to sign in.",
   );
   expect(authorized).toBe(false);
-  await expect(page).toHaveURL(/localhost:8080\/$/);
+  // Still on the app's own front page, whichever server runs the tests.
+  await expect(page).toHaveURL(/^http:\/\/(localhost|127\.0\.0\.1):\d+\/$/);
   await page.getByRole("button", { name: "Sign in with email" }).click();
   await expect(page.getByRole("textbox", { name: /email/i }).first()).toBeVisible();
 });

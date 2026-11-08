@@ -14,6 +14,10 @@ export const countryName = (code: string) => {
   }
 };
 
+/** A culture or place for display: trips store a culture as its country code ("PT"), so that
+ * reads as the country's name ("Portugal") (N-7). Anything else is shown as given. */
+export const placeName = (value: string) => (/^[A-Z]{2}$/.test(value) ? countryName(value) : value);
+
 /** Searchable country list (ISO codes that have an SVG flag), sorted by English name. */
 export const COUNTRIES = flagCodes
   .filter((c) => /^[A-Z]{2}$/.test(c))

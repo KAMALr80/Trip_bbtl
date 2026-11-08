@@ -78,8 +78,7 @@
     "codeLabel": "6-digit code",
     "digit": "Digit {{n}}",
     "checking": "Checking… ✨",
-    "expired": "That code expired ⏰ Tap Resend for a fresh one.",
-    "mismatch": "Hmm, that code doesn't match 🙈 Double-check it and try again.",
+    "wrongOrExpired": "That code didn't work 🙈 Check the digits, or tap Resend for a fresh one if it's old.",
     "resendFailed": "Couldn't resend just yet: {{reason}}",
     "resent": "Fresh code on its way 💌",
     "resendIn": "Resend code in {{seconds}}s",
@@ -90,8 +89,17 @@
     "readyMade": "Start from ready-made cards · free",
     "readyMadeHint": "You get ready-made {{label}} cards to edit or replace. No AI credits used."
   },
+  "trips": {
+    "loadFailedTitle": "We couldn't load your trips",
+    "loadFailedLine": "Something went wrong on our side. Your trips are safe. Try again in a moment.",
+    "loadFailedOffline": "You're offline. Reconnect and try again.",
+    "retry": "Try again"
+  },
   "home": {
-    "gate": "gate"
+    "gate": "gate",
+    "daysUntil_one": "day until",
+    "daysUntil_other": "days until",
+    "exploreButton": "Explore destinations and games…"
   },
   "rooms": {
     "trip": {
@@ -254,6 +262,9 @@
     }
   },
   "join": {
+    "declinedTitle": "Your request to join {{trip}} wasn't approved",
+    "declinedLine": "The Captain decided not to add you this time. You can ask them, or join another trip with a new code.",
+    "declinedDismiss": "Got it",
     "role": "Your role this trip",
     "noRole": "Pick later",
     "nameLabel": "Your name",
@@ -376,6 +387,8 @@
     "someone": "A crewmate"
   },
   "quests": {
+    "showcaseUpNow": "Your Showcase is open",
+    "showcaseUpNowLine": "One task before takeoff",
     "title": "Your quests",
     "kinds": {
       "sealed_quest": "Sealed quest",

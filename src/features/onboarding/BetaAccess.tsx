@@ -20,6 +20,7 @@ import { canApproveMember } from "@/lib/member-approval";
 import { JoinNameField } from "@/features/trip/JoinNameField";
 import { useJoinName } from "@/features/trip/use-join-name";
 import signinFriends from "@/assets/signin-night-friends.jpg";
+import { JoinDeclinedNotice } from "@/features/trip/JoinDeclinedNotice";
 
 export type Vibe = "family" | "chill" | "party";
 export const VIBES: Record<Vibe, { emoji: string; label: string; line: string; color: string }> = {
@@ -157,6 +158,7 @@ export function BetaLock({
           <h1 className="mt-5 font-display text-2xl font-extrabold">
             TripJunkies is in private beta.
           </h1>
+          <JoinDeclinedNotice className="mt-4" />
           {/* Why their link didn't let them in — otherwise this screen is a dead end. */}
           {notice && (
             <p

@@ -60,6 +60,9 @@ import { AppearanceQuickToggle } from "@/features/me/MeExtras";
 import { FoundingControls } from "@/features/onboarding/LegalConsent";
 import { legalLinks } from "@/lib/legal";
 import { Link } from "@tanstack/react-router";
+import { isFounderSection } from "@/features/app-shell/nav";
+import { i18n } from "@/i18n";
+import { tripIsOver } from "@/features/trip/trip-order";
 
 // Screens only the founder opens: not in every player's first download.
 const FounderDashboard = lazy(() =>
@@ -92,7 +95,7 @@ export function TabContent({
   onAbout,
   onMe,
   onReplay,
-  meSection,
+  meSection: requestedSection,
   setMeSection,
   loading,
   itineraryVersion,
@@ -138,6 +141,10 @@ export function TabContent({
   canStart: boolean;
   viewOnly: boolean;
 }) {
+  // Founder sections open only for an app admin (QA-13). Anyone else who follows such a link sees
+  // their own Me page; the server refuses the data either way.
+  const meSection =
+    requestedSection && isFounderSection(requestedSection) && !isAdmin ? null : requestedSection;
   const queryClient = useQueryClient();
   if (loading && active && tab !== "Me")
     return (
@@ -186,7 +193,11 @@ export function TabContent({
               {days > 0 ? days : days === 0 ? "0" : "✓"}
             </p>
             <p className="text-right text-xs text-muted-foreground">
-              {days > 0 ? "days until" : days === 0 ? "starts today" : "memories made"}
+              {days > 0
+                ? i18n.t("home.daysUntil", { count: days })
+                : days === 0
+                  ? "starts today"
+                  : "memories made"}
               <br />
               <strong className="text-foreground text-sm">
                 {new Date(`${active.start_date}T12:00:00`).toLocaleDateString(undefined, {
@@ -199,9 +210,11 @@ export function TabContent({
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 mt-[14px] cinematic-trip-actions">
-          <Button variant="outline" className="h-12 rounded-full" onClick={() => open("Invite")}>
-            <Ticket /> Invite squad
-          </Button>
+          {!tripIsOver(active) && (
+            <Button variant="outline" className="h-12 rounded-full" onClick={() => open("Invite")}>
+              <Ticket /> Invite squad
+            </Button>
+          )}
           <Button
             variant="outline"
             className="h-12 rounded-full"

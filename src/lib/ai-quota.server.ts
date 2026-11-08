@@ -21,13 +21,15 @@ export type UsageLog = (
   usage: { inputTokens?: number | undefined; outputTokens?: number | undefined } | undefined,
 ) => Promise<void>;
 
-function logger(supabase: unknown, usageId: string | null): UsageLog {
+// The cost is written with the service role (QA-20): players can't call log_ai_call themselves.
+function logger(_supabase: unknown, usageId: string | null): UsageLog {
   return async (model, usage) => {
     if (!usageId) return;
     const i = usage?.inputTokens ?? 0,
       o = usage?.outputTokens ?? 0;
     try {
-      await (supabase as Rpc).rpc("log_ai_call", {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await (supabaseAdmin as unknown as Rpc).rpc("log_ai_call", {
         p_usage: usageId,
         p_model: model,
         p_in: i,
