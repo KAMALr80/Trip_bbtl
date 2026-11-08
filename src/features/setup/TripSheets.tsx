@@ -11,6 +11,8 @@ import { InviteCode } from "@/features/trip/InviteCode";
 import { GamePlanPicker } from "@/features/setup/GamePlanPicker";
 import { inviteUrl, shareInvite, type TripWithRole } from "@/lib/trips";
 import { useT } from "@/i18n";
+import { JoinNameField } from "@/features/trip/JoinNameField";
+import { useJoinName } from "@/features/trip/use-join-name";
 
 // Join a trip by code, or the "your trip is live" sheet. Creating a trip goes through the setup
 // wizard (/trips/new, M2-05).
@@ -56,6 +58,7 @@ export function TripSheets({ mode, initialCode = "", trip, onClose, onDone }: Pr
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const name = useJoinName();
   const [phase, setPhase] = useState<"plan" | "invite">("plan");
   useEffect(() => {
     setCode(initialCode);
@@ -71,7 +74,10 @@ export function TripSheets({ mode, initialCode = "", trip, onClose, onDone }: Pr
     event.preventDefault();
     setError("");
     setBusy(true);
-    const result = await supabase.rpc("join_trip", { p_code: code.trim().toUpperCase() });
+    const result = await supabase.rpc("join_trip", {
+      p_code: code.trim().toUpperCase(),
+      p_display_name: name.clean,
+    });
     setBusy(false);
     if (result.error) setError(friendlyError(result.error));
     else if (result.data)
@@ -194,6 +200,7 @@ export function TripSheets({ mode, initialCode = "", trip, onClose, onDone }: Pr
                   className={`${field} mt-2 font-display text-2xl text-center tracking-widest uppercase`}
                 />
               </label>
+              <JoinNameField name={name} className={`${field} mt-2 font-normal text-foreground`} />
               {preview && (
                 <div className="rounded-2xl bg-blue-soft p-4 text-center">
                   <p className="text-xs font-extrabold text-blue">{t("tripSheets.joining")}</p>
@@ -209,7 +216,7 @@ export function TripSheets({ mode, initialCode = "", trip, onClose, onDone }: Pr
                   {error}
                 </p>
               )}
-              <Button variant="playful" size="lg" className="w-full" disabled={busy}>
+              <Button variant="playful" size="lg" className="w-full" disabled={busy || !name.valid}>
                 {busy ? t("tripSheets.joinBusy") : t("tripSheets.joinButton")}
                 <Ticket />
               </Button>

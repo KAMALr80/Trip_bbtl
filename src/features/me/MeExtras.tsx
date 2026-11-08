@@ -712,8 +712,10 @@ export function DeleteAccount({ onBack }: { onBack: () => void }) {
         <ul className="mt-2 list-disc pl-5 space-y-1">
           <li>Your profile and player cards</li>
           <li>Your avatar and every photo you posted</li>
+          <li>{t("account.delete.writtenAnswers")}</li>
           <li>Your sign-in</li>
         </ul>
+        <p className="mt-3">{t("account.delete.sharedHistory")}</p>
         <p className="mt-3">If you're Captain of a trip with other people, pass the crown first.</p>
       </div>
       <label className="mt-6 block text-sm font-bold">

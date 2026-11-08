@@ -6,6 +6,8 @@ import type { Tables } from "@/integrations/supabase/types";
 import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
 import { tripToday } from "@/lib/itinerary";
+import { t as translate } from "@/i18n";
+import { playerName } from "@/lib/player-name";
 
 type Item = Tables<"cost_items"> & { is_estimate?: boolean; custom_category?: string | null };
 type Share = Tables<"cost_shares">;
@@ -530,10 +532,7 @@ export function TripCostsCaptain({
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [v, setV] = useState(0);
-  const name = (id: string) =>
-    cards.find((c) => c.user_id === id)?.game_name ||
-    members.find((m) => m.user_id === id)?.display_name ||
-    "Player";
+  const name = (id: string) => playerName(cards, members, id, translate("player.former"));
   const after = async (r: { error: unknown }, ok: string) => {
     setMsg(r.error ? friendly(r.error) : ok);
     await load();

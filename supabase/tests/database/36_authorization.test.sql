@@ -168,7 +168,8 @@ $$;
 -- ---------------------------------------------------------------- the RPC matrix (scenarios 1, 2, 3, 6, 7, 9, 10)
 SELECT ok((SELECT count(*) > 100 FROM results WHERE kind = 'rpc' AND actor = 'outsider'), 'the matrix really covers the trip functions');
 SELECT is(pg_temp.passed('anon', '{}'), NULL, 'a signed-out visitor gets into no trip function');
-SELECT is(pg_temp.passed('outsider', ARRAY['captain_status', 'games_live', 'is_trip_member', 'member_stamp_badges', 'mix_ai_quota',
+-- dismiss_join_decline (N-6) deletes only the caller's own decline notice, so anyone may call it.
+SELECT is(pg_temp.passed('outsider', ARRAY['captain_status', 'dismiss_join_decline', 'games_live', 'is_trip_member', 'member_stamp_badges', 'mix_ai_quota',
             'my_preview_shared', 'my_trip_feedback_done', 'pending_count', 'player_card_read', 'player_profile', 'seat_status',
             'trip_peek', 'trip_pot', 'trip_squad_messages']),
           NULL, 'an outsider gets into no other trip function');
@@ -184,11 +185,11 @@ SELECT is((SELECT string_agg(name || '=' || detail, ', ') FROM results
            WHERE kind = 'rpc' AND actor = 'outsider+own' AND ok AND name IN ('is_trip_member', 'my_preview_shared', 'player_card_read', 'player_profile')
              AND detail NOT IN ('[]', '[null]', '[false]')),
           NULL, 'and shows nothing about them');
-SELECT is(pg_temp.passed('pending', ARRAY['captain_status', 'games_live', 'is_trip_member', 'leave_trip', 'member_stamp_badges', 'mix_ai_quota',
+SELECT is(pg_temp.passed('pending', ARRAY['captain_status', 'dismiss_join_decline', 'games_live', 'is_trip_member', 'leave_trip', 'member_stamp_badges', 'mix_ai_quota',
             'my_preview_shared', 'my_trip_feedback_done', 'pending_count', 'player_card_read', 'player_profile', 'seat_status',
             'set_trip_hidden', 'trip_peek', 'trip_pot', 'trip_squad_messages']),
           NULL, 'a pending player can only leave or hide the trip');
-SELECT is(pg_temp.passed('crew', ARRAY['ai_credit_status', 'at_home_mvp', 'at_home_plan', 'captain_status', 'crew_check', 'games_live',
+SELECT is(pg_temp.passed('crew', ARRAY['ai_credit_status', 'dismiss_join_decline', 'at_home_mvp', 'at_home_plan', 'captain_status', 'crew_check', 'games_live',
             'home_day_scores', 'is_trip_member', 'leave_trip', 'member_stamp_badges', 'mix_ai_quota', 'my_credits', 'my_preview_shared',
             'my_schedule', 'my_trip_feedback_done', 'open_live', 'pending_count', 'player_card_read', 'player_profile', 'postcard_info',
             'preview_ten_day_drops', 'season_info', 'season_timing', 'seat_status', 'set_guide_prefs', 'set_song_disc', 'set_trip_hidden',

@@ -16,7 +16,11 @@ import { ArrowLeft, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { WelcomeExtras } from "@/features/onboarding/WelcomeCopy";
+import { canApproveMember } from "@/lib/member-approval";
+import { JoinNameField } from "@/features/trip/JoinNameField";
+import { useJoinName } from "@/features/trip/use-join-name";
 import signinFriends from "@/assets/signin-night-friends.jpg";
+import { JoinDeclinedNotice } from "@/features/trip/JoinDeclinedNotice";
 
 export type Vibe = "family" | "chill" | "party";
 export const VIBES: Record<Vibe, { emoji: string; label: string; line: string; color: string }> = {
@@ -154,6 +158,7 @@ export function BetaLock({
           <h1 className="mt-5 font-display text-2xl font-extrabold">
             TripJunkies is in private beta.
           </h1>
+          <JoinDeclinedNotice className="mt-4" />
           {/* Why their link didn't let them in — otherwise this screen is a dead end. */}
           {notice && (
             <p
@@ -560,7 +565,7 @@ export function TripAccessTools({
                   <p className="font-bold truncate">{p.name}</p>
                   <p className="text-xs text-muted-foreground">{p.age_range}</p>
                 </div>
-                {isCaptain ? (
+                {canApproveMember(trip.myRole, p.age_range) ? (
                   <>
                     <Button
                       size="sm"
@@ -873,6 +878,7 @@ export function LaunchSwitch() {
 export function TeenJoinGate({ onJoined }: { onJoined: () => void }) {
   const [waiting, setWaiting] = useState<boolean | null>(null);
   const [code, setCode] = useState(readPendingCode() ?? "");
+  const name = useJoinName();
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const load = () => void rpc("my_waiting_trips").then((r) => setWaiting(!!r.data?.length));
@@ -905,7 +911,10 @@ export function TeenJoinGate({ onJoined }: { onJoined: () => void }) {
             e.preventDefault();
             setBusy(true);
             setMsg("");
-            const r = await rpc("join_trip", { p_code: code.trim().toUpperCase() });
+            const r = await rpc("join_trip", {
+              p_code: code.trim().toUpperCase(),
+              p_display_name: name.clean,
+            });
             setBusy(false);
             if (r.error) setMsg(friendlyError(r.error));
             else if (!r.data) setMsg("That code wasn't found. Check it and try again.");
@@ -929,6 +938,7 @@ export function TeenJoinGate({ onJoined }: { onJoined: () => void }) {
             placeholder="TEEN INVITE"
             className="w-full h-14 rounded-2xl border border-border bg-card text-center font-display text-2xl tracking-widest"
           />
+          <JoinNameField name={name} />
           {msg && (
             <p role="alert" className="text-sm text-destructive">
               {msg}
@@ -939,7 +949,7 @@ export function TeenJoinGate({ onJoined }: { onJoined: () => void }) {
             variant="playful"
             size="lg"
             className="w-full min-h-11"
-            disabled={busy || code.length < 6}
+            disabled={busy || code.length < 6 || !name.valid}
           >
             {busy ? "Joining…" : "Join room"}
           </Button>

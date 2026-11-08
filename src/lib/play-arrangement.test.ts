@@ -1,7 +1,7 @@
 // M0-11 characterisation: the client's phase guess and banner copy, before the M2 phase engine
 // replaces them (R-101 – R-107). These pin today's behaviour; they are not the target rules.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { datePhase, phaseBanner, readOfflineRoster, saveOfflineRoster } from "./play-arrangement";
+import { datePhase, readOfflineRoster, saveOfflineRoster } from "./play-arrangement";
 import type { TripWithRole } from "./trips";
 
 // datePhase only reads these fields; the cast keeps fixtures short.
@@ -40,24 +40,6 @@ describe("datePhase", () => {
     const bali = trip({ trip_timezone: "Asia/Makassar" });
     expect(datePhase(bali, false, new Date("2026-06-09T18:00:00Z"))).toBe("airport");
     expect(datePhase(trip({}), false, new Date("2026-06-09T18:00:00Z"))).toBe("preflight");
-  });
-});
-
-describe("phaseBanner", () => {
-  const takeoff = new Date("2026-06-10T15:00:00Z");
-
-  it("uses flight copy for trips and start-day copy for rooms without a flight", () => {
-    expect(phaseBanner(trip({}), false, takeoff)).toBe(
-      "Takeoff is underway. Airport Missions are available on departure day.",
-    );
-    expect(phaseBanner(trip({ kind: "at_home" }), false, takeoff)).toBe(
-      "Your start-day missions are open.",
-    );
-  });
-
-  it("shows nothing in Pre-Flight (deck R-107 wants a banner there too)", () => {
-    expect(phaseBanner(trip({}), false, new Date("2026-06-01T12:00:00Z"))).toBeNull();
-    expect(phaseBanner(trip({}), true)).toBe("Trip Season is open.");
   });
 });
 

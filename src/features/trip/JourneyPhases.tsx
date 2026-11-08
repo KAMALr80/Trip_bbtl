@@ -5,6 +5,7 @@ import { ArrowRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStandings } from "@/data/live";
 import { useT } from "@/i18n";
+import { hasPreflight } from "@/features/trip/phase";
 import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
 
@@ -50,7 +51,9 @@ export function JourneyPhases({
       >
         <span>
           <span className="eyebrow text-blue">{t("journey.eyebrow")}</span>
-          <span className="block font-bold mt-2">{line(pre, "✈️", t("phases.preflight"))}</span>
+          {hasPreflight(trip) && (
+            <span className="block font-bold mt-2">{line(pre, "✈️", t("phases.preflight"))}</span>
+          )}
           <span className="block font-bold mt-2">
             {line(season, "🌴", t("phases.trip_season"))}
           </span>

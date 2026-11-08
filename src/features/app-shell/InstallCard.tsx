@@ -54,7 +54,7 @@ export function InstallCard({ trips }: { trips: readonly TripWithRole[] }) {
     setHidden(true);
   };
   return (
-    <section className="app-card mx-[18px] mb-3" aria-label={t("install.title")}>
+    <section data-above-home className="app-card mx-[18px] mb-3" aria-label={t("install.title")}>
       <p className="font-display text-lg font-extrabold">{t("install.title")}</p>
       <p className="text-sm mt-1">{t("install.why")}</p>
       {platform === "ios" ? (

@@ -4,6 +4,27 @@
 
 export const MAX_ANSWER = 60;
 
+/**
+ * Is wrap-up week open, and how many questions are left (QA-08)? It's open for the whole of Baggage
+ * Claim, up to the lock. display-only; server: trip_private.answer_wrapup checks again.
+ */
+export function wrapupState(input: {
+  phase: string;
+  lockedAt?: string | null | undefined;
+  locksAt?: string | null | undefined;
+  questionKeys: readonly string[];
+  answers: Readonly<Record<string, string>>;
+  now: number;
+}): { open: boolean; remaining: number; total: number } {
+  const total = input.questionKeys.length;
+  const open =
+    input.phase === "baggage_claim" &&
+    !input.lockedAt &&
+    (!input.locksAt || input.now < Date.parse(input.locksAt));
+  const answered = input.questionKeys.filter((k) => !!input.answers[k]?.trim()).length;
+  return { open, remaining: open ? total - answered : 0, total };
+}
+
 // One emoji: a flag (two regional indicators), a keycap, or a pictograph, plus its skin tone /
 // variation selector / tag characters, joined into ZWJ sequences. Same ranges as the SQL.
 const base =

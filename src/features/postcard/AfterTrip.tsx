@@ -5,6 +5,7 @@ import type { PlayerWithAvatar } from "@/lib/player-cards";
 import type { TripWithRole } from "@/lib/trips";
 import { AvatarButton } from "@/features/players/PlayerCards";
 import { TripPostcard } from "./TripPostcard";
+import { placeName } from "@/lib/places";
 
 const fmtDay = (day: string) =>
   new Date(`${day}T12:00:00Z`).toLocaleDateString(undefined, {
@@ -34,8 +35,8 @@ export function AfterTrip({
           {trip.name}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {trip.cultures?.[0] ?? trip.destination} · {fmtDay(trip.start_date)} –{" "}
-          {fmtDay(trip.end_date)}
+          {trip.cultures?.[0] ? placeName(trip.cultures[0]) : trip.destination} ·{" "}
+          {fmtDay(trip.start_date)} – {fmtDay(trip.end_date)}
         </p>
       </header>
       <p className="mt-3 text-sm">{t("postcard.afterLine")}</p>

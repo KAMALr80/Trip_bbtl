@@ -18,6 +18,27 @@ async function passwordIsRight(email: string, password: string) {
   return true;
 }
 
+// Every table that records a file this player uploaded to a trip's storage folder.
+const TABLES_WITH_TRIP_FILES = [
+  ["proofs", "user_id"],
+  ["trip_player_cards", "user_id"],
+  ["photo_posts", "user_id"],
+  ["quest_posts", "user_id"],
+  ["bingo_marks", "user_id"],
+  ["airport_claims", "user_id"],
+  ["window_guide_items", "author_id"],
+] as const;
+type AdminRows = {
+  from: (table: string) => {
+    select: (columns: "trip_id") => {
+      eq: (
+        column: string,
+        value: string,
+      ) => Promise<{ data: { trip_id: string }[] | null; error: { message: string } | null }>;
+    };
+  };
+};
+
 async function listAll(
   admin: {
     storage: {
@@ -79,7 +100,17 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
         );
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const tripIds = (memberships ?? []).map((m) => m.trip_id);
+    // A trip left earlier still holds this player's photos, and so does a trip left by a delete that
+    // failed part way and is being retried, so look past the current memberships.
+    const tripIds = new Set((memberships ?? []).map((m) => m.trip_id));
+    for (const [table, column] of TABLES_WITH_TRIP_FILES) {
+      const { data: rows, error: rowsError } = await (supabaseAdmin as never as AdminRows)
+        .from(table)
+        .select("trip_id")
+        .eq(column, userId);
+      if (rowsError) throw new Error(rowsError.message);
+      for (const row of rows ?? []) tripIds.add(row.trip_id);
+    }
     const files: { bucket: string; paths: string[] }[] = [
       {
         bucket: "player-avatars",
@@ -109,8 +140,12 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
         paths: await listAll(supabaseAdmin as never, "window-guide", `${t}/${userId}`),
       });
     }
-    for (const f of files)
-      if (f.paths.length) await supabaseAdmin.storage.from(f.bucket).remove(f.paths);
+    // Stop here if a file can't go: the account stays, and trying again finishes the job.
+    for (const f of files) {
+      if (!f.paths.length) continue;
+      const { error: removeError } = await supabaseAdmin.storage.from(f.bucket).remove(f.paths);
+      if (removeError) throw new Error(removeError.message);
+    }
     await supabaseAdmin.from("trip_player_cards").delete().eq("user_id", userId);
     const { error: delError } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (delError) throw new Error(delError.message);

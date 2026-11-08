@@ -49,7 +49,15 @@ A local Supabase stack (`npx supabase start`, needs Docker) applies `supabase/mi
 
 The Playwright configs open `/` once before the tests (`e2e/support/warm-up.ts`), so the first test doesn't wait for the dev server's first compile. Install the browser with `npx playwright install chromium`. On Node 26 that can stall; use Node 22, or run `bun --bun node_modules/@playwright/test/cli.js install chromium`.
 
-The latest audit (status, tests, bugs, roadmap and beta readiness) is in [`docs/audit/`](docs/audit/PROJECT_STATUS_REPORT.md).
+The current state of the app is in [`docs/FINAL_PROJECT_COMPLETION_AUDIT.md`](docs/FINAL_PROJECT_COMPLETION_AUDIT.md) (Nov 8, 2026): what is verified, what is open, and the founder questions. With it:
+
+- [`FINAL_RELEASE_REPORT`](docs/FINAL_RELEASE_REPORT.md): this release's fixes and test results
+- [`SECURITY_AND_PRIVACY_FINAL_AUDIT`](docs/SECURITY_AND_PRIVACY_FINAL_AUDIT.md): permissions, account deletion and retention
+- [`PRODUCTION_DEPLOYMENT_GUIDE`](docs/PRODUCTION_DEPLOYMENT_GUIDE.md) and [`ENVIRONMENT_VARIABLES`](docs/ENVIRONMENT_VARIABLES.md): staging, production and rollback
+- [`DATABASE_AND_MIGRATIONS`](docs/DATABASE_AND_MIGRATIONS.md) and [`TESTING_GUIDE`](docs/TESTING_GUIDE.md)
+- [`ADMIN_AND_FOUNDER_GUIDE`](docs/ADMIN_AND_FOUNDER_GUIDE.md) and [`KNOWN_LIMITATIONS`](docs/KNOWN_LIMITATIONS.md)
+
+Earlier audits (Nov 6) are in [`docs/audit/`](docs/audit/PROJECT_STATUS_REPORT.md).
 
 ## Database changes
 

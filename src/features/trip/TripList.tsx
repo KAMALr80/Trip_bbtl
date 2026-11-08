@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TripWithRole } from "@/lib/trips";
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { TripActions } from "@/features/trip/TripActions";
+import { dayIn, orderTrips, tripStatus } from "@/features/trip/trip-order";
 
 type Peek = {
   kind: string;
@@ -27,30 +28,10 @@ const fmt = (d: string) =>
     day: "numeric",
     year: "numeric",
   });
-const dayIn = (tz?: string | null) => {
-  try {
-    return new Date().toLocaleDateString("en-CA", { timeZone: tz || "UTC" });
-  } catch {
-    return new Date().toISOString().slice(0, 10);
-  }
-};
 const addDays = (d: string, n: number) =>
   new Date(Date.parse(`${d}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
 
-/** Upcoming / Active / Completed, judged in the trip's home time zone. */
-export function tripStatus(t: {
-  start_date: string;
-  end_date: string;
-  ended_at?: string | null;
-  home_timezone?: string | null;
-}) {
-  const today = dayIn(t.home_timezone);
-  return t.ended_at || t.end_date < today
-    ? "Completed"
-    : t.start_date > today
-      ? "Upcoming"
-      : "Active";
-}
+export { tripStatus };
 
 /** Read-only peek for waiting or former members (server returns only these fields). */
 export function TripPeekCard({ peek }: { peek: Peek }) {
@@ -135,11 +116,7 @@ export function TripList({
     if (!hasHome) return "Add your home country to earn stamps";
     return dayIn(t.home_timezone) <= addDays(t.end_date, 2) || t.ended_at ? "Stamp on the way" : "";
   };
-  const ordered = [...trips].sort((a, b) => {
-    const rank = (t: TripWithRole) =>
-      t.is_sandbox ? 3 : tripStatus(t) === "Completed" ? 2 : t.kind === "at_home" ? 1 : 0;
-    return rank(a) - rank(b) || a.start_date.localeCompare(b.start_date);
-  });
+  const ordered = orderTrips(trips);
   return (
     <div className="cinematic-trip-list">
       <div className="divide-y divide-border border-y border-border">

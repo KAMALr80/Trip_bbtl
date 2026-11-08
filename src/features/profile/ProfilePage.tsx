@@ -11,6 +11,7 @@ import { Avatar, RoleStamp } from "@/features/players/PlayerCards";
 import { TripPostcard } from "@/features/postcard/TripPostcard";
 import { useT } from "@/i18n";
 import { levelFor } from "@/lib/levels";
+import { placeName } from "@/lib/places";
 
 const BADGES = ["us_explorer", "culture_collector", "storyteller"] as const;
 const TIERS = ["carry_on", "carry_on", "checked_bag", "first_class"] as const;
@@ -184,7 +185,9 @@ function PageTwo({ p }: { p: PlayerProfile }) {
       >
         <strong className="block uppercase">
           {s.top ? "★ " : ""}
-          {s.kind === "postcard" ? `🏠 ${s.culture ?? s.country}` : (s.state ?? s.country)}
+          {s.kind === "postcard"
+            ? `🏠 ${placeName(s.culture ?? s.country)}`
+            : (s.state ?? s.country)}
         </strong>
         <span className="block">{s.season_label}</span>
         {s.solo && <span className="block">{t("passport.solo")}</span>}

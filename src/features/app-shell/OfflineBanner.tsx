@@ -23,7 +23,7 @@ export function OfflineBanner() {
   }, [offline]);
   if (!offline && !queued && !rejected.length) return null;
   return (
-    <div className="mx-[18px] mb-3 grid gap-2">
+    <div data-above-home className="mx-[18px] mb-3 grid gap-2">
       {(offline || queued > 0) && (
         <div
           role="status"

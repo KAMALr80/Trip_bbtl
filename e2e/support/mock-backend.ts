@@ -64,18 +64,29 @@ type Options = {
   noCard?: boolean;
   tables?: Record<string, object[]>;
   role?: "captain" | "co_captain" | "player";
+  /** Extra sign-up metadata on the signed-in user (what the email sign-up form stores). */
+  userMetadata?: Record<string, unknown>;
 };
 export type RpcCall = { fn: string; body: unknown };
 
 export async function signInWithMockBackend(page: Page, options: Options = {}): Promise<RpcCall[]> {
   const calls: RpcCall[] = [];
+  const me = options.userMetadata
+    ? {
+        ...user,
+        user_metadata: {
+          ...(user as { user_metadata?: object }).user_metadata,
+          ...options.userMetadata,
+        },
+      }
+    : user;
   const session = {
     access_token: accessToken,
     refresh_token: "refresh",
     token_type: "bearer",
     expires_in: 86400,
     expires_at: Math.floor(Date.now() / 1000) + 86400,
-    user,
+    user: me,
   };
   await page.addInitScript((value) => {
     // supabase-js keys the session by the first label of the project host ("127").
@@ -148,7 +159,7 @@ export async function signInWithMockBackend(page: Page, options: Options = {}): 
     const single = (route.request().headers()["accept"] ?? "").includes("vnd.pgrst.object");
     const json = (body: unknown, status = 200) =>
       route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
-    if (url.pathname === "/auth/v1/user") return json(user);
+    if (url.pathname === "/auth/v1/user") return json(me);
     if (url.pathname.startsWith("/auth/v1/")) return json({});
     const fn = url.pathname.match(/^\/rest\/v1\/rpc\/(\w+)/)?.[1];
     if (fn) {

@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import type { Member, TripWithRole } from "@/lib/trips";
 import { usePendingCount } from "@/features/admin/BetaCodes";
+import { tripIsOver } from "@/features/trip/trip-order";
 
 export type CheckKey = "dates" | "itinerary" | "nights" | "prizes" | "invite";
 type Status = Record<CheckKey, boolean>;
@@ -159,11 +160,13 @@ export function CaptainNudge({
       </div>
     );
   if (!status || hidden) return null;
-  const missing = [
-    !status.nights && "no game night times yet",
-    !status.prizes && "no prize yet",
-    !status.invite && "nobody invited yet",
-  ].filter(Boolean) as string[];
+  const missing = tripIsOver(trip)
+    ? []
+    : ([
+        !status.nights && "no game night times yet",
+        !status.prizes && "no prize yet",
+        !status.invite && "nobody invited yet",
+      ].filter(Boolean) as string[]);
   if (!missing.length && !waiting) return null;
   return (
     <div
