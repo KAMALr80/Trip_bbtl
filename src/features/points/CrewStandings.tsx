@@ -4,8 +4,10 @@
 import { Crown } from "lucide-react";
 import { AvatarButton } from "@/features/players/PlayerCards";
 import { useCrowns, useStandings } from "@/data/live";
-import { useT } from "@/i18n";
+import { t as translate, useT } from "@/i18n";
+import { playerName } from "@/lib/player-name";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
+import { hasPreflight } from "@/features/trip/phase";
 import type { Member, TripWithRole } from "@/lib/trips";
 
 type Season = "preflight" | "trip_season";
@@ -18,12 +20,11 @@ type Props = {
 };
 
 const nameOf = (cards: PlayerWithAvatar[], members: Member[], id: string) =>
-  cards.find((c) => c.user_id === id)?.game_name ||
-  members.find((m) => m.user_id === id)?.display_name ||
-  "?";
+  playerName(cards, members, id, translate("player.former"));
 
 /** The season being played now: Trip Season once the trip has started, else Pre-Flight. */
 export function currentSeason(trip: TripWithRole): Season {
+  if (!hasPreflight(trip)) return "trip_season";
   return new Date(`${trip.start_date}T00:00:00`).getTime() <= Date.now()
     ? "trip_season"
     : "preflight";
@@ -57,9 +58,11 @@ export function CrewStandings(props: Props & { compact?: boolean }) {
         </div>
       )}
       {!compact && <CrownsRow {...props} crowns={crowns} />}
-      {(compact ? [season] : (["preflight", "trip_season"] as Season[])).map((s) => (
-        <SeasonBoard key={s} {...props} season={s} />
-      ))}
+      {(compact || !hasPreflight(trip) ? [season] : (["preflight", "trip_season"] as Season[])).map(
+        (s) => (
+          <SeasonBoard key={s} {...props} season={s} />
+        ),
+      )}
     </section>
   );
 }
@@ -77,7 +80,7 @@ function CrownsRow({
     <div className="mt-4 grid grid-cols-2 gap-3">
       {(["preflight", "trip_season"] as Season[]).map((s) => {
         const list = crowns.filter((c) => c.season === s);
-        const skipped = s === "preflight" && (trip.preflight_skipped || trip.preflight_days === 0);
+        const skipped = s === "preflight" && !hasPreflight(trip);
         return (
           <div key={s} className="rounded-2xl bg-orange-soft p-4 text-center">
             <p className="text-[11px] font-extrabold text-ink-soft flex items-center justify-center gap-1">

@@ -32,20 +32,6 @@ export function datePhase(
 /** Culture rooms (no flight) never claim a flight or a landing. */
 export const noFlight = (trip: TripWithRole) => !!trip.a2e_room || trip.kind !== "trip";
 
-export function phaseBanner(
-  trip: TripWithRole,
-  tripSeasonStarted = false,
-  now?: Date,
-): string | null {
-  const phase = datePhase(trip, tripSeasonStarted, now);
-  if (phase === "airport")
-    return noFlight(trip)
-      ? "Your start-day missions are open."
-      : "Takeoff is underway. Airport Missions are available on departure day.";
-  if (phase === "trip") return "Trip Season is open.";
-  return null;
-}
-
 const key = (tripId: string) => `tj-offline-roster:${tripId}`;
 export function saveOfflineRoster(tripId: string, names: string[]): boolean {
   try {

@@ -197,6 +197,11 @@ export function tripPhaseInput(trip: TripRow): PhaseInput {
     setupComplete: trip.setup_completed_at !== null,
   };
 }
+/** Pre-Flight exists only with at least one day and when it wasn't skipped (R-105). */
+export function hasPreflight(trip: { preflight_days: number; preflight_skipped: boolean }) {
+  return !trip.preflight_skipped && trip.preflight_days > 0;
+}
+
 /** The trip's phase now (or at `at`), for display. The server's trip_phase decides. */
 export function tripPhase(trip: TripRow, at: number = Date.now()): PhaseWindow {
   return phaseAt(tripPhaseInput(trip), at);

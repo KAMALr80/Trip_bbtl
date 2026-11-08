@@ -25,6 +25,10 @@ import { Confetti } from "@/features/points/Season";
 import { CrewStandings } from "@/features/points/CrewStandings";
 import { tripToday, tripTz, loadItinerary, type ItineraryDay } from "@/lib/itinerary";
 import { friendlyDate, friendlyRange } from "@/lib/trip-dates";
+import { useTripPhase } from "@/data/phase";
+import { t as translate } from "@/i18n";
+import { playerName } from "@/lib/player-name";
+import { hasPreflight } from "@/features/trip/phase";
 import type { Member, TripWithRole } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
 
@@ -65,9 +69,7 @@ const seasonEmoji: Record<SeasonKey, string> = { game: "🏆", trip: "🧳" };
 const EMOJIS = ["❤️", "😂", "🔥", "😍", "👏"] as const;
 const isLeader = (t: TripWithRole) => t.myRole === "captain" || t.myRole === "co_captain";
 const nameOf = (cards: PlayerWithAvatar[], members: Member[], id: string) =>
-  cards.find((c) => c.user_id === id)?.game_name ||
-  members.find((m) => m.user_id === id)?.display_name ||
-  "Player";
+  playerName(cards, members, id, translate("player.former"));
 export const tripHasEnded = (t: TripWithRole) => tripToday(tripTz(t)) > t.end_date;
 const addDays = (d: string, n: number) => {
   const x = new Date(`${d}T12:00:00Z`);
@@ -76,8 +78,10 @@ const addDays = (d: string, n: number) => {
 };
 export const tripClosed = (t: TripWithRole) =>
   !!t.ended_at || tripToday(tripTz(t)) > addDays(t.end_date, 2);
+/** Only once the trip has locked: wrap-up week stays open for all of Baggage Claim (QA-08). */
 export function ReadOnlyBanner({ trip }: { trip: TripWithRole }) {
-  if (!tripClosed(trip)) return null;
+  const phase = useTripPhase(trip);
+  if (phase !== "archived" && !trip.locked_at) return null;
   return (
     <div className="mb-5 rounded-2xl bg-blue-soft p-4 flex items-center gap-3">
       <span className="text-3xl">🔒</span>
@@ -250,7 +254,8 @@ export function MysteryPrizes({
       }
     }
   }, [data.champs, trip.id]);
-  const list = (["game", "trip"] as SeasonKey[])
+  // No Pre-Flight, no Early Bird crown to win (R-105).
+  const list = (hasPreflight(trip) ? (["game", "trip"] as SeasonKey[]) : (["trip"] as SeasonKey[]))
     .map((k) => data.info.find((i) => i.season === k))
     .filter((x): x is Info => !!x && !!x.crowning_at);
   if (!list.length) return null;

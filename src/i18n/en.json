@@ -15,8 +15,13 @@
   "account": {
     "delete": {
       "password": "Enter your password",
-      "recentSignIn": "For your security, you need to have signed in within the last 15 minutes."
+      "recentSignIn": "For your security, you need to have signed in within the last 15 minutes.",
+      "sharedHistory": "Crowns you won stay in your trips' shared history under the name \"Former player\", and points you earned stay in the trip's records. Answers already on a finished trip's postcard stay there, without your name.",
+      "writtenAnswers": "Your written answers and notes, and your passport stamps"
     }
+  },
+  "player": {
+    "former": "Former player"
   },
   "explorePrompt": {
     "title": "Explore the app ✨",
@@ -250,7 +255,10 @@
   },
   "join": {
     "role": "Your role this trip",
-    "noRole": "Pick later"
+    "noRole": "Pick later",
+    "nameLabel": "Your name",
+    "namePlaceholder": "So your Captain knows it's you",
+    "nameHint": "Your Captain sees this when approving you."
   },
   "tripSheets": {
     "joinLabel": "Join a trip",
@@ -287,9 +295,15 @@
     "homeMissions": "Home Missions",
     "trip_season": "Trip Season",
     "baggage_claim": "Baggage Claim",
+    "upcoming": "Upcoming",
+    "skipped": "Skipped",
+    "opensPreflight": "Pre-Flight opens {{date}}",
+    "opensTakeoff": "Takeoff {{date}}",
+    "noPreflight": "No Pre-Flight on this trip, so no Early Bird crown.",
     "banner": {
       "preflight": "Now boarding. Your trip starts here.",
       "takeoff": "Get ready for takeoff. Seatbelts on.",
+      "homeMissions": "Your start-day missions are open.",
       "trip_season": "You've arrived. Welcome to {{place}}.",
       "baggage_claim": "Thank you for flying with us. Collect your memories."
     },
@@ -592,6 +606,7 @@
     "unpick": "Remove this photo from your picks",
     "fullHint": "All picked. Tap a picked photo to swap it.",
     "wrapupTitle": "Wrap-up week",
+    "upNow": "{{count}} of {{total}} questions left · locks {{when}}",
     "locks": "Your Trip Postcard locks {{when}}.",
     "heartTitle": "Heart the crew's picks",
     "heartLine": "The {{count}} photos with the most hearts go on the postcard.",

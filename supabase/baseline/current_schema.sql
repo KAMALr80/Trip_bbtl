@@ -1495,13 +1495,13 @@ CREATE FUNCTION public.is_trip_member(p_trip uuid, p_user uuid) RETURNS boolean
 
 
 --
--- Name: join_trip(text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: join_trip(text, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.join_trip(p_code text) RETURNS uuid
+CREATE FUNCTION public.join_trip(p_code text, p_display_name text DEFAULT NULL::text) RETURNS uuid
     LANGUAGE sql
     SET search_path TO 'public'
-    AS $$ SELECT trip_private.join_trip(p_code) $$;
+    AS $$ SELECT trip_private.join_trip(p_code, p_display_name) $$;
 
 
 --
@@ -8651,15 +8651,18 @@ CREATE FUNCTION trip_private.is_window_room(p_trip uuid) RETURNS boolean
 
 
 --
--- Name: join_trip(text); Type: FUNCTION; Schema: trip_private; Owner: -
+-- Name: join_trip(text, text); Type: FUNCTION; Schema: trip_private; Owner: -
 --
 
-CREATE FUNCTION trip_private.join_trip(p_code text) RETURNS uuid
+CREATE FUNCTION trip_private.join_trip(p_code text, p_display_name text DEFAULT NULL::text) RETURNS uuid
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
-DECLARE t public.trips%ROWTYPE; inv public.trip_invites%ROWTYPE; v_count integer; v_approved integer; v_code text := upper(trim(coalesce(p_code,''))); v_age int; v_status text; via_invite boolean := false; was_removed boolean := false; v_teen_invite boolean := false; BEGIN
+DECLARE t public.trips%ROWTYPE; inv public.trip_invites%ROWTYPE; v_count integer; v_approved integer; v_code text := upper(trim(coalesce(p_code,''))); v_age int; v_status text; via_invite boolean := false; was_removed boolean := false; v_teen_invite boolean := false;
+  v_name text := nullif(btrim(regexp_replace(regexp_replace(coalesce(p_display_name,''), '[[:cntrl:]]', '', 'g'), '\s+', ' ', 'g')), ''); BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in first'; END IF;
+  IF v_name IS NOT NULL AND char_length(v_name) NOT BETWEEN 2 AND 30 THEN RAISE EXCEPTION 'Your name needs 2 to 30 characters'; END IF;
+  IF v_name IS NOT NULL AND NOT trip_private.content_text_safe(v_name) THEN RAISE EXCEPTION 'Please choose a different name'; END IF;
   PERFORM trip_private.code_rate_check();
   v_age := trip_private.age_of(auth.uid());
   IF v_age IS NULL THEN RAISE EXCEPTION 'Add your date of birth first'; END IF;
@@ -8694,6 +8697,9 @@ DECLARE t public.trips%ROWTYPE; inv public.trip_invites%ROWTYPE; v_count integer
     DELETE FROM trip_private.trip_removals WHERE trip_id=t.id AND user_id=auth.uid();
   END IF;
   INSERT INTO public.trip_members(trip_id,user_id,status,approved_at) VALUES(t.id,auth.uid(),v_status,CASE WHEN v_status='approved' THEN now() END);
+  IF v_name IS NOT NULL THEN
+    INSERT INTO trip_private.join_names(trip_id,user_id,display_name) VALUES (t.id,auth.uid(),v_name);
+  END IF;
   IF v_status = 'approved' THEN
     PERFORM trip_private.apply_join_baseline(t.id, auth.uid());
     INSERT INTO public.beta_access(user_id, source) VALUES (auth.uid(), 'invite') ON CONFLICT DO NOTHING;
@@ -9849,12 +9855,15 @@ BEGIN
                          FROM public.wrapup_answers a WHERE a.trip_id = p_trip AND a.question_key = w.key), '[]') AS answers
         FROM trip_private.wrapup_questions(p_trip) w) q;
 
-  SELECT coalesce(jsonb_agg(jsonb_build_object('season', c.season, 'user_id', c.user_id,
-                                               'name', coalesce(pc.game_name, pp.game_name, 'Traveler'),
+  SELECT coalesce(jsonb_agg(jsonb_build_object('season', c.season,
+                                               'user_id', CASE WHEN u.id IS NOT NULL THEN c.user_id END,
+                                               'name', CASE WHEN u.id IS NULL THEN 'Former player'
+                                                            ELSE coalesce(pc.game_name, pp.game_name, 'Traveler') END,
                                                'points', c.points, 'solo', c.solo_goal IS NOT NULL)
                             ORDER BY c.season, c.user_id), '[]')
   INTO v_crowns
   FROM public.trip_crowns c
+  LEFT JOIN auth.users u ON u.id = c.user_id
   LEFT JOIN public.trip_player_cards pc ON pc.trip_id = c.trip_id AND pc.user_id = c.user_id
   LEFT JOIN public.player_profiles pp ON pp.user_id = c.user_id
   WHERE c.trip_id = p_trip;
@@ -11040,8 +11049,8 @@ CREATE FUNCTION trip_private.pending_members(p_trip uuid) RETURNS TABLE(user_id 
     SET search_path TO 'public'
     AS $$
 BEGIN IF NOT trip_private.is_leader(p_trip) THEN RAISE EXCEPTION 'Not allowed'; END IF;
- RETURN QUERY SELECT m.user_id, coalesce(c.game_name, p.game_name, 'New traveler'), coalesce(c.avatar_style, p.avatar_style, 'street'), coalesce(c.avatar_seed, p.avatar_seed, m.user_id::text), trip_private.age_range(trip_private.age_of(m.user_id)), m.joined_at
-  FROM public.trip_members m LEFT JOIN public.trip_player_cards c ON c.trip_id=m.trip_id AND c.user_id=m.user_id LEFT JOIN public.player_profiles p ON p.user_id=m.user_id
+ RETURN QUERY SELECT m.user_id, coalesce(c.game_name, j.display_name, p.game_name, 'New traveler'), coalesce(c.avatar_style, p.avatar_style, 'street'), coalesce(c.avatar_seed, p.avatar_seed, m.user_id::text), trip_private.age_range(trip_private.age_of(m.user_id)), m.joined_at
+  FROM public.trip_members m LEFT JOIN public.trip_player_cards c ON c.trip_id=m.trip_id AND c.user_id=m.user_id LEFT JOIN public.player_profiles p ON p.user_id=m.user_id LEFT JOIN trip_private.join_names j ON j.trip_id=m.trip_id AND j.user_id=m.user_id
   WHERE m.trip_id=p_trip AND m.status='pending' ORDER BY m.joined_at; END $$;
 
 
@@ -13465,6 +13474,109 @@ CREATE FUNCTION trip_private.schedule_hash(p_text text) RETURNS bigint
     LANGUAGE sql IMMUTABLE
     SET search_path TO ''
     AS $$ SELECT abs(hashtextextended(p_text, 0)) $$;
+
+
+--
+-- Name: scrub_deleted_account(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.scrub_deleted_account() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+DECLARE
+  v_user uuid := OLD.id;
+  v_proof record;
+BEGIN
+  -- The delete screen has already left each trip. Other paths may not have. A Captain's row stays,
+  -- because removing it would leave the trip with no leader.
+  DELETE FROM public.trip_members WHERE user_id = v_user AND role <> 'captain';
+  DELETE FROM public.trip_player_cards WHERE user_id = v_user;
+
+  -- A proof still waiting for the crew would expire later and notify a user who no longer exists.
+  -- That insert fails its foreign key and stops expire_proofs for every trip. Expire it now, with
+  -- the same points rule expire_proofs uses. Only pending points change, so nothing here can refuse
+  -- the delete.
+  FOR v_proof IN
+    UPDATE public.proofs SET crew_status = 'expired'
+    WHERE user_id = v_user AND crew_status = 'waiting'
+    RETURNING trip_id, source, schedule_id
+  LOOP
+    IF v_proof.source <> 'surprise_drop' THEN
+      UPDATE public.points_ledger SET status = 'rejected', updated_at = now()
+      WHERE trip_id = v_proof.trip_id AND user_id = v_user AND source = v_proof.source
+        AND source_ref IS NOT DISTINCT FROM v_proof.schedule_id AND status = 'pending';
+    END IF;
+  END LOOP;
+
+  -- Free text. Nothing references these rows, and answers already on a locked postcard carry no name.
+  DELETE FROM public.wrapup_answers WHERE user_id = v_user;
+  DELETE FROM public.journal_entries WHERE user_id = v_user;
+  DELETE FROM public.window_guide_items WHERE author_id = v_user;
+  DELETE FROM public.at_home_answers WHERE user_id = v_user;
+  DELETE FROM public.weekly_answers WHERE user_id = v_user;
+  DELETE FROM public.cost_notes WHERE user_id = v_user;
+  DELETE FROM public.checkin_responses WHERE user_id = v_user;
+  DELETE FROM public.trip_drafts WHERE user_id = v_user;
+  DELETE FROM public.bug_reports WHERE user_id = v_user;
+  UPDATE public.cost_shares SET report_note = NULL WHERE user_id = v_user AND report_note IS NOT NULL;
+  UPDATE public.solo_quests SET story = NULL, budget_note = NULL
+  WHERE user_id = v_user AND (story IS NOT NULL OR budget_note IS NOT NULL);
+  UPDATE public.trip_feedback SET change_text = NULL, squad_message = NULL
+  WHERE user_id = v_user AND (change_text IS NOT NULL OR squad_message IS NOT NULL);
+
+  -- proofs_check needs a photo path or a body, so a text-only proof keeps an empty body.
+  UPDATE public.proofs
+  SET body = CASE WHEN photo_path IS NULL THEN '' END,
+      ai_reason = NULL,
+      photo_removed_at = CASE WHEN photo_path IS NOT NULL THEN coalesce(photo_removed_at, now()) END
+  WHERE user_id = v_user;
+
+  -- This player's own schedule rows. A row with a proof stays: deleting it would cascade to the
+  -- proof, its crew votes and photo_moderation. Points are unaffected either way, because
+  -- points_ledger has no foreign key to the schedule.
+  DELETE FROM public.trip_schedule s
+  WHERE s.user_id = v_user
+    AND NOT EXISTS (SELECT 1 FROM public.proofs p WHERE p.schedule_id = s.id)
+    AND NOT EXISTS (SELECT 1 FROM public.daily_answers d WHERE d.schedule_id = s.id AND d.user_id <> v_user)
+    AND NOT EXISTS (SELECT 1 FROM public.journal_entries j WHERE j.schedule_id = s.id AND j.user_id <> v_user);
+  UPDATE public.trip_schedule SET tailored_text = NULL WHERE user_id = v_user AND tailored_text IS NOT NULL;
+
+  DELETE FROM public.passport_stamps WHERE user_id = v_user;
+
+  -- The postcard stays for the crew: other photos, nameless answers, the crown with no identity.
+  -- This player's photos come out because their files are deleted.
+  UPDATE public.trip_postcards pc
+  SET photos = (SELECT coalesce(jsonb_agg(x.ph ORDER BY x.ord), '[]')
+                FROM jsonb_array_elements(pc.photos) WITH ORDINALITY x(ph, ord)
+                WHERE x.ph->>'user_id' IS DISTINCT FROM v_user::text),
+      crowns = (SELECT coalesce(jsonb_agg(
+                         CASE WHEN x.c->>'user_id' = v_user::text
+                              THEN x.c || jsonb_build_object('user_id', NULL, 'name', 'Former player')
+                              ELSE x.c END ORDER BY x.ord), '[]')
+                FROM jsonb_array_elements(pc.crowns) WITH ORDINALITY x(c, ord))
+  WHERE pc.photos @> jsonb_build_array(jsonb_build_object('user_id', v_user))
+     OR pc.crowns @> jsonb_build_array(jsonb_build_object('user_id', v_user));
+
+  -- The photo wall hides these the way a Captain's removal does; the game rows stay.
+  INSERT INTO public.photo_removed (trip_id, photo_path, removed_by)
+  SELECT x.trip_id, x.photo_path, v_user FROM (
+    SELECT trip_id, photo_path FROM public.bingo_marks WHERE user_id = v_user AND photo_path IS NOT NULL
+    UNION SELECT trip_id, photo_path FROM public.quest_posts WHERE user_id = v_user AND photo_path IS NOT NULL
+    UNION SELECT trip_id, photo_path FROM public.photo_posts WHERE user_id = v_user
+    UNION SELECT trip_id, photo_path FROM public.airport_claims WHERE user_id = v_user AND photo_path IS NOT NULL
+  ) x
+  ON CONFLICT (trip_id, photo_path) DO NOTHING;
+
+  -- waitlist.user_id is SET NULL on delete, so the row must go before the user does. It can also
+  -- predate the account, so match the email, but only one this user proved they own.
+  DELETE FROM public.waitlist w
+  WHERE w.user_id = v_user
+     OR (OLD.email_confirmed_at IS NOT NULL AND lower(w.email) = lower(OLD.email));
+
+  RETURN OLD;
+END
+$$;
 
 
 --
@@ -16141,7 +16253,7 @@ CREATE FUNCTION trip_private.trip_roster(p_trip uuid) RETURNS TABLE(user_id uuid
     SET search_path TO 'public'
     AS $$ BEGIN
  IF NOT trip_private.is_trip_member(p_trip,auth.uid()) THEN RAISE EXCEPTION 'Not a member'; END IF;
- RETURN QUERY SELECT m.user_id,m.role,coalesce(c.game_name,'New traveler'),c.avatar_path,m.joined_at FROM public.trip_members m LEFT JOIN public.trip_player_cards c ON c.trip_id=m.trip_id AND c.user_id=m.user_id WHERE m.trip_id=p_trip AND m.status='approved' ORDER BY CASE m.role WHEN 'captain' THEN 0 WHEN 'co_captain' THEN 1 ELSE 2 END,m.joined_at;
+ RETURN QUERY SELECT m.user_id,m.role,coalesce(c.game_name,j.display_name,'New traveler'),c.avatar_path,m.joined_at FROM public.trip_members m LEFT JOIN public.trip_player_cards c ON c.trip_id=m.trip_id AND c.user_id=m.user_id LEFT JOIN trip_private.join_names j ON j.trip_id=m.trip_id AND j.user_id=m.user_id WHERE m.trip_id=p_trip AND m.status='approved' ORDER BY CASE m.role WHEN 'captain' THEN 0 WHEN 'co_captain' THEN 1 ELSE 2 END,m.joined_at;
 END $$;
 
 
@@ -19594,6 +19706,19 @@ ALTER SEQUENCE trip_private.inspiration_moderation_id_seq OWNED BY trip_private.
 
 
 --
+-- Name: join_names; Type: TABLE; Schema: trip_private; Owner: -
+--
+
+CREATE TABLE trip_private.join_names (
+    trip_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    display_name text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT join_names_display_name_check CHECK (((char_length(display_name) >= 2) AND (char_length(display_name) <= 30)))
+);
+
+
+--
 -- Name: lab_views; Type: TABLE; Schema: trip_private; Owner: -
 --
 
@@ -21401,6 +21526,14 @@ ALTER TABLE ONLY trip_private.inspiration_moderation
 
 
 --
+-- Name: join_names join_names_pkey; Type: CONSTRAINT; Schema: trip_private; Owner: -
+--
+
+ALTER TABLE ONLY trip_private.join_names
+    ADD CONSTRAINT join_names_pkey PRIMARY KEY (trip_id, user_id);
+
+
+--
 -- Name: lab_views lab_views_pkey; Type: CONSTRAINT; Schema: trip_private; Owner: -
 --
 
@@ -21799,6 +21932,13 @@ CREATE INDEX window_guide_items_trip ON public.window_guide_items USING btree (t
 --
 
 CREATE INDEX code_attempts_user_time ON trip_private.code_attempts USING btree (user_id, created_at);
+
+
+--
+-- Name: join_names_user_id_idx; Type: INDEX; Schema: trip_private; Owner: -
+--
+
+CREATE INDEX join_names_user_id_idx ON trip_private.join_names USING btree (user_id);
 
 
 --
@@ -24107,6 +24247,22 @@ ALTER TABLE ONLY public.photo_reports
 
 
 --
+-- Name: player_birthdays player_birthdays_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.player_birthdays
+    ADD CONSTRAINT player_birthdays_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: player_private player_private_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.player_private
+    ADD CONSTRAINT player_private_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: player_profiles player_profiles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -24736,6 +24892,22 @@ ALTER TABLE ONLY public.window_guide_items
 
 ALTER TABLE ONLY public.wrapup_answers
     ADD CONSTRAINT wrapup_answers_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
+
+
+--
+-- Name: join_names join_names_trip_id_user_id_fkey; Type: FK CONSTRAINT; Schema: trip_private; Owner: -
+--
+
+ALTER TABLE ONLY trip_private.join_names
+    ADD CONSTRAINT join_names_trip_id_user_id_fkey FOREIGN KEY (trip_id, user_id) REFERENCES public.trip_members(trip_id, user_id) ON DELETE CASCADE;
+
+
+--
+-- Name: join_names join_names_user_id_fkey; Type: FK CONSTRAINT; Schema: trip_private; Owner: -
+--
+
+ALTER TABLE ONLY trip_private.join_names
+    ADD CONSTRAINT join_names_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -27110,6 +27282,12 @@ CREATE POLICY "No direct access to join grants" ON trip_private.trip_join_grants
 
 
 --
+-- Name: join_names; Type: ROW SECURITY; Schema: trip_private; Owner: -
+--
+
+ALTER TABLE trip_private.join_names ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: trip_join_grants; Type: ROW SECURITY; Schema: trip_private; Owner: -
 --
 
@@ -28270,12 +28448,12 @@ GRANT ALL ON FUNCTION public.is_trip_member(p_trip uuid, p_user uuid) TO service
 
 
 --
--- Name: FUNCTION join_trip(p_code text); Type: ACL; Schema: public; Owner: -
+-- Name: FUNCTION join_trip(p_code text, p_display_name text); Type: ACL; Schema: public; Owner: -
 --
 
-REVOKE ALL ON FUNCTION public.join_trip(p_code text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.join_trip(p_code text) TO authenticated;
-GRANT ALL ON FUNCTION public.join_trip(p_code text) TO service_role;
+REVOKE ALL ON FUNCTION public.join_trip(p_code text, p_display_name text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.join_trip(p_code text, p_display_name text) TO authenticated;
+GRANT ALL ON FUNCTION public.join_trip(p_code text, p_display_name text) TO service_role;
 
 
 --
@@ -32153,12 +32331,12 @@ GRANT ALL ON FUNCTION trip_private.is_window_room(p_trip uuid) TO service_role;
 
 
 --
--- Name: FUNCTION join_trip(p_code text); Type: ACL; Schema: trip_private; Owner: -
+-- Name: FUNCTION join_trip(p_code text, p_display_name text); Type: ACL; Schema: trip_private; Owner: -
 --
 
-REVOKE ALL ON FUNCTION trip_private.join_trip(p_code text) FROM PUBLIC;
-GRANT ALL ON FUNCTION trip_private.join_trip(p_code text) TO authenticated;
-GRANT ALL ON FUNCTION trip_private.join_trip(p_code text) TO service_role;
+REVOKE ALL ON FUNCTION trip_private.join_trip(p_code text, p_display_name text) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.join_trip(p_code text, p_display_name text) TO authenticated;
+GRANT ALL ON FUNCTION trip_private.join_trip(p_code text, p_display_name text) TO service_role;
 
 
 --
@@ -33795,6 +33973,14 @@ GRANT ALL ON FUNCTION trip_private.save_trip_draft(p_data jsonb) TO service_role
 --
 
 REVOKE ALL ON FUNCTION trip_private.schedule_changed() FROM PUBLIC;
+
+
+--
+-- Name: FUNCTION scrub_deleted_account(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.scrub_deleted_account() FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.scrub_deleted_account() TO supabase_auth_admin;
 
 
 --
@@ -36859,6 +37045,13 @@ GRANT ALL ON TABLE public.window_guide_items TO service_role;
 
 GRANT ALL ON TABLE public.wrapup_answers TO service_role;
 GRANT SELECT ON TABLE public.wrapup_answers TO authenticated;
+
+
+--
+-- Name: TABLE join_names; Type: ACL; Schema: trip_private; Owner: -
+--
+
+GRANT ALL ON TABLE trip_private.join_names TO service_role;
 
 
 --

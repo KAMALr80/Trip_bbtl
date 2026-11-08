@@ -25,7 +25,7 @@ import airportSignoff from "@/assets/home-airport-signoff-diverse.jpg";
 import airportSignoffSmall from "@/assets/home-airport-signoff-diverse-768.webp";
 import departuresBoardArt from "@/assets/home-departures-board.jpg";
 
-import { phaseBanner } from "@/lib/play-arrangement";
+import { HomePhaseBanner } from "@/features/play/PhaseNotice";
 import { Inspiration } from "@/features/culture/Inspiration";
 
 import { Button } from "@/components/ui/button";
@@ -428,11 +428,7 @@ export function HomeDashboard({
         className="home-reference-page pb-24 cinematic-home-top cinematic-home-bottom"
         aria-label="Home departures"
       >
-        {trip && phaseBanner(trip) && (
-          <p className="app-card mt-3 text-sm font-bold" role="status">
-            {phaseBanner(trip)}
-          </p>
-        )}
+        {trip && <HomePhaseBanner trip={trip} />}
         {trip && <DailyDiscovery trip={trip} />}
         {/* A saved invite is pinned at the top until joined or dismissed (AGENTS.md: pin Join room on Home). */}
         {invite && <div className="mt-3">{invite}</div>}
@@ -602,11 +598,7 @@ export function HomeDashboard({
       className="home-orbit-page pb-24 cinematic-home-top cinematic-home-bottom"
       aria-label="Home departures"
     >
-      {trip && phaseBanner(trip) && (
-        <p className="app-card mt-3 text-sm font-bold" role="status">
-          {phaseBanner(trip)}
-        </p>
-      )}
+      {trip && <HomePhaseBanner trip={trip} />}
       {trip && <DailyDiscovery trip={trip} />}
       <p className="eyebrow text-blue">
         YOUR DEPARTURE LOUNGE{" "}

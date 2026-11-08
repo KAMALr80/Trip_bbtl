@@ -46,6 +46,7 @@ import { FeedbackAdmin } from "@/features/me/TripFeedback";
 
 import { RoleTips } from "@/features/captain-tools/RoleTips";
 import type { Member, TripWithRole } from "@/lib/trips";
+import { pickActiveTrip } from "@/features/trip/trip-order";
 import { prefetchTripForOffline, queryKeys, useCards, useMembers, useTrips } from "@/data/queries";
 import { OfflineBanner } from "@/features/app-shell/OfflineBanner";
 import { InstallCard } from "@/features/app-shell/InstallCard";
@@ -344,14 +345,15 @@ export function AppShell() {
     ? members.map((m) => (m.user_id === user?.id ? { ...m, role: "player" } : m))
     : members;
   // Keep the open trip if it is still in the list; otherwise the one opened last on this device,
-  // else the first.
+  // else the first live trip (trip-order.ts).
   const pickActive = (list: TripWithRole[], preferredId?: string) => {
     if (!user) return;
-    setActiveId((previous) => {
-      const preferred =
-        preferredId ?? previous ?? window.localStorage.getItem(`tripjunkie-active-${user.id}`);
-      return list.find((t) => t.id === preferred)?.id ?? list[0]?.id ?? null;
-    });
+    setActiveId((previous) =>
+      pickActiveTrip(list, {
+        current: preferredId ?? previous,
+        saved: window.localStorage.getItem(`tripjunkie-active-${user.id}`),
+      }),
+    );
   };
   useEffect(() => {
     if (tripsQuery.data) pickActive(tripsQuery.data);

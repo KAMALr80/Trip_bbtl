@@ -7817,7 +7817,7 @@ export type Database = {
       host_check_in: { Args: { p_trip: string; p_week: number }; Returns: undefined };
       is_app_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_trip_member: { Args: { p_trip: string; p_user: string }; Returns: boolean };
-      join_trip: { Args: { p_code: string }; Returns: string };
+      join_trip: { Args: { p_code: string; p_display_name?: string }; Returns: string };
       join_waitlist: { Args: { p_email: string }; Returns: undefined };
       journal_options: {
         Args: { p_item: string };

@@ -8,6 +8,8 @@ import { dicebearUrl } from "@/lib/player-cards";
 import { friendlyRange } from "@/lib/trip-dates";
 import { Avatar } from "@/features/players/PlayerCards";
 import { PACKS } from "@/features/at-home/AtHome";
+import { JoinNameField } from "@/features/trip/JoinNameField";
+import { useJoinName } from "@/features/trip/use-join-name";
 
 type Preview = {
   name: string;
@@ -39,6 +41,7 @@ export function JoinRoomCard({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState(false);
+  const name = useJoinName();
   useEffect(() => {
     let alive = true;
     void supabase
@@ -56,10 +59,13 @@ export function JoinRoomCard({
     };
   }, [code]);
   async function join() {
-    if (busy) return;
+    if (busy || !name.valid) return;
     setBusy(true);
     setError("");
-    const { data, error: cause } = await supabase.rpc("join_trip", { p_code: code });
+    const { data, error: cause } = await supabase.rpc("join_trip", {
+      p_code: code,
+      p_display_name: name.clean,
+    });
     if (cause || !data) {
       setError(
         (cause ? friendlyError(cause) : null) ??
@@ -151,8 +157,16 @@ export function JoinRoomCard({
           {error}
         </p>
       )}
+      <div className="mt-4">
+        <JoinNameField name={name} />
+      </div>
       <div className="mt-4 flex gap-2">
-        <Button variant="playful" className="flex-1" disabled={busy} onClick={() => void join()}>
+        <Button
+          variant="playful"
+          className="flex-1"
+          disabled={busy || !name.valid}
+          onClick={() => void join()}
+        >
           {busy ? "Joining…" : "Join room"}
           <ArrowRight />
         </Button>
