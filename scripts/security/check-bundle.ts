@@ -1,17 +1,17 @@
-// M6-07: fails if anything server-only reaches the browser bundle (.output/public). Run after
+// M6-07: fails if anything server-only reaches the browser bundle (.vercel/output/static). Run after
 // `bun run build`:   bun scripts/security/check-bundle.ts
 // It looks for the names of server secrets and server-only modules, a service-role JWT, and the
 // actual secret values when they are set in this environment (as in the deploy script).
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const root = join(import.meta.dir, "..", "..", ".output", "public");
+const root = join(import.meta.dir, "..", "..", ".vercel", "output", "static");
 const names = [
   "SUPABASE_SERVICE_ROLE_KEY",
   "VAPID_PRIVATE_KEY",
   "EMAIL_API_KEY",
   "AI_API_KEY",
-  "CLOUDFLARE_API_TOKEN",
+  "VERCEL_TOKEN",
   "SMTP_PASS",
   "GOOGLE_CLIENT_SECRET",
   "client.server",

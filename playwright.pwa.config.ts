@@ -1,5 +1,5 @@
 // Service worker tests (M4-02, e2e/pwa). They need a production build with the worker turned on,
-// served by the same Workers runtime as staging (`wrangler dev`, local only), because the dev
+// served with Vercel's routes and headers (scripts/serve-build.ts, local only), because the dev
 // server has no sw.js. `npx playwright test -c playwright.pwa.config.ts` builds and serves it.
 import { defineConfig, devices } from "@playwright/test";
 
@@ -25,7 +25,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `bun run build && npx wrangler dev --config .output/server/wrangler.json --port ${PORT} --ip 127.0.0.1`,
+    command: `bun run build && bun scripts/serve-build.ts --port ${PORT}`,
     url: `http://127.0.0.1:${PORT}/api/public/version`,
     reuseExistingServer: !process.env["CI"],
     timeout: 300_000,
@@ -34,7 +34,6 @@ export default defineConfig({
       VITE_SUPABASE_URL: process.env["VITE_SUPABASE_URL"] ?? "http://127.0.0.1:54321",
       VITE_SUPABASE_PUBLISHABLE_KEY:
         process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? "e2e-placeholder-key",
-      WRANGLER_SEND_METRICS: "false",
     },
   },
 });

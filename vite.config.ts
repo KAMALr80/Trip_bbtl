@@ -1,6 +1,6 @@
 // Explicit Vite config (M0-10). It replaces @lovable.dev/vite-tanstack-config and keeps what that
 // wrapper did outside Lovable's sandbox: Tailwind, tsconfig paths, TanStack Start with import
-// protection, Nitro (build only) targeting Cloudflare Workers, React, the @ alias, dedupe and
+// protection, Nitro (build only) targeting Vercel, React, the @ alias, dedupe and
 // VITE_* env injection. Lovable-only pieces (sandbox ports, preview asset proxy, visual-editor
 // devtools, document publishing) are dropped.
 import tailwindcss from "@tailwindcss/vite";
@@ -25,7 +25,9 @@ export default defineConfig(({ command, mode }) => {
     }),
   ];
   if (command === "build") {
-    plugins.push(nitro({ defaultPreset: "cloudflare-module" }));
+    // Vercel's Build Output API (.vercel/output); scripts/deploy.sh deploys it with
+    // `vercel deploy --prebuilt` (docs/decisions/001-hosting-on-vercel.md).
+    plugins.push(nitro({ defaultPreset: "vercel" }));
   }
   plugins.push(viteReact());
 
@@ -73,9 +75,9 @@ export default defineConfig(({ command, mode }) => {
     server: {
       host: true, // all addresses; "::" fails on hosts without IPv6
       port: 8080,
-      // A build writes .output while the dev server runs; watching it crashes the watcher on
-      // Windows (EBUSY). Vite keeps its own default ignores alongside this.
-      watch: { ignored: ["**/.output/**"] },
+      // A build writes .vercel/output while the dev server runs; watching it crashes the watcher
+      // on Windows (EBUSY). Vite keeps its own default ignores alongside this.
+      watch: { ignored: ["**/.output/**", "**/.vercel/**"] },
     },
   };
 });

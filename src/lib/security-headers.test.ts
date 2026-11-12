@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   ENFORCED_CSP,
-  headersFileBlock,
   reportOnlyCsp,
   STATIC_SECURITY_HEADERS,
+  staticFileRoutes,
   withSecurityHeaders,
 } from "./security-headers";
 
@@ -69,10 +69,24 @@ describe("security headers (B-28)", () => {
     expect(res.headers.get("X-Frame-Options")).toBe("DENY");
   });
 
-  it("the _headers block covers static files with the same values", () => {
-    const block = headersFileBlock();
-    expect(block.startsWith("/*\n")).toBe(true);
-    for (const [name, value] of Object.entries(STATIC_SECURITY_HEADERS))
-      expect(block).toContain(`  ${name}: ${value}`);
+  it("the Vercel routes give static files the same values, and only static files", () => {
+    const routes = staticFileRoutes(["assets/", "icons/", "sw.js", "offline.html", "robots.txt"]);
+    const first = routes[0]!;
+    expect(first.headers).toEqual(STATIC_SECURITY_HEADERS);
+    expect(first.continue).toBe(true);
+    const re = new RegExp(first.src);
+    for (const path of ["/assets/a-1.js", "/icons/x/y.png", "/sw.js", "/offline", "/offline.html"])
+      expect(re.test(path), path).toBe(true);
+    for (const path of ["/", "/home", "/api/public/version", "/sw.jsx", "/swajs", "/assets"])
+      expect(re.test(path), path).toBe(false);
+  });
+
+  it("serves /offline from offline.html without a redirect, and never caches sw.js", () => {
+    const routes = staticFileRoutes([]);
+    expect(routes).toContainEqual({ src: "^/offline$", dest: "/offline.html", continue: true });
+    const sw = routes.find((r) => new RegExp(r.src).test("/sw.js") && r.headers?.["cache-control"]);
+    expect(sw?.headers).toEqual({ "cache-control": "no-cache", "service-worker-allowed": "/" });
+    // Every route lets the rest of the list run, so the filesystem and the function still answer.
+    expect(routes.every((r) => r.continue === true)).toBe(true);
   });
 });

@@ -7,13 +7,13 @@
 - **bun** 1.x (`bun.lock` is the lockfile; npm also works)
 - Git
 - For local DB: **Docker** + **Supabase CLI**
-- For deploys: **Wrangler** (Cloudflare)
+- For deploys: nothing extra; `scripts/deploy.sh` runs the Vercel CLI with `npx`
 
 ```bash
 bun install
 bun run dev          # vite dev server (port picked by the Lovable config's sandbox detection; usually 8080/5173)
 npx tsc --noEmit     # typecheck (passes today)
-bun run build        # production build → .output/ (Cloudflare Worker + public assets); passes today
+bun run build        # production build → .vercel/output/ (Vercel function + static files); passes today
 bun run preview      # preview the build
 bun run lint         # eslint
 ```
@@ -88,9 +88,9 @@ The project is tied to Lovable in **ten places**. Do them in this order (it's M0
 - [ ] Set up **custom SMTP** (Resend, Postmark or SES) for auth emails. The roadmap says email-code verification is "waiting on an email domain"; turn it on.
 
 ### 3.4 Hosting
-- [ ] Create a Cloudflare account and a token that can edit Workers. `wrangler.jsonc` defines the staging and production Workers; `scripts/deploy.sh <env> web` builds and deploys (Nitro merges `wrangler.jsonc` into `.output/server/wrangler.json`).
-- [ ] Move the **`tripjunkies.app`** domain DNS to your Cloudflare and set staging + production routes.
-- [x] Server secrets per environment: `scripts/deploy.sh <env> web` sets them with `wrangler secret bulk` from the environment's settings.
+- [ ] Create a Vercel account (Pro team) and an access token. `scripts/deploy.sh <env> web` makes the projects `tripjunkies-staging` / `tripjunkies` on the first run, builds and deploys ([decision 001](../docs/decisions/001-hosting-on-vercel.md)).
+- [ ] Add **`tripjunkies.app`** (production) and `staging.tripjunkies.app` to the Vercel projects and create the DNS records Vercel shows.
+- [x] Server secrets per environment: `scripts/deploy.sh <env> web` sets them as sensitive Vercel environment variables from the environment's settings.
 
 ### 3.5 AI gateway
 - [x] *(Done Oct 21, 2026, see M0 status.)* Twelve call sites read `LOVABLE_API_KEY` and call `https://ai.gateway.lovable.dev/v1` with Lovable model ids (e.g. `openai/gpt-6-astra` in `arcade-mix.server.ts`). Files:
@@ -111,7 +111,7 @@ The project is tied to Lovable in **ten places**. Do them in this order (it's M0
 ### 3.8 Build config
 - [ ] Replace `@lovable.dev/vite-tanstack-config` in `vite.config.ts` with an explicit Vite config. Per the comment in `vite.config.ts`, that package bundles:
   - TanStack devtools (dev only), `tanstackStart` (with `server.entry: "server"`), `@vitejs/plugin-react`, `@tailwindcss/vite`, `vite-tsconfig-paths`
-  - **Nitro** (build only, Cloudflare target)
+  - **Nitro** (build only, Vercel target)
   - `VITE_*` env injection, the `@` path alias, React/TanStack dedupe, error-logger plugins, sandbox port detection
 - [ ] Check the build output still matches (`.output/server`, `.output/public`).
 

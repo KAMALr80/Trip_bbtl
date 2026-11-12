@@ -242,7 +242,7 @@ notification_queue(id, user_id, trip_id, type, title, body, deep_link, send_afte
 
 ## 12. Installable web app + offline
 
-**Decision (Oct 31, 2026, founder): no native apps.** The same React app, served from Cloudflare, is
+**Decision (Oct 31, 2026, founder): no native apps.** The same React app, served from Vercel, is
 installed from the browser (Add to Home Screen). A service worker makes it open with no network (★02).
 The earlier Capacitor plan is dropped, along with store listings, native sign-in and FCM/APNs.
 
@@ -276,8 +276,8 @@ The earlier Capacitor plan is dropped, along with store listings, native sign-in
 | Env | Supabase | Web |
 |---|---|---|
 | local | `supabase start` (CLI, Docker) + seed | `bun dev` (no service worker) |
-| staging | separate Supabase project | Cloudflare Worker `staging` (service worker on) |
-| production | new production project (start fresh, see [07](07-dev-setup-and-lovable-exit.md)) | Cloudflare Worker `prod` on `tripjunkies.app` (service worker on) |
+| staging | separate Supabase project | Vercel project `tripjunkies-staging` (service worker on) |
+| production | new production project (start fresh, see [07](07-dev-setup-and-lovable-exit.md)) | Vercel project `tripjunkies` on `tripjunkies.app` (service worker on) |
 
 **CI (GitHub Actions):** install → typecheck → lint → unit tests (Vitest) → DB tests (pgTAP against `supabase start`) → build → Playwright smoke tests against a preview deploy.
 

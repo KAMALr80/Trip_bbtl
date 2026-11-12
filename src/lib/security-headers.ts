@@ -55,13 +55,42 @@ export const STATIC_SECURITY_HEADERS: Readonly<Record<string, string>> = {
   "Strict-Transport-Security": "max-age=15552000",
 };
 
-/** Lines for Cloudflare's `_headers` file, which covers static files the Worker never sees. */
-export function headersFileBlock(): string {
-  const lines = Object.entries(STATIC_SECURITY_HEADERS).map(([k, v]) => `  ${k}: ${v}`);
-  return ["/*", ...lines].join("\n");
+/** One route in Vercel's Build Output API (`.vercel/output/config.json`). */
+export type VercelRoute = {
+  src: string;
+  dest?: string;
+  headers?: Record<string, string>;
+  continue?: boolean;
+};
+
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Routes for the start of Vercel's route list. Static files are served by Vercel's CDN and never
+ * reach the server function, so they get the security headers from here (B-28). The browser must
+ * always see the newest sw.js and offline page (assets/* are already immutable), and /offline
+ * answers with offline.html directly: a redirected response can't answer a page (sw-plan.ts).
+ *
+ * `entries`: the top-level names in the static folder, with a trailing "/" on folders. Only those
+ * paths match, so server responses keep the headers src/server.ts sets.
+ */
+export function staticFileRoutes(entries: readonly string[]): VercelRoute[] {
+  const paths = [...new Set([...entries, "offline"])]
+    .sort()
+    .map((e) => (e.endsWith("/") ? `${escapeRegExp(e)}.*` : escapeRegExp(e)));
+  return [
+    { src: `^/(?:${paths.join("|")})$`, headers: { ...STATIC_SECURITY_HEADERS }, continue: true },
+    {
+      src: "^/sw\\.js$",
+      headers: { "cache-control": "no-cache", "service-worker-allowed": "/" },
+      continue: true,
+    },
+    { src: "^/offline$", headers: { "cache-control": "no-cache" }, continue: true },
+    { src: "^/offline$", dest: "/offline.html", continue: true },
+  ];
 }
 
-/** A copy of a Worker response with the security headers set. */
+/** A copy of a server response with the security headers set. */
 export function withSecurityHeaders(
   response: Response,
   requestUrl: string,

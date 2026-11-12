@@ -7,7 +7,7 @@ A mobile-first game for group trips: crews play through Pre-Flight, Takeoff, Tri
 
 ## Stack
 
-TypeScript, React 19, TanStack Start / Router / Query, Tailwind v4, shadcn/ui, i18next. The app is served by a Cloudflare Worker (Nitro). Supabase provides Postgres, Auth, Storage and pg_cron. Game rules are `SECURITY DEFINER` functions in the `trip_private` schema.
+TypeScript, React 19, TanStack Start / Router / Query, Tailwind v4, shadcn/ui, i18next. The app is hosted on Vercel (Nitro's Vercel output: static files on Vercel's CDN, one Node.js server function). Supabase provides Postgres, Auth, Storage and pg_cron. Game rules are `SECURITY DEFINER` functions in the `trip_private` schema.
 
 ```
 src/routes/     thin route files (tabs, /t/$tripId/…, invites, legal, /api/public/*)
@@ -36,11 +36,11 @@ A local Supabase stack (`npx supabase start`, needs Docker) applies `supabase/mi
 | Command | What it does |
 |---|---|
 | `bun run dev` | Dev server with SSR |
-| `bun run build` | Production build into `.output/` (Cloudflare Worker + static assets) |
+| `bun run build` | Production build into `.vercel/output/` (Vercel server function + static files); `bun scripts/serve-build.ts` serves it locally |
 | `bun run typecheck` / `bun run lint` | TypeScript; ESLint (existing exceptions in `eslint-suppressions.json`) |
 | `bun run test` | Unit tests (Vitest) |
 | `npx playwright test` | End-to-end tests, including the accessibility pass, against a mocked backend |
-| `npx playwright test -c playwright.pwa.config.ts` | Service worker and offline tests against a production build served by `wrangler dev` |
+| `npx playwright test -c playwright.pwa.config.ts` | Service worker and offline tests against a production build served by `scripts/serve-build.ts` |
 | `npx playwright test -c playwright.live.config.ts` | Signed-in tests against the local Supabase stack. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from `npx supabase status -o env` first. They write to the local database: one test adds a seed account to a trip |
 | `npx supabase test db` | pgTAP against the local stack. `07_seed` only passes on the day the seed was applied ([B-05](docs/audit/BUG_REGISTER.md)) |
 | `scripts/db/test.sh` | Replays the migrations onto a throwaway Postgres and runs the pgTAP tests ([details](supabase/tests/README.md)) |
@@ -65,7 +65,7 @@ Earlier audits (Nov 6) are in [`docs/audit/`](docs/audit/PROJECT_STATUS_REPORT.m
 
 ## Environments and deploys
 
-There are two environments, each a Supabase project plus a Cloudflare Worker: **staging** (`tripjunkies-staging`) and **production** (`tripjunkies`). Both start from the baseline migration; no data came over from the Lovable prototype.
+There are two environments, each a Supabase project plus a Vercel project: **staging** (`tripjunkies-staging`) and **production** (`tripjunkies`). Both start from the baseline migration; no data came over from the Lovable prototype.
 
 **One-time setup, per environment**
 
@@ -78,20 +78,20 @@ There are two environments, each a Supabase project plus a Cloudflare Worker: **
 |---|---|
 | `SUPABASE_ACCESS_TOKEN` | Supabase personal access token |
 | `SUPABASE_STAGING_REF`, `SUPABASE_STAGING_DB_PASSWORD` | the staging project (`PROD` instead of `STAGING` for production) |
-| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | a token that can edit Workers |
+| `VERCEL_TOKEN`, `VERCEL_TEAM_ID` | a Vercel access token scoped to the team, and the team id (`team_…`) |
 | `AI_API_KEY`, `AI_MODEL` (+ optional `AI_BASE_URL`, `AI_PRICE_IN`, `AI_PRICE_OUT`) | AI features stay off without them |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google sign-in |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SENDER_EMAIL` | auth emails |
-| `STAGING_APP_URL` / `PROD_APP_URL` | only once a custom domain is set; otherwise the workers.dev URL is used |
+| `STAGING_APP_URL` / `PROD_APP_URL` | only once a custom domain is set; otherwise the project's `vercel.app` domain is used |
 | `VITE_SENTRY_DSN` | optional browser error reporting |
 
 **Deploy**
 
 ```bash
 scripts/deploy.sh staging check   # which settings are present
-scripts/deploy.sh staging         # db push → build + deploy + Worker secrets + cron URL → auth URLs
+scripts/deploy.sh staging         # db push → build + Vercel secrets + deploy + cron URL → auth URLs
 ```
 
-Steps can also run alone: `db`, `web`, `auth`. Publishable values (`VITE_*`) are baked in at build time, so each environment gets its own build; the script fetches the project's keys from Supabase. Server secrets go to the Worker with `wrangler secret bulk` and never into the client bundle or the repo.
+Steps can also run alone: `db`, `web`, `auth`. Publishable values (`VITE_*`) are baked in at build time, so each environment gets its own build; the script fetches the project's keys from Supabase. The `web` step makes the Vercel project on the first run (with Vercel Authentication off, so players and pg_cron can reach it), sets the server secrets as sensitive Vercel environment variables through Vercel's API, then runs `vercel deploy --prebuilt --prod`. Secrets never go into the client bundle or the repo. Vercel doesn't build from Git pushes: deploys go through the script, so migrations always land before the code that needs them.
 
-**Custom domain:** once the domain is on the Cloudflare account, uncomment the `routes` lines in [`wrangler.jsonc`](wrangler.jsonc), set `<ENV>_APP_URL`, and run `scripts/deploy.sh <env> web` and `auth` again.
+**Custom domain:** add it in the Vercel project (Settings → Domains), create the DNS record Vercel shows at your DNS provider, set `<ENV>_APP_URL`, and run `scripts/deploy.sh <env> web` and `auth` again. Background: [`docs/decisions/001-hosting-on-vercel.md`](docs/decisions/001-hosting-on-vercel.md).

@@ -15,7 +15,7 @@ const copyMessage =
   'Put user-facing copy in src/i18n/en.json and read it with t() (`useT()` from "@/i18n").';
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi"] },
+  { ignores: ["dist", ".output", ".vercel", ".vinxi"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
