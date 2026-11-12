@@ -18,6 +18,7 @@ numbered sections below.
 - [x] Review and merge [PR #6](https://github.com/jay-brainbean/trip/pull/6) (no native apps; M4
       install, offline, reminders). Merged as `960f35f`; the offline browser tests
       (`playwright.pwa.config.ts`) pass locally and in CI (Nov 5, 2026).
+- [x] Merge [PR #7](https://github.com/jay-brainbean/trip/pull/7) (M5, M6 code): merged, CI green.
 - [ ] Turn on branch protection for `main` and make CI required (GitHub → Settings → Branches).
       Partly done (Nov 5, 2026): a ruleset stops `main` being deleted or force-pushed. Still to do:
       require the three CI jobs (Web, Database, Supabase local stack) before a merge. Click-by-click
