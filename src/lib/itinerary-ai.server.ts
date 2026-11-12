@@ -1,4 +1,4 @@
-import { getAiModel } from "@/integrations/ai/index.server";
+import { aiRequestLimits, getAiModel } from "@/integrations/ai/index.server";
 import { streamText } from "ai";
 import type { UsageLog } from "./ai-quota.server";
 import { PDFDocument } from "pdf-lib";
@@ -27,16 +27,16 @@ export async function extractItinerary(
   }
   const content: Array<
     | { type: "text"; text: string }
-    | { type: "image"; image: URL }
-    | { type: "file"; filename: string; data: string; mediaType: "application/pdf" }
+    | { type: "file"; data: string; mediaType: string; filename?: string }
   > = [
     {
       type: "text",
       text: `Trip destination: ${input.destination}; dates: ${input.startDate} to ${input.endDate}. Source text: ${input.text ?? ""}`,
     },
   ];
+  // A "file" part with an image media type (the AI SDK's "image" part is deprecated, B-15).
   if (input.base64 && input.mime?.startsWith("image/"))
-    content.push({ type: "image", image: new URL(`data:${input.mime};base64,${input.base64}`) });
+    content.push({ type: "file", data: input.base64, mediaType: input.mime });
   if (input.base64 && input.mime === "application/pdf")
     content.push({
       type: "file",
@@ -45,6 +45,7 @@ export async function extractItinerary(
       mediaType: "application/pdf",
     });
   const result = streamText({
+    ...aiRequestLimits(),
     model: ai.model,
     instructions:
       "Extract only itinerary details explicitly present in the source. Return ONLY a JSON array of days, each object exactly {date: YYYY-MM-DD, city: string, note: string, stays: [{name,checkIn,checkOut}], flights: [{date,from,to}], spots: [{name}]}. Dates must fall within the provided trip range. Use empty strings for unknown checkIn/checkOut; do not invent details. A stay may appear on its check-in day only. At most 3 spots per day. For any day describing travel, a flight, an in-air day, or a departure, preserve the original short line in note even if the destination or flight endpoints are unknown. Never infer a flight endpoint. No markdown.",

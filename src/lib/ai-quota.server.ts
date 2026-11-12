@@ -21,13 +21,15 @@ export type UsageLog = (
   usage: { inputTokens?: number | undefined; outputTokens?: number | undefined } | undefined,
 ) => Promise<void>;
 
-function logger(supabase: unknown, usageId: string | null): UsageLog {
+// The cost is written with the service role (QA-20): players can't call log_ai_call themselves.
+function logger(_supabase: unknown, usageId: string | null): UsageLog {
   return async (model, usage) => {
     if (!usageId) return;
     const i = usage?.inputTokens ?? 0,
       o = usage?.outputTokens ?? 0;
     try {
-      await (supabase as Rpc).rpc("log_ai_call", {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await (supabaseAdmin as unknown as Rpc).rpc("log_ai_call", {
         p_usage: usageId,
         p_model: model,
         p_in: i,
@@ -105,48 +107,50 @@ export async function refundableCredits(
   };
 }
 
-/** App-paid background AI (no user/credits): logged with the service role for the cost report. */
-/** Server-side AI cost guard for app-paid calls: true when allowed (AI on, under the daily caps). Fails closed. */
-export async function appAiAllowed(
+/**
+ * App-paid AI (no credits): reserves the call BEFORE the model runs, so parallel requests can't pass
+ * the daily caps. Returns the usage row to log tokens on, or null when AI is off or over a cap. Fails
+ * closed. A call that then fails stays counted, which errs towards spending less.
+ */
+export async function reserveAppAi(
   kind: string,
   tripId: string | null,
   userId: string | null,
-): Promise<boolean> {
+): Promise<string | null> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await rpcOn(supabaseAdmin, "ai_gate_server", {
+    const { data, error } = await rpcOn(supabaseAdmin, "ai_reserve_server", {
       p_kind: kind,
-      p_trip: tripId,
-      p_user: userId,
+      p_trip: tripId as string,
+      p_user: userId as string,
     });
-    return !error && data == null;
+    return !error && typeof data === "string" ? data : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
 export const AI_BREAK = "AI ideas are taking a break — pre-written content keeps playing.";
 
+/** Records what a reserved call actually used, for the founder's cost report. */
 export async function logAppAi(
-  tripId: string | null,
-  kind: string,
+  usageId: string,
   model: string,
   usage: { inputTokens?: number | undefined; outputTokens?: number | undefined } | undefined,
-  userId: string | null = null,
 ) {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const i = usage?.inputTokens ?? 0,
       o = usage?.outputTokens ?? 0;
-    await supabaseAdmin.from("ai_usage").insert({
-      trip_id: tripId,
-      user_id: userId,
-      kind,
-      model,
-      input_tokens: i,
-      output_tokens: o,
-      est_cost_usd: estimateCost(model, i, o),
-    });
+    await supabaseAdmin
+      .from("ai_usage")
+      .update({
+        model,
+        input_tokens: i,
+        output_tokens: o,
+        est_cost_usd: estimateCost(model, i, o),
+      })
+      .eq("id", usageId);
   } catch {
     /* never blocks */
   }

@@ -27,8 +27,14 @@ port = 54324
 
 [auth]
 site_url = "http://localhost:8080"
-additional_redirect_urls = ["http://localhost:8080", "http://127.0.0.1:8080"]
+additional_redirect_urls = ["http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:8081", "http://127.0.0.1:8081"]
 enable_signup = true
+
+# B-17: the app asks for the 6-digit code after sign-up, so the email must contain it (the default
+# template only has a link). Hosted projects get the same template from scripts/deploy.sh (auth).
+[auth.email.template.confirmation]
+subject = "Your TripJunkies sign-up code"
+content_path = "./supabase/templates/confirmation.html"
 
 [auth.external.google]
 # Set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET in supabase/.env to test Google sign-in locally.

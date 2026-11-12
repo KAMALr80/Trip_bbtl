@@ -44,6 +44,7 @@ export type Database = {
           created_at: string;
           id: number;
           note: string | null;
+          target_content: string | null;
           target_user: string | null;
         };
         ComputedFields: never;
@@ -53,6 +54,7 @@ export type Database = {
           created_at?: string;
           id?: never;
           note?: string | null;
+          target_content?: string | null;
           target_user?: string | null;
         };
         Update: {
@@ -61,9 +63,18 @@ export type Database = {
           created_at?: string;
           id?: never;
           note?: string | null;
+          target_content?: string | null;
           target_user?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "admin_actions_target_content_fkey";
+            columns: ["target_content"];
+            isOneToOne: false;
+            referencedRelation: "content_items";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       age_guesses: {
         Row: {
@@ -4352,6 +4363,7 @@ export type Database = {
           crew_status: string;
           expires_at: string;
           id: string;
+          live: boolean;
           part: number;
           photo_path: string | null;
           photo_removed_at: string | null;
@@ -4372,6 +4384,7 @@ export type Database = {
           crew_status?: string;
           expires_at: string;
           id?: string;
+          live?: boolean;
           part?: number;
           photo_path?: string | null;
           photo_removed_at?: string | null;
@@ -4391,6 +4404,7 @@ export type Database = {
           crew_status?: string;
           expires_at?: string;
           id?: string;
+          live?: boolean;
           part?: number;
           photo_path?: string | null;
           photo_removed_at?: string | null;
@@ -7065,6 +7079,41 @@ export type Database = {
       };
       add_checkin_tasks: { Args: { p_tasks: Json; p_trip: string }; Returns: number };
       add_trip_missions: { Args: { p_texts: string[]; p_trip: string }; Returns: number };
+      admin_content_items: {
+        Args: { p_kind?: string; p_offset?: number; p_query?: string; p_reviewed?: boolean };
+        Returns: {
+          active: boolean;
+          alcohol: boolean;
+          answer: number | null;
+          body: string;
+          choices: string[];
+          created_at: string;
+          culture: string | null;
+          difficulty: string | null;
+          focus: string | null;
+          id: string;
+          insight: string | null;
+          items: string[];
+          kind: string;
+          locale: string;
+          min_age: number;
+          modes: string[];
+          review_note: string | null;
+          reviewed: boolean;
+          rooms: string[];
+          source: string;
+          source_ref: string;
+          title: string | null;
+          updated_at: string;
+          vibe: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "content_items";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       admin_find_trips: {
         Args: { p_query: string };
         Returns: {
@@ -7095,6 +7144,41 @@ export type Database = {
           trips: number;
           user_id: string;
         }[];
+      };
+      admin_save_content_item: {
+        Args: { p_id: string; p_patch: Json };
+        Returns: {
+          active: boolean;
+          alcohol: boolean;
+          answer: number | null;
+          body: string;
+          choices: string[];
+          created_at: string;
+          culture: string | null;
+          difficulty: string | null;
+          focus: string | null;
+          id: string;
+          insight: string | null;
+          items: string[];
+          kind: string;
+          locale: string;
+          min_age: number;
+          modes: string[];
+          review_note: string | null;
+          reviewed: boolean;
+          rooms: string[];
+          source: string;
+          source_ref: string;
+          title: string | null;
+          updated_at: string;
+          vibe: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "content_items";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       adult_badge: { Args: { p_trip: string; p_user: string }; Returns: boolean };
       advance_play_phase: { Args: { p_current: number; p_trip: string }; Returns: number };
@@ -7131,6 +7215,10 @@ export type Database = {
       };
       ai_gate_server: { Args: { p_kind: string; p_trip: string; p_user: string }; Returns: string };
       ai_guard_report: { Args: Record<PropertyKey, never>; Returns: Json };
+      ai_reserve_server: {
+        Args: { p_kind: string; p_trip: string; p_user: string };
+        Returns: string;
+      };
       answer_daily: {
         Args: { p_choice?: number; p_item: string };
         Returns: {
@@ -7263,6 +7351,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      claim_drop_live: { Args: { p_item: string }; Returns: string };
       claim_notifications: {
         Args: { p_limit?: number; p_user?: string };
         Returns: {
@@ -7565,6 +7654,7 @@ export type Database = {
       discard_trip_draft: { Args: Record<PropertyKey, never>; Returns: undefined };
       dismiss_bug_update: { Args: { p_report: string }; Returns: undefined };
       dismiss_cost_note: { Args: { p_note: string }; Returns: undefined };
+      dismiss_join_decline: { Args: { p_trip: string }; Returns: undefined };
       draw_game_card: { Args: { p_category: string; p_trip: string }; Returns: number };
       edit_trip: {
         Args: {
@@ -7728,7 +7818,7 @@ export type Database = {
       host_check_in: { Args: { p_trip: string; p_week: number }; Returns: undefined };
       is_app_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_trip_member: { Args: { p_trip: string; p_user: string }; Returns: boolean };
-      join_trip: { Args: { p_code: string }; Returns: string };
+      join_trip: { Args: { p_code: string; p_display_name?: string }; Returns: string };
       join_waitlist: { Args: { p_email: string }; Returns: undefined };
       journal_options: {
         Args: { p_item: string };
@@ -7914,6 +8004,14 @@ export type Database = {
           wallet: number;
         }[];
       };
+      my_join_declines: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          declined_at: string;
+          name: string;
+          trip_id: string;
+        }[];
+      };
       my_lab_view: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -8044,6 +8142,13 @@ export type Database = {
           paid: boolean;
           tier: string;
           upgrade_cents: number;
+        }[];
+      };
+      orphan_files: {
+        Args: { p_limit?: number };
+        Returns: {
+          bucket: string;
+          path: string;
         }[];
       };
       passport_collection: {

@@ -1,11 +1,12 @@
 // Today's Surprise Drop (M3-09, R-342, R-343): the same game for the whole crew, open 24 hours.
 // Bingo and Scavenger take a photo per square / find; Speed and Photo take one. The crew (and the
 // AI check, Q3) approve the photos, and the points are written when the drop closes (10–33, Q4).
+// Instead of photos a player can present it live at the next Game Night Live: a 👍 there = 10.
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { openItem, useMySchedule, type ScheduleItem } from "@/data/daily";
 import { usePendingAction } from "@/data/offline/outbox";
-import { useMyProofs, useSubmitDropProof, type Proof } from "@/data/proofs";
+import { useClaimDropLive, useMyProofs, useSubmitDropProof, type Proof } from "@/data/proofs";
 import { useMinute } from "@/features/play/PhaseNotice";
 import { useT } from "@/i18n";
 import { friendlyError } from "@/lib/friendly-error";
@@ -33,12 +34,28 @@ export function SurpriseDrop({
   const now = useMinute();
   const schedule = useMySchedule(trip.id);
   const proofs = useMyProofs(trip.id);
+  const claim = useClaimDropLive(trip.id);
   const drop = openItem(schedule.data, "surprise_drop", now);
   if (!drop) return null;
   const game = (drop.variant ?? "photo") as Game;
   const mine = (proofs.data ?? []).filter((p) => p.schedule_id === drop.id);
+  const live = mine.find((p) => p.live);
   const parts = game === "bingo" || game === "scavenger" ? (drop.items ?? []) : [drop.body ?? ""];
   const label = `${t("drops.title")} · ${t(`drops.games.${game}`)}`;
+  if (live)
+    return (
+      <section className="app-card mt-3" aria-label={label}>
+        <p className="text-xs font-bold uppercase text-muted-foreground">{label}</p>
+        {drop.title && <h3 className="font-display text-lg font-extrabold mt-1">{drop.title}</h3>}
+        <p className="text-sm mt-2" role="status">
+          {live.crew_status === "approved"
+            ? t("drops.liveApproved")
+            : live.crew_status === "expired"
+              ? t("drops.liveExpired")
+              : t("drops.liveWaiting")}
+        </p>
+      </section>
+    );
   return (
     <section className="app-card mt-3" aria-label={label}>
       <p className="text-xs font-bold uppercase text-muted-foreground">{label}</p>
@@ -65,6 +82,24 @@ export function SurpriseDrop({
         ))}
       </ul>
       <p className="text-xs text-muted-foreground mt-2">{t("drops.scored")}</p>
+      {!viewOnly && trip.play_mode !== "solo" && mine.length === 0 && (
+        <div className="mt-2">
+          <Button
+            variant="outline"
+            className="min-h-11 w-full"
+            disabled={claim.isPending}
+            onClick={() => claim.mutate(drop.id)}
+          >
+            {t("drops.presentLive")}
+          </Button>
+          <p className="text-xs text-muted-foreground mt-1">{t("drops.presentLiveHint")}</p>
+          {claim.error && (
+            <p className="text-xs text-destructive mt-1" role="alert">
+              {t("drops.error", { reason: friendlyError(claim.error) })}
+            </p>
+          )}
+        </div>
+      )}
     </section>
   );
 }

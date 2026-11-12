@@ -10,6 +10,7 @@ import { friendlyError } from "@/lib/friendly-error";
 import type { TripWithRole } from "@/lib/trips";
 import { sideColumns } from "./layout";
 import { renderPostcardPng, shareOrDownload } from "./render";
+import { placeName } from "@/lib/places";
 
 type TripLike = Pick<
   TripWithRole,
@@ -23,7 +24,8 @@ export function TripPostcard({ trip }: { trip: TripLike }) {
 }
 
 function place(trip: TripLike) {
-  return trip.cultures?.[0] ?? trip.destination;
+  const culture = trip.cultures?.[0];
+  return culture ? placeName(culture) : trip.destination;
 }
 
 function PostcardCard({ trip, postcard }: { trip: TripLike; postcard: TripPostcardData }) {

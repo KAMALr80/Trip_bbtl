@@ -1,2 +1,4 @@
 # Auto detect text files and perform LF normalization
-* text=auto
+# eol=lf: check text files out with LF on every OS, so Windows (core.autocrlf=true) gets the same
+# bytes as CI. Prettier and the generated pgTAP fixture tests expect LF.
+* text=auto eol=lf

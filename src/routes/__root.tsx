@@ -22,15 +22,10 @@ import { UpdatePrompt } from "@/features/app-shell/UpdatePrompt";
 // Catches the browser's install prompt as early as possible (M4-01).
 import "@/pwa/install";
 import { isNetworkError } from "@/data/offline/rules";
-import {
-  dropSnapshot,
-  restoreSnapshot,
-  saveAccount,
-  savedAccount,
-  startSnapshot,
-} from "@/data/offline/snapshot";
+import { restoreSnapshot, saveAccount, savedAccount, startSnapshot } from "@/data/offline/snapshot";
 import { markStartedOffline } from "@/data/offline/status";
-import { clearOutbox, startOutbox } from "@/data/offline/outbox";
+import { startOutbox } from "@/data/offline/outbox";
+import { forgetAccount } from "@/data/offline/forget";
 
 const CHUNK_RELOAD_KEY = "tj-chunk-reload";
 function isChunkError(error: unknown) {
@@ -59,6 +54,7 @@ function retry(error: unknown, fallback: () => void) {
 import appCss from "../styles.css?url";
 import { reportClientError } from "../lib/error-reporting";
 import { i18n } from "@/i18n";
+import { FONT_STYLESHEETS, applyWebFonts } from "@/lib/web-fonts";
 
 function NotFoundComponent() {
   return (
@@ -205,14 +201,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preload", href: loginArt, as: "image" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&family=Fredoka:wght@600;700&display=swap",
-      },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap",
-      },
+      // Fetched early but not render-blocking; RootComponent applies them (src/lib/web-fonts.ts).
+      ...FONT_STYLESHEETS.map((href) => ({ rel: "preload", as: "style", href })),
     ],
     meta: [
       { charSet: "utf-8" },
@@ -252,6 +242,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => applyWebFonts(), []);
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -372,7 +363,7 @@ function RootComponent() {
       markStartedOffline(false);
       // The server answered with no signed-in player: this device's snapshot must go too
       // (supabase-js doesn't always send SIGNED_OUT for a session the server rejects).
-      if (!data.user) void dropSnapshot().then(clearOutbox);
+      if (!data.user) forgetAccount(queryClient);
       setUser(data.user);
       if (data.user) {
         void startSnapshot(queryClient, data.user);
@@ -391,7 +382,7 @@ function RootComponent() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      if (event === "SIGNED_OUT") void dropSnapshot().then(clearOutbox);
+      if (event === "SIGNED_OUT") forgetAccount(queryClient);
       else if (session?.user) {
         void startSnapshot(queryClient, session.user);
         void startOutbox(queryClient, session.user.id);

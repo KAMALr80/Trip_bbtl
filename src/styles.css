@@ -2488,6 +2488,8 @@ html:root button[class*="border-input"] {
 .cinematic-trip-list > .mt-4 > .divide-y {
   border: 0;
   display: grid;
+  /* One column no wider than the list, so a long status truncates inside its row (QA-01). */
+  grid-template-columns: minmax(0, 1fr);
   gap: 9px;
 }
 .cinematic-trip-list button.rounded-none {
@@ -6902,6 +6904,13 @@ html:root .cinematic-auth .cinematic-auth-email-button {
 
 /* Reference-inspired founder mockups only; the real Home remains unchanged. */
 
+/* The sky runs up behind the header, but never over a card between the header and Home (QA-04).
+   Declared after the base rules below by specificity, not order. */
+.page-scene:has(> [data-above-home]) :is(.cinematic-home-top, .home-reference-page):before,
+.page-scene :is(.cinematic-home-top, .home-reference-page):not(:first-child):before {
+  top: 0;
+  mask-image: linear-gradient(to bottom, transparent, #000 48px);
+}
 /* Approved Home: reference layout with a live photographic departures board. */
 .home-reference-page {
   position: relative;

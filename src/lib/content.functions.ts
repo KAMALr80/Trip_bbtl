@@ -10,7 +10,7 @@ const COOLDOWN_MS = 6 * 3600 * 1000;
 /** When a trip has used 80% of a pool, write fresh variants for its vibe/destination. Paid by the app, not the user's AI limit. */
 export const topUpContent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v) => z.object({ tripId: z.string().uuid() }).parse(v))
+  .validator((v) => z.object({ tripId: z.string().uuid() }).parse(v))
   .handler(async ({ data, context }) => {
     const { data: member } = await context.supabase
       .from("trip_members")

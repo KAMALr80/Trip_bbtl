@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LEGAL_VERSION, legalLinks } from "@/lib/legal";
 import { isNetworkError } from "@/data/offline/rules";
 import { saveAccount, savedAccount } from "@/data/offline/snapshot";
+import { recordSignupAnswers, signupAnswers } from "@/lib/signup-answers";
 export function LegalCheckbox({
   checked,
   onChange,
@@ -95,7 +96,18 @@ export function useLegalStatus(userId: string | undefined) {
         if (live) setStatus(saved?.legalVersion === LEGAL_VERSION ? "accepted" : "required");
         return;
       }
-      const accepted = !r.error && r.data?.[0]?.legal_version === LEGAL_VERSION;
+      let accepted = !r.error && r.data?.[0]?.legal_version === LEGAL_VERSION;
+      // N-4: an email sign-up already agreed and gave a birthday on the form; record those once
+      // instead of asking again. Anything incomplete falls back to the screens below.
+      if (!accepted && !r.error) {
+        const { data } = await supabase.auth.getUser();
+        const answers = signupAnswers(data.user?.user_metadata);
+        if (answers)
+          accepted = await recordSignupAnswers(
+            (fn, args) => supabase.rpc(fn as never, args as never),
+            answers,
+          );
+      }
       if (accepted) saveAccount({ legalVersion: LEGAL_VERSION });
       if (live) setStatus(accepted ? "accepted" : "required");
     });

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 
 import { friendlyError } from "@/lib/friendly-error";
 import { confirmInApp } from "@/lib/confirm";
+import { canApproveMember } from "@/lib/member-approval";
 import { savePendingBeta } from "@/lib/pending-beta";
 const field =
   "min-h-11 w-full rounded-full border border-border bg-card px-4 text-base outline-none focus:border-primary";
@@ -316,7 +317,7 @@ type Pending = {
   avatar_seed: string;
   age_range: string;
 };
-/** Squad tab "Waiting (n)" — leaders see it, only the Captain approves (existing approve_member). */
+/** Squad tab "Waiting (n)": leaders see it; who can approve follows approve_member (QA-05). */
 export function WaitingToJoin({
   trip,
   avatarUrl,
@@ -363,7 +364,7 @@ export function WaitingToJoin({
               <p className="font-bold truncate">{p.name}</p>
               <p className="text-xs text-muted-foreground">{p.age_range}</p>
             </div>
-            {trip.myRole === "captain" ? (
+            {canApproveMember(trip.myRole, p.age_range) ? (
               <>
                 <Button
                   size="sm"

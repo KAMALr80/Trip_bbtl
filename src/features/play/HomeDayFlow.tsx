@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 
 import { fmtWhen, zoneLabel } from "@/lib/viewer-time";
 import { friendlyError } from "@/lib/friendly-error";
+import { t as translate } from "@/i18n";
+import { playerName } from "@/lib/player-name";
 import type { TripWithRole, Member } from "@/lib/trips";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
 
@@ -55,10 +57,7 @@ export function HomeDayFlow({
   const [crowned, setCrowned] = useState(false);
   const captain = trip.myRole === "captain" && !viewOnly;
   const leader = ["captain", "co_captain"].includes(trip.myRole) && !viewOnly;
-  const name = (id: string | null) =>
-    cards.find((c) => c.user_id === id)?.game_name ||
-    members.find((m) => m.user_id === id)?.display_name ||
-    "Player";
+  const name = (id: string | null) => playerName(cards, members, id, translate("player.former"));
   const load = useCallback(async () => {
     const [plan, board] = await Promise.all([
       rpc("home_day_view", { p_trip: trip.id }),

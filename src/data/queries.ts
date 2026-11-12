@@ -5,6 +5,7 @@ import { loadCards, loadMembers, loadTrips } from "./trips";
 import { dailyAnswersQuery, scheduleQuery } from "./daily";
 import { crownsQuery, standingsQuery } from "./live";
 import { callNightsQuery } from "./schedule";
+import { supabase } from "@/integrations/supabase/client";
 
 // Avatar photo links are signed for an hour; a minute keeps tab switches from re-signing them.
 const staleTime = 60_000;
@@ -48,6 +49,10 @@ export function useCards(tripId: string | null | undefined) {
 /** Start loading a trip's roster and cards (route loaders). Browser only: the session lives there. */
 export async function prefetchTrip(queryClient: QueryClient, tripId: string) {
   if (typeof window === "undefined") return;
+  // Signed out there's no roster to load: the call would only come back 401 (QA-18). The local
+  // session check makes no network request.
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) return;
   await Promise.all([
     queryClient.prefetchQuery({
       queryKey: queryKeys.members(tripId),

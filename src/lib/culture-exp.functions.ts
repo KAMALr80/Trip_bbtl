@@ -58,11 +58,12 @@ async function runAi(
   payload: object,
   log: (m: string, u: any) => Promise<void>,
 ) {
-  const { getAiModel } = await import("@/integrations/ai/index.server");
+  const { aiRequestLimits, getAiModel } = await import("@/integrations/ai/index.server");
   const ai = getAiModel();
   if (!ai) throw new Error("AI help is unavailable right now.");
   const { streamText } = await import("ai");
   const result = streamText({
+    ...aiRequestLimits(),
     model: ai.model,
     instructions: `${instructions} ${POLICY}`,
     messages: [{ role: "user", content: JSON.stringify(payload) }],
@@ -83,7 +84,7 @@ async function runAi(
 
 export const planCultureExperience = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v) =>
+  .validator((v) =>
     z
       .object({
         id: z.string().uuid(),
@@ -136,7 +137,7 @@ export const planCultureExperience = createServerFn({ method: "POST" })
 
 export const summarizeCultureTrip = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v) => z.object({ id: z.string().uuid() }).parse(v))
+  .validator((v) => z.object({ id: z.string().uuid() }).parse(v))
   .handler(async ({ data, context }) => {
     const exp = await loadForAi(context as Ctx, data.id);
     const { data: days } = await context.supabase

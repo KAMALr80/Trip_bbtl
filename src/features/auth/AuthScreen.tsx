@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Eye, EyeOff, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { authProviderEnabled } from "@/data/account";
 
 import cinematicLoginCoast from "@/assets/cinematic-login-coast-tall-768.jpg";
 import cinematicLoginCoastLarge from "@/assets/cinematic-login-coast.jpg";
@@ -103,6 +104,13 @@ export function AuthScreen({
   async function social(provider: "google") {
     setBusy(true);
     setMessage("");
+    // A provider that's off in this environment's Auth settings says so here; otherwise the
+    // browser would land on Auth's raw JSON error. Unknown (null) tries it as before.
+    if ((await authProviderEnabled(provider)) === false) {
+      setMessage(t("auth.error.googleOff"));
+      setBusy(false);
+      return;
+    }
     try {
       // Supabase redirects the browser to Google and back to this origin, where the session is
       // picked up from the URL. The Google provider and redirect URLs live in Supabase Auth settings.
@@ -148,7 +156,8 @@ export function AuthScreen({
       <div className="cinematic-auth-content">
         <BrandLockup className="cinematic-auth-brand" />
         <div className="cinematic-auth-spacer">
-          {!emailOpen && <p className="login-hook">{t("auth.hook")}</p>}
+          {/* The page heading on the sign-in screen (QA-19). */}
+          {!emailOpen && <h1 className="login-hook">{t("auth.hook")}</h1>}
         </div>
         {emailOpen ? (
           <section
@@ -376,7 +385,9 @@ export function VerifyCode({ email, onBack }: { email: string; onBack: () => voi
     const { error } = await supabase.auth.verifyOtp({ email, token: code, type: "signup" });
     setBusy(false);
     if (error) {
-      setError(t(/expired/i.test(error.message) ? "verify.expired" : "verify.mismatch"));
+      // Auth answers a mistyped code and an expired one the same way ("otp_expired": "Token has
+      // expired or is invalid"), so the message can't claim either (N-5).
+      setError(t("verify.wrongOrExpired"));
       setDigits(Array(6).fill(""));
       refs.current[0]?.focus();
     }

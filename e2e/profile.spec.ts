@@ -17,6 +17,19 @@ const base = {
   crew: true,
 };
 
+test.describe("Deleting an account (B-31)", () => {
+  test("an account with a password has to enter it", async ({ page }) => {
+    await signInWithMockBackend(page);
+    await page.goto("/me?view=delete");
+    const button = page.getByRole("button", { name: "Delete forever" });
+    await expect(button).toBeDisabled();
+    await page.getByLabel("Type DELETE to confirm").fill("DELETE");
+    await expect(button).toBeDisabled();
+    await page.getByLabel("Enter your password").fill("my password");
+    await expect(button).toBeEnabled();
+  });
+});
+
 test.describe("Me tab", () => {
   test.use({ locale: "pt-PT" });
   test("From is filled from the phone's region; save it with About me and go public", async ({

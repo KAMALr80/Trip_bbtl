@@ -7,7 +7,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // recorded (record_user_block, which checks the admin again and logs it in admin_actions).
 export const setUserDisabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value) =>
+  .validator((value) =>
     z
       .object({
         userId: z.string().uuid(),

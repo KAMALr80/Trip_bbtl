@@ -35,7 +35,11 @@ export function RemindersCard({ trips }: { trips: readonly TripWithRole[] }) {
   if (hidden || state !== "off" || !trips.length || !installOutOfTheWay) return null;
   if (platform === "ios" && !standalone) return null;
   return (
-    <section className="app-card mx-[18px] mb-3" aria-label={t("notifications.cardTitle")}>
+    <section
+      data-above-home
+      className="app-card mx-[18px] mb-3"
+      aria-label={t("notifications.cardTitle")}
+    >
       <p className="font-display text-lg font-extrabold flex items-center gap-2">
         <BellRing aria-hidden="true" className="size-5" /> {t("notifications.cardTitle")}
       </p>

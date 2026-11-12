@@ -197,6 +197,28 @@ export function tripPhaseInput(trip: TripRow): PhaseInput {
     setupComplete: trip.setup_completed_at !== null,
   };
 }
+/** Pre-Flight exists only with at least one day and when it wasn't skipped (R-105). */
+/** What the Trip tab says about Pre-Flight, from the same boundaries as the phase engine
+ * (QA-11): when it opens, or that this trip has none and play starts at Takeoff. Dates are
+ * YYYY-MM-DD in the phase's own time zone. */
+export function preflightSummary(
+  trip: Parameters<typeof tripPhaseInput>[0] & {
+    preflight_days: number;
+    preflight_skipped: boolean;
+  },
+): { kind: "opens"; date: string } | { kind: "none"; takeoff: string } {
+  const b = phaseBoundaries(tripPhaseInput(trip));
+  const day = (at: number, tz: string) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(at));
+  return hasPreflight(trip)
+    ? { kind: "opens", date: day(b.preflight[0], b.tz.preflight) }
+    : { kind: "none", takeoff: day(b.takeoff[0], b.tz.takeoff) };
+}
+
+export function hasPreflight(trip: { preflight_days: number; preflight_skipped: boolean }) {
+  return !trip.preflight_skipped && trip.preflight_days > 0;
+}
+
 /** The trip's phase now (or at `at`), for display. The server's trip_phase decides. */
 export function tripPhase(trip: TripRow, at: number = Date.now()): PhaseWindow {
   return phaseAt(tripPhaseInput(trip), at);

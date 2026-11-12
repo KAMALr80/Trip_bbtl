@@ -15,9 +15,14 @@ Tick these off in order. Everything else in the milestones is code work. Details
 numbered sections below.
 
 **Now: unblocks staging and the M4 phone checks**
-- [x] Merge [PR #6](https://github.com/jay-brainbean/trip/pull/6) (M4) and
-      [PR #7](https://github.com/jay-brainbean/trip/pull/7) (M5, M6 code): both merged, CI green.
+- [x] Review and merge [PR #6](https://github.com/jay-brainbean/trip/pull/6) (no native apps; M4
+      install, offline, reminders). Merged as `960f35f`; the offline browser tests
+      (`playwright.pwa.config.ts`) pass locally and in CI (Nov 5, 2026).
+- [x] Merge [PR #7](https://github.com/jay-brainbean/trip/pull/7) (M5, M6 code): merged, CI green.
 - [ ] Turn on branch protection for `main` and make CI required (GitHub → Settings → Branches).
+      Partly done (Nov 5, 2026): a ruleset stops `main` being deleted or force-pushed. Still to do:
+      require the three CI jobs (Web, Database, Supabase local stack) before a merge. Click-by-click
+      steps: B-02 in [`docs/audit/BUG_REGISTER.md`](../docs/audit/BUG_REGISTER.md).
 - [ ] Create the staging accounts: Supabase (1.1), Cloudflare (1.2); AI key optional (1.3).
 - [ ] Make the web push keys: `bun scripts/pwa/vapid-keys.ts`, then add `VAPID_PUBLIC_KEY` and
       `VAPID_PRIVATE_KEY` as secrets (6.1). Do it once; never change them.
@@ -167,6 +172,48 @@ accounts are needed.
 
 ---
 
-## 8. Later (Phase 2)
+## 8. Staging readiness checklist (check after "deploy staging")
+
+These are checks, not new steps: sections 1–6 say how to do each one. Never copy production users or
+their photos into staging; use test accounts only.
+
+- [ ] **Supabase project** `tripjunkies-staging` exists (1.1). The Free plan has no backups, so
+      treat staging data as disposable. Production gets Pro with daily backups / PITR (5).
+- [ ] **Database:** `deploy staging db` pushed every file in `supabase/migrations/`. The project's
+      migration list matches the repo. The cron jobs exist (for example `expire-proofs`, every
+      5 minutes), and the photo-purge job points at the Worker (`trip_private.cron_endpoints`).
+- [ ] **Security on staging:** run `30_security` and the bundle check against staging (beta report).
+- [ ] **Worker:** `tripjunkies-staging` is deployed, and `/api/public/version` answers on its
+      `workers.dev` URL. Server secrets were set by `deploy.sh` (`wrangler secret bulk`).
+      Workers logs are on (`observability` in `wrangler.jsonc`).
+- [ ] **Domain and DNS** (2.1): `staging.tripjunkies.app` route in `wrangler.jsonc`, and
+      `STAGING_APP_URL` set.
+- [ ] **Auth URLs:** the site URL is `STAGING_APP_URL`, and the redirect allow-list includes
+      `STAGING_APP_URL/**` (`deploy.sh` auth step). Re-run the auth step after the domain changes.
+- [ ] **Email** (2.3): the sender is verified, with SPF, DKIM and DMARC records in Cloudflare DNS.
+      Sign-up sends a 6-digit **code**: `deploy staging auth` now installs the repo's template
+      (`supabase/templates/confirmation.html`, B-17); check that the email has it. Password
+      reset arrives and returns to the app. Supabase's email rate limit is raised for the beta.
+- [ ] **Google** (2.2): the consent screen is published; the redirect URI is
+      `https://<staging ref>.supabase.co/auth/v1/callback`; Google sign-in works on a phone.
+- [ ] **Push** (6.1): `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` are set once, and a test push
+      arrives (M4-10 step 3).
+- [ ] **Errors** (2.4): `VITE_SENTRY_DSN` is set and a test error shows in Sentry. The Worker
+      has no Sentry yet (M0-12); use the Workers logs.
+- [ ] **AI** (1.3, optional): `AI_API_KEY`, `AI_MODEL` and a monthly spend limit. Fix B-16
+      (low-detail images) before turning AI checks on.
+- [ ] **Security headers (B-28):** `curl -I https://<staging>/` shows the headers. Open the browser console on signed-in screens, Google sign-in and a photo upload, and look for "[Report Only]" Content Security Policy messages. When there are none, tell the developer to enforce the full policy.
+- [ ] **Orphan sweep (B-27):** delete a test trip that has photos, then check its folder is empty in Supabase Storage. The daily job's response has an `orphans` count.
+- [ ] **Account deletion (B-31):** with a throwaway test account, a wrong password is refused and the right one deletes it. Also check a Google-only test account.
+- [ ] **AI (if on):** the daily caps in the founder's AI Guard stop calls. Add a photo with "answer pass" written on it to the M6-01 run.
+- [ ] **Devices and load:** the M4-10 checklist on an iPhone and an Android phone, one desktop browser, and the load test (M6-08).
+- [ ] **Monitoring:** someone checks the Workers logs and the Supabase logs daily during the beta,
+      and an uptime check watches `/api/public/version`.
+- [ ] **Recovery:** staging can be rebuilt from the migrations. For production, do one test
+      restore from a backup before launch.
+
+---
+
+## 9. Later (Phase 2)
 Payments (Stripe on the web; needs Q18),
 Event Groups (13–24), world map, Spanish, flight tracking.

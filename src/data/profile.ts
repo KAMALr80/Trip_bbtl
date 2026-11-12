@@ -1,7 +1,7 @@
 // Passport Junkie profile (M5-10) and the player's own profile settings (M5-11).
 // The server decides what a viewer may see (trip_private.player_profile); this only reads it.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { z } from "zod";
+import { z } from "@/lib/zod-setup";
 import { supabase } from "@/integrations/supabase/client";
 import { dicebearUrl } from "@/lib/player-cards";
 import { rpc } from "./rpc";

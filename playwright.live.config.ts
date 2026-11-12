@@ -11,6 +11,8 @@ if (!url || !key)
 
 export default defineConfig({
   testDir: "e2e/live",
+  // Opens "/" once first so the dev server's first-visit compile doesn't hit the first test.
+  globalSetup: "./e2e/support/warm-up.ts",
   timeout: 90_000,
   expect: { timeout: 20_000 },
   retries: process.env["CI"] ? 1 : 0,

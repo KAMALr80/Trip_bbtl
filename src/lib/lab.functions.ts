@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { TRIP_FOLDER_BUCKETS } from "./trip-storage";
 
 const BOT_NAMES = [
   "Mango",
@@ -81,7 +82,7 @@ async function wipe(ctx: Ctx, tripId: string) {
   const { data: ids, error } = await ctx.supabase.rpc("lab_delete", { p_trip: tripId });
   if (error) throw new Error(error.message);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  for (const bucket of ["trip-photos", "player-avatars", "quest-proofs"]) {
+  for (const bucket of TRIP_FOLDER_BUCKETS) {
     const paths = await listAll(supabaseAdmin, bucket, tripId);
     if (paths.length) await supabaseAdmin.storage.from(bucket).remove(paths);
   }
@@ -107,7 +108,7 @@ const preset = z.object({
 
 export const createSandbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => preset.parse(d))
+  .validator((d) => preset.parse(d))
   .handler(async ({ data, context }) => {
     await assertFounder(context);
     await ensureBots(data.size - 1 + 2); // +2 spares for late joins
@@ -130,7 +131,7 @@ export const prepareLateBot = createServerFn({ method: "POST" })
 
 export const deleteSandbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ tripId: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ tripId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertFounder(context);
     await wipe(context, data.tripId);
@@ -139,7 +140,7 @@ export const deleteSandbox = createServerFn({ method: "POST" })
 
 export const resetSandbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ tripId: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ tripId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertFounder(context);
     const { data: p } = await context.supabase
@@ -165,7 +166,7 @@ const athome = z.object({
 });
 export const createAtHomeSandbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => athome.parse(d))
+  .validator((d) => athome.parse(d))
   .handler(async ({ data, context }) => {
     await assertFounder(context);
     await ensureBots(3 + 2);

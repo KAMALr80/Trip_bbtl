@@ -2,7 +2,7 @@
 // (M5-01 – M5-06), plus the player's stamps, level and badges (M5-07 – M5-09).
 // The server decides every rule; these hooks only call and read.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { z } from "zod";
+import { z } from "@/lib/zod-setup";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { rpc } from "./rpc";
@@ -44,8 +44,9 @@ async function signPhotos(paths: (string | null | undefined)[]): Promise<Map<str
   }
 }
 
-export function usePostcardInfo(tripId: string) {
+export function usePostcardInfo(tripId: string, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: postcardKeys.info(tripId),
     queryFn: async (): Promise<PostcardInfo> => {
       const { data, error } = await rpc("postcard_info", { p_trip: tripId });
@@ -145,8 +146,9 @@ export function useHeartPhoto(tripId: string) {
   });
 }
 
-export function useMyWrapupAnswers(tripId: string) {
+export function useMyWrapupAnswers(tripId: string, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: postcardKeys.answers(tripId),
     queryFn: async () => {
       const { data, error } = await supabase
@@ -230,9 +232,10 @@ const postcardAnswers = z.object({
   question: z.string(),
   answers: z.array(z.string()),
 });
-const postcardCrown = z.object({
+export const postcardCrown = z.object({
   season: z.enum(["preflight", "trip_season"]),
-  user_id: z.string(),
+  // Null once the winner has deleted their account; the name then reads "Former player".
+  user_id: z.string().nullable(),
   name: z.string(),
   points: z.number(),
   solo: z.boolean(),

@@ -28,6 +28,7 @@ import { gameSceneArt } from "@/features/play/GameScene";
 import { OnePhoneNight } from "@/features/play/OnePhoneNight";
 import { SoloGuide } from "@/features/window-seat/SoloGuide";
 import { TripGuide, isShowcase } from "@/features/guide/TripGuide";
+import { upNowQuest } from "./up-now";
 import { JournalPrompt } from "@/features/guide/JournalPrompt";
 import { PostcardPicks } from "@/features/postcard/PostcardPicks";
 import { WrapupWeek } from "@/features/postcard/WrapupWeek";
@@ -43,9 +44,20 @@ import { useMyProofs } from "@/data/proofs";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { noFlight, readOfflineRoster } from "@/lib/play-arrangement";
-import { phaseBoundaries, tripPhase, tripPhaseInput } from "@/features/trip/phase";
+import {
+  hasPreflight,
+  phaseBoundaries,
+  tripPhase,
+  tripPhaseInput,
+  type Phase as EnginePhase,
+} from "@/features/trip/phase";
+import { useTripPhase } from "@/data/phase";
+import { useMyWrapupAnswers, usePostcardInfo } from "@/data/postcard";
+import { wrapupState } from "@/features/postcard/wrapup";
+import { fmtWhen } from "@/lib/viewer-time";
 import { roomOf } from "@/features/trip/rooms";
-import { useT } from "@/i18n";
+import { t as translate, useT } from "@/i18n";
+import { playerName } from "@/lib/player-name";
 import { CallNightsCard, CrowningCard } from "@/features/play/TripNights";
 import { useQueryClient } from "@tanstack/react-query";
 import { tripToday, tripTz } from "@/lib/itinerary";
@@ -119,10 +131,14 @@ const stampLabel = (value: string) => {
   return label || words[0] || "TRIP";
 };
 
+/** Before the first phase opens (QA-09): the hub has no "now" yet. */
+const isUpcoming = (p: EnginePhase) => p === "upcoming" || p === "setup";
+const instantDay = (at: number, tz: string) =>
+  shortDate(new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(at)));
+
 /** The hub's phase page for the engine phase (M2-09): before the trip shows Pre-Flight, after
  * Baggage Claim stays on the last page. */
-function currentPhase(trip: TripWithRole, _tripSeasonStarted?: boolean): Phase {
-  const p = tripPhase(trip).phase;
+function hubPhase(p: EnginePhase): Phase {
   return p === "takeoff"
     ? "takeoff"
     : p === "trip_season"
@@ -268,10 +284,7 @@ function CrownBoard({
         {list.map((row) => {
           const rank = sorted.findIndex((x) => x.user_id === row.user_id) + 1;
           const c = cards.find((x) => x.user_id === row.user_id);
-          const name =
-            c?.game_name ||
-            members.find((m) => m.user_id === row.user_id)?.display_name ||
-            "Player";
+          const name = playerName(cards, members, row.user_id, translate("player.former"));
           return (
             <li key={row.user_id}>
               <span>{rank}</span>
@@ -300,10 +313,12 @@ function CrownBoard({
 function PhaseRail({
   trip,
   current,
+  upcoming,
   onOpen,
 }: {
   trip: TripWithRole;
   current: Phase;
+  upcoming: boolean;
   onOpen: (p: Phase) => void;
 }) {
   const t = useT();
@@ -319,8 +334,9 @@ function PhaseRail({
   return (
     <div className="play-phase-ticket" role="navigation" aria-label="Trip phases">
       {PHASES.map((p, i) => {
-        const done = i < now,
-          active = i === now;
+        const skipped = p.id === "preflight" && !hasPreflight(trip);
+        const done = i < now && !skipped,
+          active = i === now && !upcoming && !skipped;
         const [opens] = b[engineId[p.id]];
         const date = b[engineId[p.id]][1] > opens ? day(opens, b.tz[engineId[p.id]]) : null;
         const activeLine =
@@ -342,15 +358,17 @@ function PhaseRail({
             </span>
             <strong>{name(p.id)}</strong>
             <small>
-              {active
-                ? activeLine
-                : p.id === "trip" && i > now
-                  ? "After arrival"
-                  : date
-                    ? shortDate(date)
-                    : i > now
-                      ? "Coming up"
-                      : "Done"}
+              {skipped
+                ? t("phases.skipped")
+                : active
+                  ? activeLine
+                  : p.id === "trip" && i > now
+                    ? "After arrival"
+                    : date
+                      ? shortDate(date)
+                      : i > now
+                        ? "Coming up"
+                        : "Done"}
             </small>
           </Button>
         );
@@ -422,13 +440,15 @@ function EnginePlayHub(props: Props) {
     [cultureKind, setCultureKind] = useState<string | null>(null);
   const scrolls = useRef<Record<string, number>>({});
   const previousPoints = useRef<number | null>(null);
-  const active = currentPhase(trip, tripStarted),
+  const engine = useTripPhase(trip);
+  const upcoming = isUpcoming(engine);
+  const active = hubPhase(engine),
     shownPhase = phase ?? active,
-    preview = indexOf(shownPhase) > indexOf(active);
+    preview = upcoming || indexOf(shownPhase) > indexOf(active);
   const local = trip.play_arrangement === "solo" || trip.play_arrangement === "offline";
   const onlineGroup = !local;
   // Score and place come from the points ledger (M3-01, M3-15): the season being played now.
-  const ledgerSeason = active === "preflight" ? "preflight" : "trip_season";
+  const ledgerSeason = active === "preflight" && hasPreflight(trip) ? "preflight" : "trip_season";
   const standings = useStandings(trip.id, ledgerSeason).data ?? [];
   const myStanding = standings.find((r) => r.user_id === userId);
   const ledgerRows = usePointsBreakdown(trip.id, ledgerSeason).data ?? [];
@@ -445,6 +465,10 @@ function EnginePlayHub(props: Props) {
   }));
   const schedule = useMySchedule(trip.id).data ?? [];
   const myProofs = useMyProofs(trip.id).data ?? [];
+  // Wrap-up week (QA-08): on Up now for all of Baggage Claim, not only when the page is opened.
+  const inWrapup = engine === "baggage_claim" && !trip.locked_at && roomOf(trip.room).pointsEnabled;
+  const wrapupInfo = usePostcardInfo(trip.id, inWrapup).data;
+  const wrapupAnswers = useMyWrapupAnswers(trip.id, inWrapup).data;
   const load = useCallback(async () => {
     const [startedResult, cultureResult] = await Promise.all([
       rpc("trip_season_started", { p_trip: trip.id }),
@@ -543,7 +567,7 @@ function EnginePlayHub(props: Props) {
       <PhasePage
         {...props}
         phase={shownPhase}
-        current={active}
+        current={upcoming ? null : active}
         preview={preview}
         preRows={preRows}
         tripRows={tripRows}
@@ -557,14 +581,7 @@ function EnginePlayHub(props: Props) {
       />
     );
   const nowMs = Date.now();
-  const sealedReady = schedule.find(
-    (i) =>
-      i.user_id === userId &&
-      ["sealed_quest", "airport_mission", "home_mission", "trip_quest"].includes(i.kind) &&
-      i.is_open &&
-      i.body == null &&
-      (!i.closes_at || Date.parse(i.closes_at) > nowMs),
-  );
+  const sealedReady = upNowQuest(schedule, userId, nowMs);
   const pending = myProofs.find((p) => p.crew_status === "waiting");
   const up: {
     key: string;
@@ -581,11 +598,18 @@ function EnginePlayHub(props: Props) {
       key: sealedReady.id,
       icon: <Ticket />,
       tone: "pink",
-      title: sealedReady.kind === "sealed_quest" ? "Sealed quest dropped" : "Sealed card waiting",
+      title:
+        sealedReady.kind === "showcase"
+          ? t("quests.showcaseUpNow")
+          : sealedReady.kind === "sealed_quest"
+            ? "Sealed quest dropped"
+            : "Sealed card waiting",
       line:
-        sealedReady.kind === "sealed_quest"
-          ? "Open it within 3 hours for +5"
-          : "Open it to see what to do",
+        sealedReady.kind === "showcase"
+          ? t("quests.showcaseUpNowLine")
+          : sealedReady.kind === "sealed_quest"
+            ? "Open it within 3 hours for +5"
+            : "Open it to see what to do",
       ...(sealedReady.points ? { points: `${sealedReady.points} pts` } : {}),
       pill: "New",
       action: () => openPhase(active),
@@ -600,7 +624,30 @@ function EnginePlayHub(props: Props) {
       pill: "Pending",
       action: () => openPhase(active),
     });
+  const wrapup = wrapupState({
+    phase: inWrapup ? engine : "",
+    lockedAt: trip.locked_at,
+    locksAt: wrapupInfo?.locks_at,
+    questionKeys: wrapupInfo?.questions.map((q) => q.key) ?? [],
+    answers: wrapupAnswers ?? {},
+    now: nowMs,
+  });
+  const locksWhen = wrapupInfo?.locks_at ? fmtWhen(wrapupInfo.locks_at, trip.home_timezone) : "";
+  if (wrapup.remaining > 0)
+    up.unshift({
+      key: "wrapup",
+      icon: <Sparkles />,
+      tone: "gold",
+      title: t("postcard.wrapupTitle"),
+      line: t("postcard.upNow", { count: wrapup.remaining, total: wrapup.total, when: locksWhen }),
+      action: () => openPhase("wrapped"),
+    });
   const progress = phaseProgress(trip, active);
+  const bounds = phaseBoundaries(tripPhaseInput(trip));
+  // What opens first: Pre-Flight, or Takeoff when there's no Pre-Flight (R-105).
+  const firstOpens = hasPreflight(trip)
+    ? t("phases.opensPreflight", { date: instantDay(bounds.preflight[0], bounds.tz.preflight) })
+    : t("phases.opensTakeoff", { date: instantDay(bounds.takeoff[0], bounds.tz.takeoff) });
   return (
     <div
       className={`play-hub ${cultureKind === "inspire" ? "window-play-scene" : cultureKind ? "home-play-scene" : ""}`}
@@ -633,14 +680,22 @@ function EnginePlayHub(props: Props) {
               : `${displayPoints} pts`}
           </strong>
           <small>
-            {PHASES[indexOf(active)]?.label} ·{" "}
-            {active === "takeoff"
-              ? "Travel day"
-              : active === "wrapped"
-                ? shortDate(trip.end_date)
-                : `Day ${progress.day} of ${progress.total}`}
+            {upcoming ? (
+              <>
+                {t("phases.upcoming")} · {firstOpens}
+              </>
+            ) : (
+              <>
+                {PHASES[indexOf(active)]?.label} ·{" "}
+                {active === "takeoff"
+                  ? "Travel day"
+                  : active === "wrapped"
+                    ? shortDate(trip.end_date)
+                    : `Day ${progress.day} of ${progress.total}`}
+              </>
+            )}
           </small>
-          {(active === "preflight" || active === "trip") && (
+          {!upcoming && (active === "preflight" || active === "trip") && (
             <small>
               {trip.play_mode === "solo"
                 ? soloGoal > 0 &&
@@ -666,7 +721,7 @@ function EnginePlayHub(props: Props) {
           <div className="play-place">
             <small>PLACE</small>
             <strong>
-              #{rank || "–"} <span>of {standings.length || members.length}</span>
+              #{(!upcoming && rank) || "–"} <span>of {standings.length || members.length}</span>
             </strong>
           </div>
         )}
@@ -694,7 +749,7 @@ function EnginePlayHub(props: Props) {
           )}
         </div>
       )}
-      <PhaseRail trip={trip} current={active} onOpen={openPhase} />
+      <PhaseRail trip={trip} current={active} upcoming={upcoming} onOpen={openPhase} />
       <div className="play-section-heading play-up-heading">
         <h2>Up now</h2>
         <span>
@@ -711,11 +766,15 @@ function EnginePlayHub(props: Props) {
             <div>
               <strong>You’re all caught up</strong>
               <small>
-                {active === "wrapped"
-                  ? "Your trip has wrapped"
-                  : active === "takeoff"
-                    ? "Next phase: after arrival"
-                    : `Next phase: ${shortDate(active === "preflight" ? trip.start_date : trip.end_date)}`}
+                {upcoming
+                  ? firstOpens
+                  : active === "wrapped"
+                    ? wrapup.open && locksWhen
+                      ? t("postcard.locks", { when: locksWhen })
+                      : "Your trip has wrapped"
+                    : active === "takeoff"
+                      ? "Next phase: after arrival"
+                      : `Next phase: ${shortDate(active === "preflight" ? trip.start_date : trip.end_date)}`}
               </small>
             </div>
           </div>
@@ -736,7 +795,7 @@ function EnginePlayHub(props: Props) {
 function PhasePage(
   props: Props & {
     phase: Phase;
-    current: Phase;
+    current: Phase | null;
     preview: boolean;
     preRows: Row[];
     tripRows: Row[];
@@ -777,12 +836,16 @@ function PhasePage(
   const groupRows = phase === "trip" || phase === "wrapped" ? tripRows : preRows;
   // Takeoff before landing: flight games and "We've arrived" until Trip Season starts (R-111).
   const inFlight = phase === "takeoff" && !culture && !tripStarted;
+  const noPreflight = phase === "preflight" && !hasPreflight(trip);
+  const bounds = phaseBoundaries(tripPhaseInput(trip));
   const titleLabel =
-    phase === "takeoff"
-      ? "TRAVEL DAY"
-      : phase === "wrapped"
-        ? shortDate(trip.end_date).toUpperCase()
-        : `DAY ${p.day} OF ${p.total}`;
+    phase === "preflight" && props.current === null
+      ? t("phases.upcoming").toUpperCase()
+      : phase === "takeoff"
+        ? "TRAVEL DAY"
+        : phase === "wrapped"
+          ? shortDate(trip.end_date).toUpperCase()
+          : `DAY ${p.day} OF ${p.total}`;
   return (
     <div className="play-phase-page">
       <Button variant="ghost" className="min-h-11 -ml-2" onClick={onBack}>
@@ -813,15 +876,23 @@ function PhasePage(
           </span>
         </div>
       </header>
-      {preview && (
+      {noPreflight ? (
         <p className="play-preview-banner">
-          <LockKeyhole /> Preview · opens{" "}
-          {phase === "takeoff" || phase === "trip"
-            ? shortDate(trip.start_date)
-            : shortDate(trip.end_date)}
+          <LockKeyhole /> {t("phases.noPreflight")}
         </p>
+      ) : (
+        preview && (
+          <p className="play-preview-banner">
+            <LockKeyhole /> Preview · opens{" "}
+            {phase === "preflight"
+              ? instantDay(bounds.preflight[0], bounds.tz.preflight)
+              : phase === "takeoff" || phase === "trip"
+                ? shortDate(trip.start_date)
+                : shortDate(trip.end_date)}
+          </p>
+        )
       )}
-      {!noCrown && (phase === "preflight" || phase === "trip") && (
+      {!noCrown && !noPreflight && (phase === "preflight" || phase === "trip") && (
         <CrownBoard
           rows={fullBoard ? groupRows : groupRows.slice(0, 4)}
           members={members}
@@ -903,7 +974,7 @@ function PhasePage(
       <div className="play-face-stack">
         {phase === "preflight" && (
           <>
-            {trip.play_mode === "crew" && roomOf(trip.room).maxCallNights > 0 && (
+            {!noPreflight && trip.play_mode === "crew" && roomOf(trip.room).maxCallNights > 0 && (
               <CallNightsCard trip={trip} />
             )}
             {windowSeat && (
@@ -916,7 +987,7 @@ function PhasePage(
                 onClick={() => onDetail("guide")}
               />
             )}
-            {phase !== props.current && (
+            {!noPreflight && phase !== props.current && (
               <ComingCard
                 icon={<Ticket />}
                 tone="pink"
@@ -934,7 +1005,7 @@ function PhasePage(
                 viewOnly={props.viewOnly}
               />
             )}
-            {phase !== props.current && (
+            {!noPreflight && phase !== props.current && (
               <ComingCard
                 icon={<Trophy />}
                 tone="orange"
@@ -1158,6 +1229,7 @@ function PlayDetail(
   },
 ) {
   const { detail, trip, members, cards, userId, viewOnly, onBack } = props;
+  const livePhase = hubPhase(useTripPhase(trip));
   if (detail === "arcade")
     return (
       <div className="play-detail">
@@ -1212,11 +1284,11 @@ function PlayDetail(
               members={members}
               cards={cards}
               userId={userId}
-              viewOnly={viewOnly || currentPhase(trip, props.tripStarted) === "preflight"}
+              viewOnly={viewOnly || livePhase === "preflight"}
             />
             <LandTrip trip={trip} refresh={props.refresh} />
           </>
-        ) : currentPhase(trip, props.tripStarted) === "preflight" ? (
+        ) : livePhase === "preflight" ? (
           <p className="av-glass-card mt-5 text-sm">
             Daily activities open on your experience dates.
           </p>

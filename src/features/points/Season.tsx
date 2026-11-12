@@ -21,6 +21,8 @@ export function Confetti({ burst }: { burst: number }) {
         rot: Math.random() * 360,
         color: barColors[i % 4],
       })),
+    // A new burst re-rolls the confetti on purpose, though the pieces don't read `burst`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [burst],
   );
   if (!show) return null;

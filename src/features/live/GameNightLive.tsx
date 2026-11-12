@@ -6,6 +6,7 @@ import { useCallNights } from "@/data/schedule";
 import { AWARDS, useLiveActions, useLiveSession, useLiveState, type Award } from "@/data/live";
 import { Avatar } from "@/features/players/PlayerCards";
 import { useT } from "@/i18n";
+import { playerName } from "@/lib/player-name";
 import { friendlyError } from "@/lib/friendly-error";
 import type { PlayerWithAvatar } from "@/lib/player-cards";
 import type { Member, TripWithRole } from "@/lib/trips";
@@ -34,10 +35,7 @@ export function GameNightLive({ trip, members, cards, userId, crowning, viewOnly
     (n) =>
       Date.parse(n.starts_at) - 3_600_000 <= now && Date.parse(n.starts_at) + 4 * 3_600_000 > now,
   );
-  const nameOf = (id: string) =>
-    cards.find((c) => c.user_id === id)?.game_name ??
-    members.find((m) => m.user_id === id)?.display_name ??
-    "?";
+  const nameOf = (id: string) => playerName(cards, members, id, t("player.former"));
   const avatarOf = (id: string) => cards.find((c) => c.user_id === id)?.avatarUrl;
   const canOpen = !viewOnly && (crowning ? leader : true);
 

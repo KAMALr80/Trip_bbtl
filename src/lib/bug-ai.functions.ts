@@ -13,7 +13,7 @@ type Row = {
 /** Founder-only: asks the app's AI which other reports look like the same bug. Sends text + screen only — never screenshots, emails or names. */
 export const suggestSimilarReports = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v) => z.object({ reportId: z.string().uuid() }).parse(v))
+  .validator((v) => z.object({ reportId: z.string().uuid() }).parse(v))
   .handler(async ({ data, context }) => {
     const sb = context.supabase;
     const admin = await sb.rpc("is_app_admin");
@@ -33,15 +33,16 @@ export const suggestSimilarReports = createServerFn({ method: "POST" })
       .slice(0, 120)
       .map((r) => ({ id: r.id, screen: r.page, text: scrub(r.description), issue: r.issue_title }));
     if (!others.length) return { ids: [] as string[] };
-    const { getAiModel } = await import("@/integrations/ai/index.server");
+    const { aiRequestLimits, getAiModel } = await import("@/integrations/ai/index.server");
     const ai = getAiModel();
     if (!ai) throw new Error("AI is unavailable right now.");
     const guard = await import("./ai-quota.server");
-    if (!(await guard.appAiAllowed("bug_triage", null, context.userId)))
-      throw new Error(guard.AI_BREAK);
+    const usageId = await guard.reserveAppAi("bug_triage", null, context.userId);
+    if (!usageId) throw new Error(guard.AI_BREAK);
     const { generateText } = await import("ai");
     const model = ai.modelId;
     const result = await generateText({
+      ...aiRequestLimits(),
       model: ai.model,
       system:
         "You triage bug reports for a mobile app. Given a TARGET report and a list of OTHER reports, return ONLY a JSON array of the ids of OTHER reports that most likely describe the same underlying bug (max 8). Return [] if none. No markdown.",
@@ -51,8 +52,7 @@ export const suggestSimilarReports = createServerFn({ method: "POST" })
       }),
       providerOptions: { openai: { store: false } },
     });
-    const { logAppAi } = await import("./ai-quota.server");
-    await logAppAi(null, "bug_triage", model, result.usage, context.userId);
+    await guard.logAppAi(usageId, model, result.usage);
     const m = result.text.match(/\[[\s\S]*\]/);
     let ids: unknown = [];
     try {

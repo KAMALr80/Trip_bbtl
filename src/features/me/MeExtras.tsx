@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { compressImage } from "@/lib/compress-image";
 import { deleteMyAccount } from "@/lib/account.functions";
+import { reauthMethod } from "@/lib/account-delete";
+import { useAuth } from "@/lib/auth-context";
+import { useT } from "@/i18n";
 import type { TripWithRole } from "@/lib/trips";
 import { tripClosed } from "@/features/points/Seasons";
 import { RememberedSection } from "@/components/RememberedSection";
@@ -681,14 +684,18 @@ export function BugReportsList({ tripId }: { tripId: string }) {
 /* ---------- Delete account ---------- */
 export function DeleteAccount({ onBack }: { onBack: () => void }) {
   const del = useServerFn(deleteMyAccount);
+  const t = useT();
+  const { user } = useAuth();
+  const needsPassword = reauthMethod(user?.app_metadata) === "password";
   const [typed, setTyped] = useState(""),
+    [password, setPassword] = useState(""),
     [busy, setBusy] = useState(false),
     [err, setErr] = useState("");
   async function go() {
     setBusy(true);
     setErr("");
     try {
-      await del();
+      await del({ data: needsPassword ? { password } : {} });
       await supabase.auth.signOut();
       window.location.assign("/");
     } catch (e) {
@@ -705,8 +712,10 @@ export function DeleteAccount({ onBack }: { onBack: () => void }) {
         <ul className="mt-2 list-disc pl-5 space-y-1">
           <li>Your profile and player cards</li>
           <li>Your avatar and every photo you posted</li>
+          <li>{t("account.delete.writtenAnswers")}</li>
           <li>Your sign-in</li>
         </ul>
+        <p className="mt-3">{t("account.delete.sharedHistory")}</p>
         <p className="mt-3">If you're Captain of a trip with other people, pass the crown first.</p>
       </div>
       <label className="mt-6 block text-sm font-bold">
@@ -718,6 +727,20 @@ export function DeleteAccount({ onBack }: { onBack: () => void }) {
           autoCapitalize="characters"
         />
       </label>
+      {needsPassword ? (
+        <label className="mt-4 block text-sm font-bold">
+          {t("account.delete.password")}
+          <input
+            type="password"
+            autoComplete="current-password"
+            className="mt-2 w-full h-12 rounded-2xl border-2 border-border bg-card px-4 outline-none focus:border-primary"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </label>
+      ) : (
+        <p className="mt-4 text-sm text-muted-foreground">{t("account.delete.recentSignIn")}</p>
+      )}
       {err && (
         <p role="alert" className="text-sm text-destructive mt-3">
           {err}
@@ -727,7 +750,7 @@ export function DeleteAccount({ onBack }: { onBack: () => void }) {
         variant="outline"
         size="lg"
         className="mt-5 w-full bg-card text-destructive border-destructive"
-        disabled={busy || typed.trim().toUpperCase() !== "DELETE"}
+        disabled={busy || typed.trim().toUpperCase() !== "DELETE" || (needsPassword && !password)}
         onClick={() => void go()}
       >
         <Trash2 /> {busy ? "Deleting…" : "Delete forever"}

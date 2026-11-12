@@ -6,11 +6,13 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { rpc } from "@/data/rpc";
-import { tripPhase } from "@/features/trip/phase";
+import { useTripPhase } from "@/data/phase";
+import type { Phase } from "@/features/trip/phase";
 import { roomOf } from "@/features/trip/rooms";
 import { useT } from "@/i18n";
 import { friendlyError } from "@/lib/friendly-error";
 import { countryName } from "@/lib/places";
+import { noFlight } from "@/lib/play-arrangement";
 import type { TripWithRole } from "@/lib/trips";
 
 /** Re-renders every minute so banners and countdowns move on their own. */
@@ -31,6 +33,30 @@ export function bannerPlace(trip: TripWithRole): string {
   return trip.passport_city || trip.destination.split(",")[0]?.trim() || trip.destination;
 }
 
+/** Which banner a phase shows, or null: nothing before the first phase or after the last. */
+function bannerKey(trip: TripWithRole, phase: Phase) {
+  if (trip.room === "game_night") return null;
+  if (phase === "takeoff" && noFlight(trip)) return "homeMissions";
+  return phase === "preflight" ||
+    phase === "takeoff" ||
+    phase === "trip_season" ||
+    phase === "baggage_claim"
+    ? phase
+    : null;
+}
+
+/** The Home dashboard's line for the phase the server says the trip is in (QA-02). */
+export function HomePhaseBanner({ trip }: { trip: TripWithRole }) {
+  const t = useT();
+  const key = bannerKey(trip, useTripPhase(trip));
+  if (!key) return null;
+  return (
+    <p className="app-card mt-3 text-sm font-bold" role="status">
+      {t(`phases.banner.${key}`, { place: bannerPlace(trip) })}
+    </p>
+  );
+}
+
 export function PhaseNotice({
   trip,
   viewOnly,
@@ -40,18 +66,13 @@ export function PhaseNotice({
   started?: boolean;
 }) {
   const t = useT();
-  const now = useMinute();
+  useMinute();
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const { phase } = tripPhase(trip, now);
-  if (
-    phase !== "preflight" &&
-    phase !== "takeoff" &&
-    phase !== "trip_season" &&
-    phase !== "baggage_claim"
-  )
-    return null;
+  const phase = useTripPhase(trip);
+  const key = bannerKey(trip, phase);
+  if (!key) return null;
   const leader = trip.myRole === "captain" || trip.myRole === "co_captain";
   const canArrive =
     phase === "takeoff" &&
@@ -61,7 +82,7 @@ export function PhaseNotice({
     roomOf(trip.room).tripSeasonStart === "arrival_button";
   return (
     <div className="phase-banner mt-3 border-l-4 border-primary bg-muted p-3 text-sm" role="status">
-      <p className="font-bold">{t(`phases.banner.${phase}`, { place: bannerPlace(trip) })}</p>
+      <p className="font-bold">{t(`phases.banner.${key}`, { place: bannerPlace(trip) })}</p>
       {canArrive && (
         <>
           <Button

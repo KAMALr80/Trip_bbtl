@@ -58,6 +58,19 @@ export async function turnOnPush(): Promise<PushState> {
   return "on";
 }
 
+/**
+ * Signing out: the browser drops its subscription, so the last player's reminders stop arriving on
+ * this device. The session may already be gone, so the server isn't asked; it deletes the row when
+ * the push service answers "gone" on the next send (finish_notifications). Reminders stay off here
+ * until a player turns them on again.
+ */
+export async function releasePushOnThisDevice() {
+  if (typeof window === "undefined" || !("PushManager" in window)) return;
+  const reg = await serviceWorkerRegistration();
+  const sub = await reg?.pushManager.getSubscription();
+  await sub?.unsubscribe();
+}
+
 export async function turnOffPush(): Promise<PushState> {
   const reg = await serviceWorkerRegistration();
   const sub = await reg?.pushManager.getSubscription();

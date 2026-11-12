@@ -23,13 +23,13 @@ import { poolCards, PLAN_QUESTIONS, type CultureCard } from "@/lib/culture-pool"
 import { planCultureExperience, summarizeCultureTrip } from "@/lib/culture-exp.functions";
 import type { TripWithRole } from "@/lib/trips";
 import { SoloGuide } from "@/features/window-seat/SoloGuide";
-import type { A2eKind } from "@/features/setup/CultureA2eSetup";
 import { Navigate } from "@tanstack/react-router";
 import { CULTURE_LAYERS } from "@/lib/culture-pool";
 import { ShowcaseInvite } from "@/features/culture/CultureShowcase";
 import { useT } from "@/i18n";
 
 type Track = "home" | "travel";
+type A2eKind = "explore" | "show" | "inspire";
 type Exp = {
   id: string;
   creator_id: string;

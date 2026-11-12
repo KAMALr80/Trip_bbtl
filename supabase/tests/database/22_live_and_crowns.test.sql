@@ -70,7 +70,8 @@ SELECT throws_like($$SELECT public.live_present((SELECT id FROM ids WHERE k = 'l
                    'no 👍 after Close');
 SELECT public.reopen_live((SELECT id FROM ids WHERE k = 'live'));
 SELECT tests.clear_authentication();
-SELECT is((SELECT count(*)::int FROM public.points_ledger WHERE source LIKE 'award%' AND status = 'approved'), 0,
+SELECT is((SELECT count(*)::int FROM public.points_ledger WHERE trip_id = (SELECT id FROM ids WHERE k = 'trip')
+             AND source LIKE 'award%' AND status = 'approved'), 0,
           'Reopen takes the award points back until the next Close');
 SELECT tests.authenticate_as(tests.user_id('p1'));
 SELECT public.live_vote_award((SELECT id FROM ids WHERE k = 'live'), 'best_overall', tests.user_id('cap'));
@@ -94,7 +95,8 @@ SELECT trip_private.crown_season((SELECT id FROM ids WHERE k = 'trip'), 'preflig
 SELECT is((SELECT string_agg(u.handle, ',') FROM public.trip_crowns c JOIN tests.users u ON u.id = c.user_id WHERE c.season = 'preflight'),
           'p1', 'Early Bird goes to the top Pre-Flight scorer');
 SELECT trip_private.crown_season((SELECT id FROM ids WHERE k = 'trip'), 'preflight', 'preflight_close');
-SELECT is((SELECT count(*)::int FROM public.trip_crowns WHERE season = 'preflight'), 1, 'crowning is idempotent');
+SELECT is((SELECT count(*)::int FROM public.trip_crowns WHERE trip_id = (SELECT id FROM ids WHERE k = 'trip') AND season = 'preflight'), 1,
+          'crowning is idempotent');
 SELECT tests.authenticate_as(tests.user_id('cap'));
 SELECT throws_like($$SELECT public.open_live((SELECT id FROM ids WHERE k = 'trip'))$$, '%crown has already been decided',
                    'no more Pre-Flight Game Nights after Early Bird');
@@ -105,7 +107,8 @@ UPDATE public.trips SET start_date = current_date - 6, end_date = current_date -
 WHERE id = (SELECT id FROM ids WHERE k = 'trip');
 SELECT trip_private.award_points((SELECT id FROM ids WHERE k = 'trip'), tests.user_id('p2'), 'trip_season', 'trip_quest', NULL, 10);
 SELECT trip_private.live_and_crowns_due();
-SELECT is((SELECT how FROM public.trip_crownings WHERE season = 'trip_season'), 'fallback', 'Jet Setter is crowned without a crowning night (Q10)');
+SELECT is((SELECT how FROM public.trip_crownings WHERE trip_id = (SELECT id FROM ids WHERE k = 'trip') AND season = 'trip_season'), 'fallback',
+          'Jet Setter is crowned without a crowning night (Q10)');
 SELECT is((SELECT string_agg(u.handle, ',') FROM public.trip_crowns c JOIN tests.users u ON u.id = c.user_id WHERE c.season = 'trip_season'),
           'p2', 'the Trip Season leader wears it');
 

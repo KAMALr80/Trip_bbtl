@@ -5,7 +5,7 @@ import { spendCredits } from "./ai-quota.server";
 
 export const draftCultureQuest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v) => z.object({ cardId: z.string().uuid() }).parse(v))
+  .validator((v) => z.object({ cardId: z.string().uuid() }).parse(v))
   .handler(async ({ data, context }) => {
     const { data: card, error } = await context.supabase
       .from("cultural_inspirations")
@@ -20,12 +20,13 @@ export const draftCultureQuest = createServerFn({ method: "POST" })
       (card.creator_id !== context.userId && card.partner_id !== context.userId)
     )
       throw new Error("Only creators can draft this quest.");
-    const { getAiModel } = await import("@/integrations/ai/index.server");
+    const { aiRequestLimits, getAiModel } = await import("@/integrations/ai/index.server");
     const ai = getAiModel();
     if (!ai) throw new Error("AI help is unavailable right now.");
     const log = await spendCredits(context.supabase, card.trip_id, "inspiration_guide");
     const { generateText } = await import("ai");
     const result = await generateText({
+      ...aiRequestLimits(),
       model: ai.model,
       instructions:
         'Draft exactly three multiple-choice questions as a JSON array, one each for Guess It, Picture It, Live It. Each entry: {"round":1,"prompt":"...","options":["...","...","...","..."],"answer":0,"challenge":"..."}. Round 2 question must refer to the creator photo; round 3 is a simple real-world action. Use the creator’s Country → Region → City and category only as context. Use ONLY the provided notes for claims. Never invent facts about family, origins, ingredients or pronunciation. If notes are insufficient, make a neutral question about their described experience. Safe, clean, kind, respectful: no politics, religion, sex, drugs, alcohol, unsafe or illegal acts. No markdown.',
