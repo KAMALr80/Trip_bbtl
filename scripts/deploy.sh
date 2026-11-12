@@ -147,16 +147,20 @@ auth() {
     --arg pass "${SMTP_PASS:-}" --arg from "${SMTP_SENDER_EMAIL:-}" \
     --arg fromName "${SMTP_SENDER_NAME:-TripJunkies}" \
     --rawfile confirm supabase/templates/confirmation.html '
-    {site_url: $url, uri_allow_list: ($url + "/**"),
-     # B-17: the sign-up email carries the 6-digit code the app asks for (same as config.toml).
-     mailer_subjects_confirmation: "Your TripJunkies sign-up code",
-     mailer_templates_confirmation_content: $confirm}
+    {site_url: $url, uri_allow_list: ($url + "/**")}
+    # B-17: the sign-up email carries the 6-digit code the app asks for (same as config.toml).
+    # The Supabase Free plan refuses template changes (entitlement_required) while its built-in
+    # sender is used, so the template goes with custom SMTP; until then the default email
+    # with its confirmation link is the way in (AuthScreen sends emailRedirectTo).
+    + (if $host != "" then {mailer_subjects_confirmation: "Your TripJunkies sign-up code",
+                            mailer_templates_confirmation_content: $confirm} else {} end)
     + (if $gid != "" then {external_google_enabled: true, external_google_client_id: $gid,
                            external_google_secret: $gsecret} else {} end)
     + (if $host != "" then {smtp_host: $host, smtp_port: $port, smtp_user: $user, smtp_pass: $pass,
                             smtp_admin_email: $from, smtp_sender_name: $fromName} else {} end)')"
   api PATCH /config/auth "$body" >/dev/null
   echo "Auth settings updated (site URL $APP_URL$([ -n "${GOOGLE_CLIENT_ID:-}" ] && echo ', Google')$([ -n "${SMTP_HOST:-}" ] && echo ', SMTP'))."
+  [ -n "${SMTP_HOST:-}" ] || echo "No SMTP settings: Supabase's built-in sender and default sign-up email (link, no code) stay until SMTP_* is set and 'auth' is re-run."
 }
 
 web() {
