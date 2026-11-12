@@ -1,4 +1,4 @@
-// Web Push without a library (M4-08), on WebCrypto so it runs in the Cloudflare Worker:
+// Web Push without a library (M4-08), on WebCrypto so it runs in any server runtime:
 // - RFC 8292 VAPID: an ES256 JWT that says the push comes from us.
 // - RFC 8291 + RFC 8188 "aes128gcm": the payload encrypted for the browser's keys.
 // Keys are base64url. VAPID_PUBLIC_KEY is the 65-byte uncompressed P-256 point (the same value the

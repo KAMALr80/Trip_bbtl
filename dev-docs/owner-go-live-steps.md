@@ -9,7 +9,10 @@ environment variables) under the name shown, then start a new session.
 
 ---
 
-## Your to-do list (updated Nov 2, 2026)
+## Your to-do list (updated Nov 12, 2026)
+
+Hosting moved from Cloudflare to **Vercel** on Nov 12, 2026
+([decision 001](../docs/decisions/001-hosting-on-vercel.md)); no Cloudflare account is needed.
 
 Tick these off in order. Everything else in the milestones is code work. Details are in the
 numbered sections below.
@@ -23,7 +26,7 @@ numbered sections below.
       Partly done (Nov 5, 2026): a ruleset stops `main` being deleted or force-pushed. Still to do:
       require the three CI jobs (Web, Database, Supabase local stack) before a merge. Click-by-click
       steps: B-02 in [`docs/audit/BUG_REGISTER.md`](../docs/audit/BUG_REGISTER.md).
-- [ ] Create the staging accounts: Supabase (1.1), Cloudflare (1.2); AI key optional (1.3).
+- [ ] Create the staging accounts: Supabase (1.1), Vercel (1.2); AI key optional (1.3).
 - [ ] Make the web push keys: `bun scripts/pwa/vapid-keys.ts`, then add `VAPID_PUBLIC_KEY` and
       `VAPID_PRIVATE_KEY` as secrets (6.1). Do it once; never change them.
 - [ ] Say "deploy staging" in a new session.
@@ -31,7 +34,7 @@ numbered sections below.
       (`milestones/M4-web-offline-notifications.md`, end of the file). Report anything that fails.
 
 **Before inviting anyone**
-- [ ] Domain on Cloudflare (2.1), Google sign-in (2.2), email sender for sign-in codes (2.3).
+- [ ] Domain on Vercel (2.1), Google sign-in (2.2), email sender for sign-in codes (2.3).
 - [ ] Optional: Sentry for errors (2.4), Resend key for reminder emails (6.2).
 - [ ] Rescue the 13 images from Lovable on your own computer (3).
 - [ ] Install material: a 1024×1024 master app icon and 3–5 phone screenshots (6.3).
@@ -61,18 +64,24 @@ numbered sections below.
 ### 1.1 Supabase (database, sign-in, photos)
 1. Sign up at **supabase.com** with the company email, and create an organization ("TripJunkies").
 2. **New project** → name `tripjunkies-staging`, a strong database password (save it in a password
-   manager), the region closest to most players (e.g. US East), Free plan is fine for staging.
+   manager), region **East US (North Virginia)**: Vercel runs the app's server code in
+   Washington, D.C. by default, so this keeps them close. Free plan is fine for staging.
 3. Wait until the project is ready, then note:
    - **Project ref**: the id in the project URL, `https://<ref>.supabase.co` → secret `SUPABASE_STAGING_REF`
    - **Database password** from step 2 → secret `SUPABASE_STAGING_DB_PASSWORD`
 4. Account menu (top right) → **Access Tokens** → **Generate new token** ("claude deploy") →
    secret `SUPABASE_ACCESS_TOKEN`.
 
-### 1.2 Cloudflare (hosting)
-1. Sign up at **dash.cloudflare.com**.
-2. **Workers & Pages** → note the **Account ID** on the right → secret `CLOUDFLARE_ACCOUNT_ID`.
-3. Profile → **API Tokens** → **Create Token** → template **Edit Cloudflare Workers** → all accounts
-   is fine → create → secret `CLOUDFLARE_API_TOKEN`.
+### 1.2 Vercel (hosting)
+1. Sign up at **vercel.com** with the company email, and create a team ("TripJunkies") on the
+   **Pro** plan. The free Hobby plan is for non-commercial use only.
+2. Team **Settings → General** → copy the **Team ID** (starts with `team_`) → secret
+   `VERCEL_TEAM_ID`.
+3. Your avatar → **Account Settings → Tokens** → **Create Token** ("claude deploy"), scope: the
+   TripJunkies team, an expiry you're comfortable with (e.g. 1 year) → secret `VERCEL_TOKEN`.
+4. Don't create a project and don't import the GitHub repo. The first deploy makes
+   `tripjunkies-staging` (and later `tripjunkies`) itself. Deploys go through `scripts/deploy.sh`
+   so database changes always land before the code that needs them.
 
 ### 1.3 AI provider (optional for the first deploy)
 1. Create an API key with OpenAI (or another OpenAI-compatible provider) → secret `AI_API_KEY`.
@@ -81,7 +90,7 @@ numbered sections below.
 
 ### 1.4 Network access for the cloud session
 If deploys are refused, allow these hosts in the environment's network settings:
-`api.supabase.com`, `*.supabase.co`, `api.cloudflare.com`.
+`api.supabase.com`, `*.supabase.co`, `api.vercel.com`, `vercel.com`.
 
 ### 1.5 Web push keys
 Make them before the first deploy so reminders work on staging: see 6.1.
@@ -93,10 +102,15 @@ Make them before the first deploy so reminders work on staging: see 6.1.
 ## 2. Sign-in and email (before inviting anyone)
 
 ### 2.1 Domain
-1. Confirm you own `tripjunkies.app` (or pick the domain). Buy it if needed.
-2. Move its DNS to Cloudflare: **Add a site** → follow the nameserver change at your registrar.
-3. Tell Claude the domain; it adds the routes in `wrangler.jsonc` and sets `STAGING_APP_URL` /
-   `PROD_APP_URL` (e.g. `https://staging.tripjunkies.app`, `https://tripjunkies.app`).
+1. Confirm you own `tripjunkies.app` (or pick the domain). Buy it if needed (Route 53 or any
+   registrar). Its DNS can stay where it is.
+2. Vercel → project `tripjunkies-staging` → **Settings → Domains** → add
+   `staging.tripjunkies.app`. Later, on project `tripjunkies`: `tripjunkies.app` (Vercel offers
+   to redirect `www` too).
+3. Vercel shows the DNS record for each domain. Create it at your DNS provider (for Route 53: the
+   domain's hosted zone → **Create record**). Wait until Vercel says **Valid Configuration**.
+4. Add secrets `STAGING_APP_URL` / `PROD_APP_URL` (e.g. `https://staging.tripjunkies.app`,
+   `https://tripjunkies.app`), then say "redeploy staging web and auth".
 
 ### 2.2 Google sign-in
 1. **console.cloud.google.com** → new project "TripJunkies".
@@ -109,7 +123,7 @@ Make them before the first deploy so reminders work on staging: see 6.1.
 
 ### 2.3 Email sender (sign-up codes, password resets)
 1. Sign up with **Resend** (or Postmark / Amazon SES).
-2. Add your domain and create the DNS records it shows (in Cloudflare DNS). Wait for "verified".
+2. Add your domain and create the DNS records it shows at your DNS provider. Wait for "verified".
 3. Create SMTP credentials. Secrets: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,
    `SMTP_SENDER_EMAIL` (e.g. `hello@tripjunkies.app`).
 
@@ -181,16 +195,17 @@ their photos into staging; use test accounts only.
       treat staging data as disposable. Production gets Pro with daily backups / PITR (5).
 - [ ] **Database:** `deploy staging db` pushed every file in `supabase/migrations/`. The project's
       migration list matches the repo. The cron jobs exist (for example `expire-proofs`, every
-      5 minutes), and the photo-purge job points at the Worker (`trip_private.cron_endpoints`).
+      5 minutes), and the photo-purge job points at the app (`trip_private.cron_endpoints`).
 - [ ] **Security on staging:** run `30_security` and the bundle check against staging (beta report).
-- [ ] **Worker:** `tripjunkies-staging` is deployed, and `/api/public/version` answers on its
-      `workers.dev` URL. Server secrets were set by `deploy.sh` (`wrangler secret bulk`).
-      Workers logs are on (`observability` in `wrangler.jsonc`).
-- [ ] **Domain and DNS** (2.1): `staging.tripjunkies.app` route in `wrangler.jsonc`, and
-      `STAGING_APP_URL` set.
+- [ ] **Vercel:** project `tripjunkies-staging` is deployed, and `/api/public/version` answers on
+      its `vercel.app` URL. Server secrets were set by `deploy.sh` (Settings → Environment
+      Variables lists them). **Deployment Protection** (Settings) has Vercel Authentication off,
+      or players and the cron jobs get a Vercel login page.
+- [ ] **Domain and DNS** (2.1): `staging.tripjunkies.app` shows Valid Configuration in Vercel,
+      and `STAGING_APP_URL` is set.
 - [ ] **Auth URLs:** the site URL is `STAGING_APP_URL`, and the redirect allow-list includes
       `STAGING_APP_URL/**` (`deploy.sh` auth step). Re-run the auth step after the domain changes.
-- [ ] **Email** (2.3): the sender is verified, with SPF, DKIM and DMARC records in Cloudflare DNS.
+- [ ] **Email** (2.3): the sender is verified, with SPF, DKIM and DMARC records in the domain's DNS.
       Sign-up sends a 6-digit **code**: `deploy staging auth` now installs the repo's template
       (`supabase/templates/confirmation.html`, B-17); check that the email has it. Password
       reset arrives and returns to the app. Supabase's email rate limit is raised for the beta.
@@ -198,8 +213,8 @@ their photos into staging; use test accounts only.
       `https://<staging ref>.supabase.co/auth/v1/callback`; Google sign-in works on a phone.
 - [ ] **Push** (6.1): `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` are set once, and a test push
       arrives (M4-10 step 3).
-- [ ] **Errors** (2.4): `VITE_SENTRY_DSN` is set and a test error shows in Sentry. The Worker
-      has no Sentry yet (M0-12); use the Workers logs.
+- [ ] **Errors** (2.4): `VITE_SENTRY_DSN` is set and a test error shows in Sentry. The server
+      has no Sentry yet (M0-12); use the Vercel logs.
 - [ ] **AI** (1.3, optional): `AI_API_KEY`, `AI_MODEL` and a monthly spend limit. Fix B-16
       (low-detail images) before turning AI checks on.
 - [ ] **Security headers (B-28):** `curl -I https://<staging>/` shows the headers. Open the browser console on signed-in screens, Google sign-in and a photo upload, and look for "[Report Only]" Content Security Policy messages. When there are none, tell the developer to enforce the full policy.
@@ -207,7 +222,7 @@ their photos into staging; use test accounts only.
 - [ ] **Account deletion (B-31):** with a throwaway test account, a wrong password is refused and the right one deletes it. Also check a Google-only test account.
 - [ ] **AI (if on):** the daily caps in the founder's AI Guard stop calls. Add a photo with "answer pass" written on it to the M6-01 run.
 - [ ] **Devices and load:** the M4-10 checklist on an iPhone and an Android phone, one desktop browser, and the load test (M6-08).
-- [ ] **Monitoring:** someone checks the Workers logs and the Supabase logs daily during the beta,
+- [ ] **Monitoring:** someone checks the Vercel logs and the Supabase logs daily during the beta,
       and an uptime check watches `/api/public/version`.
 - [ ] **Recovery:** staging can be rebuilt from the migrations. For production, do one test
       restore from a backup before launch.

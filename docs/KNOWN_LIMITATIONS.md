@@ -6,7 +6,7 @@ What the app does not do yet, or does only partly. Each item says why and what w
 
 None of these has been tested yet; they need a staging environment and devices:
 - hosted Supabase (auth URLs, storage policies, cron, email templates)
-- Cloudflare Workers runtime under real traffic
+- Vercel's Node.js functions under real traffic (local tests serve the build with `scripts/serve-build.ts`, a stand-in for Vercel's routing)
 - real AI model verdicts
 - Google sign-in
 - sign-up email delivery

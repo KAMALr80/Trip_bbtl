@@ -50,7 +50,7 @@ describe("precacheList", () => {
     );
   });
 
-  it("leaves out images, maps, the worker itself and Cloudflare's files", () => {
+  it("leaves out images, maps, the worker itself and host config files", () => {
     for (const url of [
       "/assets/journey-coast-top-BN5ln5RZ.jpg",
       "/sw.js",

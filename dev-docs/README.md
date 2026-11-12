@@ -13,7 +13,7 @@ The deck is the **source of truth for product rules**. It says so itself: *"This
 
 ## TL;DR for the team lead
 
-1. **The stack is fine; keep it.** It's TypeScript + React 19 + TanStack Start on Cloudflare Workers, with Supabase (Postgres, Auth, Storage, pg_cron) behind it.
+1. **The stack is fine; keep it.** It's TypeScript + React 19 + TanStack Start, hosted on Vercel (moved from Cloudflare Workers on Nov 12, 2026), with Supabase (Postgres, Auth, Storage, pg_cron) behind it.
 2. **It typechecks and builds cleanly**, but it has **zero automated tests**. 66 roadmap items are marked "verify signed-in…, blocked", so **signed-in flows have never been tested end to end**.
 3. **The game rules live in Postgres.** There are about 125 tables and about 720 SQL functions, mostly in the `trip_private` schema. This is the most valuable part of the codebase, and also the riskiest.
 4. **Up to three rule generations run side by side**, switched by trip columns: `legacy`, `season_rule='a2c'`, and `a2e_room`/`a2e_kind`. The code was told never to change existing trips, especially the live **"Siam Vibes" trip (join code `VRFQQM`)**. Ending that requires a founder decision; see [06-open-questions.md](06-open-questions.md) Q1.

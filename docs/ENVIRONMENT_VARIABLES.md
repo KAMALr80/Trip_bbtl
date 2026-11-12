@@ -16,9 +16,9 @@ These are public by design. Never put a secret in a `VITE_` variable: the bundle
 | `VITE_VAPID_PUBLIC_KEY` | For push | Public half of the web push key pair |
 | `VITE_FEATURE_*` | No | Unfinished features, off unless `true` ([`src/lib/flags.ts`](../src/lib/flags.ts)) |
 
-## Server (Cloudflare Worker secrets)
+## Server (Vercel environment variables)
 
-Set these with `wrangler secret put NAME --env staging|production`.
+`scripts/deploy.sh <env> web` sets these on the environment's Vercel project as sensitive variables (Production target). To change one by hand: Vercel → the project → Settings → Environment Variables, then redeploy.
 
 | Name | Required | Purpose | If missing |
 |---|---|---|---|

@@ -1,4 +1,4 @@
-// The service worker (M4-02). Bundled into .output/public/sw.js by scripts/pwa/build-sw.ts after
+// The service worker (M4-02). Bundled into .vercel/output/static/sw.js by scripts/pwa/build-sw.ts after
 // `vite build`, which fills in __TJ_VERSION__ and __TJ_PRECACHE__ for that build.
 //
 // - Precaches this build's scripts, styles, icons, the Home shell and the offline page.

@@ -13,8 +13,8 @@ More background is in [`dev-docs/08-testing-and-qa.md`](../dev-docs/08-testing-a
 | Database (PostgreSQL 16) | `bash scripts/db/test.sh` inside `postgres:16-bookworm` with the repo mounted | Same files with `pgtap-lite`; no Supabase needed |
 | DB fixtures | `bun scripts/db/fixture-tests.ts` | Regenerates the fixture-driven tests (rooms, phases) from `supabase/tests/fixtures/*.json` |
 | E2E (mocked), while coding | `npx playwright test` | Starts `bun run dev` on 8080 with a placeholder Supabase URL; every Supabase call is mocked per test (`e2e/support/mock-backend.ts`) |
-| E2E (mocked), release gate | `npx playwright test -c playwright.build.config.ts` | Same specs against a production build served by `wrangler dev` on 4175. Run it twice before a release. |
-| E2E (PWA) | `npx playwright test -c playwright.pwa.config.ts` | Production build served by `wrangler dev` on 4173, with the service worker on |
+| E2E (mocked), release gate | `npx playwright test -c playwright.build.config.ts` | Same specs against a production build served by `scripts/serve-build.ts` (Vercel's routes) on 4175. Run it twice before a release. |
+| E2E (PWA) | `npx playwright test -c playwright.pwa.config.ts` | Production build served by `scripts/serve-build.ts` on 4173, with the service worker on |
 | Build | `bun run build` | |
 | Bundle secrets | `bun scripts/security/check-bundle.ts` | After the build; fails if a server secret reaches `.output/public` |
 
