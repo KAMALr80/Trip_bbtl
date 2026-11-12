@@ -2,7 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLockup } from "@/components/BrandLockup";
 import { RememberedSection } from "@/components/RememberedSection";
-import founderAbout from "@/assets/founder-about.jpg.asset.json";
+import founderAbout from "@/assets/founder-about.jpg";
 
 // The founder's story. Shown in three places: Me › About TripJunkies, the signed-out
 // "Our story ›" view, and the public /about page that can be shared as a link.
@@ -23,7 +23,7 @@ export function AboutContent({
       <BrandLockup className="inline-block text-3xl mt-2" />
       <div className="relative mt-7 aspect-[4/5] w-full overflow-hidden rounded-[24px] border border-border bg-card">
         <img
-          src={founderAbout.url}
+          src={founderAbout}
           alt="Tymeka Smith at a mountain overlook"
           width={768}
           height={960}

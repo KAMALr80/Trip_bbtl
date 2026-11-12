@@ -35,6 +35,7 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { useT } from "@/i18n";
+import { toast } from "sonner";
 
 import { JoinRoomCard } from "@/features/trip/InvitePreview";
 import { setViewerZone, deviceZone } from "@/lib/viewer-time";
@@ -344,6 +345,8 @@ export function AppShell() {
       onExpired={() => {
         clearPendingCode();
         setPendingCode(null);
+        // A wrong or expired invite link used to vanish without a word (STG-01).
+        toast(t("join.inviteNotFound"));
       }}
     />
   );
@@ -426,9 +429,14 @@ export function AppShell() {
     if (!user || !tripsQuery.data) return;
     const fromUrl = urlTripId !== lastUrlTrip.current;
     lastUrlTrip.current = urlTripId;
-    if (fromUrl && urlTripId && urlTripId !== activeId && trips.some((t) => t.id === urlTripId)) {
-      setActiveId(urlTripId);
-      return;
+    if (fromUrl && urlTripId && urlTripId !== activeId) {
+      if (trips.some((t) => t.id === urlTripId)) {
+        setActiveId(urlTripId);
+        return;
+      }
+      // Not one of my trips (wrong, old or someone else's link): say so instead of silently
+      // switching trips (STG-04). The URL then follows the open trip as before.
+      toast(t("nav.tripNotFound"));
     }
     if ((tab === "Play" || tab === "Trip") && urlTripId !== activeId) syncTripUrl(activeId);
   }, [user?.id, tripsQuery.data, urlTripId, activeId, tab]);

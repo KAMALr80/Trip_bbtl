@@ -581,7 +581,12 @@ function EnginePlayHub(props: Props) {
       />
     );
   const nowMs = Date.now();
-  const sealedReady = upNowQuest(schedule, userId, nowMs);
+  const sealedReady = upNowQuest(
+    schedule,
+    userId,
+    nowMs,
+    new Set(myProofs.map((p) => p.schedule_id).filter((id): id is string => !!id)),
+  );
   const pending = myProofs.find((p) => p.crew_status === "waiting");
   const up: {
     key: string;
