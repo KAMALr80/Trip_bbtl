@@ -11,7 +11,11 @@
 #
 # Settings come from the environment (in a cloud session: the environment's secrets). Shared:
 #   SUPABASE_ACCESS_TOKEN                       Supabase personal access token
-#   VERCEL_TOKEN, VERCEL_TEAM_ID                Vercel access token and team id (team_…)
+#   VERCEL_TOKEN [, VERCEL_TEAM_ID]             Vercel access token; team id (team_…), default: the
+#                                               token owner's own (Hobby) team
+#   SUPABASE_DB_VIA_API=true                    db step: apply migrations through Supabase's HTTPS
+#                                               API instead of a database connection (for hosts
+#                                               that only allow HTTPS, like cloud sessions)
 #   AI_API_KEY, AI_MODEL [, AI_BASE_URL, AI_PRICE_IN, AI_PRICE_OUT]   AI features (optional)
 #   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET      Google sign-in (optional)
 #   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SENDER_EMAIL [, SMTP_SENDER_NAME]  (optional)
@@ -51,7 +55,7 @@ if [ -n "$APP_URL" ] && ! valid_url "$APP_URL"; then
   echo "${P}_APP_URL must look like https://host (no path): $APP_URL" >&2
   exit 1
 fi
-API="https://api.supabase.com/v1/projects/$REF"
+API="${SUPABASE_API:-https://api.supabase.com}/v1/projects/$REF" # SUPABASE_API: tests only
 
 need() {
   local missing=()
@@ -66,7 +70,12 @@ api() { # method path [json]
     -H "Content-Type: application/json" ${3:+--data "$3"}
 }
 sql() { api POST /database/query "$(jq -n --arg q "$1" '{query: $q}')" >/dev/null; }
-vercel_api() { # method path [json]   Vercel REST API, scoped to the team
+vercel_team() { # Hobby: without VERCEL_TEAM_ID, the token owner's default team (or the user)
+  [ -n "${VERCEL_TEAM_ID:-}" ] && return
+  VERCEL_TEAM_ID="$(curl -fsS https://api.vercel.com/v2/user -H "Authorization: Bearer $VERCEL_TOKEN" |
+    jq -er '.user.defaultTeamId // .user.id')"
+}
+vercel_api() { # method path [json]   Vercel REST API, scoped to the team (call vercel_team first)
   local sep='?'; [[ "$2" == *\?* ]] && sep='&'
   curl -fsS -X "$1" "https://api.vercel.com$2${sep}teamId=$VERCEL_TEAM_ID" \
     -H "Authorization: Bearer $VERCEL_TOKEN" -H "Content-Type: application/json" ${3:+--data "$3"}
@@ -75,7 +84,7 @@ vercel_api() { # method path [json]   Vercel REST API, scoped to the team
 check() {
   echo "Settings for $env_name:"
   for v in SUPABASE_ACCESS_TOKEN "SUPABASE_${P}_REF" "SUPABASE_${P}_DB_PASSWORD" \
-           VERCEL_TOKEN VERCEL_TEAM_ID "${P}_APP_URL" AI_API_KEY AI_MODEL \
+           VERCEL_TOKEN "${P}_APP_URL" AI_API_KEY AI_MODEL \
            GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET SMTP_HOST SMTP_SENDER_EMAIL VITE_SENTRY_DSN CRON_SECRET \
            VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY EMAIL_API_KEY EMAIL_FROM; do
     if [ -n "${!v:-}" ]; then echo "  ✓ $v"; else echo "  · $v"; fi
@@ -83,10 +92,42 @@ check() {
 }
 
 push_db() {
+  if [ "${SUPABASE_DB_VIA_API:-}" = true ]; then push_db_api; return; fi
   need SUPABASE_ACCESS_TOKEN "SUPABASE_${P}_REF" "SUPABASE_${P}_DB_PASSWORD"
   export SUPABASE_DB_PASSWORD; SUPABASE_DB_PASSWORD="$(var "SUPABASE_${P}_DB_PASSWORD")"
   "${SUPABASE[@]}" link --project-ref "$REF"
   "${SUPABASE[@]}" db push --yes
+}
+
+# The same result as `supabase db push`, over HTTPS: each migration not yet recorded in
+# supabase_migrations.schema_migrations runs as one request (one implicit transaction, so a failing
+# file changes nothing) and is then recorded, so the CLI and this path can be mixed later.
+push_db_api() {
+  need SUPABASE_ACCESS_TOKEN "SUPABASE_${P}_REF"
+  local applied file base version body status out
+  sql "CREATE SCHEMA IF NOT EXISTS supabase_migrations;
+       CREATE TABLE IF NOT EXISTS supabase_migrations.schema_migrations
+         (version text PRIMARY KEY, statements text[], name text);"
+  applied="$(api POST /database/query \
+    '{"query": "SELECT version FROM supabase_migrations.schema_migrations"}' | jq -r '.[].version')"
+  body="$(mktemp)"; out="$(mktemp)"
+  for file in supabase/migrations/*.sql; do
+    base="$(basename "$file" .sql)"; version="${base%%_*}"
+    grep -qx "$version" <<<"$applied" && continue
+    echo "Applying $base"
+    jq -Rs '{query: .}' "$file" >"$body"
+    status="$(curl -sS -o "$out" -w '%{http_code}' -X POST "$API/database/query" \
+      -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+      --data-binary @"$body")"
+    if [ "${status:0:1}" != 2 ]; then
+      echo "Migration $base failed (HTTP $status):" >&2; head -c 2000 "$out" >&2; echo >&2
+      exit 1
+    fi
+    sql "INSERT INTO supabase_migrations.schema_migrations (version, name)
+         VALUES ('$version', '${base#*_}') ON CONFLICT (version) DO NOTHING;"
+  done
+  rm -f "$body" "$out"
+  echo "Database is up to date."
 }
 
 keys() { # prints "<publishable> <service_role>"
@@ -119,7 +160,8 @@ auth() {
 }
 
 web() {
-  need SUPABASE_ACCESS_TOKEN "SUPABASE_${P}_REF" VERCEL_TOKEN VERCEL_TEAM_ID
+  need SUPABASE_ACCESS_TOKEN "SUPABASE_${P}_REF" VERCEL_TOKEN
+  vercel_team
   local publishable service url project_id secrets
   read -r publishable service < <(keys)
   url="https://$REF.supabase.co"

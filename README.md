@@ -78,7 +78,8 @@ There are two environments, each a Supabase project plus a Vercel project: **sta
 |---|---|
 | `SUPABASE_ACCESS_TOKEN` | Supabase personal access token |
 | `SUPABASE_STAGING_REF`, `SUPABASE_STAGING_DB_PASSWORD` | the staging project (`PROD` instead of `STAGING` for production) |
-| `VERCEL_TOKEN`, `VERCEL_TEAM_ID` | a Vercel access token scoped to the team, and the team id (`team_…`) |
+| `VERCEL_TOKEN` (+ optional `VERCEL_TEAM_ID`) | a Vercel access token; the team id (`team_…`) defaults to the token owner's own team (Hobby) |
+| `SUPABASE_DB_VIA_API=true` | optional: the `db` step applies migrations through Supabase's HTTPS API (for machines that can't open a database connection, like cloud sessions) |
 | `AI_API_KEY`, `AI_MODEL` (+ optional `AI_BASE_URL`, `AI_PRICE_IN`, `AI_PRICE_OUT`) | AI features stay off without them |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google sign-in |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SENDER_EMAIL` | auth emails |
