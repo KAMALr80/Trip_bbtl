@@ -152,7 +152,9 @@ auth() {
     # The Supabase Free plan refuses template changes (entitlement_required) while its built-in
     # sender is used, so the template goes with custom SMTP; until then the default email
     # with its confirmation link is the way in (AuthScreen sends emailRedirectTo).
-    + (if $host != "" then {mailer_subjects_confirmation: "Your TripJunkies sign-up code",
+    # mailer_otp_length: the code box in the app takes 6 digits; new hosted projects default to 8.
+    + (if $host != "" then {mailer_otp_length: 6,
+                            mailer_subjects_confirmation: "Your TripJunkies sign-up code",
                             mailer_templates_confirmation_content: $confirm} else {} end)
     + (if $gid != "" then {external_google_enabled: true, external_google_client_id: $gid,
                            external_google_secret: $gsecret} else {} end)
