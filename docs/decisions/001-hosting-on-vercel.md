@@ -32,7 +32,9 @@ Cloudflare.
 
 ## Consequences
 
-- No Cloudflare account. The owner needs a Vercel Pro team, because Hobby is non-commercial only.
+- No Cloudflare account. Staging and the beta run on Vercel's Hobby plan (founder, Nov 12, 2026);
+  Vercel's terms limit Hobby to non-commercial use, so production moves to Pro before charging or
+  a public launch. `VERCEL_TEAM_ID` is optional: without it, the token owner's own team is used.
 - The domain's DNS can stay at any provider (e.g. Route 53). Each domain gets the record Vercel
   shows.
 - Server functions run on Node.js 22 in Vercel's default region (Washington, D.C., `iad1`). Keep

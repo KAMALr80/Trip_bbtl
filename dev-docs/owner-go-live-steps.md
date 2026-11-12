@@ -73,12 +73,14 @@ numbered sections below.
    secret `SUPABASE_ACCESS_TOKEN`.
 
 ### 1.2 Vercel (hosting)
-1. Sign up at **vercel.com** with the company email, and create a team ("TripJunkies") on the
-   **Pro** plan. The free Hobby plan is for non-commercial use only.
-2. Team **Settings → General** → copy the **Team ID** (starts with `team_`) → secret
-   `VERCEL_TEAM_ID`.
-3. Your avatar → **Account Settings → Tokens** → **Create Token** ("claude deploy"), scope: the
-   TripJunkies team, an expiry you're comfortable with (e.g. 1 year) → secret `VERCEL_TOKEN`.
+1. Sign up at **vercel.com** with the company email. The free **Hobby** plan works for staging and
+   the beta (founder's choice, Nov 12, 2026). Vercel's terms limit Hobby to non-commercial use, so
+   move to **Pro** before charging money or launching publicly.
+2. Your avatar → **Account Settings → Tokens** → **Create Token** ("claude deploy"), scope: your
+   Hobby team (or the Pro team), an expiry you're comfortable with (e.g. 1 year) → secret
+   `VERCEL_TOKEN`.
+3. Only on a Pro team with several teams: team **Settings → General** → **Team ID** (starts with
+   `team_`) → secret `VERCEL_TEAM_ID`. Without it the deploy uses the token owner's own team.
 4. Don't create a project and don't import the GitHub repo. The first deploy makes
    `tripjunkies-staging` (and later `tripjunkies`) itself. Deploys go through `scripts/deploy.sh`
    so database changes always land before the code that needs them.
