@@ -8625,7 +8625,8 @@ CREATE FUNCTION trip_private.is_captain(p_trip uuid) RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
-  SELECT EXISTS (SELECT 1 FROM public.trip_members WHERE trip_id=p_trip AND user_id=auth.uid() AND role='captain') $$;
+  SELECT EXISTS (SELECT 1 FROM public.trip_members WHERE trip_id=p_trip AND user_id=auth.uid() AND role='captain')
+     AND NOT EXISTS (SELECT 1 FROM public.user_blocks b WHERE b.user_id = auth.uid() AND b.disabled) $$;
 
 
 --
@@ -8635,7 +8636,8 @@ CREATE FUNCTION trip_private.is_captain(p_trip uuid) RETURNS boolean
 CREATE FUNCTION trip_private.is_leader(p_trip uuid) RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
-    AS $$ SELECT EXISTS (SELECT 1 FROM public.trip_members WHERE trip_id=p_trip AND user_id=auth.uid() AND role IN ('captain','co_captain')) $$;
+    AS $$ SELECT EXISTS (SELECT 1 FROM public.trip_members WHERE trip_id=p_trip AND user_id=auth.uid() AND role IN ('captain','co_captain'))
+          AND NOT EXISTS (SELECT 1 FROM public.user_blocks b WHERE b.user_id = auth.uid() AND b.disabled) $$;
 
 
 --
@@ -8663,7 +8665,8 @@ $_$;
 CREATE FUNCTION trip_private.is_trip_member(p_trip uuid, p_user uuid) RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
-    AS $$ SELECT EXISTS (SELECT 1 FROM public.trip_members WHERE trip_id = p_trip AND user_id = p_user AND status = 'approved') $$;
+    AS $$ SELECT EXISTS (SELECT 1 FROM public.trip_members WHERE trip_id = p_trip AND user_id = p_user AND status = 'approved')
+          AND NOT EXISTS (SELECT 1 FROM public.user_blocks b WHERE b.user_id = p_user AND b.disabled) $$;
 
 
 --
@@ -10354,7 +10357,7 @@ CREATE FUNCTION trip_private.moderate_photo(p_id uuid, p_action text, p_note tex
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO ''
     AS $$
-DECLARE m public.photo_moderation; p public.proofs;
+DECLARE m public.photo_moderation; p public.proofs; v_points text;
 BEGIN
   IF NOT trip_private.is_app_admin() THEN RAISE EXCEPTION 'Admins only'; END IF;
   IF p_action NOT IN ('approve', 'remove', 'warn') THEN RAISE EXCEPTION 'Pick approve, remove or warn'; END IF;
@@ -10368,7 +10371,15 @@ BEGIN
   END IF;
   IF p_action = 'remove' THEN
     SELECT * INTO p FROM public.proofs WHERE id = m.proof_id;
-    PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'rejected');
+    -- No points for removed content: approved points are voided, pending ones rejected.
+    SELECT l.status INTO v_points FROM public.points_ledger l
+    WHERE l.trip_id = p.trip_id AND l.user_id = p.user_id AND l.source = p.source
+      AND l.source_ref IS NOT DISTINCT FROM p.schedule_id;
+    IF v_points = 'approved' THEN
+      PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'void');
+    ELSIF v_points = 'pending' THEN
+      PERFORM trip_private.set_points_status(p.trip_id, p.user_id, p.source, p.schedule_id, 'rejected');
+    END IF;
     DELETE FROM public.postcard_picks WHERE proof_id = m.proof_id;
   END IF;
   INSERT INTO public.moderation_log (moderation_id, actor, action, note, subject_user)

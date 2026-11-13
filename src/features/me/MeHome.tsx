@@ -80,7 +80,7 @@ export function MeHome(props: Props) {
               <TravelerLevel />
               <FoundingBadge userId={userId} straight />
             </span>
-            <Button variant="link" className="h-auto p-0 text-sm" onClick={props.onProfile}>
+            <Button variant="link" className="h-auto min-h-6 p-0 text-sm" onClick={props.onProfile}>
               {t("me.viewProfile")}
             </Button>
           </div>

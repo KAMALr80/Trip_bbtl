@@ -187,7 +187,7 @@ function PageTwo({ p }: { p: PlayerProfile }) {
           {s.top ? "★ " : ""}
           {s.kind === "postcard"
             ? `🏠 ${placeName(s.culture ?? s.country)}`
-            : (s.state ?? s.country)}
+            : (s.state ?? placeName(s.country))}
         </strong>
         <span className="block">{s.season_label}</span>
         {s.solo && <span className="block">{t("passport.solo")}</span>}

@@ -1,4 +1,4 @@
-- Keep Night Flight/Neon Night Out dark by default, persist optional light appearance locally, and follow approved visuals. Store founder photos as CDN pointers, not git media.
+- Keep Night Flight/Neon Night Out dark by default, persist optional light appearance locally, and follow approved visuals. The founder photos and US state flags are real files in `src/assets` (the Lovable `*.asset.json` CDN pointers 404 on Vercel, STG-05); keep new large photos out of git.
 - Keep Trip section choices per trip locally and full itinerary separate; reuse GameNightCalendar with existing night actions across views so schedules cannot diverge.
 - Keep the first tour optional and replayable without resetting completion on replay, so returning members are never forced through onboarding.
 - Keep Explore tour content as local display-only sample data using shared presentation pieces, so replay never reads or mutates a real trip.

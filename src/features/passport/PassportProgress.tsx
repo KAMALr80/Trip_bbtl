@@ -96,7 +96,7 @@ export function TripStamps() {
               <strong className="block uppercase">
                 {s.kind === "postcard"
                   ? `🏠 ${placeName(s.culture ?? s.country)}`
-                  : (s.state ?? s.country)}
+                  : (s.state ?? placeName(s.country))}
               </strong>
               <span className="block">{t(`passport.kind.${kindKey(s.kind)}`)}</span>
               <span className="block">

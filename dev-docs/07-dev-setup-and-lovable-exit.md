@@ -116,11 +116,11 @@ The project is tied to Lovable in **ten places**. Do them in this order (it's M0
 - [ ] Check the build output still matches (`.output/server`, `.output/public`).
 
 ### 3.9 Lovable-hosted images (⚠ easy to miss)
-- [ ] **13 images exist only on Lovable's CDN.** The repo has `*.asset.json` pointer files with `url: "/__l5e/assets-v1/…"`, not the image files:
+- [x] **13 images exist only on Lovable's CDN.** The repo had `*.asset.json` pointer files with `url: "/__l5e/assets-v1/…"`, not the image files (done Nov 13, 2026: downloaded from the Lovable deployment with sizes checked, committed as real files, pointers removed; staging QA STG-05):
   - `src/assets/founder-about.jpg.asset.json`
   - `src/assets/founder-headshot.jpg.asset.json`
   - 11 US state flags in `src/assets/state-flags/*.png.asset.json`
-- [ ] **Download them while the Lovable deployment still works** (from the live site at those `/__l5e/...` paths, or ask Lovable support). Commit them as real files, and change the imports in `AboutStory.tsx`, `WelcomeCopy.tsx` and `TripFlag.tsx`.
+- [x] **Download them while the Lovable deployment still works** (from the live site at those `/__l5e/...` paths, or ask Lovable support). Commit them as real files, and change the imports in `AboutStory.tsx`, `WelcomeCopy.tsx` and `TripFlag.tsx`.
 
 ### 3.10 Package and tooling cleanup
 - [ ] Remove `@lovable.dev/*` packages once the steps above are done.

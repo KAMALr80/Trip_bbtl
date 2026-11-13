@@ -53,6 +53,11 @@ describe("pickActiveTrip (QA-03)", () => {
     expect(pickActiveTrip([older, finished], { saved: "finished" }, AT)).toBe("finished");
   });
 
+  it("keeps a remembered sandbox open after the Test Lab moved it past its dates (STG-07)", () => {
+    const sandbox = trip("sandbox", "2026-10-20", "2026-10-25", { is_sandbox: true });
+    expect(pickActiveTrip([sandbox, soon], { saved: "sandbox" }, AT)).toBe("sandbox");
+  });
+
   it("ignores a trip the player is no longer in", () => {
     expect(pickActiveTrip([soon], { current: "gone", saved: "gone2" }, AT)).toBe("soon");
   });
