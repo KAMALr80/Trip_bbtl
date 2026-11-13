@@ -6,7 +6,7 @@ Account setup, click by click: [`dev-docs/owner-go-live-steps.md`](../dev-docs/o
 
 ## 1. Before the first staging deploy
 
-- [ ] Owner steps 1.1–1.5 done: Supabase staging project, Cloudflare account, optional AI key, VAPID keys.
+- [ ] Owner steps 1.1–1.5 done: Supabase staging project, Vercel account, optional AI key, VAPID keys.
 - [ ] `main` contains the release and CI is green: Web, Database and Supabase local stack.
 - [ ] Locally, all of these pass (see [`TESTING_GUIDE.md`](TESTING_GUIDE.md)):
   - `bun run typecheck`, `bun run lint`, `npx vitest run`
@@ -22,9 +22,10 @@ Account setup, click by click: [`dev-docs/owner-go-live-steps.md`](../dev-docs/o
    - The new ones since the last deploy are listed in [`DATABASE_AND_MIGRATIONS.md`](DATABASE_AND_MIGRATIONS.md).
 2. **`scripts/deploy.sh staging auth`** sets the site URL and redirect URLs, plus Google and SMTP when their settings are present.
 3. **`scripts/deploy.sh staging web`**:
-   - builds with the staging URL and key, with the service worker on
-   - deploys the Worker and sets its secrets
-   - points the photo-purge cron job at it
+   - builds with the staging URL and key, with the service worker on, and checks the bundle
+   - makes the Vercel project `tripjunkies-staging` on the first run, and sets its server secrets
+   - deploys it (`vercel deploy --prebuilt --prod`)
+   - points the photo-purge and reminder cron jobs at it
 4. Smoke check. `GET https://<staging>/api/public/version` should answer with the commit. Then work through the staging readiness checklist in owner-go-live-steps section 8.
 
 ## 3. Verify on staging (cannot be done locally)
@@ -50,15 +51,15 @@ Account setup, click by click: [`dev-docs/owner-go-live-steps.md`](../dev-docs/o
 
 ## 5. Rollback
 
-- **Web.** Redeploy the previous Worker version: Cloudflare dashboard → Workers → Deployments → roll back, or `wrangler rollback`. The client build is tied to the Worker, so this rolls back both.
+- **Web.** Vercel dashboard → the project → Deployments → the previous one → **Instant Rollback** (or `npx vercel rollback`). The static files and the server function are one deployment, so this rolls back both. The next `scripts/deploy.sh` run deploys forward again.
 - **Service worker.** Deploying with `VITE_SERVICE_WORKER=false` ships a self-removing `sw.js` (the kill switch) if a bad worker is cached on phones.
 - **Database.** Migrations are not reversed automatically. Write a new forward migration that undoes the change. For data loss, restore from PITR into a new project and copy back what is needed. Never run `supabase db reset` against a hosted project.
-- **Secrets.** Rotate `CRON_SECRET` using `CRON_SECRET_PREVIOUS`. Rotating the service role key needs a Worker secret update in the same window.
+- **Secrets.** Rotate `CRON_SECRET` using `CRON_SECRET_PREVIOUS`. Rotating the service role key needs a Vercel environment variable update and a redeploy (`scripts/deploy.sh <env> web`) in the same window.
 
 ## 6. Monitoring
 
 - **Browser errors:** Sentry when `VITE_SENTRY_DSN` is set; otherwise only the console.
-- **Worker logs:** `wrangler tail --env <env>`.
+- **Server logs:** Vercel dashboard → the project → Logs (or `npx vercel logs <deployment-url>`).
 - **Database:**
   - Supabase logs and advisors (performance and security) after each migration push.
   - Rate limiting is per-feature in the database (AI quotas, code attempts); there is no global API rate limit beyond Supabase's own.

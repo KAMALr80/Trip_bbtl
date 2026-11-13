@@ -4,7 +4,8 @@
     "Home": "Home",
     "Play": "Play",
     "Trip": "Trip",
-    "Me": "Me"
+    "Me": "Me",
+    "tripNotFound": "That trip link isn’t one of your trips, so we opened your current trip instead."
   },
   "common": {
     "back": "Back",
@@ -269,7 +270,8 @@
     "noRole": "Pick later",
     "nameLabel": "Your name",
     "namePlaceholder": "So your Captain knows it's you",
-    "nameHint": "Your Captain sees this when approving you."
+    "nameHint": "Your Captain sees this when approving you.",
+    "inviteNotFound": "That invite link didn’t work. The code may be wrong or expired — ask your Captain for a new one."
   },
   "tripSheets": {
     "joinLabel": "Join a trip",

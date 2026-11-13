@@ -5,7 +5,7 @@ import { legalLinks } from "@/lib/legal";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import founderHeadshot from "@/assets/founder-headshot.jpg.asset.json";
+import founderHeadshot from "@/assets/founder-headshot.jpg";
 
 type Copy = { founder_intro: string; faq: { q: string; a: string }[] };
 const fallback: Copy = {
@@ -52,7 +52,7 @@ export function WelcomeExtras({ onStory }: { onStory: () => void }) {
       <details className="app-card group">
         <summary className="cursor-pointer list-none flex items-center gap-3 font-display font-extrabold text-lg">
           <img
-            src={founderHeadshot.url}
+            src={founderHeadshot}
             alt="Tymeka Smith"
             width={48}
             height={48}

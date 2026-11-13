@@ -57,7 +57,14 @@ export function pickActiveTrip<T extends OrderTrip>(
   if (choice.current && trips.some((t) => t.id === choice.current)) return choice.current;
   const first = orderTrips(trips, at)[0] ?? null;
   const saved = trips.find((t) => t.id === choice.saved);
-  if (saved && (tripStatus(saved, at) !== "Completed" || tripStatus(first!, at) === "Completed"))
+  // A sandbox the founder was testing stays open on reload even once its dates are past
+  // (Test Lab jumps to Baggage Claim and lock by moving them), so the lab keeps it (STG-07).
+  if (
+    saved &&
+    (saved.is_sandbox ||
+      tripStatus(saved, at) !== "Completed" ||
+      tripStatus(first!, at) === "Completed")
+  )
     return saved.id;
   return first?.id ?? null;
 }

@@ -4,7 +4,7 @@ import { ChevronDown, X } from "lucide-react";
 import { CountryFlag } from "@/components/CountryFlag";
 import { TripFlag } from "@/features/trip/TripFlag";
 import { TripSectionIcon } from "@/features/trip/TripSectionIcon";
-import { COUNTRIES } from "@/lib/places";
+import { COUNTRIES, placeName } from "@/lib/places";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { PACKS } from "@/features/at-home/AtHome";
@@ -430,7 +430,7 @@ export function PassportBook({
         variant="ghost"
         className="passport-visa-stamp"
         onClick={() => setEntry(s)}
-        aria-label={`Open ${s.city ?? s.state ?? s.country} stamp`}
+        aria-label={`Open ${s.city ?? s.state ?? placeName(s.country)} stamp`}
       >
         <span className="flex items-center gap-2">
           {trip ? (
@@ -444,7 +444,7 @@ export function PassportBook({
               className="h-4 w-6"
             />
           )}
-          <strong className="truncate">{s.city ?? s.state ?? s.country}</strong>
+          <strong className="truncate">{s.city ?? s.state ?? placeName(s.country)}</strong>
         </span>
         <small>{date(s.stamped_on)}</small>
       </Button>
@@ -875,7 +875,7 @@ export function PassportBook({
                 <h3>
                   {entry.kind === "postcard"
                     ? (PACKS.find((p) => p.key === entry.pack)?.name ?? entry.pack)
-                    : (entry.city ?? entry.state ?? entry.country)}
+                    : (entry.city ?? entry.state ?? placeName(entry.country))}
                 </h3>
                 <p>
                   {tripDisplayName(

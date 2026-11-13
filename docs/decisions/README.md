@@ -11,4 +11,8 @@ The rules the current code was built on live in four `AGENTS.md` files. They sta
 
 New decisions go here as short records, `NNN-title.md`: context → decision → consequences (see [dev-docs/09 §6](../../dev-docs/09-engineering-conventions.md)). When a decision replaces an `AGENTS.md` rule, edit that rule in the same PR.
 
+Records:
+
+- [001 · Host the web app on Vercel](001-hosting-on-vercel.md) (Nov 12, 2026)
+
 History from the Lovable build (round plans, the old roadmap) is archived in [`../history/`](../history/).

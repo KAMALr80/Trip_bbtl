@@ -32,6 +32,10 @@ enable_signup = true
 
 # B-17: the app asks for the 6-digit code after sign-up, so the email must contain it (the default
 # template only has a link). Hosted projects get the same template from scripts/deploy.sh (auth).
+[auth.email]
+# The code box (AuthScreen VerifyCode) takes 6 digits; newer hosted projects default to 8.
+otp_length = 6
+
 [auth.email.template.confirmation]
 subject = "Your TripJunkies sign-up code"
 content_path = "./supabase/templates/confirmation.html"

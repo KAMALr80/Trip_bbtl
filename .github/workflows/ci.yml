@@ -48,8 +48,8 @@ jobs:
       - run: npx playwright install chromium
         timeout-minutes: 5
       - run: npx playwright test
-      # M4-02: a second build with the service worker on, served by `wrangler dev` (Workers runtime,
-      # local only), then the offline tests in e2e/pwa.
+      # M4-02: a second build with the service worker on, served with Vercel's routes by
+      # scripts/serve-build.ts (local only), then the offline tests in e2e/pwa.
       - run: npx playwright test -c playwright.pwa.config.ts
       - uses: actions/upload-artifact@v4
         if: failure()
