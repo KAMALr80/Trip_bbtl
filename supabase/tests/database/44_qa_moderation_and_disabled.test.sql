@@ -46,13 +46,15 @@ SELECT public.report_proof_photo(pg_temp.id('waiting'), 'QA');
 SELECT tests.authenticate_as(tests.user_id('admin'));
 SELECT lives_ok($$SELECT public.moderate_photo((SELECT id FROM public.moderation_queue() WHERE proof_id = pg_temp.id('approved')), 'remove', 'QA')$$,
                 'an approved photo can be removed');
+SELECT lives_ok($$SELECT public.moderate_photo((SELECT id FROM public.moderation_queue() WHERE proof_id = pg_temp.id('waiting')), 'remove', 'QA')$$,
+                'a waiting photo can be removed');
+-- photo_moderation and the ledger aren't readable by signed-in users (43_least_privilege), so check
+-- them as the test owner.
+SELECT tests.clear_authentication();
 SELECT is((SELECT status FROM public.photo_moderation WHERE proof_id = pg_temp.id('approved')), 'removed', 'it leaves the queue as removed');
 SELECT ok(NOT trip_private.proof_photo_ok(pg_temp.id('approved'), tests.user_id('cap')), 'the crew no longer sees it');
 SELECT is(pg_temp.points('item'), 'void', 'its approved points are voided');
-SELECT lives_ok($$SELECT public.moderate_photo((SELECT id FROM public.moderation_queue() WHERE proof_id = pg_temp.id('waiting')), 'remove', 'QA')$$,
-                'a waiting photo can be removed');
 SELECT is(pg_temp.points('item2'), 'rejected', 'its pending points are rejected');
-SELECT tests.clear_authentication();
 SELECT is((SELECT coalesce(sum(points), 0)::int FROM public.points_ledger
            WHERE trip_id = pg_temp.id('trip') AND user_id = tests.user_id('p1') AND status = 'approved'), 0,
           'no points left for removed content');
