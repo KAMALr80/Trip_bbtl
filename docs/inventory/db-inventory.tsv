@@ -761,10 +761,10 @@ trigger	trip_private	inspiration_vote_guard		t	true						20261002171231_6a8ae031
 trigger	trip_private	inspiration_vote_validate		f	true						20261002164153_14d4b2d3-f03b-46bb-86bb-4d776543b573.sql	1	0	
 function	trip_private	is_app_admin		t	true				EXECUTE		20261002020127_d8478377-e9ec-4552-ab37-9dfa962e1146.sql	1	0	
 function	trip_private	is_approved_adult	p_trip uuid, p_user uuid	t	true				EXECUTE		20261005054945_da6738e3-ead5-4924-b2df-3b49451dcb51.sql	5	0	
-function	trip_private	is_captain	p_trip uuid	t	true				EXECUTE		20261002015216_f867571e-817c-49ea-bb2e-49aeaebac36d.sql	1	0	
-function	trip_private	is_leader	p_trip uuid	t	true				EXECUTE		20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	0	
+function	trip_private	is_captain	p_trip uuid	t	true				EXECUTE		20261113100000_qa_moderation_and_disabled_accounts.sql	2	0	
+function	trip_private	is_leader	p_trip uuid	t	true				EXECUTE		20261113100000_qa_moderation_and_disabled_accounts.sql	2	0	
 function	trip_private	is_three_emojis	p text	f	true				EXECUTE		20261102100000_m5_postcards.sql	1	0	
-function	trip_private	is_trip_member	p_trip uuid, p_user uuid	t	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	0	
+function	trip_private	is_trip_member	p_trip uuid, p_user uuid	t	true				EXECUTE		20261113100000_qa_moderation_and_disabled_accounts.sql	2	0	
 function	trip_private	is_unlocked	p_trip uuid	t	true						20261002034338_5eeea1c2-c81e-46ba-8a29-93d610005276.sql	1	0	
 function	trip_private	is_window_room	p_trip uuid	t	true				EXECUTE		20261005091250_b590b1f5-aee7-4936-8a83-94a070ff743f.sql	1	0	
 function	trip_private	join_trip	p_code text, p_display_name text	t	true				EXECUTE		20261107100000_privacy_and_join_names.sql	12	0	
@@ -817,7 +817,7 @@ function	trip_private	mission_bonus	p_trip uuid	t	true				EXECUTE		2026100522112
 function	trip_private	mission_window	p_trip uuid	t	true				EXECUTE		20261006024714_82adb54f-0d8b-4207-84a6-7b7909b4eb72.sql	2	0	
 function	trip_private	mix_ai_quota	p_trip uuid	t	true				EXECUTE		20261004001643_e9b66114-a18e-4a5f-a2e1-a93c252e81ba.sql	3	0	
 function	trip_private	moderate_inspiration	p_card uuid, p_action text	t	true				EXECUTE		20261002210105_753acd6c-39c8-4083-bc3b-eb5d6d2e4d1e.sql	1	0	
-function	trip_private	moderate_photo	p_id uuid, p_action text, p_note text	t	true				EXECUTE		20261104130000_m6_moderation.sql	1	0	
+function	trip_private	moderate_photo	p_id uuid, p_action text, p_note text	t	true				EXECUTE		20261113100000_qa_moderation_and_disabled_accounts.sql	2	0	
 function	trip_private	moderation_queue	p_include_closed boolean	t	true				EXECUTE		20261104130000_m6_moderation.sql	1	0	
 function	trip_private	my_access		t	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	0	
 function	trip_private	my_bug_updates		t	true				EXECUTE			0	0	
