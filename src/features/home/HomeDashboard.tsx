@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import { HomeSearch } from "@/features/home/HomeSearch";
 import { rpc } from "@/data/rpc";
 import { useEffect, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, LockKeyhole, Plane, Search, Share2 } from "lucide-react";
@@ -171,6 +172,7 @@ export function HomeDashboard({
   const flightReminder = useFlightReminders(active, userId);
   const homeLayout = useHomeLayout(userId);
   const [tile, setTile] = useState("a");
+  const [searchOpen, setSearchOpen] = useState(false);
   useEffect(() => {
     void rpc("boarding_tile").then((r) => setTile(r.data ?? "a"));
   }, []);
@@ -380,7 +382,9 @@ export function HomeDashboard({
         detail: "",
       },
       {
-        label: "GAME NIGHT",
+        // The casual games, named like their screen; "Game Night" is the one-night room below and
+        // Game Night Live the present-and-vote screen (founder review).
+        label: "GAMES ON FLIGHT",
         gate: "D",
         img: gameOptionA,
         action: () => setScreen("arcade"),
@@ -418,10 +422,11 @@ export function HomeDashboard({
         action: () => void navigate({ to: "/trips/new", search: { room: "game_night" } }),
       },
       {
-        label: "Passport",
-        subline: "Your stamps",
-        img: iconPassport,
-        action: () => setScreen("passport"),
+        // Passport is already on the board (gate E); joining a trip needs a door on Home.
+        label: "Join with Code",
+        subline: "Your Captain's code",
+        img: iconBoarding,
+        action: () => open("Join a trip"),
       },
     ];
     return (
@@ -445,11 +450,24 @@ export function HomeDashboard({
           </span>
           ?
         </h1>
-        <Button variant="outline" className="home-live-search" onClick={() => explore()}>
+        <Button variant="outline" className="home-live-search" onClick={() => setSearchOpen(true)}>
           <Search size={18} />
-          {/* It opens Explore, not a search (QA-14), so it says so. */}
+          {/* A real search now (founder review); the tour stays one of its results. */}
           <span>{i18n.t("home.exploreButton")}</span>
         </Button>
+        {searchOpen && (
+          <HomeSearch
+            onClose={() => setSearchOpen(false)}
+            onRoom={(room, country) =>
+              void navigate({ to: "/trips/new", search: country ? { room, country } : { room } })
+            }
+            onGames={() => setScreen("arcade")}
+            onPassport={() => setScreen("passport")}
+            onJoin={() => open("Join a trip")}
+            onJourney={() => setScreen("journey")}
+            onTour={() => explore()}
+          />
+        )}
         <section className="home-live-board-scene" aria-label="Departures board">
           <img
             className="home-live-board-photo"
