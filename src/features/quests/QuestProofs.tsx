@@ -238,7 +238,17 @@ export function CrewCheck({
     ),
   );
   const rows = crew.data ?? [];
-  if (!rows.length) return null;
+  // Solo trips self-honor proofs, so there's no Crew Check at all. In a crew trip an empty list
+  // still shows the section, so players know where proofs to 👍 will appear (founder review).
+  if (!rows.length) {
+    if (trip.play_mode === "solo" || crew.isLoading) return null;
+    return (
+      <section className="app-card mt-3" aria-label={t("crewCheck.title")}>
+        <p className="text-xs font-bold uppercase text-muted-foreground">{t("crewCheck.title")}</p>
+        <p className="text-xs text-muted-foreground mt-1">{t("crewCheck.empty")}</p>
+      </section>
+    );
+  }
   const nameOf = (id: string) =>
     members.find((m) => m.user_id === id)?.display_name ?? t("crewCheck.someone");
   return (
