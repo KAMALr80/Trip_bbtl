@@ -80,7 +80,9 @@ export function TripWizard({ search }: { search: WizardSearch }) {
     window.scrollTo({ top: 0 });
     void navigate({
       to: "/trips/new",
-      search: { ...search, ...extra, step: to } as never,
+      // `country` (from Home search) only seeds a fresh draft. Drop it once the wizard moves on:
+      // left in the URL, a refresh on a later screen would start over and lose the saved draft.
+      search: { ...search, country: undefined, ...extra, step: to } as never,
       replace,
     });
   };

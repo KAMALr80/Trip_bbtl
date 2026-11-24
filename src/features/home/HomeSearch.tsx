@@ -7,6 +7,7 @@ import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { roomIds, type RoomId } from "@/features/trip/rooms";
 import { useT } from "@/i18n";
+import { displayGameTitle } from "@/lib/display-game-title";
 import { COUNTRIES } from "@/lib/places";
 
 /** The Games on Flight titles, as on the arcade grid. */
@@ -70,7 +71,8 @@ export function HomeSearch({
     }));
     const games: Hit[] = SEARCH_GAMES.map((g) => ({
       key: `game-${g}`,
-      label: g,
+      // The same title the arcade grid shows ("Spin the Wheel", "Two Truths & a Lie").
+      label: displayGameTitle(g),
       line: t("search.gamesLine"),
       go: onGames,
     }));
