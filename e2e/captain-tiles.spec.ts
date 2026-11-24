@@ -16,6 +16,8 @@ test("a Captain edits the crowning night from the Trip Season tile", async ({ pa
     /Baggage Claim/,
   ]);
   await tiles.getByRole("button", { name: /Trip Season/ }).click();
+  // No crowning night yet: the Captain picks the day (nothing is pre-filled), then the place.
+  await page.getByRole("combobox", { name: "Day" }).selectOption(day(14));
   await page.getByLabel("Where").fill("Rooftop bar");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();

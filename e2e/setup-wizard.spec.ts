@@ -51,6 +51,10 @@ test("a Captain sets up a trip to Bali in five screens", async ({ page }) => {
   await next(page);
 
   await expect(page.getByRole("heading", { name: "Trip Season" })).toBeVisible();
+  // The Captain picks the crowning day; nothing is pre-filled (founder review).
+  await next(page);
+  await expect(page.getByRole("alert")).toHaveText("Pick the day and time.");
+  await page.getByRole("combobox", { name: "Day" }).selectOption(iso(inDays(13)));
   await next(page);
   await expect(page.getByRole("alert")).toHaveText("Add where it happens.");
   await page.getByLabel("Where").fill("The villa rooftop");

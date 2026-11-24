@@ -86,7 +86,8 @@ export function TripOverview({
   const [full, setFull] = useState(false);
   const [edit, setEdit] = useState<Edit>(null),
     [bump, setBump] = useState(0);
-  const captain = trip.myRole === "captain" && !viewOnly;
+  // Leaders (Captain and Co-Captain) edit the itinerary, plan, vibe and time zone; the server checks it.
+  const captain = (trip.myRole === "captain" || trip.myRole === "co_captain") && !viewOnly;
   const saved = async () => {
     setBump((b) => b + 1);
     await onUpdated?.();
@@ -170,7 +171,7 @@ export function TripOverview({
 
       {onWindowSeat && trip.kind !== "at_home" && (
         <Button variant="outline" className="mt-4 min-h-11" onClick={onWindowSeat}>
-          Add to Window Seat <ChevronRight size={18} />
+          {t("trips.shareTrip")} <ChevronRight size={18} />
         </Button>
       )}
       <CaptainTakeover trip={trip} onChanged={saved} />

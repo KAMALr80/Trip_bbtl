@@ -1,4 +1,5 @@
 import { friendlyError } from "@/lib/friendly-error";
+import { useT } from "@/i18n";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, FileUp, Link2, MapPin, Plus, Sparkles, Trash2, X } from "lucide-react";
@@ -60,6 +61,7 @@ export function TripTimeline({
   version?: number;
   preview?: boolean;
 }) {
+  const t = useT();
   const past =
     !!trip.ended_at ||
     trip.end_date <
@@ -257,7 +259,14 @@ export function TripTimeline({
         );
       })}
       {preview && visible.length === 0 && (
-        <p className="text-sm text-muted-foreground">No upcoming plan items.</p>
+        <p className="text-sm text-muted-foreground">
+          {/* Say who fills it in, so an empty plan reads as "not added yet", not as broken. */}
+          {t(
+            trip.myRole === "captain" || trip.myRole === "co_captain"
+              ? "trips.noPlanLeader"
+              : "trips.noPlanPlayer",
+          )}
+        </p>
       )}
     </div>
   );
@@ -349,7 +358,7 @@ export function ItineraryEditor({
             })),
         })),
       );
-      if (trip.myRole === "captain")
+      if (trip.myRole === "captain" || trip.myRole === "co_captain")
         await Promise.all(
           days
             .filter(
@@ -461,7 +470,7 @@ export function ItineraryEditor({
                   <h3 className="font-display text-lg font-extrabold">
                     Day {i + 1} · {dateLabel(day.date)}
                   </h3>
-                  {trip.myRole === "captain" && (
+                  {(trip.myRole === "captain" || trip.myRole === "co_captain") && (
                     <select
                       aria-label={`Day ${i + 1} tag`}
                       className="rounded-full bg-orange-soft text-orange text-xs font-bold px-2 py-2"
