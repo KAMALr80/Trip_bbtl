@@ -71,7 +71,13 @@
       "teenNoInvite": "TripJunkies accounts are for ages 18 and up. Under 18? Open the teen invite link your trip's Captain sends you, then sign up."
     },
     "revealEmail": "Reveal email",
-    "hideEmail": "Hide email"
+    "hideEmail": "Hide email",
+    "contact": {
+      "title": "Need a hand?",
+      "general": "General questions",
+      "support": "Bug reports and account help",
+      "safety": "Safety, harassment and copyright"
+    }
   },
   "verify": {
     "title": "Check your email",
@@ -769,7 +775,8 @@
     "settings": "Account & legal",
     "settingsHint": "Appearance, time zone, legal, delete account, sign out",
     "aboutMe": "About me",
-    "tripRole": "Trip role: {{role}}"
+    "tripRole": "Trip role: {{role}}",
+    "founderOnly": "That page is for the TripJunkies founder only, so you are on your own Me page."
   },
   "tour": {
     "label": "The TripJunkies tour",
@@ -917,5 +924,22 @@
     "coCaptainNote": "As Co-Captain you can do everything here except cancel the trip, pick the Co-Captain or hand off the Captaincy.",
     "makePlayer": "Make Player",
     "makePlayerConfirm": "Make {{name}} a Player again"
+  },
+  "search": {
+    "title": "Search",
+    "label": "Search destinations and games",
+    "placeholder": "A country, a game, a room…",
+    "close": "Close",
+    "rooms": "Start something",
+    "games": "Games on Flight",
+    "places": "Destinations",
+    "more": "Also here",
+    "planTo": "Plan a trip to {{place}}",
+    "none": "Nothing matches “{{q}}”. Try a country or a game name.",
+    "passport": "Your Passport",
+    "join": "Join with Code",
+    "journey": "Your journey",
+    "tour": "Explore the app (tour)",
+    "gamesLine": "Free, no points"
   }
 }

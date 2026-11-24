@@ -129,6 +129,17 @@ export const prepareLateBot = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// New-engine sandboxes (lab_engine_create) need free bots too; make them first so creating one
+// never fails with "Not enough bots ready" (founder review).
+export const prepareBots = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d) => z.object({ count: z.number().int().min(0).max(30) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertFounder(context);
+    await ensureBots(data.count);
+    return { ok: true };
+  });
+
 export const deleteSandbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((d) => z.object({ tripId: z.string().uuid() }).parse(d))

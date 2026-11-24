@@ -38,6 +38,7 @@ import {
 export type WizardSearch = {
   step?: Step | undefined;
   room?: RoomId | undefined;
+  country?: string | undefined;
   trip?: string | undefined;
 };
 
@@ -60,8 +61,16 @@ export function TripWizard({ search }: { search: WizardSearch }) {
     void loadDraft(user.id)
       .catch(() => null)
       .then((saved) => {
-        const fresh = search.room && saved?.room !== search.room;
-        setDraft(fresh || !saved ? { room: search.room, reached: 0 } : saved);
+        const fresh = (search.room && saved?.room !== search.room) || !!search.country;
+        setDraft(
+          fresh || !saved
+            ? {
+                room: search.room,
+                reached: 0,
+                ...(search.country ? { country: search.country, cultures: [search.country] } : {}),
+              }
+            : saved,
+        );
       });
   }, [user?.id]);
 
