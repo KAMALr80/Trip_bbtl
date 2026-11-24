@@ -1000,6 +1000,12 @@ function PhasePage(
                 line="One drops 3 days before each call night · 5–15 pts, +5 if opened within 3h"
               />
             )}
+            {local && phase === props.current && (
+              <section className="app-card mt-3" aria-label={t("live.title")}>
+                <h3 className="font-display text-lg font-extrabold">{t("live.title")}</h3>
+                <p className="text-xs text-muted-foreground">{t("live.localNote")}</p>
+              </section>
+            )}
             {!local && phase === props.current && (
               <GameNightLive
                 trip={trip}
@@ -1100,6 +1106,12 @@ function PhasePage(
               title="Surprise Drops"
               line="Bingo, Scavenger Hunt, Speed or Photo Challenge on random days"
             />
+            {local && phase === props.current && (
+              <section className="app-card mt-3" aria-label={t("live.title")}>
+                <h3 className="font-display text-lg font-extrabold">{t("live.title")}</h3>
+                <p className="text-xs text-muted-foreground">{t("live.localNote")}</p>
+              </section>
+            )}
             {!local && phase === props.current && (
               <GameNightLive
                 trip={trip}
