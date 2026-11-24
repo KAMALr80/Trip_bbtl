@@ -455,7 +455,7 @@ export function TestLab({
                 disabled={busy}
                 onClick={() => role("host", "You host the next night")}
               >
-                🎤 Host
+                🎤 Host · older rules only
               </Button>
               <Button
                 variant="outline"

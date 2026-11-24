@@ -354,7 +354,7 @@ export function PassportBook({
       <Button
         key={s.trip_id}
         variant="ghost"
-        className="passport-visa-stamp"
+        className="passport-visa-stamp passport-stamp-land"
         onClick={() => setEntry(s)}
         aria-label={`Open ${s.city ?? s.state ?? placeName(s.country)} stamp`}
       >

@@ -275,12 +275,16 @@ export function MysteryPrizes({
                 {done ? "🎉" : "🎁"}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="eyebrow">MYSTERY PRIZE · {seasonName[k].toUpperCase()}</p>
+                {/* Founder review: the crown is named Early Bird / Jet Setter (deck); the Captain's
+                    prize is shown under it as the prize, not as the crown's name. */}
+                <p className="eyebrow">
+                  {translate(`standings.crownCard.${k === "game" ? "preflight" : "trip_season"}`)}
+                </p>
                 <p className="font-display font-extrabold leading-tight mt-1">
                   {done ? (
-                    s.prize
+                    s.prize && translate("standings.prize", { prize: s.prize })
                   ) : isLeader(trip) && s.prize ? (
-                    <span>{s.prize}</span>
+                    <span>{translate("standings.prize", { prize: s.prize })}</span>
                   ) : (
                     "Top secret 🤫"
                   )}

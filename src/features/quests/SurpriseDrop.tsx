@@ -9,6 +9,7 @@ import { usePendingAction } from "@/data/offline/outbox";
 import { useClaimDropLive, useMyProofs, useSubmitDropProof, type Proof } from "@/data/proofs";
 import { useMinute } from "@/features/play/PhaseNotice";
 import { useT } from "@/i18n";
+import { confirmInApp } from "@/lib/confirm";
 import { friendlyError } from "@/lib/friendly-error";
 import type { TripWithRole } from "@/lib/trips";
 
@@ -88,7 +89,15 @@ export function SurpriseDrop({
             variant="outline"
             className="min-h-11 w-full"
             disabled={claim.isPending}
-            onClick={() => claim.mutate(drop.id)}
+            onClick={async () => {
+              // Founder review: presenting live replaces every photo in this drop (R-343), so ask first.
+              if (
+                await confirmInApp(
+                  t("drops.presentLiveConfirm", { game: t(`drops.games.${game}`) }),
+                )
+              )
+                claim.mutate(drop.id);
+            }}
           >
             {t("drops.presentLive")}
           </Button>

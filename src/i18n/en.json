@@ -499,7 +499,12 @@
     "empty": "Points appear here as the crew plays.",
     "openCard": "Open {{name}}'s profile",
     "journey": "Your journey · two crowns",
-    "journeyLine": "{{season}} · {{points}} pts · #{{rank}} of {{count}}"
+    "journeyLine": "{{season}} · {{points}} pts · #{{rank}} of {{count}}",
+    "crownCard": {
+      "preflight": "🔵 Early Bird crown · Pre-Flight",
+      "trip_season": "🟡 Jet Setter crown · Trip Season"
+    },
+    "prize": "Prize: {{prize}}"
   },
   "drops": {
     "title": "Surprise Drop",
@@ -522,7 +527,8 @@
     "presentLiveHint": "Show the crew at the next Game Night Live. A 👍 there scores 10 pts (no photos needed, no bonus).",
     "liveWaiting": "You're presenting this one live. A 👍 at the next Game Night Live scores 10 pts.",
     "liveApproved": "Presented live ✓ 10 pts",
-    "liveExpired": "Not presented before the crown was decided, so no points."
+    "liveExpired": "Not presented before the crown was decided, so no points.",
+    "presentLiveConfirm": "Present the whole {{game}} live instead? This replaces photo proof for every part of today's drop, and scores 10 pts if the crew gives it a 👍."
   },
   "journey": {
     "eyebrow": "YOUR JOURNEY · TWO SEPARATE CROWNS",
@@ -955,5 +961,12 @@
     "coCaptainNote": "As Co-Captain you can do everything here except cancel the trip, pick the Co-Captain or hand off the Captaincy.",
     "makePlayer": "Make Player",
     "makePlayerConfirm": "Make {{name}} a Player again"
+  },
+  "play": {
+    "finalStandings": "Final standings",
+    "you": "you",
+    "pts_one": "{{count}} pt",
+    "pts_other": "{{count}} pts",
+    "photoExpiry": "Trip photos are deleted 7 days after the trip, when Baggage Claim ends. Your postcard photos stay. Download the ones you want before then."
   }
 }

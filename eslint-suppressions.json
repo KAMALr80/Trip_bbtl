@@ -358,7 +358,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 30
+      "count": 29
     }
   },
   "src/features/players/PlayerCards.tsx": {
@@ -387,7 +387,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 51
+      "count": 50
     }
   },
   "src/features/points/TieWheel.tsx": {

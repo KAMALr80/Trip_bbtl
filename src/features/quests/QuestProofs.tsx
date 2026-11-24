@@ -105,10 +105,12 @@ function QuestCard({
   const share = useShareTripQuest(trip.id);
   const [photo, setPhoto] = useState<File | null>(null);
   const [text, setText] = useState("");
+  // Founder review (deck animations): the wax seal cracks once when the player opens a sealed card.
+  const [cracked, setCracked] = useState(false);
   const kind = item.kind as ProofKind;
   const label = `${t(`quests.kinds.${kind}`)}${item.points ? ` · ${t("quests.points", { count: item.points })}` : ""}`;
   return (
-    <article className="app-card" aria-label={label}>
+    <article className={`app-card ${cracked ? "quest-wax-breaking" : ""}`} aria-label={label}>
       <p className="text-xs font-bold uppercase text-muted-foreground">{label}</p>
       {!item.is_open ? (
         <p className="text-sm mt-1">{t("quests.sealed", { time: when(item.opens_at) })}</p>
@@ -122,7 +124,7 @@ function QuestCard({
             <Button
               className="mt-3 w-full min-h-11"
               disabled={reveal.isPending}
-              onClick={() => reveal.mutate(item.id)}
+              onClick={() => reveal.mutate(item.id, { onSuccess: () => setCracked(true) })}
             >
               {reveal.isPending ? t("quests.opening") : t("quests.open")}
             </Button>

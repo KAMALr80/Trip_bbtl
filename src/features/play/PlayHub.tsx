@@ -1173,6 +1173,7 @@ function WrappedSummary({
   onMember?: ((id: string) => void) | undefined;
 }) {
   const [celebrate, setCelebrate] = useState(false);
+  const [standingsOpen, setStandingsOpen] = useState(false);
   useEffect(() => {
     const key = `tj-wrapped-crown-${trip.id}`;
     if (!champions.length || window.sessionStorage.getItem(key)) return;
@@ -1227,13 +1228,29 @@ function WrappedSummary({
           me > 0 ? `You finished #${me} of ${sorted.length}` : "Final places appear after crowning"
         }
         points={`${(preRows.find((r) => r.user_id === userId)?.total ?? 0) + (tripRows.find((r) => r.user_id === userId)?.total ?? 0)} pts`}
+        onClick={sorted.length ? () => setStandingsOpen((v) => !v) : undefined}
       />
+      {/* Founder review: the arrow used to open nothing; it now shows every player's final place. */}
+      {standingsOpen && (
+        <ol className="mt-2 grid gap-1 text-sm" aria-label={translate("play.finalStandings")}>
+          {sorted.map((r, i) => (
+            <li key={r.user_id} className="flex items-center justify-between gap-2">
+              <span className="min-w-0 truncate">
+                #{i + 1} {name(r.user_id)}
+                {r.user_id === userId ? ` · ${translate("play.you")}` : ""}
+              </span>
+              <b>{translate("play.pts", { count: r.total })}</b>
+            </li>
+          ))}
+        </ol>
+      )}
       <div className="play-stamp-row">
         <span>TRIP</span>
         <span title={trip.destination}>{stampLabel(trip.destination)}</span>
         {champions.length > 0 && <span>CROWN</span>}
       </div>
-      <p className="play-photo-expiry">Trip photos are removed 15 days after the trip.</p>
+      {/* Photos go when the trip locks on Baggage Claim Day 7; postcard photos stay (R-607, Q11). */}
+      <p className="play-photo-expiry">{translate("play.photoExpiry")}</p>
     </>
   );
 }

@@ -7,6 +7,7 @@ import { useMarkBadgesSeen, useMyStamps, usePassportProgress, type Stamp } from 
 import { TripPostcard } from "@/features/postcard/TripPostcard";
 import { useT } from "@/i18n";
 import { placeName } from "@/lib/places";
+import { RoomMark } from "./RoomMark";
 
 const BADGE_ICON = { us_explorer: "🗽", culture_collector: "🎎", storyteller: "📖" } as const;
 const TIER = ["carry_on", "carry_on", "checked_bag", "first_class"] as const;
@@ -89,7 +90,7 @@ export function TripStamps() {
           <li key={s.trip_id}>
             <button
               type="button"
-              className="passport-stamp w-full min-h-11 p-2 text-left text-xs"
+              className="passport-stamp passport-stamp-land w-full min-h-11 p-2 text-left text-xs"
               onClick={() => setOpen(s)}
               aria-label={t("passport.openPostcard", { trip: s.trip_name })}
             >
@@ -98,7 +99,9 @@ export function TripStamps() {
                   ? `🏠 ${placeName(s.culture ?? s.country)}`
                   : (s.state ?? placeName(s.country))}
               </strong>
-              <span className="block">{t(`passport.kind.${kindKey(s.kind)}`)}</span>
+              <span className="block">
+                <RoomMark room={s.room} /> {t(`passport.kind.${kindKey(s.kind)}`)}
+              </span>
               <span className="block">
                 {s.season_label}
                 {s.solo ? ` · ${t("passport.solo")}` : ""}

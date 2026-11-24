@@ -320,40 +320,52 @@ export function AppShell() {
     sessionStorage.setItem(`tj-topup-${activeId}`, "1");
     nudgeTopUp(activeId);
   }, [activeId]);
-  const joinRoom = !pendingCode ? null : inviteSnoozed ? (
-    <Button
-      variant="outline"
-      className="w-full mb-4 border-blue text-blue"
-      onClick={() => {
-        sessionStorage.removeItem("tj-invite-snoozed");
-        setInviteSnoozed(false);
-      }}
-    >
-      📌 Trip invite waiting · open
-    </Button>
-  ) : (
-    <JoinRoomCard
-      key={pendingCode}
-      code={pendingCode}
-      onJoin={async (id) => {
-        await refreshTrips(id);
-        clearPendingCode();
-        setPendingCode(null);
-        setHomeScreen("dashboard");
-        setTab("Home");
-      }}
-      onDismiss={() => {
-        sessionStorage.setItem("tj-invite-snoozed", pendingCode);
-        setInviteSnoozed(true);
-      }}
-      onExpired={() => {
-        clearPendingCode();
-        setPendingCode(null);
-        // A wrong or expired invite link used to vanish without a word (STG-01).
-        toast(t("join.inviteNotFound"));
-      }}
-    />
-  );
+  // Founder review: a Captain (or any member) opening their own trip's invite link saw "You're
+  // invited". If the code is a trip they're already in, drop the invite and open that trip instead.
+  const ownInvite = pendingCode
+    ? trips.find((t) => t.join_code?.toUpperCase() === pendingCode.toUpperCase())
+    : undefined;
+  useEffect(() => {
+    if (!ownInvite) return;
+    clearPendingCode();
+    setPendingCode(null);
+    setActiveId(ownInvite.id);
+  }, [ownInvite?.id]);
+  const joinRoom =
+    !pendingCode || ownInvite ? null : inviteSnoozed ? (
+      <Button
+        variant="outline"
+        className="w-full mb-4 border-blue text-blue"
+        onClick={() => {
+          sessionStorage.removeItem("tj-invite-snoozed");
+          setInviteSnoozed(false);
+        }}
+      >
+        📌 Trip invite waiting · open
+      </Button>
+    ) : (
+      <JoinRoomCard
+        key={pendingCode}
+        code={pendingCode}
+        onJoin={async (id) => {
+          await refreshTrips(id);
+          clearPendingCode();
+          setPendingCode(null);
+          setHomeScreen("dashboard");
+          setTab("Home");
+        }}
+        onDismiss={() => {
+          sessionStorage.setItem("tj-invite-snoozed", pendingCode);
+          setInviteSnoozed(true);
+        }}
+        onExpired={() => {
+          clearPendingCode();
+          setPendingCode(null);
+          // A wrong or expired invite link used to vanish without a word (STG-01).
+          toast(t("join.inviteNotFound"));
+        }}
+      />
+    );
   const displayedTrip = active && viewAsPlayer ? { ...active, myRole: "player" } : active;
   const displayedMembers = viewAsPlayer
     ? members.map((m) => (m.user_id === user?.id ? { ...m, role: "player" } : m))

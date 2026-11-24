@@ -10,6 +10,7 @@ import { useMyStamps } from "@/data/postcard";
 import { useMyProfilePrefs, usePlayerProfile, useProfileActions } from "@/data/profile";
 import { FoundingBadge } from "@/features/onboarding/LegalConsent";
 import { TravelerLevel } from "@/features/passport/PassportBook";
+import { RoomMark } from "@/features/passport/RoomMark";
 import { Avatar, RoleStamp } from "@/features/players/PlayerCards";
 import { useT } from "@/i18n";
 import { friendlyError } from "@/lib/friendly-error";
@@ -248,7 +249,7 @@ function StampChoices() {
           return (
             <li key={s.trip_id} className="flex items-center gap-2 py-1">
               <span className="min-w-0 flex-1 truncate text-sm">
-                {s.trip_name} · {s.season_label}
+                <RoomMark room={s.room} /> {s.trip_name} · {s.season_label}
               </span>
               <Button
                 variant="ghost"
