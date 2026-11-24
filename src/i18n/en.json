@@ -386,7 +386,8 @@
     "aiFlag": "Flagged for a closer look",
     "photoAlt": "{{name}}'s proof photo",
     "error": "That didn't work: {{reason}}",
-    "someone": "A crewmate"
+    "someone": "A crewmate",
+    "empty": "Nothing to check right now. When a crewmate sends a proof, it shows up here for your 👍."
   },
   "quests": {
     "showcaseUpNow": "Your Showcase is open",
@@ -448,7 +449,8 @@
     "winners": "Winners",
     "won": "{{name}} · {{awards}}",
     "noWinners": "No award votes this time.",
-    "error": "That didn't work: {{reason}}"
+    "error": "That didn't work: {{reason}}",
+    "localNote": "Game Night Live is for crews playing on their own phones. This trip is solo or on one phone, so there is no Show & Tell or award vote here."
   },
   "standings": {
     "race": {
