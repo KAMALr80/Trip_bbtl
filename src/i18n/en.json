@@ -94,7 +94,10 @@
     "loadFailedTitle": "We couldn't load your trips",
     "loadFailedLine": "Something went wrong on our side. Your trips are safe. Try again in a moment.",
     "loadFailedOffline": "You're offline. Reconnect and try again.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "noPlanLeader": "No plan yet. Tap ✏️ above to add days, stays, flights and spots.",
+    "noPlanPlayer": "No plan yet. Your Captain adds the days, stays and spots here.",
+    "shareTrip": "Share this trip · inspire someone"
   },
   "home": {
     "gate": "gate",
@@ -222,7 +225,8 @@
       "time": "Time ({{zone}})",
       "place": "Where",
       "placeHint": "A restaurant, the hotel rooftop, someone's living room…",
-      "callLink": "Call link for anyone who can't be there (optional)"
+      "callLink": "Call link for anyone who can't be there (optional)",
+      "pickDay": "Pick a day"
     },
     "invite": {
       "title": "Invite your crew",
@@ -764,7 +768,8 @@
     "feedback": "Send feedback",
     "settings": "Account & legal",
     "settingsHint": "Appearance, time zone, legal, delete account, sign out",
-    "aboutMe": "About me"
+    "aboutMe": "About me",
+    "tripRole": "Trip role: {{role}}"
   },
   "tour": {
     "label": "The TripJunkies tour",
@@ -907,5 +912,10 @@
       "reviewed": "Reviewed",
       "note": "Review note"
     }
+  },
+  "captainTools": {
+    "coCaptainNote": "As Co-Captain you can do everything here except cancel the trip, pick the Co-Captain or hand off the Captaincy.",
+    "makePlayer": "Make Player",
+    "makePlayerConfirm": "Make {{name}} a Player again"
   }
 }

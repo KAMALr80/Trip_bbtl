@@ -562,10 +562,10 @@ export function SeasonScreen({ draft, set, ctx }: ScreenProps) {
   const tripDays: string[] = [];
   if (draft.startDate && draft.endDate)
     for (let d = draft.startDate; d <= draft.endDate; d = addDays(d, 1)) tripDays.push(d);
+  // The Captain picks the crowning day (deck, R-205); only the time gets a starting value.
   useEffect(() => {
-    if (!draft.crowningDate && draft.endDate)
-      set({ crowningDate: draft.endDate, crowningTime: draft.crowningTime ?? "19:00" });
-  }, [draft.endDate]);
+    if (!draft.crowningTime) set({ crowningTime: "19:00" });
+  }, []);
   return (
     <>
       <p className="text-muted-foreground">
@@ -582,6 +582,9 @@ export function SeasonScreen({ draft, set, ctx }: ScreenProps) {
             value={draft.crowningDate ?? ""}
             onChange={(e) => set({ crowningDate: e.target.value })}
           >
+            <option value="" disabled>
+              {t("setup.season.pickDay")}
+            </option>
             {tripDays.map((d) => (
               <option key={d} value={d}>
                 {new Date(`${d}T12:00:00`).toLocaleDateString(undefined, {

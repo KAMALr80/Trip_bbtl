@@ -372,10 +372,12 @@ export function HomeDashboard({
         detail: "",
       },
       {
+        // Inspiring someone = sharing your own culture (founder review): this was the only Home
+        // door to Show Your Culture, and it used to open Window Seat under another name.
         label: "INSPIRE SOMEONE",
         gate: "C",
         img: windowSeatArt,
-        action: () => void navigate({ to: "/trips/new", search: { room: "window_seat" } }),
+        action: () => void navigate({ to: "/trips/new", search: { room: "show_culture" } }),
         status: "ON TIME",
         detail: "",
       },
@@ -405,8 +407,9 @@ export function HomeDashboard({
         action: () => void navigate({ to: "/trips/new", search: { room: "explore_culture" } }),
       },
       {
-        label: "Inspire Someone",
-        subline: "Share the view",
+        // Window Seat under its own name (it was labelled "Inspire Someone").
+        label: "Window Seat",
+        subline: "Solo or a crew of 4",
         img: windowSeatArt,
         action: () => void navigate({ to: "/trips/new", search: { room: "window_seat" } }),
       },

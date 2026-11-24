@@ -31,7 +31,7 @@ import { PhaseNotice } from "@/features/play/PhaseNotice";
 import { DailyDiscovery } from "@/features/daily/DailyPlay";
 import { PlayHub } from "@/features/play/PlayHub";
 
-import { CaptainBadge, LockedNote, isUnlocked } from "@/features/trip/TripUnlock";
+import { LockedNote, isUnlocked } from "@/features/trip/TripUnlock";
 import { ReadOnlyBanner } from "@/features/points/Seasons";
 import { type TripWithRole, type Member } from "@/lib/trips";
 
@@ -45,7 +45,7 @@ import {
   PublicLeaderboardSetting,
 } from "@/features/me/MeExtras";
 import { TripList } from "@/features/trip/TripList";
-import { Bug, HelpCircle, PlayCircle, Trash2 } from "lucide-react";
+import { Bell, Bug, HelpCircle, PlayCircle, Trash2 } from "lucide-react";
 
 import { RememberedSection } from "@/components/RememberedSection";
 
@@ -61,7 +61,7 @@ import { FoundingControls } from "@/features/onboarding/LegalConsent";
 import { legalLinks } from "@/lib/legal";
 import { Link } from "@tanstack/react-router";
 import { isFounderSection } from "@/features/app-shell/nav";
-import { i18n } from "@/i18n";
+import { i18n, useT } from "@/i18n";
 import { tripIsOver } from "@/features/trip/trip-order";
 
 // Screens only the founder opens: not in every player's first download.
@@ -141,6 +141,7 @@ export function TabContent({
   canStart: boolean;
   viewOnly: boolean;
 }) {
+  const t = useT();
   // Founder sections open only for an app admin (QA-13). Anyone else who follows such a link sees
   // their own Me page; the server refuses the data either way.
   const meSection =
@@ -419,10 +420,24 @@ export function TabContent({
             <p className="eyebrow text-gold">YOUR CORNER</p>
             <h1 className="font-display text-4xl font-extrabold mt-1">It’s you!</h1>
           </div>
-          <AppearanceQuickToggle />
+          <div className="flex items-center gap-1">
+            {/* Reminders as a small bell, not a big row (founder review). */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="min-h-11 min-w-11"
+              aria-label={t("me.notifications")}
+              title={t("me.notifications")}
+              onClick={() => onMe("notifications")}
+            >
+              <Bell size={20} />
+            </Button>
+            <AppearanceQuickToggle />
+          </div>
         </div>
         <BugUpdates />
-        <CaptainBadge />
+        {/* The Captain badge tiers (Bronze, Silver…) aren't in the deck's badge set; the Passport's
+            badges are the one set (founder review), so it no longer shows here. */}
         <MeHome
           userId={userId}
           name={name}
