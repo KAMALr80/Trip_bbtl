@@ -9350,6 +9350,7 @@ CREATE FUNCTION trip_private.lab_jump(p_trip uuid, p_phase text) RETURNS text
     SET search_path TO ''
     AS $$
 DECLARE t public.trips; v_days int; v_today date; v_start date; v_zone text; v_phase text; v_home boolean;
+        v_shift int;
 BEGIN
   PERFORM trip_private.lab_guard(p_trip);
   SELECT * INTO t FROM public.trips WHERE id = p_trip FOR UPDATE;
@@ -9367,6 +9368,7 @@ BEGIN
   IF v_start IS NULL THEN RAISE EXCEPTION 'Pick preflight, takeoff, trip_season, baggage_claim or locked'; END IF;
   IF p_phase = 'preflight' AND t.preflight_days = 0 THEN RAISE EXCEPTION 'This room has no Pre-Flight'; END IF;
   v_zone := coalesce(t.trip_timezone, t.home_timezone);
+  v_shift := v_start - t.start_date;
   UPDATE public.trips
   SET start_date = v_start, end_date = v_start + v_days, locked_at = NULL, photos_purged_at = NULL,
       arrived_at = CASE WHEN p_phase IN ('preflight', 'takeoff') THEN NULL ELSE now() - interval '1 day' END,
@@ -9374,12 +9376,45 @@ BEGIN
       crowning_at = CASE WHEN crowning_at IS NULL THEN NULL
                          ELSE ((v_start + v_days) + time '20:00') AT TIME ZONE v_zone END
   WHERE id = p_trip;
+  -- The itinerary and day tags move with the dates, so they don't fall outside the trip.
+  PERFORM trip_private.lab_move_itinerary(p_trip, v_shift);
   IF p_phase = 'locked' THEN
     DELETE FROM public.trip_postcards WHERE trip_id = p_trip;   -- a fresh lock each time
     PERFORM trip_private.lock_trip(p_trip, true);
   END IF;
   SELECT phase INTO v_phase FROM trip_private.trip_phase(p_trip, now());
   RETURN CASE WHEN p_phase = 'locked' THEN 'locked' ELSE v_phase END;
+END
+$$;
+
+
+--
+-- Name: lab_move_itinerary(uuid, integer); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.lab_move_itinerary(p_trip uuid, p_days integer) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+BEGIN
+  IF p_days = 0 THEN RETURN; END IF;
+  -- Every day's date and every flight's date move with the trip.
+  UPDATE public.trip_itineraries i
+  SET days = coalesce((
+    SELECT jsonb_agg(
+             CASE WHEN jsonb_typeof(d) <> 'object' THEN d ELSE
+               trip_private.lab_shift_date(d, p_days)
+               || CASE WHEN jsonb_typeof(d->'flights') = 'array' THEN jsonb_build_object('flights', (
+                    SELECT coalesce(jsonb_agg(trip_private.lab_shift_date(f, p_days) ORDER BY fo), '[]'::jsonb)
+                    FROM jsonb_array_elements(d->'flights') WITH ORDINALITY x(f, fo)))
+                  ELSE '{}'::jsonb END
+             END ORDER BY n)
+    FROM jsonb_array_elements(i.days) WITH ORDINALITY e(d, n)), '[]'::jsonb)
+  WHERE i.trip_id = p_trip;
+  -- Day tags are keyed by date; move them as a set so no two rows collide on the way.
+  WITH moved AS (DELETE FROM public.trip_day_tags WHERE trip_id = p_trip RETURNING day_date, tag, created_at)
+  INSERT INTO public.trip_day_tags (trip_id, day_date, tag, created_at)
+  SELECT p_trip, day_date + p_days, tag, created_at FROM moved;
 END
 $$;
 
@@ -9525,7 +9560,12 @@ BEGIN
   DELETE FROM public.mission_votes WHERE trip_id=p_trip; DELETE FROM public.photo_posts WHERE trip_id=p_trip;
   DELETE FROM public.day_votes WHERE trip_id=p_trip; DELETE FROM public.airport_claims WHERE trip_id=p_trip;
   DELETE FROM public.trip_item_alternatives WHERE trip_id=p_trip;
-  PERFORM trip_private.lab_itinerary(p_trip);
+  -- Keep the trip's own itinerary, moved with the dates; seed the sample one only when there is none.
+  IF EXISTS (SELECT 1 FROM public.trip_itineraries WHERE trip_id = p_trip AND jsonb_array_length(days) > 0) THEN
+    PERFORM trip_private.lab_move_itinerary(p_trip, v_days);
+  ELSE
+    PERFORM trip_private.lab_itinerary(p_trip);
+  END IF;
   IF p_target = 'rest' THEN
     UPDATE public.trips SET surprise_mode=false, rest_days = array_append(array_remove(rest_days, today), today) WHERE id=p_trip;
   END IF;
@@ -9538,6 +9578,21 @@ BEGIN
   BEGIN PERFORM trip_private.ensure_weekly_questions(p_trip); EXCEPTION WHEN others THEN NULL; END;
   IF p_target IN ('end','feedback','wrapped') THEN UPDATE public.trips SET ended_at = now() WHERE id=p_trip; END IF;
 END $$;
+
+
+--
+-- Name: lab_shift_date(jsonb, integer); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.lab_shift_date(p_item jsonb, p_days integer) RETURNS jsonb
+    LANGUAGE sql IMMUTABLE
+    SET search_path TO ''
+    AS $$
+  SELECT CASE
+    WHEN jsonb_typeof(p_item) = 'object' AND coalesce(p_item->>'date', '') ~ '^\d{4}-\d{2}-\d{2}$'
+      THEN jsonb_set(p_item, '{date}', to_jsonb(((p_item->>'date')::date + p_days)::text))
+    ELSE p_item END
+$$;
 
 
 --
@@ -32622,6 +32677,14 @@ GRANT ALL ON FUNCTION trip_private.lab_jump(p_trip uuid, p_phase text) TO servic
 
 
 --
+-- Name: FUNCTION lab_move_itinerary(p_trip uuid, p_days integer); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.lab_move_itinerary(p_trip uuid, p_days integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.lab_move_itinerary(p_trip uuid, p_days integer) TO service_role;
+
+
+--
 -- Name: FUNCTION lab_r17(p_trip uuid, p_action text); Type: ACL; Schema: trip_private; Owner: -
 --
 
@@ -32645,6 +32708,14 @@ GRANT ALL ON FUNCTION trip_private.lab_role(p_trip uuid, p_role text) TO service
 REVOKE ALL ON FUNCTION trip_private.lab_shift(p_trip uuid, p_target text, p_day integer) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.lab_shift(p_trip uuid, p_target text, p_day integer) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.lab_shift(p_trip uuid, p_target text, p_day integer) TO service_role;
+
+
+--
+-- Name: FUNCTION lab_shift_date(p_item jsonb, p_days integer); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.lab_shift_date(p_item jsonb, p_days integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.lab_shift_date(p_item jsonb, p_days integer) TO service_role;
 
 
 --
