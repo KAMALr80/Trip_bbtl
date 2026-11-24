@@ -3,6 +3,7 @@ import { Crown, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLockup } from "@/components/BrandLockup";
 import { Avatar } from "@/features/players/PlayerCards";
+import { useT } from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 
 import { tripDisplayName } from "@/lib/trip-display-name";
@@ -180,11 +181,13 @@ export function LocalCrownCelebration({
   score: number;
   onContinue: () => void;
 }) {
+  // A one-phone game night: no points or crowns are saved, so it says "winner" and "rounds won".
+  const t = useT();
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Game Night Crown"
+      aria-label={t("gameNight.localWinLabel")}
       className="cinematic-crown-celebration"
     >
       <div className="cinematic-crown-confetti" aria-hidden="true">
@@ -198,14 +201,14 @@ export function LocalCrownCelebration({
       <div className="cinematic-crown-content">
         <BrandLockup className="text-2xl" compact />
         <Crown className="cinematic-crown-icon" aria-hidden="true" strokeWidth={1.3} />
-        <h2 className="font-display text-4xl font-extrabold">Game Night Crown!</h2>
+        <h2 className="font-display text-4xl font-extrabold">{t("gameNight.localWinTitle")}</h2>
         <p className="mt-2 font-bold">{label}</p>
         <Avatar name={name} className="cinematic-crown-avatar" />
         <p className="font-display text-xl font-bold break-words">{name}</p>
-        <p className="font-display text-5xl font-extrabold text-gold mt-2">
-          {score}
-          <span className="text-xl"> {score === 1 ? "point" : "points"}</span>
+        <p className="font-display text-3xl font-extrabold text-gold mt-2">
+          {t("gameNight.roundsWon", { count: score })}
         </p>
+        <p className="mt-2 text-sm text-muted-foreground">{t("gameNight.justForFun")}</p>
         <Button variant="playful" size="lg" className="w-full mt-8" onClick={onContinue}>
           See the scoreboard
         </Button>

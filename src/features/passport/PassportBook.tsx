@@ -10,24 +10,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { PACKS } from "@/features/at-home/AtHome";
 import type { TripWithRole } from "@/lib/trips";
 import { FoundingBadge } from "@/features/onboarding/LegalConsent";
-import { Avatar } from "@/features/players/PlayerCards";
+import { Avatar, RoleStamp } from "@/features/players/PlayerCards";
 import { dicebearUrl } from "@/lib/player-cards";
-import { CultureBadgeRow } from "@/features/culture/CultureBadgeRow";
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { tripStatus } from "@/features/trip/TripList";
 import { friendlyError } from "@/lib/friendly-error";
 
 import { ROOM_COPY } from "@/lib/room-copy";
 import { BrandLockup } from "@/components/BrandLockup";
-import iconBoarding from "@/assets/icon-boarding-pass.webp";
 import iconMap from "@/assets/icon-map.webp";
-import iconHome from "@/assets/icon-at-home.webp";
-import iconPostcard from "@/assets/icon-postcard.webp";
 import seaside from "@/assets/passport-seaside.jpg";
-import { CULTURE_LAYERS } from "@/lib/culture-pool";
 
 import { levelFor } from "@/lib/levels";
 import { usePassportProgress } from "@/data/postcard";
+import { usePlayerProfile } from "@/data/profile";
+import { useT } from "@/i18n";
 import { BadgeShelf, TripStamps } from "./PassportProgress";
 
 type Ink = {
@@ -43,13 +40,6 @@ type Ink = {
   squad_count: number;
 };
 type Postcard = { trip_id: string; pack: string; created_at: string };
-type CultureStamp = {
-  card_id: string;
-  title: string;
-  points: number;
-  champion: boolean;
-  created_at: string;
-};
 type Collectible = { trip_id: string; kind: "postcard"; pack: string; created_at: string } | Ink;
 type PassportDestination = "preflight" | "touchdown" | "athome" | "culture";
 const date = (value: string) =>
@@ -161,11 +151,11 @@ export function PassportBook({
   trips,
   selectTrip,
   userId,
-  onNavigate,
 }: {
   trips: TripWithRole[];
   selectTrip: (id: string) => void;
   userId: string;
+  /** Kept for callers; the Phases strip it drove was removed from the profile page (R-715). */
   onNavigate?: (screen: PassportDestination) => void;
 }) {
   const [ink, setInk] = useState<Ink[]>([]),
@@ -186,32 +176,6 @@ export function PassportBook({
       trip_persona: string | null;
     } | null>(null),
     [avatarPhoto, setAvatarPhoto] = useState("");
-  const [culture, setCulture] = useState<CultureStamp[]>([]),
-    [cultureOpen, setCultureOpen] = useState(false),
-    [story, setStory] = useState<{
-      title: string;
-      backstory: string;
-      steps: string;
-      meaning: string;
-    } | null>(null),
-    [cultureError, setCultureError] = useState("");
-  const [layers, setLayers] = useState<
-    { country: string; culture_layer: string; earned_at: string }[]
-  >([]);
-  useEffect(() => {
-    let live = true;
-    void supabase
-      .from("culture_layer_stamps")
-      .select("country,culture_layer,earned_at")
-      .eq("creator_id", userId)
-      .order("earned_at", { ascending: false })
-      .then(({ data }: { data: typeof layers | null }) => {
-        if (live) setLayers(data ?? []);
-      });
-    return () => {
-      live = false;
-    };
-  }, [userId]);
   const [expandedTrip, setExpandedTrip] = useState<string | null>(null),
     [night, setNight] = useState<string | null>(null);
   useEffect(() => {
@@ -230,20 +194,6 @@ export function PassportBook({
             .createSignedUrl(data.avatar_path, 3600);
           if (live) setAvatarPhoto(signed.data?.signedUrl ?? "");
         }
-      });
-    return () => {
-      live = false;
-    };
-  }, [userId]);
-  useEffect(() => {
-    let live = true;
-    void supabase
-      .from("culture_stamps")
-      .select("card_id,title,points,champion,created_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .then(({ data }: { data: CultureStamp[] | null }) => {
-        if (live) setCulture(data ?? []);
       });
     return () => {
       live = false;
@@ -370,18 +320,8 @@ export function PassportBook({
       .eq("id", userId);
     setAskHome(false);
   }
-  async function openCulture(stamp: CultureStamp) {
-    const r = await supabase
-      .from("cultural_inspirations")
-      .select("title,backstory,steps,meaning")
-      .eq("id", stamp.card_id)
-      .maybeSingle();
-    if (r.error) setCultureError(friendlyError(r.error));
-    else setStory(r.data);
-  }
   const stamps = [...ink].sort((a, b) => b.stamped_on.localeCompare(a.stamped_on));
   const cards = [...postcards].sort((a, b) => b.created_at.localeCompare(a.created_at));
-  const countries = new Set(ink.map((s) => s.country));
   const shownTrips = [...trips].sort((a, b) => {
     const rank = (t: TripWithRole) =>
       t.is_sandbox
@@ -398,14 +338,6 @@ export function PassportBook({
   const activeTrip =
     shownTrips.find((t) => tripStatus(t) === "Active") ??
     shownTrips.find((t) => tripStatus(t) === "Upcoming");
-  const currentPhase: PassportDestination =
-    activeTrip?.kind === "at_home"
-      ? "athome"
-      : activeTrip && tripStatus(activeTrip) === "Active"
-        ? "touchdown"
-        : activeTrip
-          ? "preflight"
-          : "culture";
   const samplePlace =
     ["Bangkok", "Mexico City", "Tokyo", "Athens", "Rio de Janeiro", "Nairobi"][
       Array.from(userId).reduce((n, c) => n + c.charCodeAt(0), 0) % 6
@@ -416,12 +348,6 @@ export function PassportBook({
         samplePlace,
       )
     ] ?? "TH";
-  const phases: { key: PassportDestination; name: string; copy: string; icon: string }[] = [
-    { key: "preflight", name: "Pre-Flight", copy: "Game nights before", icon: iconBoarding },
-    { key: "touchdown", name: "Trip Season", copy: "Games on the trip", icon: iconMap },
-    { key: "athome", name: "At Home", copy: "Your couch, any country", icon: iconHome },
-    { key: "culture", name: "Culture", copy: "Share & play quests", icon: iconPostcard },
-  ];
   function stamp(s: Ink) {
     const trip = trips.find((t) => t.id === s.trip_id);
     return (
@@ -613,117 +539,11 @@ export function PassportBook({
               {error}
             </p>
           )}
+          <ThisTripAndAbout userId={userId} tripId={activeTrip?.id ?? null} />
           <div className="passport-badges">
             <FoundingBadge userId={userId} straight />
-            <TravelerLevel userId={userId} />
           </div>
           <BadgeShelf />
-          <TripStamps />
-          <h3 className="passport-rule-title">MY JOURNEY</h3>
-          <div className="passport-stats">
-            <span>
-              <strong>{ink.length}</strong>
-              <small>Stamps</small>
-            </span>
-            <span>
-              <strong>{postcards.length}</strong>
-              <small>Postcards</small>
-            </span>
-            <span>
-              <strong>{countries.size}</strong>
-              <small>Countries</small>
-            </span>
-            <Button
-              variant="ghost"
-              onClick={() => setCultureOpen(!cultureOpen)}
-              aria-expanded={cultureOpen}
-            >
-              <strong>{culture.reduce((n, s) => n + s.points, 0)}</strong>
-              <small>Culture Pts</small>
-            </Button>
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">Points never mix between shelves.</p>
-          {cultureOpen && (
-            <div className="passport-culture" role="region" aria-label="Culture stamps">
-              <p>Culture Points · separate from your Season Score</p>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {culture.map((s) => (
-                  <Button
-                    key={s.card_id}
-                    variant="ghost"
-                    className="passport-more"
-                    onClick={() => void openCulture(s)}
-                  >
-                    {s.title} · {s.points} pts
-                  </Button>
-                ))}
-                {!culture.length && <span>No Culture stamps yet.</span>}
-              </div>
-              {layers.length > 0 && (
-                <div className="mt-4 border-t border-border pt-3">
-                  <h3 className="font-display font-extrabold">
-                    My culture series · {layers.length} layers
-                  </h3>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {layers.map((s) => (
-                      <span
-                        key={`${s.country}-${s.culture_layer}`}
-                        className="passport-stamp border border-border px-3 py-2 text-sm"
-                      >
-                        {s.country} ·{" "}
-                        {CULTURE_LAYERS.find((l) => l.id === s.culture_layer)?.label ??
-                          s.culture_layer}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {cultureError && <p role="alert">{cultureError}</p>}
-              {story && (
-                <div className="mt-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Close culture story"
-                    onClick={() => setStory(null)}
-                  >
-                    <X />
-                  </Button>
-                  <strong className="block">{story.title}</strong>
-                  <p>{story.backstory}</p>
-                  <p className="whitespace-pre-line">{story.steps}</p>
-                  <p>{story.meaning}</p>
-                </div>
-              )}
-            </div>
-          )}
-          <h3 className="passport-rule-title">
-            TRIPS · PRE-FLIGHT + TRIP SEASON CROWNS · JUNKIE RANK
-          </h3>
-          <h3 className="passport-rule-title">✈ PHASES</h3>
-          <div className="passport-phases">
-            {phases.map((phase) => (
-              <Button
-                key={phase.key}
-                variant="ghost"
-                className={`passport-phase ${phase.key === currentPhase ? "passport-phase-current" : ""}`}
-                onClick={() => onNavigate?.(phase.key)}
-                disabled={!onNavigate}
-              >
-                <img src={phase.icon} alt="" width={56} height={56} />
-                <strong>{phase.name}</strong>
-                <small>{phase.copy}</small>
-                {phase.key === "preflight" && night && (
-                  <em>
-                    {new Date(night).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </em>
-                )}
-              </Button>
-            ))}
-          </div>
           <img
             className="passport-seaside"
             src={seaside}
@@ -764,30 +584,7 @@ export function PassportBook({
               <div className="passport-stamps">{stamps.slice(3).map(stamp)}</div>
             </MorePanel>
           </section>
-          <section aria-label="Your trips">
-            <h3 className="passport-rule-title">YOUR TRIPS</h3>
-            <div className="passport-trips">
-              {shownTrips.length ? (
-                shownTrips.slice(0, 3).map(tripRow)
-              ) : (
-                <Button
-                  variant="ghost"
-                  className="passport-sample-trip"
-                  onClick={() => setEntry("sample-trip")}
-                >
-                  <img src={iconMap} alt="" width={22} height={22} />
-                  <span>
-                    Next adventure <small>Bangkok · SAMPLE</small>
-                  </span>
-                  <span className="passport-status">Upcoming</span>
-                </Button>
-              )}
-            </div>
-            <MorePanel title="trips" count={Math.max(0, shownTrips.length - 3)}>
-              <div className="passport-trips">{shownTrips.slice(3).map(tripRow)}</div>
-            </MorePanel>
-          </section>
-          <h3 className="passport-rule-title">AT HOME · IN-EXPERIENCE CROWNS</h3>
+          <TripStamps />
           <section aria-label="Postcard wall">
             <h3 className="passport-rule-title">POSTCARD WALL</h3>
             <div className="passport-board">
@@ -817,17 +614,28 @@ export function PassportBook({
               </MorePanel>
             </div>
           </section>
-          <section aria-label="Culture stories shelf">
-            <h3 className="passport-rule-title">CULTURE STORIES</h3>
-            <p className="text-xs text-muted-foreground">Culture stamps · {culture.length}</p>
-            <CultureBadgeRow />
-            <div
-              className="mt-2 rounded-md border border-border bg-muted p-3 opacity-60"
-              aria-disabled="true"
-            >
-              <strong className="block text-sm">Bronze / Silver / Gold</strong>
-              <span className="text-xs">Tiers unlock with likes and downloads · coming soon</span>
+          <section aria-label="Your trips">
+            <h3 className="passport-rule-title">YOUR TRIPS</h3>
+            <div className="passport-trips">
+              {shownTrips.length ? (
+                shownTrips.slice(0, 3).map(tripRow)
+              ) : (
+                <Button
+                  variant="ghost"
+                  className="passport-sample-trip"
+                  onClick={() => setEntry("sample-trip")}
+                >
+                  <img src={iconMap} alt="" width={22} height={22} />
+                  <span>
+                    Next adventure <small>Bangkok · SAMPLE</small>
+                  </span>
+                  <span className="passport-status">Upcoming</span>
+                </Button>
+              )}
             </div>
+            <MorePanel title="trips" count={Math.max(0, shownTrips.length - 3)}>
+              <div className="passport-trips">{shownTrips.slice(3).map(tripRow)}</div>
+            </MorePanel>
           </section>
           {loading && (
             <p role="status" className="mt-4 text-sm">
@@ -911,5 +719,34 @@ export function PassportBook({
         </div>
       )}
     </section>
+  );
+}
+
+/** Page 1 (R-701): this trip's role and "most excited for", then About me. The server decides what
+ * is shown (player_profile); edits stay on the Me tab and the trip card. */
+function ThisTripAndAbout({ userId, tripId }: { userId: string; tripId: string | null }) {
+  const t = useT();
+  const me = usePlayerProfile(userId, tripId).data;
+  if (!me) return null;
+  const trip = me.this_trip;
+  return (
+    <div className="mt-4 grid gap-3 text-sm">
+      {trip && (
+        <section aria-label={t("me.tripTitle")}>
+          <h3 className="passport-rule-title">{t("me.tripTitle")}</h3>
+          <p className="mt-1 flex flex-wrap items-center gap-2">
+            <strong>{tripDisplayName(trip.trip_name)}</strong>
+            <RoleStamp role={trip.role} />
+          </p>
+          <p className="mt-1">
+            <strong>{t("profile.excited")}</strong> {trip.most_excited || t("me.excitedEmpty")}
+          </p>
+        </section>
+      )}
+      <section aria-label={t("me.aboutMe")}>
+        <h3 className="passport-rule-title">{t("me.aboutMe")}</h3>
+        <p className="mt-1">{me.about_me || t("passport.aboutEmpty")}</p>
+      </section>
+    </div>
   );
 }

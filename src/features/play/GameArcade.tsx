@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Clapperboard, Pause, Play, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import { displayGameTitle, arcadeGameType, gameType } from "@/lib/display-game-title";
+import { displayGameTitle, arcadeGameType } from "@/lib/display-game-title";
 import { premadeAvatars, buddyAvatars } from "@/lib/player-cards";
 import { arcadeMix } from "@/lib/arcade-mix.functions";
 import { friendlyError } from "@/lib/friendly-error";
@@ -377,7 +377,9 @@ export function BoardingPass({
               {displayGameTitle(title)}
             </h2>
             <span className="game-type-chip">
-              {gate >= 1 && gate <= 15 ? gameType(gate) : arcadeGameType(title)}
+              {/* The arcade's own tag for this game, as on the grid; the gate is only a card number, not a
+                  game-night catalog number (founder review: 30-Sec Draw said "Sing It"). */}
+              {arcadeGameType(title)}
             </span>
             <p className="text-xs font-bold mt-1">{tagline}</p>
           </div>
@@ -1057,21 +1059,29 @@ export function GameArcade({
         <img src={gameOptionA} alt="" width={40} height={40} className="size-10 object-contain" />
       </h1>
       <p className="text-muted-foreground text-sm mt-1">{ROOM_COPY.games}</p>
-      <div className="mt-4 grid grid-cols-2 gap-2" aria-label="Mode">
+      {/* Founder review: the two used to look the same. A Game Night is the main action (live, with the
+          crew); Practice is a quiet toggle for sample prompts with nothing saved. */}
+      <div className="mt-4 grid gap-2" role="group" aria-label={t("gameNight.modeLabel")}>
         <Button
-          variant={practiceOn ? "playful" : "outline"}
-          className="min-h-12 rounded-full"
+          variant="playful"
+          className="h-auto min-h-14 flex-col gap-0 rounded-2xl py-2"
+          onClick={() => setNight(true)}
+        >
+          <span className="text-base font-extrabold">{t("gameNight.startNight")}</span>
+          <span className="text-xs font-normal opacity-90">{t("gameNight.startNightHint")}</span>
+        </Button>
+        <Button
+          variant="outline"
+          className={`h-auto min-h-11 flex-col gap-0 rounded-full border-dashed py-1.5 ${practiceOn ? "border-solid border-primary bg-primary/10" : ""}`}
           aria-pressed={practiceOn}
           onClick={() => setPracticeOn((v) => !v)}
         >
-          {practiceOn ? "Practice ✓" : "Practice"}
-        </Button>
-        <Button
-          variant={practiceOn ? "outline" : "playful"}
-          className="min-h-12 rounded-full"
-          onClick={() => setNight(true)}
-        >
-          Start a Game Night
+          <span className="text-sm font-semibold">
+            {practiceOn ? `${t("gameNight.practiceOn")} ✓` : t("gameNight.practice")}
+          </span>
+          <span className="text-xs font-normal text-muted-foreground">
+            {t("gameNight.practiceHint")}
+          </span>
         </Button>
       </div>
       {!guest && (

@@ -1,7 +1,6 @@
 export const ROOM_COPY = {
   journey: "Your whole trip in one place — every game night, every stop, from now to takeoff.",
-  passport:
-    "Your card, your stamps, your rank. Five international trips make you a Passport Junkie 👑.",
+  passport: "Your card, your stamps, your rank. Stamp 10 countries to become a Passport Junkie 👑.",
   join: "Got a code from your Captain? Drop it in and you're aboard.",
   home: "Play your way through a culture with daily challenges and a Game Night finale, or share your own.",
   window:
