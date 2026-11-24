@@ -312,7 +312,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 64
+      "count": 43
     }
   },
   "src/features/passport/StampBadge.tsx": {
@@ -330,7 +330,7 @@
   },
   "src/features/play/GameArcade.tsx": {
     "no-restricted-syntax": {
-      "count": 64
+      "count": 62
     }
   },
   "src/features/play/GameScene.tsx": {
@@ -374,7 +374,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 4
+      "count": 2
     }
   },
   "src/features/points/HomeSeasons.tsx": {

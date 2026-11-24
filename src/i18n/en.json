@@ -354,7 +354,18 @@
     "close": "Close"
   },
   "gameNight": {
-    "line": "Game Night · free, just for fun · no points or crowns"
+    "line": "Game Night · free, just for fun · no points or crowns",
+    "localWinTitle": "Game Night winner!",
+    "localWinLabel": "Game Night winner",
+    "roundsWon_one": "{{count}} round won",
+    "roundsWon_other": "{{count}} rounds won",
+    "justForFun": "Just for fun · no points or crowns, nothing is saved.",
+    "modeLabel": "How to play",
+    "startNight": "Start a Game Night",
+    "startNightHint": "Live with your crew · rounds count",
+    "practice": "Practice",
+    "practiceOn": "Practice on",
+    "practiceHint": "Just you, sample prompts · no points"
   },
   "daily": {
     "discovery": "Daily Discovery",
@@ -702,7 +713,8 @@
       "road_trip": "State stamp",
       "postcard": "Culture postcard"
     },
-    "solo": "Solo"
+    "solo": "Solo",
+    "aboutEmpty": "Nothing here yet. Add About me on the Me tab."
   },
   "profile": {
     "eyebrow": "Passport Junkie",
