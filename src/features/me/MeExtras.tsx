@@ -267,7 +267,7 @@ export function MemoriesReminder({ trip }: { trip: TripWithRole }) {
   if (purged)
     return (
       <div className="mt-5 rounded-2xl bg-muted p-4 text-sm">
-        <b>📦 Photos from this trip have expired.</b> Leaderboards, winners and Trip Wrapped are
+        <b>📦 Photos from this trip have expired.</b> Leaderboards, winners and Baggage Claim are
         still here forever.
       </div>
     );
