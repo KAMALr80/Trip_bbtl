@@ -199,7 +199,8 @@
       "tripTime": "Trip time: {{zone}} ({{offset}})",
       "change": "Change",
       "pickZone": "Pick the trip time zone",
-      "zoneAsk": "This place has more than one time zone. Which one is the trip in?"
+      "zoneAsk": "This place has more than one time zone. Which one is the trip in?",
+      "vibeSolo": "What kind of traveler are you?"
     },
     "preflight": {
       "title": "Pre-Flight",
@@ -795,8 +796,8 @@
     "settings": "Account & legal",
     "settingsHint": "Appearance, time zone, legal, delete account, sign out",
     "aboutMe": "About me",
-    "founderOnly": "That page is for the TripJunkies founder only, so you are on your own Me page.",
-    "tripRole": "Trip role: {{role}}"
+    "tripRole": "Trip role: {{role}}",
+    "founderOnly": "That page is for the TripJunkies founder only, so you are on your own Me page."
   },
   "tour": {
     "label": "The TripJunkies tour",
@@ -940,6 +941,11 @@
       "note": "Review note"
     }
   },
+  "captainTools": {
+    "coCaptainNote": "As Co-Captain you can do everything here except cancel the trip, pick the Co-Captain or hand off the Captaincy.",
+    "makePlayer": "Make Player",
+    "makePlayerConfirm": "Make {{name}} a Player again"
+  },
   "search": {
     "title": "Search",
     "label": "Search destinations and games",
@@ -957,10 +963,13 @@
     "tour": "Explore the app (tour)",
     "gamesLine": "Free, no points"
   },
-  "captainTools": {
-    "coCaptainNote": "As Co-Captain you can do everything here except cancel the trip, pick the Co-Captain or hand off the Captaincy.",
-    "makePlayer": "Make Player",
-    "makePlayerConfirm": "Make {{name}} a Player again"
+  "photoWall": {
+    "hint": "Tap a photo to react or report it.",
+    "hintLeader": "Tap a photo to react, report it, or hide it from the wall.",
+    "hide": "Hide from wall",
+    "hideConfirm": "Hide this photo from the wall? The crew won't see it any more.",
+    "closedHint": "This trip has ended, so reporting is closed here. To report a photo, email",
+    "closed": "This trip has ended, so the wall is read-only. Tap a photo to see how to report it."
   },
   "play": {
     "finalStandings": "Final standings",

@@ -905,7 +905,7 @@ export function PhotoWall({ trip, members, cards, userId }: Base) {
     );
   }
   async function remove(path: string) {
-    if (!(await confirmInApp("Delete this photo from the wall?"))) return;
+    if (!(await confirmInApp(translate("photoWall.hideConfirm")))) return;
     const { error } = await rpc("remove_photo", { p_trip: trip.id, p_path: path });
     if (error) setMsg(friendlyError(error));
     else {
@@ -941,6 +941,14 @@ export function PhotoWall({ trip, members, cards, userId }: Base) {
             {tripDisplayName(trip.name)} scrapbook
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">{trip.destination} · members only</p>
+          {/* Founder review: Report and Hide live on the full-screen photo, which wasn't obvious. */}
+          {photos.length > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {closed
+                ? translate("photoWall.closed")
+                : translate(isLeader(trip) ? "photoWall.hintLeader" : "photoWall.hint")}
+            </p>
+          )}
         </div>
         <span
           className="shrink-0 text-sm text-muted-foreground"
@@ -1138,10 +1146,18 @@ export function PhotoWall({ trip, members, cards, userId }: Base) {
                   className="text-destructive"
                   onClick={() => void remove(open.photo_path)}
                 >
-                  <Trash2 /> Delete
+                  <Trash2 /> {translate("photoWall.hide")}
                 </Button>
               )}
             </div>
+            {closed && (
+              <p className="mt-3 text-center text-xs opacity-80">
+                {translate("photoWall.closedHint")}{" "}
+                <a className="underline" href="mailto:safety@tripjunkies.app">
+                  safety@tripjunkies.app
+                </a>
+              </p>
+            )}
             <p className="mt-2 text-center text-xs text-background">
               Urgent?{" "}
               <a href="mailto:safety@tripjunkies.app" className="underline">

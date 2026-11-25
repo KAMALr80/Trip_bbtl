@@ -25,6 +25,8 @@ SELECT t.id, jsonb_build_array(
                             'flights', '[]'::jsonb))
 FROM public.trips t WHERE t.id = pg_temp.id('trip')
 ON CONFLICT (trip_id) DO UPDATE SET days = excluded.days;
+-- The sandbox starts with the sample day tags; keep only one to follow.
+DELETE FROM public.trip_day_tags WHERE trip_id = pg_temp.id('trip');
 INSERT INTO public.trip_day_tags (trip_id, day_date, tag)
 SELECT id, start_date + 1, 'Explore' FROM public.trips WHERE id = pg_temp.id('trip');
 
