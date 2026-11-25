@@ -779,7 +779,7 @@ function	trip_private	lab_bypass	p_trip uuid	t	true				EXECUTE		20261002111230_1
 function	trip_private	lab_card	p_trip uuid, p_user uuid, p_name text, p_n integer	t	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	2	0	
 function	trip_private	lab_create	p_size integer, p_days integer, p_window integer	t	true				EXECUTE		20261002041439_9be2f1cd-866f-4ffd-94a1-af116d6d032a.sql	1	0	
 function	trip_private	lab_delete	p_trip uuid	t	true				EXECUTE		20261002041739_4e2ec1a9-2728-4260-a11b-d9e1dcc07b1a.sql	2	0	
-function	trip_private	lab_engine_create	p_room text, p_mode text, p_size integer, p_days integer	t	true				EXECUTE		20261104140000_m6_test_lab.sql	1	0	
+function	trip_private	lab_engine_create	p_room text, p_mode text, p_size integer, p_days integer	t	true				EXECUTE		20261125100000_lab_engine_sample_itinerary.sql	2	0	
 function	trip_private	lab_engine_play	p_trip uuid	t	true				EXECUTE		20261104140000_m6_test_lab.sql	1	0	
 function	trip_private	lab_extra	p_trip uuid, p_action text, p_arg text	t	true				EXECUTE		20261002043324_2b91bb71-ac55-41a4-b760-2a99e1b9c6d3.sql	1	0	
 function	trip_private	lab_guard	p_trip uuid	t	true						20261002041439_9be2f1cd-866f-4ffd-94a1-af116d6d032a.sql	1	0	
