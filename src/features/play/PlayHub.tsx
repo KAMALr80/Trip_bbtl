@@ -57,6 +57,7 @@ import { wrapupState } from "@/features/postcard/wrapup";
 import { fmtWhen } from "@/lib/viewer-time";
 import { roomOf } from "@/features/trip/rooms";
 import { t as translate, useT } from "@/i18n";
+import { finalStandings } from "./final-standings";
 import { playerName } from "@/lib/player-name";
 import { CallNightsCard, CrowningCard } from "@/features/play/TripNights";
 import { useQueryClient } from "@tanstack/react-query";
@@ -74,7 +75,7 @@ import type { PlayerWithAvatar } from "@/lib/player-cards";
 type Phase = "preflight" | "takeoff" | "trip" | "wrapped";
 type Detail = "arcade" | "offline-night" | "solo" | "home" | "guide" | null;
 /** A standings row for the crown boards: ledger points (M3-01). */
-type Row = { user_id: string; total: number };
+type Row = { user_id: string; total: number; rank?: number | undefined };
 /** A crown, in the season names the older Wrapped screen uses. */
 type Champion = { season: "game" | "trip"; user_id: string; score: number };
 type Props = {
@@ -455,8 +456,8 @@ function EnginePlayHub(props: Props) {
   const ledgerRows = usePointsBreakdown(trip.id, ledgerSeason).data ?? [];
   const soloGoal = useSoloGoal(trip.id, ledgerSeason, trip.play_mode === "solo").data ?? 0;
   // Both seasons' boards and the crowns come from the ledger (M3-16 retired the older scoring).
-  const toRows = (r: { user_id: string; points: number }[] | undefined): Row[] =>
-    (r ?? []).map((x) => ({ user_id: x.user_id, total: x.points }));
+  const toRows = (r: { user_id: string; points: number; rank?: number }[] | undefined): Row[] =>
+    (r ?? []).map((x) => ({ user_id: x.user_id, total: x.points, rank: x.rank }));
   const preRows = toRows(useStandings(trip.id, "preflight").data);
   const tripRows = toRows(useStandings(trip.id, "trip_season").data);
   const champions: Champion[] = (useCrowns(trip.id).data ?? []).map((c) => ({
@@ -1183,8 +1184,9 @@ function WrappedSummary({
     return () => window.clearTimeout(timer);
   }, [trip.id, champions.length]);
   const days = daysBetween(trip.start_date, trip.end_date) + 1;
-  const sorted = tripRows.length ? tripRows : preRows;
-  const me = sorted.findIndex((r) => r.user_id === userId) + 1;
+  // Season by season, like the Trip tab's Standings (R-501, R-505): the card and the list never add
+  // Pre-Flight and Trip Season points together.
+  const final = finalStandings(preRows, tripRows, userId);
   const champ = (season: string) => champions.find((c) => c.season === season);
   const name = (id: string | undefined) =>
     cards.find((c) => c.user_id === id)?.game_name ||
@@ -1225,25 +1227,41 @@ function WrappedSummary({
         tone="gold"
         title="Final standings"
         line={
-          me > 0 ? `You finished #${me} of ${sorted.length}` : "Final places appear after crowning"
+          final.mine
+            ? translate("standings.place", {
+                race: translate(`standings.race.${final.mine.season}`),
+                rank: final.mine.rank,
+                count: final.mine.count,
+              })
+            : "Final places appear after crowning"
         }
-        points={`${(preRows.find((r) => r.user_id === userId)?.total ?? 0) + (tripRows.find((r) => r.user_id === userId)?.total ?? 0)} pts`}
-        onClick={sorted.length ? () => setStandingsOpen((v) => !v) : undefined}
+        points={final.mine ? translate("play.pts", { count: final.mine.points }) : undefined}
+        onClick={final.races.length ? () => setStandingsOpen((v) => !v) : undefined}
       />
-      {/* Founder review: the arrow used to open nothing; it now shows every player's final place. */}
-      {standingsOpen && (
-        <ol className="mt-2 grid gap-1 text-sm" aria-label={translate("play.finalStandings")}>
-          {sorted.map((r, i) => (
-            <li key={r.user_id} className="flex items-center justify-between gap-2">
-              <span className="min-w-0 truncate">
-                #{i + 1} {name(r.user_id)}
-                {r.user_id === userId ? ` · ${translate("play.you")}` : ""}
-              </span>
-              <b>{translate("play.pts", { count: r.total })}</b>
-            </li>
-          ))}
-        </ol>
-      )}
+      {/* Founder review: the arrow used to open nothing; it now shows each season's final places. */}
+      {standingsOpen &&
+        final.races.map((race) => (
+          <section
+            key={race.season}
+            className="mt-2"
+            aria-label={translate(`standings.race.${race.season}`)}
+          >
+            <h3 className="text-xs font-bold uppercase text-muted-foreground">
+              {translate(`standings.race.${race.season}`)}
+            </h3>
+            <ol className="mt-1 grid gap-1 text-sm">
+              {race.rows.map((r) => (
+                <li key={r.user_id} className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate">
+                    #{r.rank} {name(r.user_id)}
+                    {r.user_id === userId ? ` · ${translate("play.you")}` : ""}
+                  </span>
+                  <b>{translate("play.pts", { count: r.total })}</b>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ))}
       <div className="play-stamp-row">
         <span>TRIP</span>
         <span title={trip.destination}>{stampLabel(trip.destination)}</span>
