@@ -1,0 +1,25 @@
+setup trip ok
+card role via profile 204
+PASS  p.6  Sign-in lists hello@, support@, safety@  — mailto:hello@tripjunkies.app mailto:support@tripjunkies.app mailto:safety@tripjunkies.app
+PASS  p.6  Try Games on Flight without an account (sign-in button)
+PASS  p.6  Board row says Games on Flight
+PASS  p.6  Join with Code door on Home
+PASS  p.6  Game Night (one-night room) door on Home
+PASS  p.6  Inspire Someone on the board
+PASS  p.6  Welcome letter near the greeting / Connecting flights (batch 5)
+PASS  p.6  Search bar opens a search, not the tour
+PASS  p.10  No Bronze Captain badge
+PASS  p.10  Notification is a small bell icon in the header
+PASS  p.10  Picked/custom trip role shown on Me ("Trip role: Snack Captain")
+PASS  p.15  Passport says 10 countries (not five trips)
+PASS  p.15  Remove list gone (MY JOURNEY counters, PHASES, CULTURE STORIES)
+PASS  p.16  World map on the Passport (batch 5)
+PASS  p.13  Hot Seat, Act It, Would You Rather, Trivia, Sing-off in the list
+PASS  p.14  Practice and Start a Game Night look different (hint lines)
+PASS  p.11  Last phase named Baggage Claim (not Wrapped)
+PASS  p.7  Phase art / countdown / crew at the gate on Play (batch 5)
+PASS  p.9  Seats read "of 12", not "of 30"
+PASS  p.12  Setup wizard opens
+INFO  p.12  Window Seat offers no "Friends off the app" (founder decision)  — not offered
+
+console/network errors: 0

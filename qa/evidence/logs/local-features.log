@@ -1,0 +1,10 @@
+PASS  LF-01  a 1-day crew trip can be created
+PASS  LF-02  Captain Tools rename of a 1-day trip saves (QA-B01)
+PASS  LF-03  a 15-day trip is refused by the room rule  — Trips can be up to 14 days. For a longer trip, start a second one.
+PASS  LF-04  "Add 6 seats" is refused and the cap stays 12 (QA-B02)  — This crew already has every seat its room allows. Bigger groups come in a later update. | cap 12
+PASS  LF-05  a non-Captain is still told only the Captain can  — Only the Captain can add seats
+PASS  LF-06  cleanup
+PASS  LF-07  world map loads for a signed-in player  — 200 0 pins
+PASS  LF-08  world map refused when signed out  — 401
+PASS  LF-09  public.junkie_rank stays closed to players (QA-B07 kept the grant)  — 403
+PASS  LF-10  passport progress loads (level by countries)  — {"level":"none","stars":0,"badges":[],"next_at":1,"countries":0}

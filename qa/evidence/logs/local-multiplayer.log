@@ -1,0 +1,30 @@
+PASS  MP-00  both accounts sign in at the same time
+PASS  MP-01  Captain creates a crew trip
+PASS  MP-02  Player joins with the trip code
+PASS  MP-02a  the Captain sees the player waiting for approval  — ok 1 rows
+PASS  MP-02b  Captain approves; the player is in  — approved
+PASS  MP-03  both see the same seat count (N of 12)  — 2 of 12
+PASS  MP-04  Captain promotes the player to Co-Captain; the player sees it  — co_captain
+PASS  MP-05  Co-Captain can edit trip details (R-208)
+PASS  MP-06  Co-Captain cannot delete the trip  — Captain only
+PASS  MP-07  Co-Captain cannot hand over the Captaincy  — Only the Captain can do that
+PASS  MP-08  Captain moves the Co-Captain back to Player  — player
+PASS  MP-09  role changes are logged  — 2 rows
+PASS  MP-10  a Player cannot delete the trip  — Captain only
+PASS  MP-11  "We've arrived" starts Trip Season for both  — arrive 200 "2026-11-26T16:50:58.147112+00:00" | player [{"phase":"trip_season","phase_starts_at":"2026-11-26T16:50:58.147112+00:00","phase_ends_at":"2026-11-29T00:00:00+00:00" | captain [{"phase":"trip_season","phase_starts_at":"2026-11-26T16:50:58.147112+00:00","phase_ends_at":"2026-11-29T00:00:00+00:00"
+PASS  MP-12  a Player cannot open the crowning night  — The Captain or Co-Captain opens the crowning night
+PASS  MP-13  Captain opens Game Night Live
+PASS  MP-14  a player can't 👍 their own Show & Tell  — You can't tap your own avatar
+PASS  MP-15  👍 for the Captain's Show & Tell is accepted; a second tap doesn't add again  — first 200 true, second 200 false
+PASS  MP-16  both cast a secret Best Overall vote (repeat vote accepted once)  —   repeat 204
+PASS  MP-17  before Close the Captain can't read the player's vote through the API  — refused 403 42501 permission denied for table live_award_votes
+PASS  MP-18  live_state before Close shows no award winner  — [{"user_id":"<id>","thumbs":0,"i_tapped":false,"my_awards":[],"won_awards":[]},{"user_id":"<id>"
+PASS  MP-19  a Player cannot close Game Night Live  — The Captain or Co-Captain closes Game Night
+PASS  MP-20  Captain closes Game Night Live
+INFO  live_state after Close: [{"user_id":"<id>","thumbs":0,"i_tapped":false,"my_awards":[],"won_awards":["best_overall"]},{"user_id":"<id>","thumbs":1,"i_tapped":true,"my_awards":["best_overall"],"won_awards":["best_overall"]}]
+PASS  MP-21  both accounts see identical Trip Season standings  — [{"user_id":"JAY","points":30,"rank":1,"showcase_points":0,},{"user_id":"KAMAL","points":10,"rank":2,"showcase_points":0,}]
+INFO  ledger as Kamal: [{"user_id":"KAMAL","points":10,"source":"award_best_overall"}]
+INFO  ledger: [{"user_id":"<id>","points":20,"source":"game_night_present"},{"user_id":"<id>","points":10,"source":"award_best_overall"}]
+PASS  MP-22  a player can't write points directly  — 403
+PASS  MP-23  Crew Check loads for the player (no proofs yet)  — ok 0 rows
+PASS  MP-99  Captain deletes the throwaway trip
