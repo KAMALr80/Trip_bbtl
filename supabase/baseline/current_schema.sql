@@ -3883,17 +3883,9 @@ CREATE FUNCTION public.unlock_extra_seats(p_trip uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
-DECLARE rp record;
 BEGIN
   IF NOT trip_private.is_captain(p_trip) THEN RAISE EXCEPTION 'Only the Captain can add seats'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.trips WHERE id=p_trip AND play_arrangement IS NOT NULL) THEN RAISE EXCEPTION 'This room uses its existing seat limit'; END IF;
-  IF trip_private.is_window_room(p_trip) THEN RAISE EXCEPTION 'Bigger group? Start a Going on a Trip instead.'; END IF;
-  IF NOT trip_private.beta_free() THEN RAISE EXCEPTION 'Seat add-ons aren''t open yet. Nothing was charged.'; END IF;
-  IF EXISTS (SELECT 1 FROM public.trips WHERE id=p_trip AND extra_seats) THEN RETURN; END IF;
-  UPDATE public.trips SET extra_seats=true WHERE id=p_trip AND play_arrangement IS NOT NULL;
-  SELECT * INTO rp FROM trip_private.room_pricing(p_trip);
-  INSERT INTO public.orders(trip_id,captain_id,kind,label,tier,list_cents,discount_cents,amount_due_cents,status,collected_cents)
-  VALUES (p_trip, auth.uid(), 'seat_addon', '+6 seats', rp.addon_key, rp.addon_cents, rp.addon_cents, 0, 'beta_free', 0);
+  RAISE EXCEPTION 'This crew already has every seat its room allows. Bigger groups come in a later update.';
 END $$;
 
 

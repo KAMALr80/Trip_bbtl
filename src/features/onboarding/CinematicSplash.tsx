@@ -3,10 +3,9 @@ import { BrandLockup } from "@/components/BrandLockup";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { APP_VERSION } from "@/lib/app-version";
-import { useT } from "@/i18n";
+import { ContactLinks } from "@/features/auth/ContactLinks";
 
 export function CinematicSplash({ failed, onLogin }: { failed: boolean; onLogin: () => void }) {
-  const t = useT();
   const [report, setReport] = useState<"idle" | "sending" | "sent" | "signin" | "failed">("idle");
   async function sendReport() {
     setReport("sending");
@@ -58,24 +57,7 @@ export function CinematicSplash({ failed, onLogin }: { failed: boolean; onLogin:
             >
               ⚑ {report === "sending" ? "Sending…" : "Report this problem"}
             </Button>
-            <div className="mt-3 text-xs text-muted-foreground leading-relaxed">
-              <p>{t("auth.contact.title")}</p>
-              {/* All three contacts, as on Help (founder review): not only support@. */}
-              {(
-                [
-                  ["general", "hello@tripjunkies.app"],
-                  ["support", "support@tripjunkies.app"],
-                  ["safety", "safety@tripjunkies.app"],
-                ] as const
-              ).map(([key, email]) => (
-                <p key={key}>
-                  {t(`auth.contact.${key}`)}:{" "}
-                  <a href={`mailto:${email}`} className="underline">
-                    {email}
-                  </a>
-                </p>
-              ))}
-            </div>
+            <ContactLinks className="mt-3" />
             {report !== "idle" && report !== "sending" && (
               <p role="status" className="cinematic-splash-report-status">
                 {report === "sent"

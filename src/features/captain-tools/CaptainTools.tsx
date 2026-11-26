@@ -23,6 +23,8 @@ import { friendlyRange } from "@/lib/trip-dates";
 import { RememberedSection } from "@/components/RememberedSection";
 import { TripUnlock, isUnlocked } from "@/features/trip/TripUnlock";
 import { useSeatCap } from "@/features/trip/SeatCap";
+import { roomOf } from "@/features/trip/rooms";
+import { lengthProblem } from "@/features/setup/wizard-model";
 import { TripAccessTools } from "@/features/onboarding/BetaAccess";
 import { dicebearUrl } from "@/lib/player-cards";
 import { permanentlyDeleteTrip } from "@/lib/delete-trip.functions";
@@ -126,11 +128,11 @@ export function CaptainTools({
       setError("Your return date should be after your start date.");
       return;
     }
-    const days =
-      Math.round((Date.parse(`${end}T12:00:00Z`) - Date.parse(`${start}T12:00:00Z`)) / 86400000) +
-      1;
-    if (days < 2 || days > 30) {
-      setError("Trips can be 2 to 30 days long.");
+    // QA-B01: the room's own length (1–14 days for a trip, 1–7 at home), as in setup; a 1-day
+    // trip used to fail a leftover 2–30 day check before anything was sent.
+    const room = roomOf(trip.room);
+    if (lengthProblem(room, start, end) === "tooLong") {
+      setError(t("setup.problem.tooLong", { min: room.mainDays.min, max: room.mainDays.max }));
       return;
     }
     void run(async () => {

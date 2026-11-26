@@ -33,6 +33,8 @@ dist-ssr
 
 # Local env (only the publishable key belongs here)
 .env
+# Staging QA account passwords for the live multiplayer pass; never committed
+.env.qa
 
 # Playwright
 test-results/

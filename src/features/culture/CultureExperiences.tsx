@@ -118,7 +118,8 @@ const VIS: Record<Exp["visibility"], string> = {
   public: "TripJunkies",
 };
 
-/** Full Travel From Home and Window Seat experiences. All writes go through culture_action. */
+/** Full Travel From Home and travel-story ("inspire someone") experiences. All writes go through
+ * culture_action. The travel track isn't the Window Seat room, so it isn't labelled that (QA-B05). */
 export function CultureExperiences({
   trips,
   userId,
@@ -237,7 +238,7 @@ export function CultureExperiences({
   return (
     <section
       className={`mt-6 min-w-0 room-story-shell ${track === "travel" ? "window-seat-content window-room-scene" : "home-culture-content home-room-scene"}`}
-      aria-label={`${track === "home" ? "Travel From Home" : "Window Seat"} experiences`}
+      aria-label={`${track === "home" ? "Travel From Home" : "Travel stories"} experiences`}
     >
       {track === "home" && samples}
       {canCreate && (
@@ -250,7 +251,7 @@ export function CultureExperiences({
             className="mt-3 w-full min-h-14"
             onClick={() => setCreating(track)}
           >
-            {track === "home" ? "Map out your culture" : "Add to Window Seat"}{" "}
+            {track === "home" ? "Map out your culture" : "Share your travel story"}{" "}
             <ArrowRight size={18} />
           </Button>
         </>
@@ -293,19 +294,8 @@ export function CultureExperiences({
           🏅 First Culture Share · {TRACK_LABEL[track]}
         </span>
       </div>
-      <div className="mt-2 flex flex-wrap gap-2 opacity-60" aria-disabled="true">
-        {["Bronze", "Silver", "Gold"].map((t) => (
-          <span
-            key={t}
-            className="rounded-full border border-border bg-muted px-3 py-1 text-xs font-bold"
-          >
-            {t}
-          </span>
-        ))}
-      </div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Tiers unlock with likes and downloads · coming soon
-      </p>
+      {/* QA-B05: the empty "Bronze / Silver / Gold · coming soon" tier chips are gone, as on the
+          Passport (R-715); the named badges live on the Passport. */}
       <h3 className="mt-6 font-display text-lg font-extrabold">Shared with TripJunkies</h3>
       <PlaceBrowser
         items={shared.filter((s) => s.track === track).map((s) => ({ ...s, id: s.id }))}
@@ -601,7 +591,8 @@ function CreateFlow({
               : onDone(null)
         }
       >
-        <ArrowLeft /> {step || who ? "Back" : track === "home" ? "Travel From Home" : "Window Seat"}
+        <ArrowLeft />{" "}
+        {step || who ? "Back" : track === "home" ? "Travel From Home" : "Travel stories"}
       </Button>
       <p className="eyebrow mt-3 text-blue">
         {TRACK_LABEL[track].toUpperCase()} · STEP{" "}
@@ -984,7 +975,7 @@ function ExperienceView({
         className={`mt-6 min-w-0 pb-8 room-story-shell ${exp.track === "travel" ? "window-seat-content window-room-scene" : "home-culture-content home-room-scene"}`}
       >
         <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft /> {exp.track === "home" ? "Travel From Home" : "Window Seat"}
+          <ArrowLeft /> {exp.track === "home" ? "Travel From Home" : "Travel stories"}
         </Button>
         <RoomExperienceCard room={exp.track === "home" ? "home" : "window"}>
           {exp.play_mode === "solo" && <SwitchToGroup exp={exp} trips={trips} onDone={load} />}
@@ -1190,7 +1181,7 @@ function ExperienceView({
       className={`mt-6 min-w-0 pb-8 room-story-shell ${exp.track === "travel" ? "window-seat-content window-room-scene" : "home-culture-content home-room-scene"}`}
     >
       <Button variant="ghost" onClick={onBack}>
-        <ArrowLeft /> {exp.track === "home" ? "Travel From Home" : "Window Seat"}
+        <ArrowLeft /> {exp.track === "home" ? "Travel From Home" : "Travel stories"}
       </Button>
       <RoomExperienceCard room={exp.track === "home" ? "home" : "window"}>
         {exp.play_mode === "solo" && isCreator && !exp.started_at && (

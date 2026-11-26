@@ -181,7 +181,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 94
+      "count": 93
     }
   },
   "src/features/culture/CultureQuest.tsx": {
@@ -463,7 +463,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 5
+      "count": 4
     }
   },
   "src/features/trip/SquadView.tsx": {

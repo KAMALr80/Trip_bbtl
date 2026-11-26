@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { rooms } from "@/features/trip/rooms";
 import {
   callNightDates,
+  lengthProblem,
   nextStep,
   problem,
   stepsFor,
@@ -151,5 +153,22 @@ describe("tripToDraft (Captain tools reuse the wizard screens)", () => {
     );
     expect([d.crowningDate, d.crowningTime]).toEqual(["2026-06-13", "20:00"]);
     expect(d.callNights?.[0]).toMatchObject({ date: "2099-06-07", time: "19:00" });
+  });
+});
+
+describe("lengthProblem (QA-B01: Captain Tools and setup share the room's length)", () => {
+  it("lets a 1-day trip through, which the old 2–30 day check refused", () => {
+    expect(lengthProblem(rooms.trip, "2027-01-10", "2027-01-10")).toBeNull();
+    expect(lengthProblem(rooms.game_night, "2027-01-10", "2027-01-10")).toBeNull();
+  });
+  it("uses the room's maximum: 14 days for a trip, 7 at home", () => {
+    expect(lengthProblem(rooms.trip, "2027-01-01", "2027-01-14")).toBeNull();
+    expect(lengthProblem(rooms.trip, "2027-01-01", "2027-01-15")).toBe("tooLong");
+    expect(lengthProblem(rooms.explore_culture, "2027-01-01", "2027-01-07")).toBeNull();
+    expect(lengthProblem(rooms.explore_culture, "2027-01-01", "2027-01-08")).toBe("tooLong");
+  });
+  it("flags dates that are missing or out of order", () => {
+    expect(lengthProblem(rooms.trip, "2027-01-10", "2027-01-09")).toBe("dates");
+    expect(lengthProblem(rooms.trip, "", "2027-01-09")).toBe("dates");
   });
 });

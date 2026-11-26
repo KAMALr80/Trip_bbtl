@@ -82,3 +82,19 @@ test("the version endpoint answers for the update prompt", async ({ request }) =
   const response = await request.get("/api/public/version");
   expect(response.ok()).toBe(true);
 });
+
+test("the sign-in screen lists hello@, support@ and safety@ (QA-B03)", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible();
+  for (const email of ["hello", "support", "safety"])
+    await expect(page.getByRole("link", { name: `${email}@tripjunkies.app` })).toHaveAttribute(
+      "href",
+      `mailto:${email}@tripjunkies.app`,
+    );
+});
+
+test("Try Games on Flight opens the arcade as a guest", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Try Games on Flight" }).click();
+  await expect(page.getByRole("heading", { name: /Games on Flight/ })).toBeVisible();
+});

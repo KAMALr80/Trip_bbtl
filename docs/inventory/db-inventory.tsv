@@ -29,12 +29,12 @@ table	public	cost_items				t	1		DELETE,INSERT,SELECT,UPDATE		20261002015216_f867
 table	public	cost_log				t	1		DELETE,INSERT,SELECT,UPDATE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	0	
 table	public	cost_notes				t	1		DELETE,INSERT,SELECT,UPDATE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	1	src/features/at-home/TripCosts.tsx
 table	public	cost_shares				t	1		DELETE,INSERT,SELECT,UPDATE		20261002015216_f867571e-817c-49ea-bb2e-49aeaebac36d.sql	1	1	src/features/at-home/TripCosts.tsx
-table	public	cultural_inspirations				t	4		DELETE,INSERT,SELECT	DELETE,INSERT,UPDATE	20261002164011_bb8f0d95-7fe3-4564-9209-82172fa80008.sql	1	5	src/features/culture/CultureQuest.tsx src/features/culture/Inspiration.tsx src/features/passport/PassportBook.tsx src/lib/culture-quest.functions.ts src/lib/inspiration.functions.ts
+table	public	cultural_inspirations				t	4		DELETE,INSERT,SELECT	DELETE,INSERT,UPDATE	20261002164011_bb8f0d95-7fe3-4564-9209-82172fa80008.sql	1	4	src/features/culture/CultureQuest.tsx src/features/culture/Inspiration.tsx src/lib/culture-quest.functions.ts src/lib/inspiration.functions.ts
 table	public	culture_exp_days				t	1		DELETE,INSERT,SELECT,UPDATE		20261004013306_b18f4c90-e999-49f3-b61e-503d898301af.sql	1	1	src/lib/culture-exp.functions.ts
 table	public	culture_exp_hidden				t	1		DELETE,INSERT,SELECT,UPDATE		20261004013306_b18f4c90-e999-49f3-b61e-503d898301af.sql	1	0	
 table	public	culture_exp_likes				t	1		DELETE,INSERT,SELECT,UPDATE		20261004013306_b18f4c90-e999-49f3-b61e-503d898301af.sql	1	0	
 table	public	culture_experiences				t	1		DELETE,INSERT,SELECT,UPDATE		20261004013306_b18f4c90-e999-49f3-b61e-503d898301af.sql	1	3	src/features/culture/CultureExperiences.tsx src/features/play/PlayHub.tsx src/lib/culture-exp.functions.ts
-table	public	culture_layer_stamps				t	1		DELETE,INSERT,SELECT,UPDATE		20261005064510_c092bebc-2bac-4683-bd00-f484f52cb378.sql	1	1	src/features/passport/PassportBook.tsx
+table	public	culture_layer_stamps				t	1		DELETE,INSERT,SELECT,UPDATE		20261005064510_c092bebc-2bac-4683-bd00-f484f52cb378.sql	1	0	
 table	public	culture_quest_answers				t	1		DELETE,INSERT,SELECT,UPDATE		20261002170137_fa91655f-3ad8-4e3e-908a-fbe50dcf74fe.sql	1	0	
 table	public	culture_quest_items				t	4		DELETE,INSERT,SELECT,UPDATE	DELETE,INSERT,UPDATE	20261002170137_fa91655f-3ad8-4e3e-908a-fbe50dcf74fe.sql	1	1	src/features/culture/CultureQuest.tsx
 table	public	culture_quest_players				t	1		DELETE,INSERT,SELECT,UPDATE		20261002170137_fa91655f-3ad8-4e3e-908a-fbe50dcf74fe.sql	1	0	
@@ -532,14 +532,14 @@ function	public	trip_photos	p_trip uuid	f	true				EXECUTE		20261001055917_7163ef
 function	public	trip_pot	p_trip uuid	f	true				EXECUTE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	1	src/features/at-home/TripCosts.tsx
 function	public	trip_price	p_trip uuid, p_headcount integer	f	true				EXECUTE		20261002034338_5eeea1c2-c81e-46ba-8a29-93d610005276.sql	1	1	src/features/trip/TripUnlock.tsx
 function	public	trip_roster	p_trip uuid	f	true				EXECUTE		20261001043440_510aebe2-d821-49ad-8452-42b8fd98758f.sql	2	4	src/data/queries.ts src/data/trips.ts src/features/culture/CultureExperiences.tsx src/features/culture/Inspiration.tsx
-function	public	trip_season	p_trip uuid	f	true						20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	15	src/data/live.ts src/data/offline/rules.test.ts src/data/phase.test.ts src/data/postcard.test.ts src/data/postcard.ts src/data/queries.ts src/features/admin/EngineLab.tsx src/features/captain-tools/PhaseTiles.tsx src/features/passport/PassportProgress.tsx src/features/play/PhaseNotice.tsx src/features/play/PlayHub.tsx src/features/points/CrewStandings.tsx src/features/postcard/wrapup-state.test.ts src/features/trip/JourneyPhases.tsx src/features/trip/phase.ts
+function	public	trip_season	p_trip uuid	f	true						20261001055053_28d3de7e-29b6-4c8b-ab2f-70a247891cd1.sql	1	20	src/data/live.ts src/data/offline/rules.test.ts src/data/phase.test.ts src/data/postcard.test.ts src/data/postcard.ts src/data/queries.ts src/features/admin/EngineLab.tsx src/features/captain-tools/PhaseTiles.tsx src/features/passport/PassportProgress.tsx src/features/play/PhaseNotice.tsx src/features/play/PlayHero.test.ts src/features/play/PlayHero.tsx src/features/play/PlayHub.tsx src/features/play/final-standings.test.ts src/features/play/final-standings.ts src/features/points/CrewStandings.tsx src/features/points/Seasons.tsx src/features/postcard/wrapup-state.test.ts src/features/trip/JourneyPhases.tsx src/features/trip/phase.ts
 function	public	trip_season_score	p_trip uuid	f	true						20261005024938_64b7bea2-bfed-40ea-93ea-3e169bd7dabe.sql	1	0	
 function	public	trip_season_started	p_trip uuid	f	true				EXECUTE		20261005223206_337f661b-ecd0-4989-b2bf-4c27b0430077.sql	1	1	src/features/play/PlayHub.tsx
 function	public	trip_squad_messages	p_trip uuid	f	true				EXECUTE		20261002020111_f180a993-1d28-46f1-a383-0792ab4361a4.sql	1	0	
 function	public	trip_standings	p_trip uuid, p_season text	f	true				EXECUTE		20261030100000_m3_points_ledger.sql	1	1	src/data/live.ts
 function	public	undo_cost_payment	p_item uuid, p_user uuid, p_amount_cents bigint, p_reason text	f	true				EXECUTE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	1	src/features/at-home/TripCosts.tsx
 function	public	unlock_big_group	p_trip uuid	f	true				EXECUTE		20261002022825_07b81448-6efe-4855-90a0-76ffec10d339.sql	1	0	
-function	public	unlock_extra_seats	p_trip uuid	t	true				EXECUTE		20261005154302_ba6aa404-5943-406c-862e-1dfa2ed6565a.sql	2	1	src/features/trip/SeatCap.tsx
+function	public	unlock_extra_seats	p_trip uuid	t	true				EXECUTE		20261126120000_retire_extra_seats_addon.sql	3	0	
 function	public	unlock_trip	p_trip uuid, p_headcount integer	f	true				EXECUTE		20261002034338_5eeea1c2-c81e-46ba-8a29-93d610005276.sql	1	0	
 function	public	use_ai_quota	p_kind text, p_trip uuid	f	true				EXECUTE		20261002070906_8ff32319-0fd9-4971-bf7d-15961bfe9af5.sql	2	1	src/lib/ai-quota.server.ts
 function	public	use_captain_pass	p_trip uuid, p_week integer	f	true				EXECUTE		20261002064146_d6694141-2653-428c-9c3f-fa6bbc1b46bc.sql	1	1	src/features/at-home/HostSwaps.tsx

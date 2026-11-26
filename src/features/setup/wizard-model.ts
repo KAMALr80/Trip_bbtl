@@ -2,7 +2,7 @@
 // room shows, what each screen needs before Next, and how the answers become create_trip_v2's input.
 // The server checks everything again; this keeps the Captain from getting there with a mistake.
 import { addDays, phaseBoundaries, zonedInstant } from "@/features/trip/phase";
-import { rooms, type PlayMode, type RoomId } from "@/features/trip/rooms";
+import { rooms, type PlayMode, type RoomConfig, type RoomId } from "@/features/trip/rooms";
 
 /** 0 Who's playing (asked first, Q2) · 1 Where to? · 2 Basics · 3 Pre-Flight · 4 Trip Season · 5 Invite */
 export type Step = 0 | 1 | 2 | 3 | 4 | 5;
@@ -100,6 +100,17 @@ const minutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)
 const daysBetween = (a: string, b: string) =>
   Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
 
+/** A trip's length against its room (R-112): setup and Captain Tools share this one rule. */
+export function lengthProblem(
+  room: Pick<RoomConfig, "mainDays">,
+  startDate: string,
+  endDate: string,
+): "dates" | "tooLong" | null {
+  if (!isDate(startDate) || !isDate(endDate) || endDate < startDate) return "dates";
+  const days = daysBetween(startDate, endDate) + 1;
+  return days > room.mainDays.max || days < room.mainDays.min ? "tooLong" : null;
+}
+
 export type Context = { homeTz: string; now: number };
 export const today = (ctx: Context) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: ctx.homeTz }).format(new Date(ctx.now));
@@ -126,8 +137,7 @@ export function problem(draft: SetupDraft, step: Step, ctx: Context): Problem | 
     const now = today(ctx);
     if (draft.endDate < now) return "datesPast";
     if (room.takeoff === "home_missions" && draft.startDate <= now) return "atHomeTomorrow";
-    const days = daysBetween(draft.startDate, draft.endDate) + 1;
-    if (days > room.mainDays.max || days < room.mainDays.min) return "tooLong";
+    if (lengthProblem(room, draft.startDate, draft.endDate) === "tooLong") return "tooLong";
     if (draft.hasMinors && draft.vibe === "party") return "minorsParty";
     if (!room.atHome && !draft.tripTz) return "tripTz";
     return null;

@@ -20,6 +20,7 @@ import { BetaCodeField } from "@/features/admin/BetaCodes";
 import { LegalCheckbox } from "@/features/onboarding/LegalConsent";
 import { LEGAL_VERSION } from "@/lib/legal";
 import { useT } from "@/i18n";
+import { ContactLinks } from "./ContactLinks";
 
 export function AuthScreen({
   allowSignup = true,
@@ -334,12 +335,8 @@ export function AuthScreen({
                 </Button>
               )}
             </div>
-            <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
-              {t("auth.needHand")}{" "}
-              <a href={`mailto:${t("common.supportEmail")}`} className="underline">
-                {t("common.supportEmail")}
-              </a>
-            </p>
+            {/* QA-B03: all three contacts, not only support@ (PDF p.6). */}
+            <ContactLinks className="mt-3" />
           </div>
         )}
         {message && (
