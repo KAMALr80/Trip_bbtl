@@ -23,6 +23,12 @@ Statuses: REPORTED · INVESTIGATING · CONFIRMED · FIXING · FIXED · VERIFYING
 | QA-B08 | CI / inventory | `docs/inventory` out of date: source-reference counts for `cultural_inspirations`, `culture_layer_stamps` and `trip_season` changed with batches 4–5. CI's "snapshot and inventory are up to date" step would fail | MEDIUM (release gate) | `docs/inventory/db-inventory.*` | Earlier inventory edits were made by hand | Regenerated with `replay-migrations.sh` + `inventory.py` in Docker, as CI does | Snapshot regeneration shows no remaining drift | VERIFIED |
 | QA-S01 | Security | No test pinned which `public` SECURITY DEFINER functions signed-in users can run (default privileges grant new public functions to `authenticated`) | LOW (hardening) | `supabase/tests/database/50_definer_allowlist.test.sql` | Gap noted in QA_SECURITY_AUDIT | New pgTAP test: allowlist of 7; anon can run none | pgTAP 50: 2/2 | VERIFIED |
 
+## Open requirement (handled in a separate change)
+
+| ID | PDF p. | Item | Finding | Status |
+|---|---|---|---|---|
+| QA-R01 | 12 | Solo setup asks "What kind of traveler are you?" | Batch 3 relabelled the trip vibe question for solo trips. The batch 3 follow-up on `main` (`1edacc0`) reverted that: the vibe options (Family / Chill / Party) are content settings, not the deck's traveler types (foodie, explorer, chill…, R-351), and new trips don't store traveler types. That commit says the traveler question comes in its own change. Not changed here, to avoid clashing with it | CONFIRMED, pending (other change) |
+
 ## Report claims that were wrong or outdated
 
 | Report claim | Finding in code | Status |

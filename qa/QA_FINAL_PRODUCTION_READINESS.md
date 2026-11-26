@@ -16,6 +16,7 @@ Every automated release check passes on this branch, and no CRITICAL or HIGH bug
 | Bugs fixed | 6 |
 | Bugs verified (automated) | 5 verified + 1 fixed with the visual check pending (B05) |
 | Still failing | 0 |
+| Open requirement | 1 (QA-R01: solo "What kind of traveler are you?", PDF p.12; planned as a separate change on `main`) |
 | Blocked | Live multiplayer (TC-MP-01…08), age/teen accounts, devices, staging logs |
 | Not a bug | 4 report claims (Practice vs Start and the bell icon were already fixed; `write_journal` isn't a definer function; `CaptainBadge` is never rendered) |
 | Needs product decision | 6 (B04, B06, hunt daily unlock, present-live bonus, Game Night Calendar, award tie rule Q7) |
@@ -54,3 +55,4 @@ Typecheck clean · `eslint . --quiet` exit 0 · Vitest 346/346 · pgTAP 50/50 (D
 - Real-device checks (offline in airplane mode, install, push) not run.
 - CSP still report-only; 13 images still on Lovable's CDN (`docs/KNOWN_LIMITATIONS.md`).
 - The six founder decisions above.
+- QA-R01: the solo traveler question (R-351) still needs building; it needs stored traveler types for new trips.

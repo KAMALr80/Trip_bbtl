@@ -31,7 +31,8 @@ Categories: **Bug fixed** · **Already fixed** (earlier batches) · **Expected**
 | 11 | Co-Captain powers, Make Player, paywall copy, Baggage Claim name | Already fixed | DB `16` |
 | 11 | Trip details refuses 1-day trips | **Bug fixed (QA-B01)** | Vitest `lengthProblem` |
 | 11 | Big Group pricing copy (legacy) | Decision (QA-B06) | Payments dormant |
-| 12 | 5 rooms, caps, crowning date, solo traveler question, Pseudo-Accents, Inspire Someone | Already fixed | DB `13`, `17`; e2e `setup-wizard` |
+| 12 | 5 rooms, caps, crowning date, Pseudo-Accents, Inspire Someone | Already fixed | DB `13`, `17`; e2e `setup-wizard` |
+| 12 | Solo setup asks "What kind of traveler are you?" | **Open (QA-R01)** | Batch 3 label reverted on `main` (`1edacc0`): the vibe isn't a traveler type; the real question (R-351) is planned as a separate change |
 | 12 | Window Seat "Friends off the app" | Decision (QA-B04) | Deck conflict |
 | 12, 15 | Travel-story hub labelled "Window Seat"; tier chips | **Bug fixed (QA-B05)** | Code; e2e suite |
 | 13 | Missing games; tag mismatch | Already fixed (batch 4/5) | Code |

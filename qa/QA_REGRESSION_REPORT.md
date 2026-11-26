@@ -31,3 +31,14 @@ No test was deleted or loosened. The one test change to an existing file (47) mo
 ## Flaky test seen earlier
 
 `e2e/pwa/outbox.spec.ts` "an answer given offline waits, survives a restart…" failed once during batch 5 and passed on every rerun (2/2 repeat, then 18/18). It passed here too. Worth watching in CI; it depends on the service worker taking control in time.
+
+## After merging `main` (batch 3 and its follow-ups)
+
+`jay-trip/main` gained batch 3 (PR #18) with two follow-up commits during this pass; it was merged into `fix/qa-audit` without conflicts.
+
+| Suite | Result |
+|---|---|
+| Typecheck, `eslint . --quiet` | Clean, exit 0 |
+| Vitest | 346 / 346 |
+| Snapshot + inventory regenerated | No drift |
+| Mocked E2E | 123 / 127 on the full run; the 4 failures were 60 s timeouts in one burst (tests 106–111: `responsive` small phone /trip and desktop /me, `shell-navigation` refresh and crew list), where the page never rendered. Rerun of both specs: **17 / 17**. Logs: `e2e-mocked-after-merge.log`, `e2e-rerun-after-merge.log` |
