@@ -29,12 +29,12 @@ table	public	cost_items				t	1		DELETE,INSERT,SELECT,UPDATE		20261002015216_f867
 table	public	cost_log				t	1		DELETE,INSERT,SELECT,UPDATE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	0	
 table	public	cost_notes				t	1		DELETE,INSERT,SELECT,UPDATE		20261002095557_4b31fb84-db5e-44a8-8f11-686a2029298f.sql	1	1	src/features/at-home/TripCosts.tsx
 table	public	cost_shares				t	1		DELETE,INSERT,SELECT,UPDATE		20261002015216_f867571e-817c-49ea-bb2e-49aeaebac36d.sql	1	1	src/features/at-home/TripCosts.tsx
-table	public	cultural_inspirations				t	4		DELETE,INSERT,SELECT	DELETE,INSERT,UPDATE	20261002164011_bb8f0d95-7fe3-4564-9209-82172fa80008.sql	1	5	src/features/culture/CultureQuest.tsx src/features/culture/Inspiration.tsx src/features/passport/PassportBook.tsx src/lib/culture-quest.functions.ts src/lib/inspiration.functions.ts
+table	public	cultural_inspirations				t	4		DELETE,INSERT,SELECT	DELETE,INSERT,UPDATE	20261002164011_bb8f0d95-7fe3-4564-9209-82172fa80008.sql	1	4	src/features/culture/CultureQuest.tsx src/features/culture/Inspiration.tsx src/lib/culture-quest.functions.ts src/lib/inspiration.functions.ts
 table	public	culture_exp_days				t	1		DELETE,INSERT,SELECT,UPDATE		20261004013306_b18f4c90-e999-49f3-b61e-503d898301af.sql	1	1	src/lib/culture-exp.functions.ts
 table	public	culture_exp_hidden				t	1		DELETE,INSERT,SELECT,UPDATE		20261004013306_b18f4c90-e999-49f3-b61e-503d898301af.sql	1	0	
 table	public	culture_exp_likes				t	1		DELETE,INSERT,SELECT,UPDATE		20261004013306_b18f4c90-e999-49f3-b61e-503d898301af.sql	1	0	
 table	public	culture_experiences				t	1		DELETE,INSERT,SELECT,UPDATE		20261004013306_b18f4c90-e999-49f3-b61e-503d898301af.sql	1	3	src/features/culture/CultureExperiences.tsx src/features/play/PlayHub.tsx src/lib/culture-exp.functions.ts
-table	public	culture_layer_stamps				t	1		DELETE,INSERT,SELECT,UPDATE		20261005064510_c092bebc-2bac-4683-bd00-f484f52cb378.sql	1	1	src/features/passport/PassportBook.tsx
+table	public	culture_layer_stamps				t	1		DELETE,INSERT,SELECT,UPDATE		20261005064510_c092bebc-2bac-4683-bd00-f484f52cb378.sql	1	0	
 table	public	culture_quest_answers				t	1		DELETE,INSERT,SELECT,UPDATE		20261002170137_fa91655f-3ad8-4e3e-908a-fbe50dcf74fe.sql	1	0	
 table	public	culture_quest_items				t	4		DELETE,INSERT,SELECT,UPDATE	DELETE,INSERT,UPDATE	20261002170137_fa91655f-3ad8-4e3e-908a-fbe50dcf74fe.sql	1	1	src/features/culture/CultureQuest.tsx
 table	public	culture_quest_players				t	1		DELETE,INSERT,SELECT,UPDATE		20261002170137_fa91655f-3ad8-4e3e-908a-fbe50dcf74fe.sql	1	0	

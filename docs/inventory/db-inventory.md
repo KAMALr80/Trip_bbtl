@@ -117,11 +117,11 @@ are still found.
 - `unlock_trip(p_trip uuid, p_headcount integer)`
 - `weekly_question_status(p_trip uuid)`
 
-### Public tables/views not referenced by name in `src/`: 94
+### Public tables/views not referenced by name in `src/`: 95
 
 Usually fine: most are read and written only through `trip_private` functions.
 
-`account_consents`, `admin_actions`, `age_guesses`, `ai_credit_purchases`, `app_admins`, `app_settings`, `at_home_answers`, `at_home_votes`, `beta_access`, `beta_codes`, `bug_issues`, `content_feedback`, `content_items`, `cost_log`, `culture_exp_hidden`, `culture_exp_likes`, `culture_quest_answers`, `culture_quest_players`, `culture_quest_sessions`, `culture_showcase_ballots`, `culture_showcase_rewards`, `culture_showcase_viewers`, `day_votes`, `experience_previews`, `game_format_prompts`, `game_night_card_skips`, `game_night_flow`, `game_night_moments`, `game_night_polls`, `game_night_reactions`, `game_night_turns`, `game_night_votes`, `game_pick_log`, `game_scores`, `home_day_results`, `home_day_sessions`, `junkie_ranks`, `live_award_votes`, `live_presents`, `live_vote_ballots`, `live_votes`, `mission_claims`, `mission_votes`, `moderation_log`, `notification_prefs`, `notification_queue`, `passport_progress`, `photo_moderation`, `photo_moderation_reports`, `photo_purge_log`, `photo_removed`, `player_birthdays`, `player_private`, `postcard_choices`, `postcard_hearts`, `preview_hidden`, `price_rules`, `proof_votes`, `push_subscriptions`, `quest_challenges`, `quest_thumbs`, `room_blocks`, `room_requests`, `sealed_quests`, `season_quests`, `season_settings`, `secret_missions`, `security_missions`, `skip_passes`, `solo_quests`, `stamp_settings`, `trip_adult_activities`, `trip_adult_approvals`, `trip_adult_settings`, `trip_crownings`, `trip_day_games`, `trip_day_trivia_keys`, `trip_deletion_log`, `trip_item_alternatives`, `trip_role_changes`, `trip_schedule`, `trip_season_finds`, `trip_season_games`, `trip_season_reveals`, `trip_team_members`, `trip_teams`, `trivia_answers`, `user_badges`, `user_blocks`, `user_credits`, `waitlist`, `weekly_answer_votes`, `weekly_answers`, `weekly_questions`
+`account_consents`, `admin_actions`, `age_guesses`, `ai_credit_purchases`, `app_admins`, `app_settings`, `at_home_answers`, `at_home_votes`, `beta_access`, `beta_codes`, `bug_issues`, `content_feedback`, `content_items`, `cost_log`, `culture_exp_hidden`, `culture_exp_likes`, `culture_layer_stamps`, `culture_quest_answers`, `culture_quest_players`, `culture_quest_sessions`, `culture_showcase_ballots`, `culture_showcase_rewards`, `culture_showcase_viewers`, `day_votes`, `experience_previews`, `game_format_prompts`, `game_night_card_skips`, `game_night_flow`, `game_night_moments`, `game_night_polls`, `game_night_reactions`, `game_night_turns`, `game_night_votes`, `game_pick_log`, `game_scores`, `home_day_results`, `home_day_sessions`, `junkie_ranks`, `live_award_votes`, `live_presents`, `live_vote_ballots`, `live_votes`, `mission_claims`, `mission_votes`, `moderation_log`, `notification_prefs`, `notification_queue`, `passport_progress`, `photo_moderation`, `photo_moderation_reports`, `photo_purge_log`, `photo_removed`, `player_birthdays`, `player_private`, `postcard_choices`, `postcard_hearts`, `preview_hidden`, `price_rules`, `proof_votes`, `push_subscriptions`, `quest_challenges`, `quest_thumbs`, `room_blocks`, `room_requests`, `sealed_quests`, `season_quests`, `season_settings`, `secret_missions`, `security_missions`, `skip_passes`, `solo_quests`, `stamp_settings`, `trip_adult_activities`, `trip_adult_approvals`, `trip_adult_settings`, `trip_crownings`, `trip_day_games`, `trip_day_trivia_keys`, `trip_deletion_log`, `trip_item_alternatives`, `trip_role_changes`, `trip_schedule`, `trip_season_finds`, `trip_season_games`, `trip_season_reveals`, `trip_team_members`, `trip_teams`, `trivia_answers`, `user_badges`, `user_blocks`, `user_credits`, `waitlist`, `weekly_answer_votes`, `weekly_answers`, `weekly_questions`
 
 ## Tables
 
@@ -157,12 +157,12 @@ Usually fine: most are read and written only through `trip_private` functions.
 | public | `cost_log` | table | ✅ | 1 | — | 0 |
 | public | `cost_notes` | table | ✅ | 1 | — | 1 |
 | public | `cost_shares` | table | ✅ | 1 | — | 1 |
-| public | `cultural_inspirations` | table | ✅ | 4 | DELETE,INSERT,UPDATE | 5 |
+| public | `cultural_inspirations` | table | ✅ | 4 | DELETE,INSERT,UPDATE | 4 |
 | public | `culture_exp_days` | table | ✅ | 1 | — | 1 |
 | public | `culture_exp_hidden` | table | ✅ | 1 | — | 0 |
 | public | `culture_exp_likes` | table | ✅ | 1 | — | 0 |
 | public | `culture_experiences` | table | ✅ | 1 | — | 3 |
-| public | `culture_layer_stamps` | table | ✅ | 1 | — | 1 |
+| public | `culture_layer_stamps` | table | ✅ | 1 | — | 0 |
 | public | `culture_quest_answers` | table | ✅ | 1 | — | 0 |
 | public | `culture_quest_items` | table | ✅ | 4 | DELETE,INSERT,UPDATE | 1 |
 | public | `culture_quest_players` | table | ✅ | 1 | — | 0 |
