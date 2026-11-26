@@ -31,7 +31,7 @@ export function LockedNote({ trip, what = "this" }: { trip: TripWithRole; what?:
         <p className="font-display font-extrabold">Unlock {what} 🔓</p>
         <p className="text-sm text-muted-foreground mt-1">
           {trip.myRole === "captain"
-            ? "Unlock the full trip in Captain Tools — free for Founding Members."
+            ? "Unlock the full trip in Captain Tools. It's free during beta."
             : "Your Captain can unlock the full trip."}
         </p>
       </div>

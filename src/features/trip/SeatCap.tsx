@@ -8,6 +8,22 @@ import { usePrices, usd, BETA_LINE } from "@/lib/prices";
 type Seats = { used: number; cap: number; is_window: boolean; extra_seats: boolean };
 type Props = { tripId: string; isCaptain: boolean; room?: "culture" | "trip" };
 
+/** The trip's seat limit from the server (seat_status), or null while loading / for older rooms. */
+export function useSeatCap(tripId: string) {
+  const [cap, setCap] = useState<number | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void supabase.rpc("seat_status", { p_trip: tripId }).then(({ data }) => {
+      const row = data?.[0] as Seats | undefined;
+      if (alive) setCap(row?.cap ? row.cap : null);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [tripId]);
+  return cap;
+}
+
 /** Seat count for new-rule rooms. The server enforces the limit; this only explains it. */
 export function SeatCap({ tripId, isCaptain, room = "trip" }: Props) {
   const prices = usePrices();

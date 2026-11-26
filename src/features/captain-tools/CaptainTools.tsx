@@ -1,4 +1,5 @@
 import { TripActions } from "@/features/trip/TripActions";
+import { useT } from "@/i18n";
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { confirmInApp } from "@/lib/confirm";
 import { friendlyError } from "@/lib/friendly-error";
@@ -21,6 +22,7 @@ import { MottoField } from "@/features/setup/MottoField";
 import { friendlyRange } from "@/lib/trip-dates";
 import { RememberedSection } from "@/components/RememberedSection";
 import { TripUnlock, isUnlocked } from "@/features/trip/TripUnlock";
+import { useSeatCap } from "@/features/trip/SeatCap";
 import { TripAccessTools } from "@/features/onboarding/BetaAccess";
 import { dicebearUrl } from "@/lib/player-cards";
 import { permanentlyDeleteTrip } from "@/lib/delete-trip.functions";
@@ -49,6 +51,8 @@ export function CaptainTools({
   onMember,
   userId,
 }: Props & { userId: string }) {
+  const seatCap = useSeatCap(trip.id);
+  const t = useT();
   const [name, setName] = useState(trip.name),
     [destination, setDestination] = useState(trip.destination),
     [start, setStart] = useState(trip.start_date),
@@ -74,6 +78,9 @@ export function CaptainTools({
     [passportState, setPassportState] = useState(trip.passport_state ?? ""),
     [passportCity, setPassportCity] = useState(trip.passport_city ?? "");
   const captain = trip.myRole === "captain";
+  // Co-Captain: every Captain power except cancelling the trip, naming the Co-Captain and handing
+  // off the Captaincy (deck, root AGENTS.md); the server already allows it (is_leader).
+  const leader = captain || trip.myRole === "co_captain";
   async function run(action: () => PromiseLike<{ error: { message: string } | null }>) {
     setBusy(true);
     setError("");
@@ -341,7 +348,7 @@ export function CaptainTools({
           <p className="mt-3 text-xs text-muted-foreground">
             Itinerary, vibe, Pre-Flight start date and time zone are edited with the ✏️ pencils on
             the Trip tab.
-            {!captain && " As Co-Captain you review quests; setup stays with the Captain."}
+            {!captain && ` ${t("captainTools.coCaptainNote")}`}
           </p>
           {captain && (
             <RememberedSection
@@ -364,7 +371,7 @@ export function CaptainTools({
               <CoCaptainPicker trip={trip} members={members} cards={cards} onChanged={onUpdated} />
             </RememberedSection>
           )}
-          {captain && (
+          {leader && (
             <RememberedSection id={`${trip.id}-captain-invites`} title="Invites & approval 💌">
               <TripAccessTools
                 trip={trip}
@@ -448,7 +455,7 @@ export function CaptainTools({
               </form>
             </RememberedSection>
           )}
-          {captain && (
+          {leader && (
             <RememberedSection id={`${trip.id}-captain-details`} title="Trip details">
               <p className="text-sm text-muted-foreground mt-1">{friendlyRange(start, end)}</p>
               <form className="mt-4 space-y-4" onSubmit={save}>
@@ -557,7 +564,10 @@ export function CaptainTools({
           <RememberedSection id={`${trip.id}-captain-members`} title="Members">
             <div className="flex items-center justify-between mt-10">
               <h2 className="font-display font-extrabold text-xl">Members</h2>
-              <span className="text-muted-foreground text-sm">{members.length}/30</span>
+              {/* The room's real seat limit, as on the invite panel (was a fixed /30). */}
+              <span className="text-muted-foreground text-sm">
+                {seatCap ? `${members.length}/${seatCap}` : members.length}
+              </span>
             </div>
             <div className="mt-3 divide-y divide-border">
               <ShortList items={members} id={`captain-members-${trip.id}`}>
@@ -588,9 +598,25 @@ export function CaptainTools({
                           </p>
                         </div>
                       </div>
-                      {m.role !== "captain" && captain && (
+                      {m.role !== "captain" && (captain || (leader && m.role === "player")) && (
                         <div className="flex flex-wrap gap-2 mt-3 pl-14">
-                          {m.role !== "co_captain" && (
+                          {captain && m.role === "co_captain" && (
+                            <Button
+                              variant="subtle"
+                              size="sm"
+                              disabled={busy}
+                              onClick={() =>
+                                manage(
+                                  m.user_id,
+                                  "demote",
+                                  t("captainTools.makePlayerConfirm", { name: m.display_name }),
+                                )
+                              }
+                            >
+                              {t("captainTools.makePlayer")}
+                            </Button>
+                          )}
+                          {captain && m.role !== "co_captain" && (
                             <Button
                               variant="subtle"
                               size="sm"
@@ -646,7 +672,7 @@ export function CaptainTools({
               <Button
                 variant="outline"
                 className="mt-3 bg-card"
-                disabled={busy || !captain}
+                disabled={busy || !leader}
                 onClick={() =>
                   setConfirmAction({
                     label: "Reset invite code? Old links will stop working.",

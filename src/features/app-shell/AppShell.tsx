@@ -206,6 +206,10 @@ export function AppShell() {
     void isAppAdmin().then((admin) => {
       setIsAdmin(admin);
       setFounder(admin);
+      // A founder-only page (Test Lab, Reports, Feedback) opened by anyone else used to fall back
+      // to plain Me without a word; say why (founder review). Checked once the answer is in.
+      const view = new URLSearchParams(window.location.search).get("view");
+      if (!admin && view && isFounderView(view)) toast(t("me.founderOnly"));
     });
     void touchLastSeen();
   }, [user?.id]);
@@ -780,13 +784,15 @@ export function AppShell() {
       ) : about && tab === "Me" ? (
         <div className="px-[18px]">
           <AboutContent
-            backLabel={welcomeStoryReturn ? "Home" : "Me"}
+            backLabel={welcomeStoryReturn ? "Welcome letter" : "Me"}
             onBack={() => {
               setAbout(false);
               if (welcomeStoryReturn) {
+                // Back goes one step: to the welcome letter the story was opened from.
                 setTab("Home");
                 setHomeScreen("dashboard");
                 setWelcomeStoryReturn(false);
+                setWelcomeOpen(true);
               }
             }}
           />

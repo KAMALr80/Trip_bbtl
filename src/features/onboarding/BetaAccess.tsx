@@ -469,6 +469,7 @@ export function TripAccessTools({
   const [invites, setInvites] = useState<Invite[]>([]);
   const [msg, setMsg] = useState("");
   const isCaptain = trip.myRole === "captain";
+  const isLeader = isCaptain || trip.myRole === "co_captain";
   async function load() {
     const [p, i] = await Promise.all([
       rpc("pending_members", { p_trip: trip.id }),
@@ -686,7 +687,7 @@ export function TripAccessTools({
           })}
         </div>
       )}
-      {isCaptain && (
+      {isLeader && (
         <div className="space-y-2">
           <label className="flex items-center justify-between gap-3 bg-card border border-border rounded-2xl p-3">
             <span>

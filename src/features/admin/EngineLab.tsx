@@ -2,11 +2,13 @@
 // bots, jump it to any phase (by moving its dates; real trips can't be moved), and let the bots play
 // what is open. Founder only; the server checks (trip_private.lab_guard).
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { rpc } from "@/data/rpc";
 import { roomIds, rooms, type PlayMode, type RoomId } from "@/features/trip/rooms";
 import { useT } from "@/i18n";
 import { friendlyError } from "@/lib/friendly-error";
+import { prepareBots } from "@/lib/lab.functions";
 import type { TripWithRole } from "@/lib/trips";
 
 const jumps = ["preflight", "takeoff", "trip_season", "baggage_claim", "locked"] as const;
@@ -28,6 +30,7 @@ export function EngineLab({
   const [room, setRoom] = useState<RoomId>("trip");
   const [mode, setMode] = useState<PlayMode>("crew");
   const [size, setSize] = useState(4);
+  const bots = useServerFn(prepareBots);
   const [days, setDays] = useState(5);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
@@ -115,6 +118,8 @@ export function EngineLab({
         disabled={busy}
         onClick={() =>
           run(async () => {
+            // A crew needs size - 1 free bots; make any that are missing first.
+            if (mode === "crew") await bots({ data: { count: Math.max(0, size - 1) } });
             const { data, error } = await rpc("lab_engine_create", {
               p_room: room,
               p_mode: mode,

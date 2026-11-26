@@ -238,7 +238,19 @@ export function CrewCheck({
     ),
   );
   const rows = crew.data ?? [];
-  if (!rows.length) return null;
+  // Solo trips self-honor proofs and one-phone (offline) trips have no proofs at all, so neither
+  // has a Crew Check. In a crew trip an empty list still shows the section, so players know where
+  // proofs to 👍 will appear (founder review). Only once the list has loaded: a failed load says
+  // nothing rather than "nothing to check".
+  if (!rows.length) {
+    if (trip.play_mode !== "crew" || !crew.isSuccess) return null;
+    return (
+      <section className="app-card mt-3" aria-label={t("crewCheck.title")}>
+        <p className="text-xs font-bold uppercase text-muted-foreground">{t("crewCheck.title")}</p>
+        <p className="text-xs text-muted-foreground mt-1">{t("crewCheck.empty")}</p>
+      </section>
+    );
+  }
   const nameOf = (id: string) =>
     members.find((m) => m.user_id === id)?.display_name ?? t("crewCheck.someone");
   return (

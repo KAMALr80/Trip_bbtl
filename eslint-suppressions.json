@@ -275,7 +275,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 7
+      "count": 5
     }
   },
   "src/features/onboarding/FirstRunWelcome.tsx": {
@@ -447,7 +447,7 @@
   },
   "src/features/trip/Itinerary.tsx": {
     "no-restricted-syntax": {
-      "count": 49
+      "count": 48
     }
   },
   "src/features/trip/JourneyMap.tsx": {
@@ -489,7 +489,7 @@
   },
   "src/features/trip/TripOverview.tsx": {
     "no-restricted-syntax": {
-      "count": 12
+      "count": 11
     }
   },
   "src/features/trip/TripUnlock.tsx": {

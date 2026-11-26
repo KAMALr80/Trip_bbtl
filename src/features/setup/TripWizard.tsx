@@ -38,6 +38,7 @@ import {
 export type WizardSearch = {
   step?: Step | undefined;
   room?: RoomId | undefined;
+  country?: string | undefined;
   trip?: string | undefined;
 };
 
@@ -60,8 +61,16 @@ export function TripWizard({ search }: { search: WizardSearch }) {
     void loadDraft(user.id)
       .catch(() => null)
       .then((saved) => {
-        const fresh = search.room && saved?.room !== search.room;
-        setDraft(fresh || !saved ? { room: search.room, reached: 0 } : saved);
+        const fresh = (search.room && saved?.room !== search.room) || !!search.country;
+        setDraft(
+          fresh || !saved
+            ? {
+                room: search.room,
+                reached: 0,
+                ...(search.country ? { country: search.country, cultures: [search.country] } : {}),
+              }
+            : saved,
+        );
       });
   }, [user?.id]);
 
@@ -71,7 +80,9 @@ export function TripWizard({ search }: { search: WizardSearch }) {
     window.scrollTo({ top: 0 });
     void navigate({
       to: "/trips/new",
-      search: { ...search, ...extra, step: to } as never,
+      // `country` (from Home search) only seeds a fresh draft. Drop it once the wizard moves on:
+      // left in the URL, a refresh on a later screen would start over and lose the saved draft.
+      search: { ...search, country: undefined, ...extra, step: to } as never,
       replace,
     });
   };

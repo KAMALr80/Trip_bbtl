@@ -71,7 +71,13 @@
       "teenNoInvite": "TripJunkies accounts are for ages 18 and up. Under 18? Open the teen invite link your trip's Captain sends you, then sign up."
     },
     "revealEmail": "Reveal email",
-    "hideEmail": "Hide email"
+    "hideEmail": "Hide email",
+    "contact": {
+      "title": "Need a hand?",
+      "general": "General questions",
+      "support": "Bug reports and account help",
+      "safety": "Safety, harassment and copyright"
+    }
   },
   "verify": {
     "title": "Check your email",
@@ -94,7 +100,10 @@
     "loadFailedTitle": "We couldn't load your trips",
     "loadFailedLine": "Something went wrong on our side. Your trips are safe. Try again in a moment.",
     "loadFailedOffline": "You're offline. Reconnect and try again.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "noPlanLeader": "No plan yet. Tap ✏️ above to add days, stays, flights and spots.",
+    "noPlanPlayer": "No plan yet. Your Captain adds the days, stays and spots here.",
+    "shareTrip": "Share this trip · inspire someone"
   },
   "home": {
     "gate": "gate",
@@ -222,7 +231,8 @@
       "time": "Time ({{zone}})",
       "place": "Where",
       "placeHint": "A restaurant, the hotel rooftop, someone's living room…",
-      "callLink": "Call link for anyone who can't be there (optional)"
+      "callLink": "Call link for anyone who can't be there (optional)",
+      "pickDay": "Pick a day"
     },
     "invite": {
       "title": "Invite your crew",
@@ -397,7 +407,8 @@
     "aiFlag": "Flagged for a closer look",
     "photoAlt": "{{name}}'s proof photo",
     "error": "That didn't work: {{reason}}",
-    "someone": "A crewmate"
+    "someone": "A crewmate",
+    "empty": "Nothing to check right now. When a crewmate sends a proof, it shows up here for your 👍."
   },
   "quests": {
     "showcaseUpNow": "Your Showcase is open",
@@ -459,7 +470,8 @@
     "winners": "Winners",
     "won": "{{name}} · {{awards}}",
     "noWinners": "No award votes this time.",
-    "error": "That didn't work: {{reason}}"
+    "error": "That didn't work: {{reason}}",
+    "localNote": "Game Night Live is for crews playing on their own phones. This trip is solo or on one phone, so there is no Show & Tell or award vote here."
   },
   "standings": {
     "race": {
@@ -776,7 +788,9 @@
     "feedback": "Send feedback",
     "settings": "Account & legal",
     "settingsHint": "Appearance, time zone, legal, delete account, sign out",
-    "aboutMe": "About me"
+    "aboutMe": "About me",
+    "tripRole": "Trip role: {{role}}",
+    "founderOnly": "That page is for the TripJunkies founder only, so you are on your own Me page."
   },
   "tour": {
     "label": "The TripJunkies tour",
@@ -919,5 +933,35 @@
       "reviewed": "Reviewed",
       "note": "Review note"
     }
+  },
+  "captainTools": {
+    "coCaptainNote": "As Co-Captain you can do everything here except cancel the trip, pick the Co-Captain or hand off the Captaincy.",
+    "makePlayer": "Make Player",
+    "makePlayerConfirm": "Make {{name}} a Player again"
+  },
+  "search": {
+    "title": "Search",
+    "label": "Search destinations and games",
+    "placeholder": "A country, a game, a room…",
+    "close": "Close",
+    "rooms": "Start something",
+    "games": "Games on Flight",
+    "places": "Destinations",
+    "more": "Also here",
+    "planTo": "Plan a trip to {{place}}",
+    "none": "Nothing matches “{{q}}”. Try a country or a game name.",
+    "passport": "Your Passport",
+    "join": "Join with Code",
+    "journey": "Your journey",
+    "tour": "Explore the app (tour)",
+    "gamesLine": "Free, no points"
+  },
+  "photoWall": {
+    "hint": "Tap a photo to react or report it.",
+    "hintLeader": "Tap a photo to react, report it, or hide it from the wall.",
+    "hide": "Hide from wall",
+    "hideConfirm": "Hide this photo from the wall? The crew won't see it any more.",
+    "closedHint": "This trip has ended, so reporting is closed here. To report a photo, email",
+    "closed": "This trip has ended, so the wall is read-only. Tap a photo to see how to report it."
   }
 }

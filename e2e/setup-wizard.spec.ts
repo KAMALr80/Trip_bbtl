@@ -51,6 +51,10 @@ test("a Captain sets up a trip to Bali in five screens", async ({ page }) => {
   await next(page);
 
   await expect(page.getByRole("heading", { name: "Trip Season" })).toBeVisible();
+  // The Captain picks the crowning day; nothing is pre-filled (founder review).
+  await next(page);
+  await expect(page.getByRole("alert")).toHaveText("Pick the day and time.");
+  await page.getByRole("combobox", { name: "Day" }).selectOption(iso(inDays(13)));
   await next(page);
   await expect(page.getByRole("alert")).toHaveText("Add where it happens.");
   await page.getByLabel("Where").fill("The villa rooftop");
@@ -76,6 +80,18 @@ test("a Captain sets up a trip to Bali in five screens", async ({ page }) => {
 
   await page.getByRole("button", { name: "Done · open Play" }).click();
   await expect(page).toHaveURL(new RegExp(`/t/${sampleTrip.id}/play$`));
+});
+
+test("Home search's country fills the destination once, then leaves the URL", async ({ page }) => {
+  await signInWithMockBackend(page);
+  await page.goto("/trips/new?room=trip&country=PT");
+  await expect(page.getByRole("heading", { name: "Who's playing?" })).toBeVisible();
+  await page.getByRole("radio", { name: /My crew \(on the app\)/ }).click();
+  await next(page);
+  await expect(page.getByRole("heading", { name: "Where to?" })).toBeVisible();
+  await expect(page.getByRole("combobox").first()).toHaveValue("Portugal");
+  // A refresh from here must reload the saved draft, not start a new one from the country.
+  await expect(page).not.toHaveURL(/country=/);
 });
 
 test("a refresh keeps the screen, and can't skip ahead", async ({ page }) => {
