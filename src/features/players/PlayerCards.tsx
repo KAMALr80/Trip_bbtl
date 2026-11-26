@@ -141,24 +141,24 @@ const blankCard = { real_name: "-", game_name: "-", avatar_style: "street", avat
 const buddyChoices = Array.from({ length: 30 }, (_, i) => 25 + i);
 const travelerChoices = [...Array.from({ length: 24 }, (_, i) => 1 + i), 55, 56, 57, 58, 59, 60];
 
+/** The trip-only answer ("most excited for"). The trip role lives on the profile: the
+ * fill_card_from_profile trigger copies it onto every card and overwrites anything sent here. */
 async function saveTripAnswer(
   tripId: string,
   userId: string,
   mostExcited: string,
   hasCard: boolean,
-  persona?: string,
 ) {
   const value = mostExcited.trim() || null;
-  const role = persona === undefined ? {} : { trip_persona: persona.trim() || null };
   const result = hasCard
     ? await supabase
         .from("trip_player_cards")
-        .update({ most_excited: value, ...role })
+        .update({ most_excited: value })
         .eq("trip_id", tripId)
         .eq("user_id", userId)
     : await supabase
         .from("trip_player_cards")
-        .insert({ trip_id: tripId, user_id: userId, ...blankCard, most_excited: value, ...role });
+        .insert({ trip_id: tripId, user_id: userId, ...blankCard, most_excited: value });
   if (result.error) throw result.error;
 }
 
@@ -225,7 +225,17 @@ export function QuickJoinCard({
     setBusy(true);
     setError("");
     try {
-      await saveTripAnswer(tripId, userId, excited, false, persona);
+      // Local QA (PDF p.10): the role picked here used to go only onto the new trip card, where the
+      // profile trigger replaced it, so it was lost. Save it on the profile, as the card editor does.
+      const role = persona.trim() || null;
+      if (role !== (profile.trip_persona ?? null)) {
+        const { error: roleError } = await supabase
+          .from("player_profiles")
+          .update({ trip_persona: role })
+          .eq("user_id", userId);
+        if (roleError) throw roleError;
+      }
+      await saveTripAnswer(tripId, userId, excited, false);
       await onSaved();
     } catch (e) {
       console.error("Card save failed", e);
