@@ -377,11 +377,7 @@ export function BasicsScreen({ draft, set, ctx }: ScreenProps) {
           onChange={(e) => set({ name: e.target.value })}
         />
       </label>
-      {/* Founder review: on a solo trip the trip's vibe is the player's own, and it picks their daily
-          quests (R-351), so ask it as "What kind of traveler are you?". */}
-      <p className={label}>
-        {draft.playMode === "solo" ? t("setup.basics.vibeSolo") : t("setup.basics.vibe")}
-      </p>
+      <p className={label}>{t("setup.basics.vibe")}</p>
       <div className="mt-2">
         <VibePicker value={(draft.vibe ?? "chill") as Vibe} onChange={(v) => set({ vibe: v })} />
       </div>

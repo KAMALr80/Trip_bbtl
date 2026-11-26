@@ -203,8 +203,7 @@
       "tripTime": "Trip time: {{zone}} ({{offset}})",
       "change": "Change",
       "pickZone": "Pick the trip time zone",
-      "zoneAsk": "This place has more than one time zone. Which one is the trip in?",
-      "vibeSolo": "What kind of traveler are you?"
+      "zoneAsk": "This place has more than one time zone. Which one is the trip in?"
     },
     "preflight": {
       "title": "Pre-Flight",

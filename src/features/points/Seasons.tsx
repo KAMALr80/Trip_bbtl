@@ -1158,12 +1158,15 @@ export function PhotoWall({ trip, members, cards, userId }: Base) {
                 </a>
               </p>
             )}
-            <p className="mt-2 text-center text-xs text-background">
-              Urgent?{" "}
-              <a href="mailto:safety@tripjunkies.app" className="underline">
-                Email safety@tripjunkies.app
-              </a>
-            </p>
+            {/* One safety email: the closed-trip line above already gives it. */}
+            {!closed && (
+              <p className="mt-2 text-center text-xs text-background">
+                Urgent?{" "}
+                <a href="mailto:safety@tripjunkies.app" className="underline">
+                  Email safety@tripjunkies.app
+                </a>
+              </p>
+            )}
           </div>
         </div>
       )}
