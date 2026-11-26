@@ -8971,6 +8971,22 @@ export type Database = {
         }[];
       };
       welcome_copy: { Args: Record<PropertyKey, never>; Returns: Json };
+      world_map: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          country: string;
+          crowns: string[];
+          culture: string;
+          kind: string;
+          member: boolean;
+          players: Json;
+          room: string;
+          season_label: string;
+          state: string;
+          trip_id: string;
+          trip_name: string;
+        }[];
+      };
       wrapup_board: {
         Args: { p_trip: string };
         Returns: {

@@ -172,6 +172,79 @@ const extras: Record<number, string[]> = {
     "Two truths and a lie about a time you laughed too hard.",
   ],
 };
+// The games the founder's docs list that the arcade didn't have (founder review): Hot Seat, Act It,
+// Would You Rather, Trivia and Sing-off. Local pretend prompts like the rest, family-friendly.
+// Keys 10-14 (9 is Mix It Up's practice pool); GameArcade maps its list to these keys.
+practicePrompts[10] = [
+  "Hot seat: what's the best thing you've ever eaten on a trip?",
+  "Hot seat: which city would you move to tomorrow, and why?",
+  "Hot seat: what's your most-used travel app, and your least-used?",
+  "Hot seat: aisle or window? Defend your answer in 20 seconds.",
+  "Hot seat: what's the funniest thing that ever happened to you at an airport?",
+  "Hot seat: which souvenir from your life would you save in a fire?",
+  "Hot seat: what's a skill you'd learn if you lived abroad for a year?",
+  "Hot seat: who in this room would you want next to you on a 12-hour flight?",
+  "Hot seat: what's one place you'd never go back to, and why?",
+  "Hot seat: describe your perfect day off in three words.",
+  "Hot seat: what's the worst thing you've ever packed?",
+  "Hot seat: which trip changed you the most?",
+];
+practicePrompts[11] = [
+  "Act it: a tourist trying to fold a giant paper map. No words!",
+  "Act it: someone whose suitcase won't close.",
+  "Act it: the moment your flight gets delayed again.",
+  "Act it: tasting a dish that's much spicier than expected.",
+  "Act it: a surfer catching their first wave.",
+  "Act it: a guide leading a group that keeps wandering off.",
+  "Act it: sleeping upright in an airplane seat.",
+  "Act it: haggling at a market without speaking the language.",
+  "Act it: a cat sneaking into someone's luggage.",
+  "Act it: a photographer chasing the perfect sunset.",
+  "Act it: going through airport security with too many layers on.",
+  "Act it: a chef tossing pizza dough for the first time.",
+];
+practicePrompts[12] = [
+  "Would you rather explore a jungle or a glacier?",
+  "Would you rather only travel by train or only by boat?",
+  "Would you rather speak every language or play every instrument?",
+  "Would you rather have a beach to yourself or a mountain to yourself?",
+  "Would you rather eat only street food or only fancy dinners on your next trip?",
+  "Would you rather visit the past for a day or the future for a day?",
+  "Would you rather never wait in a line again or never sit in traffic again?",
+  "Would you rather take a road trip with no music or no snacks?",
+  "Would you rather wake up for every sunrise or stay up for every night sky?",
+  "Would you rather pack only one bag forever or never unpack again?",
+  "Would you rather sleep in a treehouse or on a houseboat?",
+  "Would you rather know every shortcut or every hidden café in a city?",
+];
+practicePrompts[13] = [
+  "Trivia: what is the capital of Australia? (Canberra)",
+  "Trivia: which is the largest ocean on Earth? (The Pacific)",
+  "Trivia: in which country is Machu Picchu? (Peru)",
+  "Trivia: Mount Kilimanjaro is in which country? (Tanzania)",
+  "Trivia: what currency is used in Japan? (The yen)",
+  "Trivia: what is the largest hot desert in the world? (The Sahara)",
+  "Trivia: the Great Barrier Reef lies off the coast of which country? (Australia)",
+  "Trivia: in which country is the ancient city of Petra? (Jordan)",
+  "Trivia: what is the capital of Canada? (Ottawa)",
+  "Trivia: in which country is Angkor Wat? (Cambodia)",
+  "Trivia: what language is most spoken in Brazil? (Portuguese)",
+  "Trivia: which river flows through Cairo? (The Nile)",
+];
+practicePrompts[14] = [
+  "Sing-off: songs with a color in the title. Take turns; first to blank sits out.",
+  "Sing-off: songs about the sun or summer. Hum a line, no lyrics on screen.",
+  "Sing-off: songs with a city in the title. Go round the room!",
+  "Sing-off: songs about rain. Ten seconds each.",
+  "Sing-off: songs with a number in the title.",
+  "Sing-off: songs you'd play on a road trip. Best chorus wins the round.",
+  "Sing-off: songs about love, but hummed only.",
+  "Sing-off: songs from a movie. The room guesses the movie too.",
+  "Sing-off: songs with 'night' or 'star' in them.",
+  "Sing-off: songs about dancing.",
+  "Sing-off: a song in a language other than English.",
+  "Sing-off: songs with an animal in the title.",
+];
 for (const [k, list] of Object.entries(extras))
   practicePrompts[Number(k)] = [...(practicePrompts[Number(k)] ?? []), ...list];
 export function shuffledPractice(index: number) {

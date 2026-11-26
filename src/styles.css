@@ -6957,18 +6957,20 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Founder review: the board is one piece of art, not a card on a photo. The scene runs edge to
+   edge and fades into the lounge above and below; the board glows inside it. */
 .home-live-board-scene {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  min-height: 500px;
-  margin-top: 15px;
-  padding: 50px 10px 25px;
-  border: 1px solid var(--cinema-frost-border);
-  border-radius: 8px;
+  min-height: 520px;
+  margin: 15px -16px 0;
+  padding: 64px 22px 40px;
   background: var(--cinema-deep);
   display: flex;
   align-items: flex-start;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 86%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 86%, transparent);
 }
 .home-live-board-photo {
   position: absolute;
@@ -6994,11 +6996,17 @@ html:root .cinematic-auth .cinematic-auth-email-button {
 .home-live-board {
   width: 100%;
   padding: 7px 5px;
-  border: 1px solid var(--cinema-gold-start);
-  border-radius: 4px;
-  background: color-mix(in oklab, var(--cinema-deep) 72%, transparent);
-  box-shadow: 0 0 22px color-mix(in oklab, var(--cinema-gold-start) 46%, transparent);
+  border: 6px solid color-mix(in oklab, var(--cinema-deep) 70%, #000);
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--cinema-deep) 80%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--cinema-gold-start) 55%, transparent),
+    0 0 26px color-mix(in oklab, var(--cinema-gold-start) 40%, transparent),
+    0 18px 30px -18px #000;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.home-live-board-row > span:first-of-type {
+  text-transform: uppercase;
 }
 .home-live-board-head {
   display: grid;
@@ -8067,4 +8075,443 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   .passport-stamp-land {
     animation: none;
   }
+}
+
+/* Play hub hero (founder review, deck slide 21): the phase's art sits behind the trip name, the
+   countdown, the score card and the route, and changes with each phase. Text over the art always
+   uses the paper colour on a dark scrim, so it reads the same in light and dark appearance. */
+.play-hero-scene {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: 10px;
+  margin-inline: -4px;
+  padding: 0 4px 12px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.play-hero-scene::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--cinema-deep) 35%, transparent),
+      color-mix(in oklab, var(--background) 82%, transparent) 46%,
+      var(--background)
+    ),
+    var(--play-hero-art);
+  background-size: cover;
+  background-position: center top;
+  filter: saturate(1.1);
+}
+.play-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 210px;
+  margin-inline: -4px;
+  border-radius: 12px 12px 18px 18px;
+  color: var(--cinema-paper);
+  box-shadow: 0 18px 40px -22px color-mix(in oklab, var(--cinema-deep) 90%, transparent);
+}
+.play-hero-art {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 70% center;
+}
+.play-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    to top,
+    color-mix(in oklab, var(--cinema-deep) 92%, transparent),
+    color-mix(in oklab, var(--cinema-deep) 25%, transparent) 62%,
+    color-mix(in oklab, var(--cinema-deep) 10%, transparent)
+  );
+}
+.play-hero-route {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 70%;
+  fill: none;
+  stroke: var(--cinema-gold-start);
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+  stroke-linecap: round;
+  opacity: 0.85;
+  animation: play-hero-dash 6s linear infinite;
+}
+.play-hero-plane {
+  position: absolute;
+  top: 12%;
+  left: 58%;
+  color: var(--cinema-paper);
+  font-size: 20px;
+  text-shadow: 0 0 12px var(--cinema-gold-start);
+  transform: rotate(-14deg);
+  animation: play-hero-plane 5.5s ease-in-out infinite;
+}
+.play-hero-countdown {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 7px 10px;
+  border: 1px solid var(--cinema-frost-border);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--cinema-deep) 72%, transparent);
+  backdrop-filter: blur(6px);
+  text-align: center;
+}
+.play-hero-countdown small {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+.play-hero-countdown span {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+.play-hero-countdown b {
+  min-width: 30px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--cinema-paper) 10%, transparent);
+  color: var(--cinema-gold-start);
+  font: 900 20px/1.1 var(--font-display);
+}
+.play-hero-countdown i {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 3px;
+}
+.play-hero-title {
+  position: absolute;
+  inset: auto 14px 14px;
+}
+.play-hero-title p {
+  color: var(--cinema-gold-start);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.play-hero-title h1 {
+  margin-top: 2px;
+  font: 900 clamp(24px, 7vw, 32px) / 1.02 var(--font-display);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  text-shadow: 0 2px 14px color-mix(in oklab, var(--cinema-deep) 80%, transparent);
+}
+.play-hero-title small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+@keyframes play-hero-dash {
+  to {
+    stroke-dashoffset: -120;
+  }
+}
+@keyframes play-hero-plane {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-14deg);
+  }
+  50% {
+    transform: translate(8px, -5px) rotate(-10deg);
+  }
+}
+/* Your crew at the gate (deck slide 21). */
+.play-crew-gate ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 8px;
+  margin-top: 8px;
+  padding: 14px 8px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--card) 90%, var(--blue));
+}
+.play-crew-seat {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.play-crew-avatar {
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 3px var(--cinema-gold-end),
+    0 0 14px color-mix(in oklab, var(--cinema-gold-end) 55%, transparent);
+}
+.play-crew-seat.is-captain .play-crew-avatar {
+  box-shadow:
+    0 0 0 3px var(--cinema-cyan-end),
+    0 0 14px color-mix(in oklab, var(--cinema-cyan-end) 60%, transparent);
+}
+.play-crew-seat.is-co_captain .play-crew-avatar {
+  box-shadow:
+    0 0 0 3px var(--blue),
+    0 0 14px color-mix(in oklab, var(--blue) 60%, transparent);
+}
+.play-crew-seat strong {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.play-crew-seat small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted-foreground);
+  font:
+    700 10px/1.2 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.play-crew-invite {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 2px dashed var(--muted-foreground);
+  border-radius: 50%;
+  color: var(--muted-foreground);
+}
+.play-crew-invite:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .play-hero-route,
+  .play-hero-plane {
+    animation: none;
+  }
+}
+
+/* Welcome letter with the greeting (founder review). */
+.home-live-letter.home-live-letter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  height: auto;
+  margin-top: 10px;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid color-mix(in oklab, var(--cinema-gold-start) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--cinema-deep) 70%, var(--cinema-gold-end));
+  color: var(--cinema-paper);
+  text-align: left;
+  white-space: normal;
+}
+.home-live-letter img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+.home-live-letter span {
+  min-width: 0;
+  flex: 1;
+}
+.home-live-letter small {
+  display: block;
+  color: var(--cinema-gold-start);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.home-live-letter strong {
+  display: block;
+  font: 800 15px/1.15 var(--font-display);
+}
+/* Connecting flights: the doors the board doesn't have, in the board's glow. */
+.home-live-connections {
+  margin-top: 22px;
+  padding: 10px 8px 6px;
+  border: 1px solid color-mix(in oklab, var(--cinema-gold-start) 60%, transparent);
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--cinema-deep) 82%, transparent);
+  box-shadow: 0 0 22px color-mix(in oklab, var(--cinema-gold-start) 30%, transparent);
+}
+.home-live-connections h2 {
+  padding: 0 6px;
+  color: var(--cinema-gold-start);
+  font:
+    900 12px/1.2 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.home-live-connections .home-live-ways {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* A stamp's dialog now holds the whole trip postcard, so it scrolls (founder review). */
+.passport-detail {
+  max-height: 90dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.passport-trip-relive:not(:empty) {
+  margin-top: 14px;
+}
+
+/* Sign-in: "Try Games on Flight" runs the width under the two chips (founder review). */
+.cinematic-auth-chips button:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+/* World map (deck slide 15, R-721). The board keeps the passport's paper look; pins are buttons. */
+.world-map {
+  margin-top: 18px;
+}
+.world-map-board {
+  position: relative;
+  overflow: hidden;
+  margin-top: 8px;
+  aspect-ratio: 360 / 140;
+  border: 1px solid var(--passport-gold);
+  border-radius: 12px;
+  touch-action: none;
+  user-select: none;
+}
+.world-map-board svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.world-map-sea {
+  fill: color-mix(in oklab, var(--blue) 30%, var(--cinema-deep));
+}
+.world-map-land {
+  fill: color-mix(in oklab, var(--green) 45%, var(--cinema-deep));
+  stroke: color-mix(in oklab, var(--cinema-paper) 35%, transparent);
+  stroke-width: 0.3;
+  vector-effect: non-scaling-stroke;
+}
+.world-map-pin {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border: 2px solid var(--cinema-paper);
+  border-radius: 50%;
+  background: var(--cinema-hot-pink, #ff5ea8);
+  color: var(--cinema-deep);
+  font: 900 11px/1 var(--font-display);
+  box-shadow: 0 2px 8px color-mix(in oklab, #000 45%, transparent);
+}
+.world-map-pin::after {
+  content: "";
+  position: absolute;
+  inset: -11px;
+}
+.world-map-pin.is-cluster {
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  font-size: 13px;
+}
+.world-map-pin:focus-visible {
+  outline: 2px solid var(--cinema-gold-start);
+  outline-offset: 2px;
+}
+/* Bottom left sits over the South Pacific, so the buttons never cover a place. */
+.world-map-zoom {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  display: grid;
+  gap: 4px;
+}
+.world-map-zoom button {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border-radius: 50%;
+}
+.world-map-zoom button::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+.world-map-zoom button {
+  position: relative;
+}
+.world-map-hint {
+  color: var(--passport-ink-color);
+  font-size: 12px;
+  opacity: 0.8;
+}
+.world-map-panel {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--passport-gold);
+  border-radius: 12px;
+  background: var(--passport-field);
+}
+.world-map-trip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  text-align: left;
+}
+.world-map-trip:hover,
+.world-map-trip:focus-visible {
+  background: color-mix(in oklab, var(--passport-gold) 14%, transparent);
+}
+.world-map-trip strong,
+.world-map-trip small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.world-map-trip small {
+  font-size: 11px;
+  opacity: 0.75;
+}
+.world-map-player {
+  display: flex;
+  min-width: 56px;
+  min-height: 44px;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
 }

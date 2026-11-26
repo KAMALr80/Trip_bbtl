@@ -13,6 +13,10 @@ const displayNames: Record<string, string> = {
   "vote showdown": "Vote Showdown",
   "card flip": "Card Flip",
   "would you rather": "Would You Rather",
+  "hot seat": "Hot Seat",
+  "act it": "Act It",
+  trivia: "Trivia",
+  "sing-off": "Sing-off",
   "question of the week": "Question of the Week",
 };
 export function displayGameTitle(title: string) {
@@ -92,6 +96,11 @@ const arcadeTypes: Record<string, (typeof GAME_TYPES)[number]> = {
   bingo: "Find It",
   "scavenger hunt": "Find It",
   "mix it up": "Team Up",
+  "hot seat": "Know Each Other",
+  "act it": "Act It",
+  "would you rather": "Vote It",
+  trivia: "Know It",
+  "sing-off": "Sing It",
 };
 export function arcadeGameType(title: string) {
   return arcadeTypes[title.trim().toLowerCase()] ?? "Team Up";

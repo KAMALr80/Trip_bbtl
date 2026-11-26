@@ -225,7 +225,7 @@
       "count": 1
     },
     "no-restricted-syntax": {
-      "count": 51
+      "count": 44
     }
   },
   "src/features/me/ContentVote.tsx": {

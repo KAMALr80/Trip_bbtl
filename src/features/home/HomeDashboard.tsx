@@ -22,8 +22,10 @@ import { tripDisplayName } from "@/lib/trip-display-name";
 import { TripList } from "@/features/trip/TripList";
 import journeyArt from "@/assets/cinematic-journey-map.jpg";
 
-import airportSignoff from "@/assets/home-airport-signoff-diverse.jpg";
-import airportSignoffSmall from "@/assets/home-airport-signoff-diverse-768.webp";
+// One illustrated look (founder review): the old stock photo at the bottom is now illustrated art.
+import takeoffArt from "@/assets/play-phase-takeoff.jpg";
+import tripSeasonArt from "@/assets/play-phase-trip-season.jpg";
+import preflightArt from "@/assets/play-phase-preflight.jpg";
 import departuresBoardArt from "@/assets/home-departures-board.jpg";
 
 import { HomePhaseBanner } from "@/features/play/PhaseNotice";
@@ -357,7 +359,7 @@ export function HomeDashboard({
   if (homeLayout === "trips_first") {
     const boardRows = [
       {
-        label: "GOING ON A TRIP",
+        label: "Going on a Trip",
         gate: "A",
         img: iconMap,
         action: () => setScreen("journey"),
@@ -365,7 +367,7 @@ export function HomeDashboard({
         detail: "",
       },
       {
-        label: "EXPLORE A CULTURE",
+        label: "Explore a Culture",
         gate: "B",
         img: iconHome,
         // Culture rooms are set up on the engine like every room (M3-13).
@@ -376,7 +378,7 @@ export function HomeDashboard({
       {
         // Inspiring someone = sharing your own culture (founder review): this was the only Home
         // door to Show Your Culture, and it used to open Window Seat under another name.
-        label: "INSPIRE SOMEONE",
+        label: "Inspire Someone",
         gate: "C",
         img: windowSeatArt,
         action: () => void navigate({ to: "/trips/new", search: { room: "show_culture" } }),
@@ -386,7 +388,7 @@ export function HomeDashboard({
       {
         // The casual games, named like their screen; "Game Night" is the one-night room below and
         // Game Night Live the present-and-vote screen (founder review).
-        label: "GAMES ON FLIGHT",
+        label: "Games on Flight",
         gate: "D",
         img: gameOptionA,
         action: () => setScreen("arcade"),
@@ -394,7 +396,7 @@ export function HomeDashboard({
         detail: !gameNightLive && next ? boardCountdown(remaining) : "",
       },
       {
-        label: "PASSPORT JUNKIE",
+        label: "Passport Junkie",
         gate: "E",
         img: iconPassport,
         action: () => setScreen("passport"),
@@ -402,14 +404,13 @@ export function HomeDashboard({
         detail: "",
       },
     ];
+    // Founder review: "More ways to play" repeated the board. It now holds only the doors the board
+    // doesn't have, as "Connecting flights" with the board's glow.
+    // Founder review: more variety behind the board, all in the same illustrated style; one a day.
+    const boardScenes = [departuresBoardArt, takeoffArt, tripSeasonArt, preflightArt];
+    const boardArt =
+      boardScenes[Math.floor(Date.now() / 86_400_000) % boardScenes.length] ?? departuresBoardArt;
     const ways = [
-      {
-        label: "Explore a Culture",
-        subline: "Play from home",
-        img: iconHome,
-        // Culture rooms are set up on the engine like every room (M3-13).
-        action: () => void navigate({ to: "/trips/new", search: { room: "explore_culture" } }),
-      },
       {
         // Window Seat under its own name (it was labelled "Inspire Someone").
         label: "Window Seat",
@@ -453,6 +454,15 @@ export function HomeDashboard({
           </span>
           ?
         </h1>
+        {/* Founder review: the welcome letter sits with the greeting, not below the board. */}
+        <Button variant="ghost" className="home-live-letter" onClick={onWelcome}>
+          <img src={welcomeLetter} alt="" width={256} height={256} />
+          <span>
+            <small>{t("home.letterEyebrow")}</small>
+            <strong>{t("home.letterTitle")}</strong>
+          </span>
+          <ArrowRight size={16} aria-hidden />
+        </Button>
         <Button variant="outline" className="home-live-search" onClick={() => setSearchOpen(true)}>
           <Search size={18} />
           {/* A real search now (founder review); the tour stays one of its results. */}
@@ -472,13 +482,7 @@ export function HomeDashboard({
           />
         )}
         <section className="home-live-board-scene" aria-label="Departures board">
-          <img
-            className="home-live-board-photo"
-            src={departuresBoardArt}
-            alt="A diverse squad beneath an airport departures board at tropical sunset"
-            width={1536}
-            height={1024}
-          />
+          <img className="home-live-board-photo" src={boardArt} alt="" width={1536} height={1024} />
           <div className="home-live-board">
             <div className="home-live-board-head" aria-hidden="true">
               <strong>DEPARTURES</strong>
@@ -555,46 +559,26 @@ export function HomeDashboard({
               <Check size={16} /> Check in
             </Button>
           </section>
-        ) : (
-          <Button
-            variant="outline"
-            className="home-live-night w-full justify-start text-left"
-            onClick={onWelcome}
-          >
-            <img
-              src={welcomeLetter}
-              alt=""
-              width={256}
-              height={256}
-              className="size-16 object-contain"
-            />
-            <span>
-              <span className="eyebrow text-blue block">WELCOME ABOARD</span>
-              <strong className="font-display text-lg block">Your welcome letter</strong>
-              <small className="text-muted-foreground">Open your starting guide</small>
-            </span>
-            <ArrowRight className="ml-auto" size={18} />
-          </Button>
-        )}
-        <div className="home-live-section-title">
-          <h2 className="font-display text-xl font-extrabold">More ways to play</h2>
-        </div>
-        <div className="home-live-ways">
-          {ways.map((way) => (
-            <Button
-              key={way.label}
-              variant="ghost"
-              className={`home-live-way ${way.label === "Inspire Someone" ? "window-seat-shortcut" : ""}`}
-              onClick={way.action}
-            >
-              <span className="home-door-medallion">
-                <img src={way.img} alt="" width={104} height={104} />
-              </span>
-              <strong>{way.label}</strong>
-              <small>{way.subline}</small>
-            </Button>
-          ))}
-        </div>
+        ) : null}
+        <section className="home-live-connections" aria-labelledby="home-connections">
+          <h2 id="home-connections">{t("home.connections")}</h2>
+          <div className="home-live-ways">
+            {ways.map((way) => (
+              <Button
+                key={way.label}
+                variant="ghost"
+                className={`home-live-way ${way.label === "Inspire Someone" ? "window-seat-shortcut" : ""}`}
+                onClick={way.action}
+              >
+                <span className="home-door-medallion">
+                  <img src={way.img} alt="" width={104} height={104} />
+                </span>
+                <strong>{way.label}</strong>
+                <small>{way.subline}</small>
+              </Button>
+            ))}
+          </div>
+        </section>
         <div className="home-live-stamp-space" aria-hidden="true">
           <span>
             TRIPJUNKIES
@@ -603,15 +587,7 @@ export function HomeDashboard({
           </span>
         </div>
         <div className="home-live-signoff">
-          <img
-            src={airportSignoff}
-            srcSet={`${airportSignoffSmall} 768w, ${airportSignoff} 1536w`}
-            sizes="(max-width: 520px) 100vw, 768px"
-            alt="Four friends watching a plane take off at sunset"
-            loading="lazy"
-            width={1536}
-            height={1024}
-          />
+          <img src={takeoffArt} alt="" loading="lazy" width={1536} height={768} />
           <BrandLockup className="home-signoff text-[clamp(28px,8vw,44px)]" />
         </div>
       </section>
@@ -854,15 +830,7 @@ export function HomeDashboard({
           </div>
         )}
         <div className="cinematic-home-signoff">
-          <img
-            src={airportSignoff}
-            srcSet={`${airportSignoffSmall} 768w, ${airportSignoff} 1536w`}
-            sizes="(max-width: 520px) 100vw, 768px"
-            alt="Four friends watching a plane take off at sunset"
-            loading="lazy"
-            width={1536}
-            height={1024}
-          />
+          <img src={takeoffArt} alt="" loading="lazy" width={1536} height={768} />
           <BrandLockup className="home-signoff text-[clamp(28px,8vw,44px)]" />
         </div>
       </>

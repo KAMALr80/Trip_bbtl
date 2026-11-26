@@ -34,13 +34,12 @@ function PostcardCard({ trip, postcard }: { trip: TripLike; postcard: TripPostca
   const [message, setMessage] = useState("");
   const { left, right } = sideColumns(postcard.photos);
   const answers = postcard.answers.filter((a) => a.answers.length);
-  const subtitle = `${place(trip)} · ${new Date(`${trip.end_date}T12:00:00`).toLocaleDateString(
-    undefined,
-    {
-      month: "long",
-      year: "numeric",
-    },
-  )}`;
+  // The trip's last day, or the lock date when the caller has no dates (the world map, a stamp).
+  const day = (trip.end_date || postcard.locked_at || "").slice(0, 10);
+  const subtitle = `${place(trip)} · ${new Date(`${day}T12:00:00`).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  })}`;
   const crownLine = postcard.crowns
     .map((c) => `👑 ${t(`standings.crown.${c.season}`)}: ${c.name}`)
     .join(" · ");

@@ -113,7 +113,8 @@ const demos = [
     title: "Bingo",
     prompt: "Find a color that reminds you of the place you're visiting.",
     art: bingoIcon,
-    rules: "Find the little moments around you and mark your squares.",
+    rules:
+      "Find the little moments around you and mark your squares. On a trip, Bingo also lands on Play as a Surprise Drop for the whole crew.",
     destination: "The discovery deck",
     tagline: "Eyes open, adventure on",
     accent: "blue",
@@ -130,7 +131,67 @@ const demos = [
     accent: "green",
     length: "2 min",
   },
+  // The games from the founder's docs that weren't here (founder review). Local prompts only.
+  {
+    icon: "🔥",
+    title: "Hot seat",
+    prompt: "One player takes the hot seat; everyone else asks the questions.",
+    art: truthsIcon,
+    rules: "One player answers rapid questions from the crew. Then swap seats.",
+    destination: "The spotlight seat",
+    tagline: "All eyes on row one",
+    accent: "orange",
+    length: "2 min",
+  },
+  {
+    icon: "🎭",
+    title: "Act it",
+    prompt: "Act it out without a word. The crew shouts guesses.",
+    art: drawIcon,
+    rules: "Act out the prompt with no words while your crew guesses.",
+    destination: "The silent stage",
+    tagline: "No talking past this gate",
+    accent: "blue",
+    length: "1 min",
+  },
+  {
+    icon: "🤔",
+    title: "Would you rather",
+    prompt: "Pick a side, then defend it in one sentence.",
+    art: voteIcon,
+    rules: "Everyone picks a side on three, then the minority defends their choice.",
+    destination: "The fork in the road",
+    tagline: "Two gates, one choice",
+    accent: "green",
+    length: "2 min",
+  },
+  {
+    icon: "🧠",
+    title: "Trivia",
+    prompt: "Read the question, shout your answer, then reveal it.",
+    art: cardIcon,
+    rules:
+      "Read the question out loud; first right answer gets the point. The answer is in brackets.",
+    destination: "The quiz lounge",
+    tagline: "Know before you go",
+    accent: "blue",
+    length: "2 min",
+  },
+  {
+    icon: "🎤",
+    title: "Sing-off",
+    prompt: "Take turns singing or humming a line on the theme. No lyrics in the app.",
+    art: songIcon,
+    rules: "Take turns with a song on the theme. Blank or repeat, and you sit out.",
+    destination: "The encore stage",
+    tagline: "Last voice standing wins",
+    accent: "orange",
+    length: "3 min",
+  },
 ] as const;
+/** Practice prompt pool for a game in the list above: 9 belongs to Mix It Up, so the newer games
+ * (from Hot seat on) use 10 and up (src/lib/practice-prompts.ts). */
+export const promptKey = (index: number) => (index >= 9 ? index + 1 : index);
 const passBuddies = [
   buddyAvatars[0],
   buddyAvatars[1],
@@ -604,8 +665,13 @@ export function GameArcade({
     return (
       <OnePhoneNight
         games={demos
-          .slice(0, 7)
-          .map((d, index) => ({ index, title: d.title, art: d.art, icon: d.icon }))}
+          .map((d, index) => ({
+            index: promptKey(index),
+            title: d.title,
+            art: d.art,
+            icon: d.icon,
+          }))
+          .filter((g) => g.index <= 6 || g.index >= 10)}
         onExit={() => {
           setNight(false);
           try {
@@ -674,11 +740,11 @@ export function GameArcade({
             tagline={game?.tagline ?? "Mystery destination, mixed fresh"}
             accent={game?.accent ?? "blue"}
             length={game?.length ?? "2 min"}
-            gate={isMix ? 10 : selected + 1}
+            gate={isMix ? demos.length + 1 : selected + 1}
             buddy={gamePassBuddyFor(title)}
             onBoard={() => {
               if (!isMix) {
-                setPractice(shuffledPractice(selected));
+                setPractice(shuffledPractice(promptKey(selected)));
                 setPracticeNumber(0);
               }
               setStarted(true);

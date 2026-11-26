@@ -26,6 +26,8 @@ import { usePassportProgress } from "@/data/postcard";
 import { usePlayerProfile } from "@/data/profile";
 import { useT } from "@/i18n";
 import { BadgeShelf, TripStamps } from "./PassportProgress";
+import { TripPostcard } from "@/features/postcard/TripPostcard";
+import { WorldMap } from "./WorldMap";
 
 type Ink = {
   trip_id: string;
@@ -637,6 +639,8 @@ export function PassportBook({
               <div className="passport-trips">{shownTrips.slice(3).map(tripRow)}</div>
             </MorePanel>
           </section>
+          {/* Deck slide 15 (R-721): the world map of trips. */}
+          <WorldMap />
           {loading && (
             <p role="status" className="mt-4 text-sm">
               Opening your passport…
@@ -703,6 +707,29 @@ export function PassportBook({
                     ? "At Home experience completed"
                     : "Trip completed with your squad"}
                 </p>
+                {/* Founder review (deck slides 13, 14): a stamp relives the trip. Its postcard holds
+                    the crew's top photos, everyone's answers, the crowns and "most excited for". */}
+                <div className="passport-trip-relive">
+                  <TripPostcard
+                    trip={{
+                      id: entry.trip_id,
+                      name:
+                        trips.find((t) => t.id === entry.trip_id)?.name ??
+                        (entry.kind === "postcard" ? "" : entry.trip_name),
+                      destination:
+                        entry.kind === "postcard"
+                          ? (PACKS.find((p) => p.key === entry.pack)?.name ?? entry.pack)
+                          : (entry.city ?? entry.destination),
+                      start_date:
+                        trips.find((t) => t.id === entry.trip_id)?.start_date ??
+                        (entry.kind === "postcard" ? entry.created_at : entry.start_date),
+                      end_date:
+                        trips.find((t) => t.id === entry.trip_id)?.end_date ??
+                        (entry.kind === "postcard" ? entry.created_at : entry.stamped_on),
+                      cultures: trips.find((t) => t.id === entry.trip_id)?.cultures ?? [],
+                    }}
+                  />
+                </div>
                 <Button
                   variant="ghost"
                   className="passport-more mt-4"

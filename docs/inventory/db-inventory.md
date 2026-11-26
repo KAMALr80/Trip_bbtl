@@ -14,7 +14,7 @@
 |---|---|---|
 | Tables | 161 | 16 |
 | Views | 0 | 0 |
-| Functions | 373 | 517 |
+| Functions | 374 | 518 |
 | Triggers | 5 | 53 |
 
 Objects (re)defined in 5 or more migrations: **22**. This is why the snapshot, not the migration history, is the reference (gotcha G5).

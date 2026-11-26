@@ -512,6 +512,7 @@ export function AppShell() {
           allowSignup={false}
           onExplore={() => setPublicView("overview")}
           onStory={() => setPublicView("story")}
+          onGames={() => setPublicView("games")}
         />
       );
     if (publicView === "games")
@@ -601,6 +602,7 @@ export function AppShell() {
         onBetaSaved={() => setAnonCode(readPendingBeta())}
         onExplore={() => setPublicView("overview")}
         onStory={() => setPublicView("story")}
+        onGames={() => setPublicView("games")}
       />
     );
   }

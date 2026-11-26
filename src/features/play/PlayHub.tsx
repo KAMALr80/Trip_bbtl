@@ -58,11 +58,12 @@ import { fmtWhen } from "@/lib/viewer-time";
 import { roomOf } from "@/features/trip/rooms";
 import { t as translate, useT } from "@/i18n";
 import { finalStandings } from "./final-standings";
+import { CrewAtGate, PlayHero } from "./PlayHero";
+import { useSeatCap } from "@/features/trip/SeatCap";
 import { playerName } from "@/lib/player-name";
 import { CallNightsCard, CrowningCard } from "@/features/play/TripNights";
 import { useQueryClient } from "@tanstack/react-query";
 import { tripToday, tripTz } from "@/lib/itinerary";
-import { friendlyRange } from "@/lib/trip-dates";
 import { tripDisplayName } from "@/lib/trip-display-name";
 import { hapticTap } from "@/lib/haptics";
 import preflightArt from "@/assets/play-phase-preflight.jpg";
@@ -219,37 +220,6 @@ function ComingCard({
   line: string;
 }) {
   return <FaceCard icon={icon} tone={tone} title={title} line={line} pill="Coming in this phase" />;
-}
-
-function SquadAvatars({
-  members,
-  cards,
-  onMember,
-}: {
-  members: Member[];
-  cards: PlayerWithAvatar[];
-  onMember?: ((id: string) => void) | undefined;
-}) {
-  const shown = members.slice(0, 4);
-  return (
-    <div className="play-squad-avatars" aria-label={`${members.length} in the squad`}>
-      {shown.map((m) => {
-        const c = cards.find((x) => x.user_id === m.user_id);
-        return (
-          <AvatarButton
-            key={m.user_id}
-            userId={m.user_id}
-            onOpen={onMember}
-            url={c?.avatarUrl}
-            name={c?.game_name || m.display_name || "Player"}
-            className="size-8"
-            wrapperClass="play-squad-avatar"
-          />
-        );
-      })}
-      {members.length > 4 && <span>+{members.length - 4}</span>}
-    </div>
-  );
 }
 
 function CrownBoard({
@@ -503,6 +473,7 @@ function EnginePlayHub(props: Props) {
     };
   }, [load]);
   const rank = myStanding?.rank ?? 0;
+  const seatCap = useSeatCap(trip.id);
   const me = cards.find((c) => c.user_id === userId);
   useEffect(() => {
     const total = myStanding?.points;
@@ -659,104 +630,109 @@ function EnginePlayHub(props: Props) {
     <div
       className={`play-hub ${cultureKind === "inspire" ? "window-play-scene" : cultureKind ? "home-play-scene" : ""}`}
     >
-      <header className="play-hub-heading">
-        <div className="min-w-0">
-          <h1>{tripDisplayName(trip.name)}</h1>
-          <p>
-            {trip.destination} · {friendlyRange(trip.start_date, trip.end_date)}
-          </p>
-        </div>
-        <SquadAvatars members={members} cards={cards} onMember={onMember} />
-      </header>
       <PhaseNotice trip={trip} viewOnly={props.viewOnly} />
-      <section className="play-score-card" aria-label="Your score">
-        <AvatarButton
-          userId={userId}
-          onOpen={() => setPassport(true)}
-          url={me?.avatarUrl}
-          name={me?.game_name || "Player"}
-          className="size-14"
-          wrapperClass="play-score-avatar"
-        />
-        <div className="min-w-0 flex-1">
-          <strong>
-            {local
-              ? trip.play_arrangement === "solo"
-                ? "Solo journey"
-                : `${readOfflineRoster(trip.id).length || 1} playing`
-              : `${displayPoints} pts`}
-          </strong>
-          <small>
-            {upcoming ? (
-              <>
-                {t("phases.upcoming")} · {firstOpens}
-              </>
-            ) : (
-              <>
-                {PHASES[indexOf(active)]?.label} ·{" "}
-                {active === "takeoff"
-                  ? "Travel day"
-                  : active === "wrapped"
-                    ? shortDate(trip.end_date)
-                    : `Day ${progress.day} of ${progress.total}`}
-              </>
-            )}
-          </small>
-          {!upcoming && (active === "preflight" || active === "trip") && (
-            <small>
-              {trip.play_mode === "solo"
-                ? soloGoal > 0 &&
-                  t("standings.goal", { points: myStanding?.points ?? 0, goal: soloGoal })
-                : rank > 0 &&
-                  t("standings.place", {
-                    race: t(`standings.race.${ledgerSeason}`),
-                    rank,
-                    count: standings.length,
-                  })}
-            </small>
-          )}
-          <Button variant="ghost" className="play-score-link" onClick={() => setPassport(true)}>
-            Tap your avatar → Passport
-          </Button>
-        </div>
-        {pointPop > 0 && (
-          <span className="play-points-pop" role="status">
-            +{pointPop}
-          </span>
-        )}
-        {onlineGroup && (
-          <div className="play-place">
-            <small>PLACE</small>
+      {/* Founder review (deck slide 21): the phase's art behind the trip, the countdown, the score
+          card and the route, shifting with each phase. */}
+      <PlayHero
+        trip={trip}
+        art={(PHASES[indexOf(active)] ?? PHASES[0]!).art}
+        current={upcoming ? null : engineId[active]}
+        bounds={bounds}
+        withPreflight={hasPreflight(trip)}
+        atHome={roomOf(trip.room).atHome}
+      >
+        <section className="play-score-card" aria-label="Your score">
+          <AvatarButton
+            userId={userId}
+            onOpen={() => setPassport(true)}
+            url={me?.avatarUrl}
+            name={me?.game_name || "Player"}
+            className="size-14"
+            wrapperClass="play-score-avatar"
+          />
+          <div className="min-w-0 flex-1">
             <strong>
-              #{(!upcoming && rank) || "–"} <span>of {standings.length || members.length}</span>
+              {local
+                ? trip.play_arrangement === "solo"
+                  ? "Solo journey"
+                  : `${readOfflineRoster(trip.id).length || 1} playing`
+                : `${displayPoints} pts`}
             </strong>
+            <small>
+              {upcoming ? (
+                <>
+                  {t("phases.upcoming")} · {firstOpens}
+                </>
+              ) : (
+                <>
+                  {PHASES[indexOf(active)]?.label} ·{" "}
+                  {active === "takeoff"
+                    ? "Travel day"
+                    : active === "wrapped"
+                      ? shortDate(trip.end_date)
+                      : `Day ${progress.day} of ${progress.total}`}
+                </>
+              )}
+            </small>
+            {!upcoming && (active === "preflight" || active === "trip") && (
+              <small>
+                {trip.play_mode === "solo"
+                  ? soloGoal > 0 &&
+                    t("standings.goal", { points: myStanding?.points ?? 0, goal: soloGoal })
+                  : rank > 0 &&
+                    t("standings.place", {
+                      race: t(`standings.race.${ledgerSeason}`),
+                      rank,
+                      count: standings.length,
+                    })}
+              </small>
+            )}
+            <Button variant="ghost" className="play-score-link" onClick={() => setPassport(true)}>
+              Tap your avatar → Passport
+            </Button>
+          </div>
+          {pointPop > 0 && (
+            <span className="play-points-pop" role="status">
+              +{pointPop}
+            </span>
+          )}
+          {onlineGroup && (
+            <div className="play-place">
+              <small>PLACE</small>
+              <strong>
+                #{(!upcoming && rank) || "–"} <span>of {standings.length || members.length}</span>
+              </strong>
+            </div>
+          )}
+          {onlineGroup && (
+            <Button
+              variant="ghost"
+              className="play-breakdown"
+              aria-expanded={breakdown}
+              onClick={() => setBreakdown((v) => !v)}
+            >
+              See breakdown <ChevronDown className={breakdown ? "rotate-180" : ""} />
+            </Button>
+          )}
+        </section>
+        {breakdown && (
+          <div className="play-breakdown-panel">
+            {ledgerRows.length === 0 ? (
+              <span>{t("standings.nothingYet")}</span>
+            ) : (
+              ledgerRows.map((r) => (
+                <span key={r.source}>
+                  {r.label} <b>{r.points}</b>
+                </span>
+              ))
+            )}
           </div>
         )}
-        {onlineGroup && (
-          <Button
-            variant="ghost"
-            className="play-breakdown"
-            aria-expanded={breakdown}
-            onClick={() => setBreakdown((v) => !v)}
-          >
-            See breakdown <ChevronDown className={breakdown ? "rotate-180" : ""} />
-          </Button>
-        )}
-      </section>
-      {breakdown && (
-        <div className="play-breakdown-panel">
-          {ledgerRows.length === 0 ? (
-            <span>{t("standings.nothingYet")}</span>
-          ) : (
-            ledgerRows.map((r) => (
-              <span key={r.source}>
-                {r.label} <b>{r.points}</b>
-              </span>
-            ))
-          )}
-        </div>
-      )}
-      <PhaseRail trip={trip} current={active} upcoming={upcoming} onOpen={openPhase} />
+        <PhaseRail trip={trip} current={active} upcoming={upcoming} onOpen={openPhase} />
+      </PlayHero>
+      {members.length > 1 || onlineGroup ? (
+        <CrewAtGate trip={trip} members={members} cards={cards} cap={seatCap} onMember={onMember} />
+      ) : null}
       <div className="play-section-heading play-up-heading">
         <h2>Up now</h2>
         <span>
@@ -862,7 +838,12 @@ function PhasePage(
       {phase === props.current && (
         <>
           <CrewCheck trip={trip} members={members} viewOnly={props.viewOnly} />
-          <SurpriseDrop trip={trip} userId={userId} viewOnly={props.viewOnly} />
+          <SurpriseDrop
+            trip={trip}
+            userId={userId}
+            viewOnly={props.viewOnly}
+            teaser={phase === "trip" && roomOf(trip.room).pointsEnabled}
+          />
           <JournalPrompt trip={trip} userId={userId} viewOnly={props.viewOnly} />
           <QuestProofs trip={trip} userId={userId} viewOnly={props.viewOnly} />
           {phase === "trip" && <PostcardPicks trip={trip} viewOnly={props.viewOnly} />}

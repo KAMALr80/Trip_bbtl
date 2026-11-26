@@ -22,10 +22,10 @@ export function gameSceneArt(title: string) {
 export function gameSceneFor(title: string) {
   const value = title.toLowerCase();
   if (value.includes("spin") || value.includes("wheel")) return 1;
-  if (value.includes("draw")) return 2;
-  if (value.includes("song")) return 3;
+  if (value.includes("draw") || value.includes("act it")) return 2;
+  if (value.includes("song") || value.includes("sing")) return 3;
   if (value.includes("never")) return 4;
-  if (value.includes("vote") || value.includes("showdown")) return 5;
+  if (value.includes("vote") || value.includes("showdown") || value.includes("rather")) return 5;
   if (value.includes("truth") || value.includes("lie")) return 6;
   if (value.includes("bingo")) return 7;
   if (value.includes("scavenger") || value.includes("hunt")) return 8;
@@ -54,11 +54,14 @@ export function GameScene({
   onMember?: ((id: string) => void) | undefined;
   children: ReactNode;
 }) {
+  // Art and styling follow the game's title, so a game added later never borrows another game's
+  // scene through its list position (founder review: the five new arcade games).
+  const scene = title ? gameSceneFor(title) : index;
   return (
-    <div className={`cinematic-game-scene cinematic-game-scene-${index}`}>
+    <div className={`cinematic-game-scene cinematic-game-scene-${scene}`}>
       <img
         className="cinematic-game-world"
-        src={scenes[index] ?? cards}
+        src={scenes[scene] ?? cards}
         alt=""
         width={1536}
         height={1536}
@@ -83,7 +86,7 @@ export function GameScene({
             <strong className="font-display">{displayGameTitle(title)}</strong>
           </span>
         </header>
-        <div className={`cinematic-game-play cinematic-hero-${index}`}>{children}</div>
+        <div className={`cinematic-game-play cinematic-hero-${scene}`}>{children}</div>
         {progress && <div className="cinematic-game-progress">{progress}</div>}
         <div className="cinematic-game-crew" aria-label="Your crew">
           {crew.map((person, i) =>

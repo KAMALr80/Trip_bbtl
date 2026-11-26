@@ -21,9 +21,9 @@ See [`PRODUCTION_DEPLOYMENT_GUIDE.md`](PRODUCTION_DEPLOYMENT_GUIDE.md), section 
 - **Live standings.** Live boards list current members only. A player who leaves or deletes their account keeps their crowns, which read "Former player", but drops off the live board. Points stay in the ledger.
 - **Postcards.** Wrap-up answers already on a locked postcard stay there without a name after the writer deletes their account. Their photos are removed.
 - **Notifications.** There is no push for a declined join request. The player sees an in-app notice on the private-beta screen and on Home.
-- **Search.** There is no destination search; the Home button opens Explore (QA-14).
+- **Search.** Home search covers rooms, games, the main doors and countries ("Plan a trip to …"); it doesn't search inside trips.
 - **Trip costs.** The pot and payment functions are dormant.
-- **Map.** Behind `VITE_FEATURE_MAP`, off.
+- **Map.** The world map is on the Passport page (deck slide 15, R-721). It uses a simple land outline and approximate country centres; US states split out when zoomed in.
 - **First paint.** System fonts show for a moment until the web fonts load (they no longer block the app).
 
 ## Waiting on the founder, legal or assets

@@ -77,7 +77,8 @@
       "general": "General questions",
       "support": "Bug reports and account help",
       "safety": "Safety, harassment and copyright"
-    }
+    },
+    "tryGames": "Try Games on Flight"
   },
   "verify": {
     "title": "Check your email",
@@ -109,7 +110,10 @@
     "gate": "gate",
     "daysUntil_one": "day until",
     "daysUntil_other": "days until",
-    "exploreButton": "Explore destinations and games…"
+    "exploreButton": "Explore destinations and games…",
+    "letterEyebrow": "Welcome aboard",
+    "letterTitle": "Your welcome letter",
+    "connections": "Connecting flights"
   },
   "rooms": {
     "trip": {
@@ -529,7 +533,10 @@
     "liveWaiting": "You're presenting this one live. A 👍 at the next Game Night Live scores 10 pts.",
     "liveApproved": "Presented live ✓ 10 pts",
     "liveExpired": "Not presented before the crown was decided, so no points.",
-    "presentLiveConfirm": "Present the whole {{game}} live instead? This replaces photo proof for every part of today's drop, and scores 10 pts if the crew gives it a 👍."
+    "presentLiveConfirm": "Present the whole {{game}} live instead? This replaces photo proof for every part of today's drop, and scores 10 pts if the crew gives it a 👍.",
+    "nextTitle": "Next Surprise Drop",
+    "sealed": "sealed",
+    "nextLine": "Bingo, Scavenger Hunt, Speed or Photo Challenge, the same game for the whole crew. About one every 2–3 days on a random day, open for 24 hours."
   },
   "journey": {
     "eyebrow": "YOUR JOURNEY · TWO SEPARATE CROWNS",
@@ -976,6 +983,43 @@
     "you": "you",
     "pts_one": "{{count}} pt",
     "pts_other": "{{count}} pts",
-    "photoExpiry": "Trip photos are deleted 7 days after the trip, when Baggage Claim ends. Your postcard photos stay. Download the ones you want before then."
+    "photoExpiry": "Trip photos are deleted 7 days after the trip, when Baggage Claim ends. Your postcard photos stay. Download the ones you want before then.",
+    "hero": {
+      "nextTrip": "Your next trip",
+      "now": "Now · {{phase}}",
+      "in": "{{phase}} in",
+      "d": "d",
+      "h": "h",
+      "m": "m"
+    },
+    "crew": {
+      "title": "Your crew at the gate",
+      "seats": "{{count}} of {{cap}} seats",
+      "captain": "Captain",
+      "coCaptain": "Co-Captain",
+      "player": "Player",
+      "invite": "Invite",
+      "shareCode": "Share code",
+      "copied": "Invite link copied"
+    }
+  },
+  "map": {
+    "title": "World map",
+    "hint": "Every finished trip of a public player, and yours. Tap a pin; zoom in to split nearby places and US states.",
+    "pinLabel_one": "1 trip in {{places}}",
+    "pinLabel_other": "{{count}} trips in {{places}}",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "loading": "Loading the map…",
+    "error": "The map didn't load. Try again in a moment.",
+    "empty": "No trips on the map yet. Finished trips of public players show up here.",
+    "placeTitle_one": "{{places}} · 1 trip",
+    "placeTitle_other": "{{places}} · {{count}} trips",
+    "close": "Close",
+    "zoomHere": "Zoom in here",
+    "back": "All trips here",
+    "crew": "The crew",
+    "openProfile": "Open {{name}}'s profile",
+    "crewOnly": "The postcard, photos and answers stay with this trip's crew."
   }
 }

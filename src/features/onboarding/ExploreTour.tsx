@@ -6,7 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import { BrandLockup } from "@/components/BrandLockup";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/i18n";
-import welcomeArt from "@/assets/home-airport-signoff-diverse.jpg";
+// Illustrated like the rest of the app (founder review: the first slide was a stock photo).
+import welcomeArt from "@/assets/play-phase-takeoff.jpg";
 import tripArt from "@/assets/how-play-together.jpg";
 import windowArt from "@/assets/window-seat-room.webp";
 import exploreArt from "@/assets/athome-mexico.jpg";

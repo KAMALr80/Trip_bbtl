@@ -6,7 +6,7 @@ import { BrandLockup } from "@/components/BrandLockup";
 
 import { useEffect, useRef, useState } from "react";
 
-import { ArrowLeft, Eye, EyeOff, BookOpen } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, BookOpen, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { authProviderEnabled } from "@/data/account";
@@ -25,12 +25,15 @@ export function AuthScreen({
   allowSignup = true,
   onExplore,
   onStory,
+  onGames,
   onBetaSaved,
 }: {
   onBetaSaved?: () => void;
   allowSignup?: boolean;
   onExplore: () => void;
   onStory: () => void;
+  /** Founder review: try Games on Flight before making an account (free, nothing saved). */
+  onGames?: (() => void) | undefined;
 }) {
   const t = useT();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -324,6 +327,12 @@ export function AuthScreen({
                 <BookOpen size={17} />
                 {t("auth.ourStory")}
               </Button>
+              {onGames && (
+                <Button variant="outline" onClick={onGames}>
+                  <Gamepad2 size={17} />
+                  {t("auth.tryGames")}
+                </Button>
+              )}
             </div>
             <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
               {t("auth.needHand")}{" "}

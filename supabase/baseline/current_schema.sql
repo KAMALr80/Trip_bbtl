@@ -4018,6 +4018,16 @@ CREATE FUNCTION public.welcome_copy() RETURNS jsonb
 
 
 --
+-- Name: world_map(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.world_map() RETURNS TABLE(trip_id uuid, trip_name text, room text, kind text, country text, state text, culture text, season_label text, crowns text[], member boolean, players jsonb)
+    LANGUAGE sql STABLE
+    SET search_path TO ''
+    AS $$ SELECT * FROM trip_private.world_map() $$;
+
+
+--
 -- Name: wrapup_board(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -8827,14 +8837,15 @@ BEGIN
     ON CONFLICT (user_id) DO UPDATE SET best_points=greatest(public.junkie_ranks.best_points, excluded.best_points), updated_at=now()
     RETURNING best_points INTO v_best;
   PERFORM trip_private.sync_passport(p_user);
-  SELECT count(*) INTO v_intl FROM public.passport_stamps s JOIN public.trips t ON t.id=s.trip_id AND t.kind='trip' AND NOT t.is_sandbox AND t.unlocked_at IS NOT NULL AND (t.ended_at IS NOT NULL OR current_date > t.end_date) AND (SELECT count(*) FROM public.trip_members x WHERE x.trip_id=t.id AND x.status='approved') >= 3 WHERE s.user_id=p_user AND s.kind='international';
+  -- Passport Junkie = 10 countries (R-703), the same count the passport level uses (passport_progress).
+  SELECT coalesce((SELECT pp.countries FROM public.passport_progress pp WHERE pp.user_id = p_user), 0) INTO v_intl;
   RETURN QUERY SELECT
     CASE WHEN v_best>=3000 THEN 'World Class 👑' WHEN v_best>=1500 THEN 'Jet Setter' WHEN v_best>=750 THEN 'First Class' WHEN v_best>=250 THEN 'Frequent Flyer' ELSE 'Carry-On' END,
     v_pts,
     CASE WHEN v_best>=3000 THEN NULL WHEN v_best>=1500 THEN 'World Class 👑' WHEN v_best>=750 THEN 'Jet Setter' WHEN v_best>=250 THEN 'First Class' ELSE 'Frequent Flyer' END,
     CASE WHEN v_best>=3000 THEN NULL WHEN v_best>=1500 THEN 3000 WHEN v_best>=750 THEN 1500 WHEN v_best>=250 THEN 750 ELSE 250 END,
     CASE WHEN v_best>=3000 THEN 3000 WHEN v_best>=1500 THEN 1500 WHEN v_best>=750 THEN 750 WHEN v_best>=250 THEN 250 ELSE 0 END,
-    v_intl >= 5;
+    v_intl >= 10;
 END $$;
 
 
@@ -16793,6 +16804,45 @@ RETURN QUERY SELECT q.week_number, CASE WHEN q.drops_at <= now() OR trip_private
  (SELECT count(*)::int FROM public.weekly_answer_votes v WHERE v.trip_id=p_trip AND v.week_number=q.week_number),
  (SELECT o.idx FROM public.weekly_answer_votes v JOIN trip_private.ordered_answers(p_trip,q.week_number) o ON o.user_id=v.target_id WHERE v.trip_id=p_trip AND v.week_number=q.week_number AND v.voter_id=auth.uid())
  FROM public.weekly_questions q LEFT JOIN public.game_nights n ON n.trip_id=q.trip_id AND n.week_number=q.week_number WHERE q.trip_id=p_trip AND (n.week_number IS NOT NULL OR q.week_number >= 1000) ORDER BY q.drops_at; END $$;
+
+
+--
+-- Name: world_map(); Type: FUNCTION; Schema: trip_private; Owner: -
+--
+
+CREATE FUNCTION trip_private.world_map() RETURNS TABLE(trip_id uuid, trip_name text, room text, kind text, country text, state text, culture text, season_label text, crowns text[], member boolean, players jsonb)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+  -- Every finished trip of a public adult player (R-714, R-721), plus the viewer's own; a trip
+  -- hidden on a profile stays off the map (Q28). One row per trip; players are only the ones shown.
+  WITH seen AS (
+    SELECT s.trip_id, s.user_id, s.kind, s.country, s.state, s.culture, s.stamped_on, s.season_label,
+           s.room, s.crowns
+    FROM public.passport_stamps s
+    JOIN public.trips t ON t.id = s.trip_id AND NOT t.is_sandbox
+    LEFT JOIN public.profile_prefs pr ON pr.user_id = s.user_id
+    WHERE auth.uid() IS NOT NULL
+      AND (s.user_id = auth.uid()
+           OR (coalesce(pr.is_public, false)
+               AND coalesce(trip_private.age_of(s.user_id), 0) >= 18
+               AND NOT (s.trip_id = ANY (coalesce(pr.hidden_trips, '{}')))))
+  )
+  SELECT v.trip_id, t.name, coalesce(min(v.room), 'trip'), min(v.kind), min(v.country), min(v.state),
+         min(v.culture), coalesce(min(v.season_label), trip_private.season_label(min(v.stamped_on))),
+         coalesce((SELECT array_agg(DISTINCT c ORDER BY c)
+                   FROM seen v2 CROSS JOIN LATERAL unnest(v2.crowns) c WHERE v2.trip_id = v.trip_id), '{}'),
+         trip_private.is_trip_member(v.trip_id, auth.uid()),
+         jsonb_agg(jsonb_build_object('user_id', v.user_id, 'game_name', pp.game_name,
+                                      'avatar_style', pp.avatar_style, 'avatar_seed', pp.avatar_seed)
+                   ORDER BY pp.game_name)
+  FROM seen v
+  JOIN public.trips t ON t.id = v.trip_id
+  LEFT JOIN public.player_profiles pp ON pp.user_id = v.user_id
+  GROUP BY v.trip_id, t.name
+  ORDER BY min(v.stamped_on) DESC, t.name
+  LIMIT 1000
+$$;
 
 
 --
@@ -30776,6 +30826,15 @@ GRANT ALL ON FUNCTION public.welcome_copy() TO anon;
 
 
 --
+-- Name: FUNCTION world_map(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.world_map() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.world_map() TO service_role;
+GRANT ALL ON FUNCTION public.world_map() TO authenticated;
+
+
+--
 -- Name: FUNCTION wrapup_board(p_trip uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -35468,6 +35527,15 @@ GRANT ALL ON FUNCTION trip_private.week_game_action(p_trip uuid, p_week integer,
 REVOKE ALL ON FUNCTION trip_private.weekly_question_status(p_trip uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION trip_private.weekly_question_status(p_trip uuid) TO authenticated;
 GRANT ALL ON FUNCTION trip_private.weekly_question_status(p_trip uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION world_map(); Type: ACL; Schema: trip_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION trip_private.world_map() FROM PUBLIC;
+GRANT ALL ON FUNCTION trip_private.world_map() TO authenticated;
+GRANT ALL ON FUNCTION trip_private.world_map() TO service_role;
 
 
 --

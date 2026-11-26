@@ -552,6 +552,7 @@ function	public	vote_weekly_answer	p_trip uuid, p_week integer, p_idx integer	f	
 function	public	week_game_action	p_trip uuid, p_week integer, p_action text	f	true						20261002010415_b333da6b-5009-4692-aa79-ca636c31b816.sql	1	0	
 function	public	weekly_question_status	p_trip uuid	f	true				EXECUTE		20261002021700_13b7d943-1332-4407-8f09-f44ccfda29cc.sql	2	0	
 function	public	welcome_copy		f	true			EXECUTE	EXECUTE		20261002123608_778159d1-3af6-4762-8a33-183262bb00b9.sql	2	1	src/features/onboarding/WelcomeCopy.tsx
+function	public	world_map		f	true				EXECUTE		20261126110000_world_map.sql	1	1	src/data/map.ts
 function	public	wrapup_board	p_trip uuid	f	true				EXECUTE		20261102100000_m5_postcards.sql	1	1	src/data/postcard.ts
 function	public	write_journal	p_item uuid, p_body text, p_choice integer	f	true				EXECUTE		20261031100000_m3_journal_guide.sql	1	5	src/data/guide.ts src/data/offline/outbox-rules.test.ts src/data/offline/outbox-rules.ts src/data/offline/outbox.ts src/features/guide/JournalPrompt.tsx
 function	trip_private	a2c_minor_trip	p_trip uuid	t	true				EXECUTE		20261005052331_e2c5f1ef-560e-402a-8738-eab483313042.sql	1	0	
@@ -770,7 +771,7 @@ function	trip_private	is_window_room	p_trip uuid	t	true				EXECUTE		202610050912
 function	trip_private	join_trip	p_code text, p_display_name text	t	true				EXECUTE		20261107100000_privacy_and_join_names.sql	12	0	
 function	trip_private	join_waitlist	p_email text	t	true				EXECUTE		20261004085445_83e7b819-adbc-43ef-bd6c-74f933e72093.sql	1	0	
 function	trip_private	journal_options	p_item uuid	t	true				EXECUTE		20261031100000_m3_journal_guide.sql	1	0	
-function	trip_private	junkie_rank	p_user uuid	t	true				EXECUTE		20261005055943_411e244e-baf1-41b7-a2de-9416330a5fa3.sql	3	0	
+function	trip_private	junkie_rank	p_user uuid	t	true				EXECUTE		20261126100000_passport_junkie_ten_countries.sql	4	0	
 function	trip_private	lab_as	p_trip uuid, p_action text	t	true				EXECUTE		20261002041439_9be2f1cd-866f-4ffd-94a1-af116d6d032a.sql	1	0	
 function	trip_private	lab_at_home	p_pack text, p_length text	t	true				EXECUTE		20261002085632_da6294f9-5d94-462c-a613-3e11979ee426.sql	1	0	
 function	trip_private	lab_at_home_bots	p_trip uuid	t	true				EXECUTE		20261002085632_da6294f9-5d94-462c-a613-3e11979ee426.sql	1	0	
@@ -1121,6 +1122,7 @@ function	trip_private	vote_mission	p_trip uuid, p_date date, p_owner uuid, p_cau
 function	trip_private	vote_weekly_answer	p_trip uuid, p_week integer, p_idx integer	t	true				EXECUTE		20261002021700_13b7d943-1332-4407-8f09-f44ccfda29cc.sql	1	0	
 function	trip_private	week_game_action	p_trip uuid, p_week integer, p_action text	t	true				EXECUTE		20261002010415_b333da6b-5009-4692-aa79-ca636c31b816.sql	1	0	
 function	trip_private	weekly_question_status	p_trip uuid	t	true				EXECUTE		20261002023938_597146df-8d17-4895-9bcc-bd2568945ad9.sql	3	0	
+function	trip_private	world_map		t	true				EXECUTE		20261126110000_world_map.sql	1	0	
 function	trip_private	wrapup_board	p_trip uuid	t	true				EXECUTE		20261102100000_m5_postcards.sql	1	0	
 function	trip_private	wrapup_questions	p_trip uuid	f	true				EXECUTE		20261102100000_m5_postcards.sql	1	0	
 function	trip_private	write_journal	p_item uuid, p_body text, p_choice integer	t	true				EXECUTE		20261031100000_m3_journal_guide.sql	1	0	

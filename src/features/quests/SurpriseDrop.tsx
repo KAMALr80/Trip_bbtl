@@ -26,10 +26,13 @@ export function SurpriseDrop({
   trip,
   userId,
   viewOnly,
+  teaser,
 }: {
   trip: TripWithRole;
   userId: string;
   viewOnly?: boolean | undefined;
+  /** Trip Season: show the sealed next drop when none is open (deck slide 7). */
+  teaser?: boolean | undefined;
 }) {
   const t = useT();
   const now = useMinute();
@@ -37,7 +40,17 @@ export function SurpriseDrop({
   const proofs = useMyProofs(trip.id);
   const claim = useClaimDropLive(trip.id);
   const drop = openItem(schedule.data, "surprise_drop", now);
-  if (!drop) return null;
+  // Founder review: Bingo and the other drop games live on Play in Trip Season (R-342), but nothing
+  // showed there until a drop opened. The next one is sealed: its day stays a surprise.
+  if (!drop)
+    return teaser ? (
+      <section className="app-card mt-3 drop-teaser" aria-label={t("drops.nextTitle")}>
+        <p className="text-xs font-bold uppercase text-muted-foreground">
+          {t("drops.nextTitle")} · {t("drops.sealed")}
+        </p>
+        <p className="text-sm mt-1">{t("drops.nextLine")}</p>
+      </section>
+    ) : null;
   const game = (drop.variant ?? "photo") as Game;
   const mine = (proofs.data ?? []).filter((p) => p.schedule_id === drop.id);
   const live = mine.find((p) => p.live);
