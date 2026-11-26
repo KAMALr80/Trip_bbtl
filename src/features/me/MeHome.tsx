@@ -97,6 +97,15 @@ export function MeHome(props: Props) {
           <p className="font-display text-lg font-extrabold">{active.name}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <RoleStamp role={active.myRole} />
+            {/* The role they picked (Planner, Hype person or their own), not only Captain / Player. */}
+            {mine.trip_persona && (
+              <span className="rounded-full border border-border px-2 py-0.5 text-xs font-bold">
+                {t("me.tripRole", {
+                  role:
+                    mine.trip_persona.charAt(0).toLocaleUpperCase() + mine.trip_persona.slice(1),
+                })}
+              </span>
+            )}
           </div>
           <p className="mt-2 text-sm">
             <strong>{t("profile.excited")}</strong> {mine.most_excited || t("me.excitedEmpty")}
@@ -115,7 +124,6 @@ export function MeHome(props: Props) {
 
       <section className="mt-4" aria-label={t("me.moreTitle")}>
         <h2 className="font-display text-lg font-extrabold">{t("me.moreTitle")}</h2>
-        {row(t("me.notifications"), props.onNotifications, t("me.notificationsHint"))}
         {leader && row(t("me.captainTools"), props.onCaptainTools, active?.name)}
         {row(t("me.trips"), props.onTrips)}
         {row(t("me.help"), props.onHelp)}

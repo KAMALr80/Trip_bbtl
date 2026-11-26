@@ -9170,6 +9170,15 @@ BEGIN
     INSERT INTO public.trip_members (trip_id, user_id, role, status, approved_at) VALUES (v_trip, b.user_id, 'player', 'approved', now());
     PERFORM trip_private.lab_card(v_trip, b.user_id, b.name, k);
   END LOOP;
+  -- Travel rooms get the sample itinerary, set in Lisbon and Porto like the sandbox itself, so the
+  -- Trip tab isn't empty (founder review).
+  IF NOT (r->>'atHome')::boolean THEN
+    PERFORM trip_private.lab_itinerary(v_trip);
+    UPDATE public.trip_itineraries
+    SET days = replace(replace(replace(replace(days::text, 'Bangkok', 'Lisbon'), 'Phuket', 'Porto'),
+                               '"BKK"', '"LIS"'), '"HKT"', '"OPO"')::jsonb
+    WHERE trip_id = v_trip;
+  END IF;
   UPDATE public.trips SET setup_completed_at = now() WHERE id = v_trip;  -- plans the schedule
   RETURN v_trip;
 END

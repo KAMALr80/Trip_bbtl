@@ -110,7 +110,8 @@ const PHASES: { id: Phase; label: string; art: string; tagline: string }[] = [
   },
   {
     id: "wrapped",
-    label: "Wrapped",
+    // The deck's name for the last phase, as on Captain Tools (was "Wrapped" here only).
+    label: "Baggage Claim",
     art: wrappedArt,
     tagline: "The points, crowns and memories from your trip.",
   },

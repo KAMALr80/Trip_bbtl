@@ -19,8 +19,11 @@ export const countryName = (code: string) => {
 export const placeName = (value: string) => (/^[A-Z]{2}$/.test(value) ? countryName(value) : value);
 
 /** Searchable country list (ISO codes that have an SVG flag), sorted by English name. */
+// Region codes that aren't a place you travel to: browser test locales ("Pseudo-Accents"), unions.
+const NOT_COUNTRIES = new Set(["XA", "XB", "EU", "UN", "EZ", "QO"]);
+
 export const COUNTRIES = flagCodes
-  .filter((c) => /^[A-Z]{2}$/.test(c))
+  .filter((c) => /^[A-Z]{2}$/.test(c) && !NOT_COUNTRIES.has(c))
   .map((code) => ({ code, name: countryName(code) }))
   .filter((c) => c.name !== c.code)
   .sort((a, b) => a.name.localeCompare(b.name));
