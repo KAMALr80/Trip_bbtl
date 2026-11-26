@@ -28,11 +28,13 @@ SELECT tests.create_user('p2', 25);
 CREATE TEMP TABLE ids (k text PRIMARY KEY, id uuid);
 GRANT ALL ON ids TO PUBLIC;
 -- Takeoff in 3 days, 5 days of Pre-Flight, a call night in two days.
+-- Call nights sit at fixed daytime hours (UTC), not now() + n: their reminders go an hour before, and
+-- from a run in the evening that hour fell in quiet hours (22:00-08:00), which moves it to 21:55.
 INSERT INTO ids SELECT 'trip', tests.create_trip(tests.user_id('cap'), 3, 4, 'a2c', 'UTC', 'Europe/Lisbon');
 UPDATE public.trips SET preflight_days = 5 WHERE id = (SELECT id FROM ids WHERE k = 'trip');
 SELECT tests.add_member((SELECT id FROM ids WHERE k = 'trip'), tests.user_id('p1'));
 SELECT tests.add_member((SELECT id FROM ids WHERE k = 'trip'), tests.user_id('p2'));
-INSERT INTO public.call_nights (trip_id, starts_at) VALUES ((SELECT id FROM ids WHERE k = 'trip'), now() + interval '2 days');
+INSERT INTO public.call_nights (trip_id, starts_at) VALUES ((SELECT id FROM ids WHERE k = 'trip'), ((now() AT TIME ZONE 'UTC')::date + 2 + time '14:00') AT TIME ZONE 'UTC');
 INSERT INTO ids SELECT 'night', id FROM public.call_nights WHERE trip_id = (SELECT id FROM ids WHERE k = 'trip');
 CREATE FUNCTION pg_temp.queued(p_user text, p_type text) RETURNS int LANGUAGE sql SECURITY DEFINER AS $$
   SELECT count(*)::int FROM public.notification_queue
@@ -55,7 +57,7 @@ SELECT ok((SELECT bool_and(body <> '') FROM public.notification_queue WHERE type
           'the daily push carries the tip itself (R-313)');
 
 -- Re-planning: the Captain moves the call night; its reminder moves, no duplicate.
-UPDATE public.call_nights SET starts_at = now() + interval '2 days 3 hours' WHERE id = (SELECT id FROM ids WHERE k = 'night');
+UPDATE public.call_nights SET starts_at = ((now() AT TIME ZONE 'UTC')::date + 2 + time '17:00') AT TIME ZONE 'UTC' WHERE id = (SELECT id FROM ids WHERE k = 'night');
 SELECT trip_private.plan_trip((SELECT id FROM ids WHERE k = 'trip'));
 SELECT is(pg_temp.queued('p1', 'night_soon'), 1, 'moving a call night keeps one reminder');
 SELECT is((SELECT send_after FROM public.notification_queue WHERE type = 'night_soon' AND user_id = tests.user_id('p1')),
