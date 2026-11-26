@@ -1,6 +1,8 @@
 # QA multiplayer retest
 
-**Live status: BLOCKED.**
+**Live status: RUN on staging, 26 / 26 PASS** (2026-11-26, jay@ + kamal@). Details: [QA_STAGING_LIVE_TEST.md](QA_STAGING_LIVE_TEST.md). Staging runs the build from before batches 1–5; the server rules tested here were already deployed.
+
+_Original note, kept for the record:_
 
 Two things are missing for a live two-account run with jay@ and kamal@:
 
@@ -28,11 +30,11 @@ TC-MP-01 to TC-MP-08 in [QA_TEST_CASES.md](QA_TEST_CASES.md). For each, record t
 
 | Case | Status |
 |---|---|
-| TC-MP-01 Crew Check points post once | BLOCKED |
-| TC-MP-02 Show & Tell +20 once | BLOCKED |
-| TC-MP-03 Secret votes hidden until Close (UI and network) | BLOCKED |
-| TC-MP-04 Award tie (needs the Q7 rule) | BLOCKED |
-| TC-MP-05 Fresh account sees Crew Check / Game Night Live | BLOCKED |
-| TC-MP-06 Role changes reach the other browser | BLOCKED |
-| TC-MP-07 13th join / 5th Window Seat refused | BLOCKED |
-| TC-MP-08 Friends off the app saves nothing | BLOCKED |
+| TC-MP-01 Crew Check points post once | Covered by DB suite; live photo upload not run |
+| TC-MP-02 Show & Tell +20 once | PASS (live: MP-14, MP-15) |
+| TC-MP-03 Secret votes hidden until Close (UI and network) | PASS (live: MP-16–MP-18, API 403) |
+| TC-MP-04 Award tie (needs the Q7 rule) | RUN: both get the award and +10; founder to confirm Q7 |
+| TC-MP-05 Fresh account sees Crew Check / Game Night Live | Partly: fresh trip, Crew Check and Live load for the player (MP-13, MP-23); a brand-new third account not used |
+| TC-MP-06 Role changes reach the other browser | PASS via API (MP-04, MP-08, MP-09); UI refetch not timed |
+| TC-MP-07 13th join / 5th Window Seat refused | Not run (needs 11 more accounts); DB suite covers it |
+| TC-MP-08 Friends off the app saves nothing | Not run live; nothing is sent to the server by design |

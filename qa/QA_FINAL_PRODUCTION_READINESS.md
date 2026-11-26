@@ -17,7 +17,8 @@ Every automated release check passes on this branch, and no CRITICAL or HIGH bug
 | Bugs verified (automated) | 5 verified + 1 fixed with the visual check pending (B05) |
 | Still failing | 0 |
 | Open requirement | 1 (QA-R01: solo "What kind of traveler are you?", PDF p.12; planned as a separate change on `main`) |
-| Blocked | Live multiplayer (TC-MP-01…08), age/teen accounts, devices, staging logs |
+| Live multiplayer on staging | 26 / 26 PASS (server rules) |
+| Blocked | UI fixes on staging until deployed; age/teen accounts; devices |
 | Not a bug | 4 report claims (Practice vs Start and the bell icon were already fixed; `write_journal` isn't a definer function; `CaptainBadge` is never rendered) |
 | Needs product decision | 6 (B04, B06, hunt daily unlock, present-live bonus, Game Night Calendar, award tie rule Q7) |
 | Security issues | 0 open; 1 hardening test added (S01) |
@@ -47,7 +48,7 @@ Typecheck clean · `eslint . --quiet` exit 0 · Vitest 346/346 · pgTAP 50/50 (D
 ## Production blockers (must clear before production)
 
 1. **Merge and deploy to staging.** Batches 3–5 and this branch aren't on `main` or staging. Merge this branch as **one PR**: it holds batches 3–5. Separate PRs for batches 3 and 4 would likely fail CI's inventory check (batch 4 changed the source references behind QA-B08; not run separately), and the inventory is only regenerated here.
-2. **Live two-account pass** on staging (TC-MP-01…08 and the P1 cases in [QA_TEST_CASES.md](QA_TEST_CASES.md)) with jay@ and kamal@. Needs `.env.qa` (see [QA_MULTIPLAYER_RETEST.md](QA_MULTIPLAYER_RETEST.md)).
+2. **Live two-account pass: done for the server rules (26/26 PASS, [QA_STAGING_LIVE_TEST.md](QA_STAGING_LIVE_TEST.md)).** After deploying, rerun the screen checks: staging still runs the build from before batch 1, so none of the batch 1–5 UI fixes can be seen there yet.
 3. **CI's generated-types step** must pass (`world_map` types were written by hand in batch 5).
 
 ## Known limitations (acceptable for release, documented)

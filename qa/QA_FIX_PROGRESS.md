@@ -32,6 +32,10 @@ Typecheck clean · eslint --quiet 0 · Vitest 346/346 · pgTAP 50/50 · build OK
 - Live multiplayer (TC-MP-01…08) with jay@ and kamal@: needs `.env.qa` with the two passwords, and this code deployed to staging.
 - Devices (offline, install, push); staging logs for the 9 console errors.
 
+## Live staging pass (2026-11-26)
+
+Multiplayer 26/26 PASS with jay@ and kamal@; screens checked, 0 console errors. Staging runs the build from before batch 1, so UI fixes can't be seen there yet. See QA_STAGING_LIVE_TEST.md.
+
 ## Exact next task
 
 1. User: merge `fix/qa-audit` as one PR into `main` (after CI is green, including generated types) and deploy to staging.
