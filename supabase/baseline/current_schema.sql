@@ -9596,12 +9596,12 @@ END $$;
 CREATE FUNCTION trip_private.lab_shift_date(p_item jsonb, p_days integer) RETURNS jsonb
     LANGUAGE sql IMMUTABLE
     SET search_path TO ''
-    AS $$
+    AS $_$
   SELECT CASE
     WHEN jsonb_typeof(p_item) = 'object' AND coalesce(p_item->>'date', '') ~ '^\d{4}-\d{2}-\d{2}$'
       THEN jsonb_set(p_item, '{date}', to_jsonb(((p_item->>'date')::date + p_days)::text))
     ELSE p_item END
-$$;
+$_$;
 
 
 --
