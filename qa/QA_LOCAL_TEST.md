@@ -91,6 +91,15 @@ These are the same checks as the staging run (MP-00 … MP-23, MP-99), on the la
   - `e2e/join-flow.spec.ts` now expects the role in the profile write, not in the card write (it had been checking the old behaviour). It passes.
   - The live check after the fix shows the role on the profile, on the new trip card and on Me ("Trip role: Photographer"; screenshot `10-quickjoin-role-me.png`).
 
+## New bug found: QA-B10, the Play screen was broken on a desktop screen (PDF p.7)
+
+- **What happened:** reported with a screenshot after the run. In the phone-width app frame on a wide screen, the Play hub used two columns. The "You have arrived" banner filled the left column, and the hero, score card and phase strip were squeezed into the right one and cut off.
+- **Cause:** the two-column grid (`.play-hub`) switched on the viewport width, not on the width of the hub itself.
+- **Fix:** `src/styles.css`. The hub now uses two columns only when it is wide enough itself, and the banner, hero and crew always span the full row.
+- **Checked:**
+  - at 1910px, 1024px and iPhone 13 widths, the hub is one column with no sideways scroll (screenshots `11-play-layout-desktop.png`, `-tablet.png`, `-phone.png`)
+  - e2e `responsive`, `play-engine` and `shell-navigation`: 21/21
+
 ## Other tests on this code
 
 All passed after the QA-B09 change:

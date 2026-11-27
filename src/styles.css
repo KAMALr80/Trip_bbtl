@@ -7976,10 +7976,15 @@ html:root .cinematic-auth .cinematic-auth-email-button {
   }
 }
 @media (min-width: 700px) {
+  /* Two columns only when the hub itself is wide (tablet). In the phone-width app frame on a
+     desktop screen the viewport passes 700px but the hub is ~600px: stay one column there. */
   .play-hub {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
     gap: 12px;
   }
+  .play-hub > .phase-banner,
+  .play-hero-scene,
+  .play-crew-gate,
   .play-hub-heading,
   .play-score-card,
   .play-phase-ticket,
